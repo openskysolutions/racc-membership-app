@@ -42,3 +42,41 @@ npm install
 ```bash
 npm run dev
 ```
+
+## Mobile (Capacitor)
+
+1. Build web assets:
+```bash
+npm run build
+```
+2. Initialize Capacitor (only once):
+```bash
+npm run cap:init
+```
+3. Add platforms:
+```bash
+npm run cap:add:ios
+npm run cap:add:android
+```
+4. Sync web assets to native projects:
+```bash
+npm run cap:sync
+```
+5. Open native IDE:
+```bash
+npm run cap:open:ios
+npm run cap:open:android
+```
+
+## Desktop (Electron)
+
+- Run in development (launch Vite and Electron):
+```bash
+npm run electron:dev
+```
+- Build production package:
+```bash
+npm run build
+```bash
+npm run electron:build
+```

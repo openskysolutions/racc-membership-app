@@ -19,14 +19,26 @@
   ],
   "private": true,
   "version": "1.1.0",
+  "main": "electron-main.cjs",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "cap:init": "cap init db-studio com.example.dbstudio",
+    "cap:add:ios": "cap add ios",
+    "cap:add:android": "cap add android",
+    "cap:sync": "cap sync",
+    "cap:open:ios": "cap open ios",
+    "cap:open:android": "cap open android",
+    "electron:dev": "cross-env NODE_ENV=development concurrently \"vite\" \"wait-on http://localhost:5174 && electron .\"",
+    "electron:build": "electron-builder"
   },
   "dependencies": {
+    "@capacitor/android": "^5.1.1",
+    "@capacitor/core": "^5.1.1",
+    "@capacitor/ios": "^5.1.1",
     "@radix-ui/react-accordion": "^1.2.0",
     "@radix-ui/react-avatar": "^1.1.0",
     "@radix-ui/react-dialog": "^1.1.1",
@@ -44,6 +56,7 @@
     "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
+    "@capacitor/cli": "^5.1.1",
     "@types/node": "^20.14.2",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
@@ -51,12 +64,44 @@
     "@typescript-eslint/parser": "^7.12.0",
     "@vitejs/plugin-react": "^4.3.0",
     "autoprefixer": "^10.4.19",
+    "concurrently": "^8.2.0",
+    "electron": "^24.3.1",
+    "electron-builder": "^24.6.0",
     "eslint": "^8.53.0",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.4",
     "postcss": "^8.4.38",
     "tailwindcss": "^3.4.4",
     "typescript": "^5.4.5",
-    "vite": "^5.2.13"
+    "vite": "^5.2.13",
+    "wait-on": "^7.0.1",
+    "cross-env": "^7.0.3"
+  },
+  "build": {
+    "appId": "com.example.dbstudio",
+    "files": [
+      "dist/**/*",
+      "electron-main.cjs",
+      "preload.cjs"
+    ],
+    "directories": {
+      "buildResources": "assets"
+    },
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ]
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ]
+    }
   }
 }

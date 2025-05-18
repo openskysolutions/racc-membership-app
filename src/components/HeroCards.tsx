@@ -9,7 +9,6 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { Check, Linkedin } from "lucide-react";
-import { LightBulbIcon } from "./Icons";
 import { GitHubLogoIcon } from "@radix-ui/react-icons";
 import { OpenSkyLogo } from '@/components/Icons';
 import cn from "classnames";
