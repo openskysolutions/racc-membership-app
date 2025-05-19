@@ -52,8 +52,11 @@
     "lucide-react": "^0.424.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-router-dom": "^7.6.0",
     "tailwind-merge": "^2.4.0",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "vite-plugin-pages": "^0.33.0",
+    "vite-plugin-svgr": "^4.3.0"
   },
   "devDependencies": {
     "@capacitor/cli": "^5.1.1",
@@ -65,6 +68,7 @@
     "@vitejs/plugin-react": "^4.3.0",
     "autoprefixer": "^10.4.19",
     "concurrently": "^8.2.0",
+    "cross-env": "^7.0.3",
     "electron": "^24.3.1",
     "electron-builder": "^24.6.0",
     "eslint": "^8.53.0",
@@ -74,8 +78,7 @@
     "tailwindcss": "^3.4.4",
     "typescript": "^5.4.5",
     "vite": "^5.2.13",
-    "wait-on": "^7.0.1",
-    "cross-env": "^7.0.3"
+    "wait-on": "^7.0.1"
   },
   "build": {
     "appId": "com.example.dbstudio",
