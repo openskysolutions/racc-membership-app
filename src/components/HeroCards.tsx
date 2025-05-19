@@ -15,10 +15,10 @@ import cn from "classnames";
 
 export const HeroCards = () => {
   return (
-    <div className="flex flex-col md:flex-row !mt-12 flex-wrap gap-8 justify-center items-center">
+    <div className="flex flex-col md:flex-row gap-8 justify-center items-stretch">
 
       {/* Pricing */}
-      <Card className="w-full mt:12 md:w-72 drop-shadow-xl shadow-black/10 dark:shadow-white/10">
+      <Card className="w-full mt:12 md:w-72 h-full drop-shadow-xl shadow-black/10 dark:shadow-white/10">
         <CardHeader>
           <CardTitle className="flex item-center justify-between">
             Free
