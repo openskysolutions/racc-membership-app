@@ -5,8 +5,9 @@ const ProtectedRoutePage: React.FC = () => {
   return (
     <section className="container py-20">
       <h1 className="text-3xl font-bold">Protected Route</h1>
-      {/* Privacy policy content */}
+      {/* Protected content here */}
     </section>
   );
-}
+};
+
 export default ProtectedRoutePage;
