@@ -8,9 +8,14 @@ import AuthPage from "@/pages/auth";
 import Privacy from '@/pages/docs/Privacy';
 import Terms from '@/pages/docs/Terms';
 import ProtectedRoutePage from '@/pages/ProtectedRoute';
+import { ReactNode } from 'react';
 
 export default function AppRoutes() {
   const { isAuthenticated, isLoading } = useAuthStore();
+
+  const protectedRoute = (component: ReactNode, pathname: string) => {
+    return isAuthenticated ? component : <Navigate to="/auth" state={{ from: { pathname: pathname } }} replace />
+  }
 
   console.log('isAuthenticated', isAuthenticated);
 
@@ -19,25 +24,15 @@ export default function AppRoutes() {
   }
   return (
     <Routes>
-      {/* public routes */}
+      {/* public routes without layout wrapper */}
       <Route path="/auth" element={<AuthPage />} />
 
-      {/* layout wrapper for all public pages except auth */}
+      {/* routes with layout wrapper */}
       <Route path="/" element={<PagesLayout />}>  
-        {/* home is public */}
         <Route index element={<HomePage />} />
-        {/* protected route: only this path requires auth */}
-        <Route
-          path="protected"
-          element={
-            isAuthenticated
-              ? <ProtectedRoutePage />
-              : <Navigate to="/auth" state={{ from: { pathname: '/protected' } }} replace />
-          }
-        />
-        {/* other public pages under layout */}
         <Route path="privacy" element={<Privacy />} />
         <Route path="terms" element={<Terms />} />
+        <Route path="/protected" element={protectedRoute(<ProtectedRoutePage /> , '/protected')} />
       </Route>
 
       {/* fallback */}
