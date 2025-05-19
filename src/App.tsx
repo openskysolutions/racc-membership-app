@@ -1,16 +1,21 @@
-import { Footer } from "./components/Footer";
-import { Hero } from "./components/Hero";
-import { Navbar } from "./components/Navbar";
-import { ScrollToTop } from "./components/ScrollToTop";
-import "./App.css";
+import { BrowserRouter } from "react-router-dom";
+import { ThemeProvider } from "@/components/theme-provider";
+import AppRoutes from "@/routes";
+
+import { Footer } from "@/components/Footer";
+import { Navbar } from "@/components/Navbar";
+import "@/App.css";
 
 function App() {
   return (
     <>
       <Navbar />
-      <Hero />
+      <BrowserRouter>
+        <ThemeProvider>
+          <AppRoutes />
+        </ThemeProvider>
+      </BrowserRouter>
       <Footer />
-      <ScrollToTop />
     </>
   );
 }

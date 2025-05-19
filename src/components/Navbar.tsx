@@ -27,6 +27,10 @@ const routeList: RouteProps[] = [
     href: "/",
     label: "Home",
   },
+  {
+    href: "/protected-route",
+    label: "Protected Route",
+  }
 ];
 
 export const Navbar = () => {
