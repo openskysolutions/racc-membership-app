@@ -162,14 +162,14 @@ export const Footer = () => {
 
       <section className="container pb-14 text-center">
         <h3>
-          &copy; 2025 Landing page made by{" "}
+          &copy; 2025 Powered by{" "}
           <a
             rel="noreferrer noopener"
             target="_blank"
-            href="https://www.linkedin.com/in/schotttaylor/"
+            href="https://openskydev.com"
             className="text-primary transition-all border-primary hover:border-b-2"
           >
-            Schott Taylor
+            Open Sky Solutions
           </a>
         </h3>
       </section>

@@ -15,7 +15,7 @@ import {
 import { Button, buttonVariants } from "./ui/button";
 import { Menu } from "lucide-react";
 import { ModeToggle } from "./mode-toggle";
-import { LogoIcon } from "./Icons";
+import Logo from "@/assets/racc-logo.png"
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu";
 import { useAuthStore } from "@/stores/authStore";
@@ -54,15 +54,18 @@ export const Navbar = () => {
   return (
     <header className="sticky border-b-[1px] top-0 z-40 w-full bg-white dark:border-b-slate-700 dark:bg-background">
       <NavigationMenu className="mx-auto">
-        <NavigationMenuList className="container h-14 px-4 w-screen flex justify-between ">
+        <NavigationMenuList className="container h-20 px-4 w-screen flex justify-between ">
           <NavigationMenuItem className="font-bold flex">
             <a
               rel="noreferrer noopener"
               href="/"
-              className="ml-2 font-bold text-xl flex"
+              className="flex h-24 py-3"
             >
-              <LogoIcon />
-              React/Vite/ShadcnUI
+              <img
+                src={Logo}
+                alt="Richfield Area Chamber of Commerce Logo"
+                className="h-full w-auto" 
+              />
             </a>
           </NavigationMenuItem>
 

@@ -22,13 +22,13 @@
 1. Clone this repository:
 
 ```bash
-git clone https://github.com/openskysolutions/react-vite-shadcn.git
+git clone https://github.com/openskysolutions/racc-membership-app.git
 ```
 
 2. Go into project
 
 ```bash
-cd react-vite-shadcn
+cd racc-membership-app
 ```
 
 3. Install dependencies

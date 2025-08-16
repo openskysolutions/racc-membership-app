@@ -91,7 +91,7 @@ export const HeroCards = () => {
             </a>
             <a
               rel="noreferrer noopener"
-              href="https://twitter.com/schotttaylor"
+              href="https://x.com/OpenSkySolution"
               target="_blank"
               className={buttonVariants({
                 variant: "ghost",
