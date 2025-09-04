@@ -25,20 +25,10 @@ export const Footer = () => {
           <div>
             <a
               rel="noreferrer noopener"
-              href="#"
+              href="https://www.facebook.com/profile.php?id=100063232268373"
               className="opacity-60 hover:opacity-100"
             >
-              Github
-            </a>
-          </div>
-
-          <div>
-            <a
-              rel="noreferrer noopener"
-              href="#"
-              className="opacity-60 hover:opacity-100"
-            >
-              Twitter
+              Facebook
             </a>
           </div>
         </div>
@@ -64,16 +54,6 @@ export const Footer = () => {
               Mobile
             </a>
           </div>
-
-          <div>
-            <a
-              rel="noreferrer noopener"
-              href="#"
-              className="opacity-60 hover:opacity-100"
-            >
-              Desktop
-            </a>
-          </div>
         </div>
 
         <div className="flex flex-col gap-2">
@@ -84,7 +64,7 @@ export const Footer = () => {
               href="#"
               className="opacity-60 hover:opacity-100"
             >
-              Features
+              Benefits
             </a>
           </div>
 

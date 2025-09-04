@@ -8,10 +8,10 @@
 @layer base {
   :root {
     --background: theme('colors.white');
-    --foreground: theme('colors.slate.900');
+    --foreground: theme('colors.amber.900');
 
     --card: theme('colors.white');
-    --card-foreground: theme('colors.slate.900');
+    --card-foreground: theme('colors.slate.600');
 
     --popover: theme('colors.white');
     --popover-foreground: theme('colors.slate.900');
@@ -28,8 +28,8 @@
     --accent: theme('colors.slate.500');
     --accent-foreground: theme('colors.white');
 
-    --highlight: theme('colors.yellow.600');
-    --highlight-foreground: theme('colors.yellow.900');
+    --highlight: theme('colors.yellow.500');
+    --highlight-foreground: theme('colors.yellow.600');
 
     --destructive: theme('colors.red.600');
     --destructive-foreground: theme('colors.white');
@@ -42,11 +42,11 @@
   }
 
   .dark {
-    --background: theme('colors.slate.900');
+    --background: theme('colors.sky.800');
     --foreground: theme('colors.white');
 
-    --card: theme('colors.gray.800');
-    --card-foreground: theme('colors.white');
+    --card: theme('colors.sky.900');
+    --card-foreground: theme('colors.slate.100');
 
     --popover: theme('colors.slate.800');
     --popover-foreground: theme('colors.white');
@@ -60,16 +60,16 @@
     --muted: theme('colors.slate.700');
     --muted-foreground: theme('colors.slate.300');
 
-    --accent: theme('colors.slate.400');
+    --accent: theme('colors.slate.300');
     --accent-foreground: theme('colors.slate.900');
 
-    --highlight: theme('colors.yellow.600');
-    --highlight-foreground: theme('colors.yellow.100');
+    --highlight: theme('colors.yellow.400');
+    --highlight-foreground: theme('colors.yellow.500');
 
     --destructive: theme('colors.red.400');
     --destructive-foreground: theme('colors.slate.900');
 
-    --border: theme('colors.slate.600');
+    --border: theme('colors.sky.100');
     --input: theme('colors.slate.700');
     --ring: theme('colors.slate.400');
   }
@@ -84,5 +84,8 @@
   }
   h1 {
     @apply inline-block;
+  }
+  .rdp-day_today {
+    @apply bg-blue-500 text-white font-bold rounded-full;
   }
 }

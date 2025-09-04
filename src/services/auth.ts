@@ -22,7 +22,9 @@ interface AuthResponse {
 }
   
 // Define the API base URL with a fallback
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+const GHL_API_BASE_URL = import.meta.env.VITE_GHL_API_URL || 'http://localhost:3000/api';
+const GHL_APP_DOMAIN = import.meta.env.VITE_GHL_APP_DOMAIN || 'localhost';
+const GHL_LOCATION_ID = import.meta.env.VITE_LOCATION_ID || '';
 
 // Keycloak PKCE constants
 const keycloakUrl = import.meta.env.VITE_KEYCLOAK_URL as string;
@@ -87,14 +89,33 @@ export async function exchangeTokenWithCode(code: string): Promise<any> {
 
 export async function login(credentials: LoginCredentials): Promise<AuthResponse> {
   try {
-    console.log('Attempting login at:', `${API_BASE_URL}/auth/login`);
+    console.log('Attempting login at:', `${GHL_API_BASE_URL}/auth/login`);
     
-    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+    // prepare deviceId (persisted per client)
+    let deviceId = localStorage.getItem('deviceId');
+    if (!deviceId && window.crypto?.randomUUID) {
+      deviceId = window.crypto.randomUUID();
+      localStorage.setItem('deviceId', deviceId);
+    }
+    // assemble new API payload
+    const payload = {
+      email: credentials.email,
+      password: credentials.password,
+      userId: '',
+      deviceName: navigator.userAgent,
+      deviceId: deviceId || '',
+      deviceType: 'web',
+      releaseVersionCode: null,
+      appType: 'WL',
+      domainName: GHL_APP_DOMAIN,
+      locationId: GHL_LOCATION_ID,
+      ipAddress: '0.0.0.1',
+      redirectUrl: null,
+    };
+    const response = await fetch('https://services.leadconnectorhq.com/clientclub/auth/login/email', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(credentials),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
     });
 
     // Log the raw response for debugging
@@ -118,10 +139,44 @@ export async function login(credentials: LoginCredentials): Promise<AuthResponse
     if (!data) {
       throw new Error('Empty response from server');
     }
-    localStorage.setItem('token', data.token);
-    fetchInitialData();
-    
-    return data;
+
+    // Exchange the custom token for a Firebase idToken
+    const customToken = data.token;
+    const googleCustomToken = await fetch(
+      `https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=${import.meta.env.VITE_GOOGLE_CUSTOM_TOKEN_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: customToken, returnSecureToken: true }),
+      }
+    );
+    const googleCustomTokenData = await googleCustomToken.json();
+    console.log('Firebase token exchange response:', googleCustomTokenData);
+    if (!googleCustomToken.ok) {
+      throw new Error(googleCustomTokenData.error?.message || 'Token exchange failed');
+    }
+    // Persist the Firebase idToken for subsequent API calls
+    localStorage.setItem('token-id', googleCustomTokenData.idToken);
+    // Lookup Firebase account info to get the `localId`
+    const lookupRes = await fetch(
+      `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${import.meta.env.VITE_GOOGLE_CUSTOM_TOKEN_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken: googleCustomTokenData.idToken }),
+      }
+    );
+    const lookupData = await lookupRes.json();
+    if (!lookupRes.ok || !lookupData.users?.length) {
+      throw new Error(lookupData.error?.message || 'Failed to lookup user ID');
+    }
+    const localId = lookupData.users[0].localId;
+    // Persist the Firebase localId for subsequent calls
+    localStorage.setItem('user-id', localId);
+    // Fetch any initial data now that we're authenticated
+    await fetchInitialData();
+    // Return the original user object and new idToken
+    return { user: data.user, token: googleCustomTokenData.idToken };
   } catch (error) {
     console.error('Login error:', error);
     throw error;
@@ -133,7 +188,7 @@ export async function getProfile(): Promise<AuthResponse['user']> {
     const token = localStorage.getItem('token');
     if (!token) throw new Error('No token found');
     
-    const response = await fetch(`${API_BASE_URL}/auth/profile`, {
+    const response = await fetch(`${GHL_API_BASE_URL}/auth/profile`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -179,8 +234,22 @@ export async function hasToken(): Promise<boolean> {
 }
 
 export async function fetchInitialData() {
-  //TODO: update getClients API to return an object with clients and clientTypes
-  // and then replace the client and clientsData with the new object
-
-  return {};
+  const idToken = localStorage.getItem('token-id');
+  const userId = localStorage.getItem('user-id');
+  if (!idToken || !userId) {
+    throw new Error('Missing token-id or user-id for profile fetch');
+  }
+  const url = `${GHL_API_BASE_URL}/${GHL_LOCATION_ID}/users/${userId}`;
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'token-id': idToken,
+      'source': 'PORTAL_USER',
+    }
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Failed to fetch user profile');
+  }
+  return data;
 }

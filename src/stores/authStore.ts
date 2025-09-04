@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { hasToken, logout } from '@/services/auth';
+import { logout, fetchInitialData } from '@/services/auth';
 
 interface AuthState {
   user: any;
@@ -21,17 +21,19 @@ export const useAuthStore = create<AuthState>((set) => {
     },
     checkAuth: async () => {
       set({ isLoading: true });
-      const hasValidToken = await hasToken();
-      if (hasValidToken) {
+      // Look for stored Firebase idToken
+      const idToken = localStorage.getItem('token-id');
+      if (idToken) {
         try {
-          // const profile = await getProfile();
-          set({ isAuthenticated: true, isLoading: false });
+          // Fetch user profile via ClientClub API
+          const userData = await fetchInitialData();
+          set({ user: userData, isAuthenticated: true, isLoading: false });
         } catch (error) {
-          console.error('Failed to get profile:', error);
-          set({ isLoading: false });
+          console.error('Failed to fetch profile:', error);
+          set({ user: null, isAuthenticated: false, isLoading: false });
         }
       } else {
-        set({ isLoading: false, isAuthenticated: false });
+        set({ user: null, isAuthenticated: false, isLoading: false });
       }
     },
   };

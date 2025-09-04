@@ -16,6 +16,7 @@ import { Button, buttonVariants } from "./ui/button";
 import { Menu } from "lucide-react";
 import { ModeToggle } from "./mode-toggle";
 import Logo from "@/assets/racc-logo.png"
+import AvatarPlaceholer from "@/assets/profile-placeholder.png";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu";
 import { useAuthStore } from "@/stores/authStore";
@@ -64,7 +65,7 @@ export const Navbar = () => {
               <img
                 src={Logo}
                 alt="Richfield Area Chamber of Commerce Logo"
-                className="h-full w-auto" 
+                className="h-full w-auto p-1" 
               />
             </a>
           </NavigationMenuItem>
@@ -124,15 +125,11 @@ export const Navbar = () => {
               </a>
             ))}
           </nav>
-
-          <div className="hidden md:flex gap-2">
-            <ModeToggle />
-          </div>
           <div className="flex md:order-2 gap-2 items-center">
             <DropdownMenu>
               <DropdownMenuTrigger>
                 <Avatar>
-                  <AvatarImage  src="https://github.com/shadcn.png" />
+                  <AvatarImage src="/profile-icon.png"></AvatarImage>
                   <AvatarFallback>CN</AvatarFallback>
                 </Avatar>
               </DropdownMenuTrigger>
@@ -164,6 +161,9 @@ export const Navbar = () => {
                 
               </DropdownMenuContent>
             </DropdownMenu>
+          </div>
+          <div className="hidden md:flex gap-2">
+            <ModeToggle />
           </div>
         </NavigationMenuList>
       </NavigationMenu>
