@@ -1,27 +1,31 @@
-import Logo from "@/assets/racc-logo.png"
+import LogoDark from "@/assets/racc-logo-dark.png";
+import LogoLight from "@/assets/racc-logo.png";
+import { useTheme } from "./theme-provider";
 
 export const Footer = () => {
-  return (
-    <footer id="footer">
-      <hr className="w-11/12 mx-auto" />
+  const { theme, setTheme } = useTheme();
 
-      <section className="container py-20 grid grid-cols-2 md:grid-cols-4 xl:grid-cols-6 gap-x-12 gap-y-8">
-        <div className="col-span-full xl:col-span-2">
+  return (
+    <footer id="footer" className="bg-card-foreground text-card text-sm">
+      <hr className="w-full mx-auto" />
+
+      <section className="container py-8 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 xl:grid-cols-6 gap-x-12 gap-y-8">
+        <div className="col-span-full md:col-span-2 justify-center flex">
             <a
               rel="noreferrer noopener"
               href="/"
-              className="flex h-16 py-0"
+              className="flex h-12 py-0"
             >
               <img
-                src={Logo}
+                src={theme === "dark" ? LogoLight : LogoDark}
                 alt="Richfield Area Chamber of Commerce Logo"
                 className="h-full w-auto" 
               />
             </a>
         </div>
 
-        <div className="flex flex-col gap-2">
-          <h3 className="font-bold text-lg">Follow US</h3>
+        <div className="flex flex-col">
+          <h3 className="font-medium text-md">Follow US</h3>
           <div>
             <a
               rel="noreferrer noopener"
@@ -33,8 +37,8 @@ export const Footer = () => {
           </div>
         </div>
 
-        <div className="flex flex-col gap-2">
-          <h3 className="font-bold text-lg">Platforms</h3>
+        <div className="flex flex-col">
+          <h3 className="font-medium text-md">Platforms</h3>
           <div>
             <a
               rel="noreferrer noopener"
@@ -56,8 +60,8 @@ export const Footer = () => {
           </div>
         </div>
 
-        <div className="flex flex-col gap-2">
-          <h3 className="font-bold text-lg">About</h3>
+        <div className="flex flex-col">
+          <h3 className="font-medium text-md">About</h3>
           <div>
             <a
               rel="noreferrer noopener"
@@ -109,48 +113,29 @@ export const Footer = () => {
           </div>
         </div>
 
-        <div className="flex flex-col gap-2">
-          <h3 className="font-bold text-lg">Community</h3>
+        <div className="flex flex-col">
+          <h3 className="font-medium text-md">Community</h3>
           <div>
             <a
               rel="noreferrer noopener"
-              href="#"
+              href="https://www.facebook.com/profile.php?id=100063232268373"
               className="opacity-60 hover:opacity-100"
             >
-              Youtube
-            </a>
-          </div>
-
-          <div>
-            <a
-              rel="noreferrer noopener"
-              href="#"
-              className="opacity-60 hover:opacity-100"
-            >
-              Discord
-            </a>
-          </div>
-
-          <div>
-            <a
-              rel="noreferrer noopener"
-              href="#"
-              className="opacity-60 hover:opacity-100"
-            >
-              Twitch
+              Facebook
             </a>
           </div>
         </div>
       </section>
 
-      <section className="container pb-14 text-center">
+      <section className="container pb-4 text-center">
         <h3>
-          &copy; 2025 Powered by{" "}
+          Copyright &copy; 2025 Richfield Area Chamber of Commerce. | 
+          Powered by{" "}
           <a
             rel="noreferrer noopener"
             target="_blank"
             href="https://openskydev.com"
-            className="text-primary transition-all border-primary hover:border-b-2"
+            className="text-highlight font-bold transition-all border-primary hover:border-b-2"
           >
             Open Sky Solutions
           </a>

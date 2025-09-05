@@ -4,7 +4,10 @@ import PagesLayout from '@/components/layouts/pagesLayout';
 import { useAuthStore } from '@/stores/authStore';
 
 import HomePage from '@/pages/Home';
+import ProfilePage from '@/pages/Profile';
 import AuthPage from "@/pages/auth";
+import JoinPage from '@/pages/Join';
+import NominationsPage from '@/pages/Nominations';
 import Privacy from '@/pages/docs/Privacy';
 import Terms from '@/pages/docs/Terms';
 import ProtectedRoutePage from '@/pages/ProtectedRoute';
@@ -30,6 +33,9 @@ export default function AppRoutes() {
       {/* routes with layout wrapper */}
       <Route path="/" element={<PagesLayout />}>  
         <Route index element={<HomePage />} />
+        <Route path="/join" element={<JoinPage />} />
+        <Route path="/nominations" element={<NominationsPage />} />
+        <Route path="profile" element={protectedRoute(<ProfilePage />, '/profile')} />
         <Route path="privacy" element={<Privacy />} />
         <Route path="terms" element={<Terms />} />
         <Route path="/protected" element={protectedRoute(<ProtectedRoutePage /> , '/protected')} />

@@ -3,9 +3,11 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import Logo from '@/assets/racc-logo.png'; // Adjust the path to your logo file
+import LogoLight from '@/assets/racc-logo.png'; // Adjust the path to your logo file
+import LogoDark from '@/assets/racc-logo-dark.png';  
 import { login } from '@/services/auth';
 import { useAuthStore } from '@/stores/authStore';
+import { useTheme } from '@/components/theme-provider';
 
 export const AuthPage = () => {
   const [email, setEmail] = useState('');
@@ -14,6 +16,7 @@ export const AuthPage = () => {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const checkAuth = useAuthStore(state => state.checkAuth);
+  const { theme } = useTheme();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,12 +33,18 @@ export const AuthPage = () => {
   return (
     <div className="flex min-h-screen items-center justify-center flex-col p-4">
 
-      <img
-        src={Logo}
-        alt="Richfield Area Chamber of Commerce Logo"
-        className="w-full max-w-md p-8 pb-12" 
-      />
-      <Card className="w-full max-w-md">
+      <a
+        rel="noreferrer noopener"
+        href="/"
+        className="w-full max-w-md p-8 pb-12"
+      >
+        <img
+          src={theme === "dark" ? LogoDark : LogoLight}
+          alt="Richfield Area Chamber of Commerce Logo"
+          className="w-full"
+        />
+      </a>
+      <Card className="w-full max-w-md bg-popover border-stone-500">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl">Sign in to your 
           Richfield Area Chamber of Commerce account</CardTitle>
