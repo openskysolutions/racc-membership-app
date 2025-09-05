@@ -10,10 +10,10 @@ interface AuthState {
 }
 
 export const useAuthStore = create<AuthState>((set) => {
-  const token = localStorage.getItem('token');
+  const idToken = localStorage.getItem('token-id');
   return {
     user: null,
-    isAuthenticated: !!token, // initialize from localStorage
+    isAuthenticated: !!idToken, // initialize from localStorage using Firebase idToken
     isLoading: true, // start in loading until checkAuth finishes
     handleLogout: async () => {
       await logout();

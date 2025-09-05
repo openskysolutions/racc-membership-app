@@ -222,10 +222,13 @@ export async function getProfile(): Promise<AuthResponse['user']> {
 
 export async function logout(): Promise<void> {
   localStorage.removeItem('token');
+  localStorage.removeItem('token-id');
+  localStorage.removeItem('user-id');
 }
 
 export async function getToken(): Promise<string | null> {
-  return localStorage.getItem('token');
+  // Return the Firebase idToken stored under 'token-id'
+  return localStorage.getItem('token-id');
 }
 
 export async function hasToken(): Promise<boolean> {

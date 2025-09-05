@@ -7,7 +7,7 @@ import LogoLight from '@/assets/racc-logo.png'; // Adjust the path to your logo 
 import LogoDark from '@/assets/racc-logo-dark.png';  
 import { login } from '@/services/auth';
 import { useAuthStore } from '@/stores/authStore';
-import { useTheme } from '@/components/theme-provider';
+import { useTheme } from '@/providers/theme-provider';
 
 export const AuthPage = () => {
   const [email, setEmail] = useState('');

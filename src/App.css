@@ -52,23 +52,23 @@
     --popover: theme('colors.stone.700');
     --popover-foreground: theme('colors.white');
 
-    --primary: theme('colors.slate.200');
+    --primary: theme('colors.stone.200');
     --primary-foreground: theme('colors.stone.900');
 
-    --secondary: theme('colors.slate.700');
+    --secondary: theme('colors.stone.700');
     --secondary-foreground: theme('colors.white');
 
-    --muted: theme('colors.slate.700');
+    --muted: theme('colors.stone.700');
     --muted-foreground: theme('colors.stone.300');
 
-    --accent: theme('colors.slate.300');
+    --accent: theme('colors.stone.300');
     --accent-foreground: theme('colors.stone.800');
 
     --highlight: theme('colors.yellow.400');
     --highlight-foreground: theme('colors.yellow.500');
 
     --destructive: theme('colors.red.400');
-    --destructive-foreground: theme('colors.slate.900');
+    --destructive-foreground: theme('colors.stone.900');
 
     --border: theme('colors.stone.100');
     --input: theme('colors.stone.700');

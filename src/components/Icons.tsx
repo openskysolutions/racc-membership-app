@@ -1,4 +1,4 @@
-import { useTheme } from '@/components/theme-provider';
+import { useTheme } from '@/providers/theme-provider';
 import cn from "classnames";
 
 export const OpenSkyLogo = ({className}: {className?: string}) => {
