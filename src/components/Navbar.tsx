@@ -1,7 +1,6 @@
 import { useState } from "react";
 import {
   NavigationMenu,
-  NavigationMenuItem,
   NavigationMenuList,
 } from "@/components/ui/navigation-menu";
 import {
@@ -77,14 +76,14 @@ export const Navbar = () => {
   };
 
   return (
-    <header className="sticky border-b-[1px] top-0 z-40 w-full bg-white dark:border-b-stone-700 dark:bg-accent-foreground shadow-md">
+    <header className="sticky border-b-[1px] top-0 z-40 w-full bg-white dark:border-b-popover dark:bg-accent-foreground shadow-md">
       <NavigationMenu className="mx-auto">
         <NavigationMenuList className="container h-20 px-4 w-screen flex justify-between ">
           <a
             rel="noreferrer noopener"
             href="/"
             className={cn(
-              "flex flex-row flex-grow flex-shrink-0 h-20 py-1 justify-center ml-10 md:ml-0",
+              "flex flex-row flex-grow flex-shrink-0 h-20 py-1 justify-center md:justify-start ml-10 md:ml-0",
             )}
           >
             <img
@@ -305,7 +304,7 @@ export const Navbar = () => {
 
         </NavigationMenuList>
       </NavigationMenu>
-      <NavigationMenu className="hidden md:flex max-w-full w-full bg-background border-t dark:bg-background border-t-stone-200">
+      <NavigationMenu className="hidden md:flex max-w-full w-full bg-background border-t dark:bg-neutral-800 border-t-border dark:border-t-popover"> 
         <NavigationMenuList className="container h-10 px-0 w-screen flex justify-around items-center">
             {routeList.map(({ href, label }) => (
               <a

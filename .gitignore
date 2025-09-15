@@ -10,6 +10,8 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+ghl-api
+.env
 *.local
 
 # Editor directories and files
@@ -24,4 +26,3 @@ dist-ssr
 *.sw?
 ios**
 android**
-.env

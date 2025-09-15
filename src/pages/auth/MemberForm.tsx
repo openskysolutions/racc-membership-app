@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
-const MembershipDetailsPage: React.FC = () => {
+const MembershipFormPage: React.FC = () => {
   const [formData, setFormData] = useState({
     businessName: '',
     primaryEmail: '',
@@ -153,4 +153,4 @@ const MembershipDetailsPage: React.FC = () => {
   );
 };
 
-export default MembershipDetailsPage;
+export default MembershipFormPage;

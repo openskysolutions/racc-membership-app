@@ -25,6 +25,7 @@ interface AuthResponse {
 const GHL_API_BASE_URL = import.meta.env.VITE_GHL_API_URL || 'http://localhost:3000/api';
 const GHL_APP_DOMAIN = import.meta.env.VITE_GHL_APP_DOMAIN || 'localhost';
 const GHL_LOCATION_ID = import.meta.env.VITE_LOCATION_ID || '';
+const GHL_GROUP_ID = import.meta.env.VITE_GHL_GROUP_ID || 'default-group';
 
 // Keycloak PKCE constants
 const keycloakUrl = import.meta.env.VITE_KEYCLOAK_URL as string;
@@ -89,7 +90,7 @@ export async function exchangeTokenWithCode(code: string): Promise<any> {
 
 export async function login(credentials: LoginCredentials): Promise<AuthResponse> {
   try {
-    console.log('Attempting login at:', `${GHL_API_BASE_URL}/auth/login`);
+    console.log('Attempting login at:', `${GHL_API_BASE_URL}/clientclub/auth/login`);
     
     // prepare deviceId (persisted per client)
     let deviceId = localStorage.getItem('deviceId');
@@ -112,7 +113,7 @@ export async function login(credentials: LoginCredentials): Promise<AuthResponse
       ipAddress: '0.0.0.1',
       redirectUrl: null,
     };
-    const response = await fetch('https://services.leadconnectorhq.com/clientclub/auth/login/email', {
+    const response = await fetch(`${GHL_API_BASE_URL}/clientclub/auth/login/email`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -157,23 +158,7 @@ export async function login(credentials: LoginCredentials): Promise<AuthResponse
     }
     // Persist the Firebase idToken for subsequent API calls
     localStorage.setItem('token-id', googleCustomTokenData.idToken);
-    // Lookup Firebase account info to get the `localId`
-    const lookupRes = await fetch(
-      `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${import.meta.env.VITE_GOOGLE_CUSTOM_TOKEN_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idToken: googleCustomTokenData.idToken }),
-      }
-    );
-    const lookupData = await lookupRes.json();
-    if (!lookupRes.ok || !lookupData.users?.length) {
-      throw new Error(lookupData.error?.message || 'Failed to lookup user ID');
-    }
-    const localId = lookupData.users[0].localId;
-    // Persist the Firebase localId for subsequent calls
-    localStorage.setItem('user-id', localId);
-    // Fetch any initial data now that we're authenticated
+    // Fetch initial profile data now that we're authenticated
     await fetchInitialData();
     // Return the original user object and new idToken
     return { user: data.user, token: googleCustomTokenData.idToken };
@@ -223,7 +208,6 @@ export async function getProfile(): Promise<AuthResponse['user']> {
 export async function logout(): Promise<void> {
   localStorage.removeItem('token');
   localStorage.removeItem('token-id');
-  localStorage.removeItem('user-id');
 }
 
 export async function getToken(): Promise<string | null> {
@@ -238,16 +222,20 @@ export async function hasToken(): Promise<boolean> {
 
 export async function fetchInitialData() {
   const idToken = localStorage.getItem('token-id');
-  const userId = localStorage.getItem('user-id');
-  if (!idToken || !userId) {
-    throw new Error('Missing token-id or user-id for profile fetch');
-  }
-  const url = `${GHL_API_BASE_URL}/${GHL_LOCATION_ID}/users/${userId}`;
+  if (!idToken) throw new Error('Missing token-id for profile fetch');
+  // Decode JWT to extract Firebase user_id
+  const parts = idToken.split('.');
+  if (parts.length !== 3) throw new Error('Invalid token format');
+  const payload = JSON.parse(atob(parts[1]));
+  const userId = payload.user_id;
+  if (!userId) throw new Error('Missing user_id in token payload');
+  const url = `${GHL_API_BASE_URL}/communities/${GHL_LOCATION_ID}/groups/${GHL_GROUP_ID}/users/${userId}`;
   const response = await fetch(url, {
     method: 'GET',
     headers: {
       'token-id': idToken,
       'source': 'PORTAL_USER',
+      'channel': 'APP'
     }
   });
   const data = await response.json();

@@ -21,4 +21,14 @@ export default defineConfig({
       { find: '@', replacement: fileURLToPath(new URL('./src', import.meta.url)) },
     ],
   },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'https://services.leadconnectorhq.com',
+        changeOrigin: true,
+        secure: true,
+        rewrite: path => path.replace(/^\/api/, ''),
+      },
+    },
+  },
 });

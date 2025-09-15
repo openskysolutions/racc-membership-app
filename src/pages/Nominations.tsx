@@ -8,7 +8,7 @@ const NominationsPage: React.FC = () => {
 
   useEffect(() => {
     getMembersList()
-      .then(list => setMembers(list))
+      .then(list => setMembers(list.map(member => member.firstName + ' ' + member.lastName).filter(name => name.trim() !== '')))  
       .catch(err => console.error('Failed to load members', err))
       .finally(() => setLoading(false));
   }, []);

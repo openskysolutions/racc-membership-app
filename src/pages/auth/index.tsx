@@ -44,7 +44,7 @@ export const AuthPage = () => {
           className="w-full"
         />
       </a>
-      <Card className="w-full max-w-md bg-popover border-stone-500">
+      <Card className="w-full max-w-md bg-popover dark:bg-neutral-750 border-stone-500">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl">Sign in to your 
           Richfield Area Chamber of Commerce account</CardTitle>

@@ -33,12 +33,11 @@ export const Hero = () => {
           Be assured that the Chamber is here
           to help as you reach your business, life,
           and professional goals because
-          <br/>
+          </p>
 
           <h3 className="text-3xl bg-gradient-to-b from-highlight to-highlight text-transparent bg-clip-text py-4">
           Your Business is Our Business!
           </h3>
-          </p>
 
           <div className="space-y-4 md:space-y-0 md:space-x-4">
             <Button

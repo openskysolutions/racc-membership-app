@@ -7,6 +7,7 @@ import HomePage from '@/pages/Home';
 import NewsEventsPage from '@/pages/NewsEvents';
 import AboutPage from '@/pages/About';
 import MembersPage from '@/pages/Members';
+import MemberDetailsPage from '@/pages/MemberDetails';
 import JobPostingsPage from '@/pages/JobPostings';
 import ContactPage from '@/pages/Contact';
 import CalendarPage from '@/pages/Calendar';
@@ -28,8 +29,6 @@ export default function AppRoutes() {
     return isAuthenticated ? component : <Navigate to="/auth" state={{ from: { pathname: pathname } }} replace />
   }
 
-  console.log('isAuthenticated', isAuthenticated);
-
   if (isLoading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
@@ -41,20 +40,21 @@ export default function AppRoutes() {
       {/* routes with layout wrapper */}
       <Route path="/" element={<PagesLayout />}>  
         <Route index element={<HomePage />} />
+        <Route path="join" element={<JoinPage />} />
+        <Route path="nominations" element={<NominationsPage />} />
         <Route path="news-events" element={<NewsEventsPage />} />
-        <Route path="about" element={<AboutPage />} />
         <Route path="members" element={<MembersPage />} />
+        <Route path="members/:slug" element={<MemberDetailsPage />} />
         <Route path="job-postings" element={<JobPostingsPage />} />
         <Route path="contact" element={<ContactPage />} />
         <Route path="calendar" element={<CalendarPage />} />
-        <Route path="leaderboard" element={<LeaderboardPage />} />
-        <Route path="discussions" element={<DiscussionsPage />} />
-        <Route path="courses" element={<CoursesPage />} />
-        <Route path="join" element={<JoinPage />} />
-        <Route path="nominations" element={protectedRoute(<NominationsPage />, '/nominations')} />
-        <Route path="profile" element={protectedRoute(<ProfilePage />, '/profile')} />
+        <Route path="about" element={<AboutPage />} />
         <Route path="privacy" element={<Privacy />} />
         <Route path="terms" element={<Terms />} />
+        <Route path="leaderboard" element={protectedRoute(<LeaderboardPage />, '/leaderboard')} />
+        <Route path="discussions" element={protectedRoute(<DiscussionsPage />, '/discussions')} />
+        <Route path="courses" element={protectedRoute(<CoursesPage />, '/courses')} />
+        <Route path="profile" element={protectedRoute(<ProfilePage />, '/profile')} />
       </Route>
 
       {/* fallback */}
