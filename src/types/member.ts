@@ -4,6 +4,7 @@ export interface GamificationMeta {
 }
 
 export interface Member {
+  profilePhoto: string | undefined;
   tags: string[];
   phone: string;
   id: string;
