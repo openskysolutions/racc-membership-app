@@ -27,66 +27,6 @@ const GHL_APP_DOMAIN = import.meta.env.VITE_GHL_APP_DOMAIN || 'localhost';
 const GHL_LOCATION_ID = import.meta.env.VITE_LOCATION_ID || '';
 const GHL_GROUP_ID = import.meta.env.VITE_GHL_GROUP_ID || 'default-group';
 
-// Keycloak PKCE constants
-const keycloakUrl = import.meta.env.VITE_KEYCLOAK_URL as string;
-const keycloakRealm = import.meta.env.VITE_KEYCLOAK_REALM as string;
-const keycloakClient = import.meta.env.VITE_KEYCLOAK_CLIENT as string;
-
-/**
- * Generate a random code verifier for PKCE
- */
-export function generateCodeVerifier(): string {
-  const array = new Uint8Array(32);
-  window.crypto.getRandomValues(array);
-  return btoa(String.fromCharCode(...array))
-    .replace(/=/g, '')
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_');
-}
-
-/**
- * Generate a code challenge from the verifier
- */
-export async function generateCodeChallenge(verifier: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(verifier);
-  const digest = await window.crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(digest));
-  const base64 = btoa(String.fromCharCode(...hashArray));
-  return base64
-    .replace(/=/g, '')
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_');
-}
-
-/**
- * Exchange authorization code for token using PKCE verifier
- */
-export async function exchangeTokenWithCode(code: string): Promise<any> {
-  const codeVerifier = sessionStorage.getItem('pkce_code_verifier');
-  if (!codeVerifier) throw new Error('Missing PKCE code verifier');
-  const params = new URLSearchParams({
-    grant_type: 'authorization_code',
-    client_id: keycloakClient,
-    code,
-    code_verifier: codeVerifier,
-    redirect_uri: window.location.origin + '/auth',
-  });
-
-  const response = await fetch(
-    `${keycloakUrl}/realms/${keycloakRealm}/protocol/openid-connect/token`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: params.toString(),
-    }
-  );
-  const data = await response.json();
-  if (!response.ok) throw new Error(data.error_description || 'Token exchange failed');
-  console.log('Token exchange successful:', data);
-  localStorage.setItem('token', data.access_token);
-  return data;
-}
 
 export async function login(credentials: LoginCredentials): Promise<AuthResponse> {
   try {
@@ -210,15 +150,6 @@ export async function logout(): Promise<void> {
   localStorage.removeItem('token-id');
 }
 
-export async function getToken(): Promise<string | null> {
-  // Return the Firebase idToken stored under 'token-id'
-  return localStorage.getItem('token-id');
-}
-
-export async function hasToken(): Promise<boolean> {
-  const token = await getToken();
-  return !!token;
-}
 
 export async function fetchInitialData() {
   const idToken = localStorage.getItem('token-id');

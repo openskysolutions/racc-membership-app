@@ -1,0 +1,1929 @@
+{
+  "info": {
+    "name": "GHL API Collection",
+    "description": "API collection converted from OpenAPI Export for GoHighLevel services",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "location_id",
+      "value": "{{location_id}}",
+      "type": "string"
+    },
+    {
+      "key": "group_id", 
+      "value": "{{group_id}}",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "87L3XPFMDkL8ukFzfQup",
+      "type": "string"
+    },
+    {
+      "key": "channel_id",
+      "value": "68adda340bfd81f359ce2e22",
+      "type": "string"
+    },
+    {
+      "key": "post_id", 
+      "value": "68c352b4874efac05d73adac",
+      "type": "string"
+    },
+    {
+      "key": "event_id",
+      "value": "68bf03ceecf3ee87fec33f65", 
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login with Email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "channel",
+                "value": "WEB",
+                "type": "text"
+              },
+              {
+                "key": "priority",
+                "value": "u=1, i",
+                "type": "text"
+              },
+              {
+                "key": "source",
+                "value": "COMMUNITY_PORTAL",
+                "type": "text"
+              },
+              {
+                "key": "version",
+                "value": "2023-04-15",
+                "type": "text"
+              },
+              {
+                "key": "x-cp-build-version",
+                "value": "1.0.0",
+                "type": "text"
+              },
+              {
+                "key": "x-middleware",
+                "value": "community-portal",
+                "type": "text"
+              },
+              {
+                "key": "x-platform-details",
+                "value": "web",
+                "type": "text"
+              },
+              {
+                "key": "x-request-source",
+                "value": "community-portal",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\",\n  \"userId\": \"{{user_id}}\",\n  \"deviceName\": \"Browser\",\n  \"deviceId\": \"web-device-id\",\n  \"deviceType\": \"web\",\n  \"releaseVersionCode\": null,\n  \"appType\": \"community-portal\",\n  \"domainName\": \"example.com\",\n  \"locationId\": \"{{location_id}}\",\n  \"ipAddress\": \"192.168.1.1\",\n  \"redirectUrl\": null\n}"
+            },
+            "url": {
+              "raw": "https://services.leadconnectorhq.com/clientclub/auth/login/email",
+              "protocol": "https",
+              "host": [
+                "services",
+                "leadconnectorhq",
+                "com"
+              ],
+              "path": [
+                "clientclub",
+                "auth",
+                "login",
+                "email"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Generate IAM v2 Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "channel",
+                "value": "WEB",
+                "type": "text"
+              },
+              {
+                "key": "priority",
+                "value": "u=1, i",
+                "type": "text"
+              },
+              {
+                "key": "source",
+                "value": "COMMUNITY_PORTAL",
+                "type": "text"
+              },
+              {
+                "key": "token-id",
+                "value": "{{token_id}}",
+                "type": "text"
+              },
+              {
+                "key": "version",
+                "value": "2023-04-15",
+                "type": "text"
+              },
+              {
+                "key": "x-app-build",
+                "value": "1.0.0",
+                "type": "text"
+              },
+              {
+                "key": "x-app-version",
+                "value": "1.0.0",
+                "type": "text"
+              },
+              {
+                "key": "x-cp-core-version",
+                "value": "1.0.0",
+                "type": "text"
+              },
+              {
+                "key": "x-location-id",
+                "value": "{{location_id}}",
+                "type": "text"
+              },
+              {
+                "key": "x-platform-details",
+                "value": "web",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://services.leadconnectorhq.com/clientclub/auth/generate-iam-v2-token",
+              "protocol": "https",
+              "host": [
+                "services",
+                "leadconnectorhq",
+                "com"
+              ],
+              "path": [
+                "clientclub",
+                "auth",
+                "generate-iam-v2-token"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "User Management",
+      "item": [
+        {
+          "name": "Get User Info",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "channel",
+                "value": "WEB",
+                "type": "text"
+              },
+              {
+                "key": "priority",
+                "value": "u=1, i",
+                "type": "text"
+              },
+              {
+                "key": "source",
+                "value": "COMMUNITY_PORTAL",
+                "type": "text"
+              },
+              {
+                "key": "token-id",
+                "value": "{{token_id}}",
+                "type": "text"
+              },
+              {
+                "key": "version",
+                "value": "2023-04-15",
+                "type": "text"
+              },
+              {
+                "key": "x-platform-details",
+                "value": "web",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://services.leadconnectorhq.com/clientclub/{{location_id}}/users/{{user_id}}?getLocationId=true",
+              "protocol": "https",
+              "host": [
+                "services",
+                "leadconnectorhq",
+                "com"
+              ],
+              "path": [
+                "clientclub",
+                "{{location_id}}",
+                "users",
+                "{{user_id}}"
+              ],
+              "query": [
+                {
+                  "key": "getLocationId",
+                  "value": "true"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Portal Settings",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-platform-details",
+                "value": "web",
+                "type": "text"
+              },
+              {
+                "key": "source",
+                "value": "COMMUNITY_PORTAL",
+                "type": "text"
+              },
+              {
+                "key": "channel",
+                "value": "WEB",
+                "type": "text"
+              },
+              {
+                "key": "version",
+                "value": "2023-04-15",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://services.leadconnectorhq.com/clientclub/portal-settings?domain=example.com",
+              "protocol": "https",
+              "host": [
+                "services",
+                "leadconnectorhq",
+                "com"
+              ],
+              "path": [
+                "clientclub",
+                "portal-settings"
+              ],
+              "query": [
+                {
+                  "key": "domain",
+                  "value": "example.com"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Communities",
+      "item": [
+        {
+          "name": "Get Groups",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-app-build",
+                "value": "1.0.0",
+                "type": "text"
+              },
+              {
+                "key": "x-cp-core-version",
+                "value": "1.0.0",
+                "type": "text"
+              },
+              {
+                "key": "x-platform-details",
+                "value": "web",
+                "type": "text"
+              },
+              {
+                "key": "x-location-id",
+                "value": "{{location_id}}",
+                "type": "text"
+              },
+              {
+                "key": "source",
+                "value": "COMMUNITY_PORTAL",
+                "type": "text"
+              },
+              {
+                "key": "x-app-version",
+                "value": "1.0.0",
+                "type": "text"
+              },
+              {
+                "key": "channel",
+                "value": "WEB",
+                "type": "text"
+              },
+              {
+                "key": "version",
+                "value": "2023-04-15",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://services.leadconnectorhq.com/communities/{{location_id}}/groups?limit=20",
+              "protocol": "https",
+              "host": [
+                "services",
+                "leadconnectorhq",
+                "com"
+              ],
+              "path": [
+                "communities",
+                "{{location_id}}",
+                "groups"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Group by Slug",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "channel",
+                "value": "WEB",
+                "type": "text"
+              },
+              {
+                "key": "priority",
+                "value": "u=1, i",
+                "type": "text"
+              },
+              {
+                "key": "source",
+                "value": "COMMUNITY_PORTAL",
+                "type": "text"
+              },
+              {
+                "key": "version",
+                "value": "2023-04-15",
+                "type": "text"
+              },
+              {
+                "key": "x-app-build",
+                "value": "1.0.0",
+                "type": "text"
+              },
+              {
+                "key": "x-app-version",
+                "value": "1.0.0",
+                "type": "text"
+              },
+              {
+                "key": "x-cp-core-version",
+                "value": "1.0.0",
+                "type": "text"
+              },
+              {
+                "key": "x-location-id",
+                "value": "{{location_id}}",
+                "type": "text"
+              },
+              {
+                "key": "x-platform-details",
+                "value": "web",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://services.leadconnectorhq.com/communities/{{location_id}}/groups/slug/richfield-area-chamber",
+              "protocol": "https",
+              "host": [
+                "services",
+                "leadconnectorhq",
+                "com"
+              ],
+              "path": [
+                "communities",
+                "{{location_id}}",
+                "groups",
+                "slug",
+                "richfield-area-chamber"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Group",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "channel",
+                "value": "WEB",
+                "type": "text"
+              },
+              {
+                "key": "priority",
+                "value": "u=1, i",
+                "type": "text"
+              },
+              {
+                "key": "source",
+                "value": "COMMUNITY_PORTAL",
+                "type": "text"
+              },
+              {
+                "key": "token-id",
+                "value": "{{token_id}}",
+                "type": "text"
+              },
+              {
+                "key": "version",
+                "value": "2023-04-15",
+                "type": "text"
+              },
+              {
+                "key": "x-app-build",
+                "value": "1.0.0",
+                "type": "text"
+              },
+              {
+                "key": "x-app-version",
+                "value": "1.0.0",
+                "type": "text"
+              },
+              {
+                "key": "x-cp-core-version",
+                "value": "1.0.0",
+                "type": "text"
+              },
+              {
+                "key": "x-location-id",
+                "value": "{{location_id}}",
+                "type": "text"
+              },
+              {
+                "key": "x-platform-details",
+                "value": "web",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Group Name\",\n  \"status\": \"active\",\n  \"locationId\": \"{{location_id}}\",\n  \"description\": \"Updated group description\",\n  \"media\": [],\n  \"slug\": \"updated-group-slug\",\n  \"promotionalLinks\": [],\n  \"membersCount\": 0,\n  \"postsCount\": 0,\n  \"createdBy\": \"{{user_id}}\",\n  \"__v\": 0,\n  \"lastSyncTime\": \"2023-04-15T00:00:00.000Z\",\n  \"branding\": {\n    \"cover\": \"https://example.com/cover.jpg\"\n  },\n  \"settings\": {\n    \"allowsMembersInvite\": true\n  },\n  \"about\": \"About this group\"\n}"
+            },
+            "url": {
+              "raw": "https://services.leadconnectorhq.com/communities/{{location_id}}/groups/{{group_id}}",
+              "protocol": "https",
+              "host": [
+                "services",
+                "leadconnectorhq",
+                "com"
+              ],
+              "path": [
+                "communities",
+                "{{location_id}}",
+                "groups",
+                "{{group_id}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Posts & Channels",
+      "item": [
+        {
+          "name": "Get Group Channels",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-app-build",
+                "value": "1.0.0",
+                "type": "text"
+              },
+              {
+                "key": "token-id",
+                "value": "{{token_id}}",
+                "type": "text"
+              },
+              {
+                "key": "x-cp-core-version",
+                "value": "1.0.0",
+                "type": "text"
+              },
+              {
+                "key": "x-platform-details",
+                "value": "web",
+                "type": "text"
+              },
+              {
+                "key": "x-location-id",
+                "value": "{{location_id}}",
+                "type": "text"
+              },
+              {
+                "key": "source",
+                "value": "COMMUNITY_PORTAL",
+                "type": "text"
+              },
+              {
+                "key": "x-app-version",
+                "value": "1.0.0",
+                "type": "text"
+              },
+              {
+                "key": "channel",
+                "value": "WEB",
+                "type": "text"
+              },
+              {
+                "key": "version",
+                "value": "2023-04-15",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://services.leadconnectorhq.com/communities/{{location_id}}/groups/{{group_id}}/channels",
+              "protocol": "https",
+              "host": [
+                "services",
+                "leadconnectorhq",
+                "com"
+              ],
+              "path": [
+                "communities",
+                "{{location_id}}",
+                "groups",
+                "{{group_id}}",
+                "channels"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Channel Posts",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "channel",
+                "value": "WEB",
+                "type": "text"
+              },
+              {
+                "key": "priority",
+                "value": "u=1, i",
+                "type": "text"
+              },
+              {
+                "key": "source",
+                "value": "COMMUNITY_PORTAL",
+                "type": "text"
+              },
+              {
+                "key": "token-id",
+                "value": "{{token_id}}",
+                "type": "text"
+              },
+              {
+                "key": "version",
+                "value": "2023-04-15",
+                "type": "text"
+              },
+              {
+                "key": "x-app-build",
+                "value": "1.0.0",
+                "type": "text"
+              },
+              {
+                "key": "x-app-version",
+                "value": "1.0.0",
+                "type": "text"
+              },
+              {
+                "key": "x-cp-core-version",
+                "value": "1.0.0",
+                "type": "text"
+              },
+              {
+                "key": "x-location-id",
+                "value": "{{location_id}}",
+                "type": "text"
+              },
+              {
+                "key": "x-platform-details",
+                "value": "web",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://services.leadconnectorhq.com/communities/{{location_id}}/groups/{{group_id}}/channels/{{channel_id}}/posts?limit=20",
+              "protocol": "https",
+              "host": [
+                "services",
+                "leadconnectorhq",
+                "com"
+              ],
+              "path": [
+                "communities",
+                "{{location_id}}",
+                "groups",
+                "{{group_id}}",
+                "channels",
+                "{{channel_id}}",
+                "posts"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Channel Post",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "channel",
+                "value": "WEB",
+                "type": "text"
+              },
+              {
+                "key": "priority",
+                "value": "u=1, i",
+                "type": "text"
+              },
+              {
+                "key": "source",
+                "value": "COMMUNITY_PORTAL",
+                "type": "text"
+              },
+              {
+                "key": "token-id",
+                "value": "{{token_id}}",
+                "type": "text"
+              },
+              {
+                "key": "version",
+                "value": "2023-04-15",
+                "type": "text"
+              },
+              {
+                "key": "x-app-build",
+                "value": "1.0.0",
+                "type": "text"
+              },
+              {
+                "key": "x-app-version",
+                "value": "1.0.0",
+                "type": "text"
+              },
+              {
+                "key": "x-cp-core-version",
+                "value": "1.0.0",
+                "type": "text"
+              },
+              {
+                "key": "x-location-id",
+                "value": "{{location_id}}",
+                "type": "text"
+              },
+              {
+                "key": "x-platform-details",
+                "value": "web",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"locationId\": \"{{location_id}}\",\n  \"groupId\": \"{{group_id}}\",\n  \"channelId\": \"{{channel_id}}\",\n  \"title\": \"New Post Title\",\n  \"content\": \"This is the content of the new post\",\n  \"mentions\": [],\n  \"channelMentions\": [],\n  \"eventMentions\": [],\n  \"courseMentions\": [],\n  \"attachments\": [],\n  \"createdBy\": \"{{user_id}}\",\n  \"notifyAllGroupMembers\": false\n}"
+            },
+            "url": {
+              "raw": "https://services.leadconnectorhq.com/communities/{{location_id}}/groups/{{group_id}}/channels/{{channel_id}}/posts",
+              "protocol": "https",
+              "host": [
+                "services",
+                "leadconnectorhq",
+                "com"
+              ],
+              "path": [
+                "communities",
+                "{{location_id}}",
+                "groups",
+                "{{group_id}}",
+                "channels",
+                "{{channel_id}}",
+                "posts"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Pin/Unpin Post",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "channel",
+                "value": "WEB",
+                "type": "text"
+              },
+              {
+                "key": "priority",
+                "value": "u=1, i",
+                "type": "text"
+              },
+              {
+                "key": "source",
+                "value": "COMMUNITY_PORTAL",
+                "type": "text"
+              },
+              {
+                "key": "token-id",
+                "value": "{{token_id}}",
+                "type": "text"
+              },
+              {
+                "key": "version",
+                "value": "2023-04-15",
+                "type": "text"
+              },
+              {
+                "key": "x-app-build",
+                "value": "1.0.0",
+                "type": "text"
+              },
+              {
+                "key": "x-app-version",
+                "value": "1.0.0",
+                "type": "text"
+              },
+              {
+                "key": "x-cp-core-version",
+                "value": "1.0.0",
+                "type": "text"
+              },
+              {
+                "key": "x-location-id",
+                "value": "{{location_id}}",
+                "type": "text"
+              },
+              {
+                "key": "x-platform-details",
+                "value": "web",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"pin\"\n}"
+            },
+            "url": {
+              "raw": "https://services.leadconnectorhq.com/communities/{{location_id}}/groups/{{group_id}}/channels/{{channel_id}}/posts/{{post_id}}",
+              "protocol": "https",
+              "host": [
+                "services",
+                "leadconnectorhq",
+                "com"
+              ],
+              "path": [
+                "communities",
+                "{{location_id}}",
+                "groups",
+                "{{group_id}}",
+                "channels",
+                "{{channel_id}}",
+                "posts",
+                "{{post_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Mark Channel as Read",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "channel",
+                "value": "WEB",
+                "type": "text"
+              },
+              {
+                "key": "priority",
+                "value": "u=1, i",
+                "type": "text"
+              },
+              {
+                "key": "source",
+                "value": "COMMUNITY_PORTAL",
+                "type": "text"
+              },
+              {
+                "key": "token-id",
+                "value": "{{token_id}}",
+                "type": "text"
+              },
+              {
+                "key": "version",
+                "value": "2023-04-15",
+                "type": "text"
+              },
+              {
+                "key": "x-app-build",
+                "value": "1.0.0",
+                "type": "text"
+              },
+              {
+                "key": "x-app-version",
+                "value": "1.0.0",
+                "type": "text"
+              },
+              {
+                "key": "x-cp-core-version",
+                "value": "1.0.0",
+                "type": "text"
+              },
+              {
+                "key": "x-location-id",
+                "value": "{{location_id}}",
+                "type": "text"
+              },
+              {
+                "key": "x-platform-details",
+                "value": "web",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://services.leadconnectorhq.com/communities/{{location_id}}/groups/{{group_id}}/channels/{{channel_id}}/mark-as-read",
+              "protocol": "https",
+              "host": [
+                "services",
+                "leadconnectorhq",
+                "com"
+              ],
+              "path": [
+                "communities",
+                "{{location_id}}",
+                "groups",
+                "{{group_id}}",
+                "channels",
+                "{{channel_id}}",
+                "mark-as-read"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Events",
+      "item": [
+        {
+          "name": "Get Group Events",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "channel",
+                "value": "WEB",
+                "type": "text"
+              },
+              {
+                "key": "priority",
+                "value": "u=1, i",
+                "type": "text"
+              },
+              {
+                "key": "source",
+                "value": "COMMUNITY_PORTAL",
+                "type": "text"
+              },
+              {
+                "key": "token-id",
+                "value": "{{token_id}}",
+                "type": "text"
+              },
+              {
+                "key": "version",
+                "value": "2023-04-15",
+                "type": "text"
+              },
+              {
+                "key": "x-app-build",
+                "value": "1.0.0",
+                "type": "text"
+              },
+              {
+                "key": "x-app-version",
+                "value": "1.0.0",
+                "type": "text"
+              },
+              {
+                "key": "x-cp-core-version",
+                "value": "1.0.0",
+                "type": "text"
+              },
+              {
+                "key": "x-location-id",
+                "value": "{{location_id}}",
+                "type": "text"
+              },
+              {
+                "key": "x-platform-details",
+                "value": "web",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://services.leadconnectorhq.com/communities/{{location_id}}/groups/{{group_id}}/events?startDate=2023-01-01&endDate=2023-12-31",
+              "protocol": "https",
+              "host": [
+                "services",
+                "leadconnectorhq",
+                "com"
+              ],
+              "path": [
+                "communities",
+                "{{location_id}}",
+                "groups",
+                "{{group_id}}",
+                "events"
+              ],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2023-01-01"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2023-12-31"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Event",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "channel",
+                "value": "WEB",
+                "type": "text"
+              },
+              {
+                "key": "priority",
+                "value": "u=1, i",
+                "type": "text"
+              },
+              {
+                "key": "source",
+                "value": "COMMUNITY_PORTAL",
+                "type": "text"
+              },
+              {
+                "key": "token-id",
+                "value": "{{token_id}}",
+                "type": "text"
+              },
+              {
+                "key": "version",
+                "value": "2023-04-15",
+                "type": "text"
+              },
+              {
+                "key": "x-app-build",
+                "value": "1.0.0",
+                "type": "text"
+              },
+              {
+                "key": "x-app-version",
+                "value": "1.0.0",
+                "type": "text"
+              },
+              {
+                "key": "x-cp-core-version",
+                "value": "1.0.0",
+                "type": "text"
+              },
+              {
+                "key": "x-location-id",
+                "value": "{{location_id}}",
+                "type": "text"
+              },
+              {
+                "key": "x-platform-details",
+                "value": "web",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"New Event\",\n  \"description\": \"Event description\",\n  \"startTime\": \"2023-12-01T10:00:00.000Z\",\n  \"endTime\": \"2023-12-01T12:00:00.000Z\",\n  \"locationId\": \"{{location_id}}\",\n  \"groupId\": \"{{group_id}}\",\n  \"visibility\": \"public\",\n  \"eventPricing\": {\n    \"isFree\": true\n  },\n  \"eventColor\": \"#FF5733\",\n  \"eventLocation\": {\n    \"type\": \"physical\",\n    \"address\": \"123 Main St\"\n  },\n  \"timezone\": \"America/New_York\",\n  \"eventCoverUrl\": \"\",\n  \"remindOneDayBefore\": true,\n  \"hideAttendees\": false,\n  \"status\": \"active\",\n  \"isFree\": true,\n  \"isRecurring\": false,\n  \"isCancelled\": false,\n  \"notifications\": []\n}"
+            },
+            "url": {
+              "raw": "https://services.leadconnectorhq.com/communities/{{location_id}}/groups/{{group_id}}/events",
+              "protocol": "https",
+              "host": [
+                "services",
+                "leadconnectorhq",
+                "com"
+              ],
+              "path": [
+                "communities",
+                "{{location_id}}",
+                "groups",
+                "{{group_id}}",
+                "events"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Event",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "channel",
+                "value": "WEB",
+                "type": "text"
+              },
+              {
+                "key": "priority",
+                "value": "u=1, i",
+                "type": "text"
+              },
+              {
+                "key": "source",
+                "value": "COMMUNITY_PORTAL",
+                "type": "text"
+              },
+              {
+                "key": "token-id",
+                "value": "{{token_id}}",
+                "type": "text"
+              },
+              {
+                "key": "version",
+                "value": "2023-04-15",
+                "type": "text"
+              },
+              {
+                "key": "x-app-build",
+                "value": "1.0.0",
+                "type": "text"
+              },
+              {
+                "key": "x-app-version",
+                "value": "1.0.0",
+                "type": "text"
+              },
+              {
+                "key": "x-cp-core-version",
+                "value": "1.0.0",
+                "type": "text"
+              },
+              {
+                "key": "x-location-id",
+                "value": "{{location_id}}",
+                "type": "text"
+              },
+              {
+                "key": "x-platform-details",
+                "value": "web",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"_id\": \"{{event_id}}\",\n  \"title\": \"Updated Event\",\n  \"description\": \"Updated event description\",\n  \"startTime\": \"2023-12-01T10:00:00.000Z\",\n  \"endTime\": \"2023-12-01T12:00:00.000Z\",\n  \"locationId\": \"{{location_id}}\",\n  \"groupId\": \"{{group_id}}\",\n  \"visibility\": \"public\",\n  \"eventPricing\": {\n    \"isFree\": true\n  },\n  \"eventColor\": \"#FF5733\",\n  \"eventLocation\": {\n    \"type\": \"physical\",\n    \"address\": \"123 Main St\"\n  },\n  \"timezone\": \"America/New_York\",\n  \"eventCoverUrl\": \"\",\n  \"remindOneDayBefore\": true,\n  \"hideAttendees\": false,\n  \"status\": \"active\",\n  \"isFree\": true,\n  \"isRecurring\": false,\n  \"isCancelled\": false,\n  \"notifications\": [],\n  \"originalStartTime\": \"2023-12-01T10:00:00.000Z\",\n  \"originalEndTime\": \"2023-12-01T12:00:00.000Z\"\n}"
+            },
+            "url": {
+              "raw": "https://services.leadconnectorhq.com/communities/{{location_id}}/groups/{{group_id}}/events/{{event_id}}",
+              "protocol": "https",
+              "host": [
+                "services",
+                "leadconnectorhq",
+                "com"
+              ],
+              "path": [
+                "communities",
+                "{{location_id}}",
+                "groups",
+                "{{group_id}}",
+                "events",
+                "{{event_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Event",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "channel",
+                "value": "WEB",
+                "type": "text"
+              },
+              {
+                "key": "priority",
+                "value": "u=1, i",
+                "type": "text"
+              },
+              {
+                "key": "source",
+                "value": "COMMUNITY_PORTAL",
+                "type": "text"
+              },
+              {
+                "key": "token-id",
+                "value": "{{token_id}}",
+                "type": "text"
+              },
+              {
+                "key": "version",
+                "value": "2023-04-15",
+                "type": "text"
+              },
+              {
+                "key": "x-app-build",
+                "value": "1.0.0",
+                "type": "text"
+              },
+              {
+                "key": "x-app-version",
+                "value": "1.0.0",
+                "type": "text"
+              },
+              {
+                "key": "x-cp-core-version",
+                "value": "1.0.0",
+                "type": "text"
+              },
+              {
+                "key": "x-location-id",
+                "value": "{{location_id}}",
+                "type": "text"
+              },
+              {
+                "key": "x-platform-details",
+                "value": "web",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://services.leadconnectorhq.com/communities/{{location_id}}/groups/{{group_id}}/events/{{event_id}}",
+              "protocol": "https",
+              "host": [
+                "services",
+                "leadconnectorhq",
+                "com"
+              ],
+              "path": [
+                "communities",
+                "{{location_id}}",
+                "groups",
+                "{{group_id}}",
+                "events",
+                "{{event_id}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "Get Notifications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "channel",
+                "value": "WEB",
+                "type": "text"
+              },
+              {
+                "key": "priority",
+                "value": "u=1, i",
+                "type": "text"
+              },
+              {
+                "key": "source",
+                "value": "COMMUNITY_PORTAL",
+                "type": "text"
+              },
+              {
+                "key": "source-id",
+                "value": "{{user_id}}",
+                "type": "text"
+              },
+              {
+                "key": "token-id",
+                "value": "{{token_id}}",
+                "type": "text"
+              },
+              {
+                "key": "version",
+                "value": "2023-04-15",
+                "type": "text"
+              },
+              {
+                "key": "x-app-build",
+                "value": "1.0.0",
+                "type": "text"
+              },
+              {
+                "key": "x-app-version",
+                "value": "1.0.0",
+                "type": "text"
+              },
+              {
+                "key": "x-cp-core-version",
+                "value": "1.0.0",
+                "type": "text"
+              },
+              {
+                "key": "x-location-id",
+                "value": "{{location_id}}",
+                "type": "text"
+              },
+              {
+                "key": "x-platform-details",
+                "value": "web",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://services.leadconnectorhq.com/clientclub/notifications?read=false&limit=20",
+              "protocol": "https",
+              "host": [
+                "services",
+                "leadconnectorhq",
+                "com"
+              ],
+              "path": [
+                "clientclub",
+                "notifications"
+              ],
+              "query": [
+                {
+                  "key": "read",
+                  "value": "false"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Leaderboards",
+      "item": [
+        {
+          "name": "Get Group Leaderboard",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "channel",
+                "value": "WEB",
+                "type": "text"
+              },
+              {
+                "key": "priority",
+                "value": "u=1, i",
+                "type": "text"
+              },
+              {
+                "key": "source",
+                "value": "COMMUNITY_PORTAL",
+                "type": "text"
+              },
+              {
+                "key": "source-id",
+                "value": "{{user_id}}",
+                "type": "text"
+              },
+              {
+                "key": "token-id",
+                "value": "{{token_id}}",
+                "type": "text"
+              },
+              {
+                "key": "version",
+                "value": "2023-04-15",
+                "type": "text"
+              },
+              {
+                "key": "x-app-build",
+                "value": "1.0.0",
+                "type": "text"
+              },
+              {
+                "key": "x-app-version",
+                "value": "1.0.0",
+                "type": "text"
+              },
+              {
+                "key": "x-cp-core-version",
+                "value": "1.0.0",
+                "type": "text"
+              },
+              {
+                "key": "x-location-id",
+                "value": "{{location_id}}",
+                "type": "text"
+              },
+              {
+                "key": "x-platform-details",
+                "value": "web",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://services.leadconnectorhq.com/clientclub/leaderboards/{{group_id}}?rankLimit=10&rankSkip=0",
+              "protocol": "https",
+              "host": [
+                "services",
+                "leadconnectorhq",
+                "com"
+              ],
+              "path": [
+                "clientclub",
+                "leaderboards",
+                "{{group_id}}"
+              ],
+              "query": [
+                {
+                  "key": "rankLimit",
+                  "value": "10"
+                },
+                {
+                  "key": "rankSkip",
+                  "value": "0"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get User Leaderboard Position",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "channel",
+                "value": "WEB",
+                "type": "text"
+              },
+              {
+                "key": "priority",
+                "value": "u=1, i",
+                "type": "text"
+              },
+              {
+                "key": "source",
+                "value": "COMMUNITY_PORTAL",
+                "type": "text"
+              },
+              {
+                "key": "source-id",
+                "value": "{{user_id}}",
+                "type": "text"
+              },
+              {
+                "key": "token-id",
+                "value": "{{token_id}}",
+                "type": "text"
+              },
+              {
+                "key": "version",
+                "value": "2023-04-15",
+                "type": "text"
+              },
+              {
+                "key": "x-app-build",
+                "value": "1.0.0",
+                "type": "text"
+              },
+              {
+                "key": "x-app-version",
+                "value": "1.0.0",
+                "type": "text"
+              },
+              {
+                "key": "x-cp-core-version",
+                "value": "1.0.0",
+                "type": "text"
+              },
+              {
+                "key": "x-location-id",
+                "value": "{{location_id}}",
+                "type": "text"
+              },
+              {
+                "key": "x-platform-details",
+                "value": "web",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://services.leadconnectorhq.com/clientclub/leaderboards/{{group_id}}/users/{{user_id}}",
+              "protocol": "https",
+              "host": [
+                "services",
+                "leadconnectorhq",
+                "com"
+              ],
+              "path": [
+                "clientclub",
+                "leaderboards",
+                "{{group_id}}",
+                "users",
+                "{{user_id}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Firebase Authentication",
+      "item": [
+        {
+          "name": "Sign In with Custom Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "priority",
+                "value": "u=1, i",
+                "type": "text"
+              },
+              {
+                "key": "x-browser-channel",
+                "value": "stable",
+                "type": "text"
+              },
+              {
+                "key": "x-browser-copyright",
+                "value": "Copyright 2023 Google LLC",
+                "type": "text"
+              },
+              {
+                "key": "x-browser-validation",
+                "value": "stable",
+                "type": "text"
+              },
+              {
+                "key": "x-browser-year",
+                "value": "2023",
+                "type": "text"
+              },
+              {
+                "key": "x-client-data",
+                "value": "firebase-js-sdk",
+                "type": "text"
+              },
+              {
+                "key": "x-client-version",
+                "value": "9.0.0",
+                "type": "text"
+              },
+              {
+                "key": "x-firebase-gmpid",
+                "value": "{{firebase_project_id}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{custom_token}}\",\n  \"returnSecureToken\": true\n}"
+            },
+            "url": {
+              "raw": "https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key={{firebase_api_key}}",
+              "protocol": "https",
+              "host": [
+                "identitytoolkit",
+                "googleapis",
+                "com"
+              ],
+              "path": [
+                "v1",
+                "accounts:signInWithCustomToken"
+              ],
+              "query": [
+                {
+                  "key": "key",
+                  "value": "{{firebase_api_key}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Lookup Account",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "priority",
+                "value": "u=1, i",
+                "type": "text"
+              },
+              {
+                "key": "x-browser-channel",
+                "value": "stable",
+                "type": "text"
+              },
+              {
+                "key": "x-browser-copyright",
+                "value": "Copyright 2023 Google LLC",
+                "type": "text"
+              },
+              {
+                "key": "x-browser-validation",
+                "value": "stable",
+                "type": "text"
+              },
+              {
+                "key": "x-browser-year",
+                "value": "2023",
+                "type": "text"
+              },
+              {
+                "key": "x-client-data",
+                "value": "firebase-js-sdk",
+                "type": "text"
+              },
+              {
+                "key": "x-client-version",
+                "value": "9.0.0",
+                "type": "text"
+              },
+              {
+                "key": "x-firebase-gmpid",
+                "value": "{{firebase_project_id}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idToken\": \"{{id_token}}\"\n}"
+            },
+            "url": {
+              "raw": "https://identitytoolkit.googleapis.com/v1/accounts:lookup?key={{firebase_api_key}}",
+              "protocol": "https",
+              "host": [
+                "identitytoolkit",
+                "googleapis",
+                "com"
+              ],
+              "path": [
+                "v1",
+                "accounts:lookup"
+              ],
+              "query": [
+                {
+                  "key": "key",
+                  "value": "{{firebase_api_key}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "priority",
+                "value": "u=1, i",
+                "type": "text"
+              },
+              {
+                "key": "x-browser-channel",
+                "value": "stable",
+                "type": "text"
+              },
+              {
+                "key": "x-browser-copyright",
+                "value": "Copyright 2023 Google LLC",
+                "type": "text"
+              },
+              {
+                "key": "x-browser-validation",
+                "value": "stable",
+                "type": "text"
+              },
+              {
+                "key": "x-browser-year",
+                "value": "2023",
+                "type": "text"
+              },
+              {
+                "key": "x-client-data",
+                "value": "firebase-js-sdk",
+                "type": "text"
+              },
+              {
+                "key": "x-client-version",
+                "value": "9.0.0",
+                "type": "text"
+              },
+              {
+                "key": "x-firebase-gmpid",
+                "value": "{{firebase_project_id}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "refresh_token",
+                  "type": "text"
+                },
+                {
+                  "key": "refresh_token",
+                  "value": "{{refresh_token}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "https://securetoken.googleapis.com/v1/token?key={{firebase_api_key}}",
+              "protocol": "https",
+              "host": [
+                "securetoken",
+                "googleapis",
+                "com"
+              ],
+              "path": [
+                "v1",
+                "token"
+              ],
+              "query": [
+                {
+                  "key": "key",
+                  "value": "{{firebase_api_key}}"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Analytics & Tracking",
+      "item": [
+        {
+          "name": "Track User Analytics",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "channel",
+                "value": "WEB",
+                "type": "text"
+              },
+              {
+                "key": "priority",
+                "value": "u=1, i",
+                "type": "text"
+              },
+              {
+                "key": "source",
+                "value": "COMMUNITY_PORTAL",
+                "type": "text"
+              },
+              {
+                "key": "token-id",
+                "value": "{{token_id}}",
+                "type": "text"
+              },
+              {
+                "key": "version",
+                "value": "2023-04-15",
+                "type": "text"
+              },
+              {
+                "key": "x-cp-build-version",
+                "value": "1.0.0",
+                "type": "text"
+              },
+              {
+                "key": "x-middleware",
+                "value": "community-portal",
+                "type": "text"
+              },
+              {
+                "key": "x-platform-details",
+                "value": "web",
+                "type": "text"
+              },
+              {
+                "key": "x-request-source",
+                "value": "community-portal",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"locationId\": \"{{location_id}}\",\n  \"eventType\": \"page_view\",\n  \"route\": \"/communities\"\n}"
+            },
+            "url": {
+              "raw": "https://services.leadconnectorhq.com/clientclub/{{location_id}}/users-analytics/track/pendo",
+              "protocol": "https",
+              "host": [
+                "services",
+                "leadconnectorhq",
+                "com"
+              ],
+              "path": [
+                "clientclub",
+                "{{location_id}}",
+                "users-analytics",
+                "track",
+                "pendo"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Track Community Access Event",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "channel",
+                "value": "WEB",
+                "type": "text"
+              },
+              {
+                "key": "priority",
+                "value": "u=1, i",
+                "type": "text"
+              },
+              {
+                "key": "source",
+                "value": "COMMUNITY_PORTAL",
+                "type": "text"
+              },
+              {
+                "key": "token-id",
+                "value": "{{token_id}}",
+                "type": "text"
+              },
+              {
+                "key": "version",
+                "value": "2023-04-15",
+                "type": "text"
+              },
+              {
+                "key": "x-app-build",
+                "value": "1.0.0",
+                "type": "text"
+              },
+              {
+                "key": "x-app-version",
+                "value": "1.0.0",
+                "type": "text"
+              },
+              {
+                "key": "x-cp-core-version",
+                "value": "1.0.0",
+                "type": "text"
+              },
+              {
+                "key": "x-location-id",
+                "value": "{{location_id}}",
+                "type": "text"
+              },
+              {
+                "key": "x-platform-details",
+                "value": "web",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"groupId\": \"{{group_id}}\",\n  \"status\": \"active\",\n  \"locationId\": \"{{location_id}}\",\n  \"eventName\": \"group_accessed\",\n  \"eventData\": {\n    \"action\": \"view\"\n  },\n  \"role\": \"member\",\n  \"contactId\": \"{{user_id}}\"\n}"
+            },
+            "url": {
+              "raw": "https://services.leadconnectorhq.com/communities/health/track-communities-access-event",
+              "protocol": "https",
+              "host": [
+                "services",
+                "leadconnectorhq",
+                "com"
+              ],
+              "path": [
+                "communities",
+                "health",
+                "track-communities-access-event"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
