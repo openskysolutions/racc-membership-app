@@ -1,94 +1,367 @@
-import React, { useState, useEffect } from 'react';
-import { getMembersList } from '@/services/members';
-import type { Member } from '@/types/member';
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Search, MapPin, Phone, Mail, Globe, Users } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { CiClock2, CiGlobe, CiMail, CiPhone } from 'react-icons/ci';
-import { useNavigate } from 'react-router-dom';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { api } from '@/services/apiClient';
 import { useAuthStore } from '@/stores/authStore';
-import { PhoneNumber } from '@/components/ui/phone-number';
-import { Url } from '@/components/ui/url';
+import { useNavigate } from 'react-router-dom';
+
+interface Member {
+  id: string;
+  firstName?: string;
+  lastName?: string;
+  businessName?: string;
+  email: string;
+  phone?: string;
+  website?: string;
+  avatar?: string;
+  role: string;
+  status: string;
+  memberSince: string;
+  specialties?: string[];
+  bio?: string;
+  address?: {
+    street: string;
+    city: string;
+    state: string;
+    zipCode: string;
+  };
+}
+
+interface MembersResponse {
+  members: Member[];
+  total: number;
+  limit: number;
+  offset: number;
+}
 
 const MembersPage: React.FC = () => {
-  const role = useAuthStore(state => state.role);
+  const { isAuthenticated } = useAuthStore();
+  const navigate = useNavigate();
+  
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const navigate = useNavigate();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [roleFilter, setRoleFilter] = useState('all');
+  const [specialtyFilter, setSpecialtyFilter] = useState('all');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
+  // Fetch members data
   useEffect(() => {
-    getMembersList()
-      .then((data) => setMembers(data))
-      .catch(err => setError(err.message))
-      .finally(() => setLoading(false));
-  }, [role]);
 
-  if (loading) return <section className="container py-20">Loading...</section>;
-  if (error) return <section className="container py-20">Error: {error}</section>;
+    const fetchMembers = async () => {
+      try {
+        setLoading(true);
+        const response = await api.get('/members?limit=50');
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch members: ${response.statusText}`);
+        }
+        
+        const data: MembersResponse = await response.json();
+        setMembers(data.members || []);
+      } catch (err) {
+        console.error('Error fetching members:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load members');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMembers();
+  }, [isAuthenticated, navigate]);
+
+  // Filter and search members
+  const filteredMembers = useMemo(() => {
+    return members.filter(member => {
+      // Search filter
+      const searchLower = searchTerm.toLowerCase();
+      const matchesSearch = !searchTerm || 
+        member.firstName?.toLowerCase().includes(searchLower) ||
+        member.lastName?.toLowerCase().includes(searchLower) ||
+        member.businessName?.toLowerCase().includes(searchLower) ||
+        member.email?.toLowerCase().includes(searchLower) ||
+        member.specialties?.some(s => s.toLowerCase().includes(searchLower));
+
+      // Role filter
+      const matchesRole = roleFilter === 'all' || member.role === roleFilter;
+
+      // Specialty filter
+      const matchesSpecialty = specialtyFilter === 'all' || 
+        member.specialties?.includes(specialtyFilter);
+
+      return matchesSearch && matchesRole && matchesSpecialty;
+    });
+  }, [members, searchTerm, roleFilter, specialtyFilter]);
+
+  // Get unique specialties for filter dropdown
+  const allSpecialties = useMemo(() => {
+    const specialties = new Set<string>();
+    members.forEach(member => {
+      member.specialties?.forEach(specialty => specialties.add(specialty));
+    });
+    return Array.from(specialties).sort();
+  }, [members]);
+
+  const handleMemberClick = (memberId: string) => {
+    navigate(`/members/${memberId}`);
+  };
+
+  const formatMemberName = (member: Member) => {
+    const fullName = `${member.firstName || ''} ${member.lastName || ''}`.trim();
+    return fullName || member.email;
+  };
+
+  const getInitials = (member: Member) => {
+    if (member.businessName) {
+      return member.businessName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+    }
+    const firstName = member.firstName?.charAt(0) || '';
+    const lastName = member.lastName?.charAt(0) || '';
+    return (firstName + lastName).toUpperCase() || member.email.charAt(0).toUpperCase();
+  };
+
+  const getRoleColor = (role: string) => {
+    switch (role) {
+      case 'admin': return 'bg-red-100 text-red-800';
+      case 'moderator': return 'bg-blue-100 text-blue-800';
+      case 'member': return 'bg-green-100 text-green-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="container py-20 px-3 md:px-6">
+        <div className="flex items-center justify-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container py-20 px-3 md:px-6">
+        <Card className="max-w-md mx-auto">
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <p className="text-red-600 mb-4">{error}</p>
+              <Button onClick={() => window.location.reload()}>
+                Try Again
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
-    <section className="container py-20 px-3 md:px-6">
-      <h1 className="text-3xl font-bold mb-6">Members</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {members.map((member: Member, idx) => {
-          const fullName = `${member.firstName || ''} ${member.lastName || ''}`.trim();
+    <div className="container py-20 px-3 md:px-6">
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-2">Member Directory</h1>
+        <p className="text-muted-foreground">
+          Connect with {members.length} active RACC members
+        </p>
+      </div>
 
-          return (
-            <Card key={idx} className="p-4">
-              <CardHeader 
-                className="flex flex-row items-center space-x-4 mb-0 p-1 cursor-pointer"
-                onClick={() => navigate(`/members/${member.id}`)}
+      {/* Search and Filters */}
+      {/* <Card className="mb-6">
+        <CardContent className="pt-6"> */}
+          <div className="flex flex-col lg:flex-row gap-4">
+            {/* Search */}
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input
+                  placeholder="Search members by name, business, or specialty..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+
+            {/* Role Filter */}
+            <Select value={roleFilter} onValueChange={setRoleFilter}>
+              <SelectTrigger className="w-full lg:w-40">
+                <SelectValue placeholder="Role" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Roles</SelectItem>
+                <SelectItem value="admin">Admin</SelectItem>
+                <SelectItem value="moderator">Moderator</SelectItem>
+                <SelectItem value="member">Member</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Specialty Filter */}
+            <Select value={specialtyFilter} onValueChange={setSpecialtyFilter}>
+              <SelectTrigger className="w-full lg:w-48">
+                <SelectValue placeholder="Specialty" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Specialties</SelectItem>
+                {allSpecialties.map(specialty => (
+                  <SelectItem key={specialty} value={specialty}>
+                    {specialty}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* View Mode Toggle */}
+            <div className="flex border rounded-md">
+              <Button
+                variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('grid')}
+                className="rounded-r-none"
               >
-                <Avatar>
-                  {member.avatar ? (
-                    <AvatarImage src={member.avatar} alt={fullName} />
-                  ) : (
-                    <AvatarFallback className='bg-neutral-250 text-muted-foreground'>
-                      {
-                        // Initials of member.businessName
-                        member.businessName ? member.businessName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() :
-                        (member.firstName?.charAt(0) || '' + member.lastName?.charAt(0) || '').toUpperCase()
-                      }
-                    </AvatarFallback>
-                  )}
-                </Avatar>
-                <div>
-                  <CardTitle className='text-lg'>{member.businessName}</CardTitle>
-                  {/* <span className="text-sm text-muted-foreground">{`@${member.slug}`}</span> */}
+                Grid
+              </Button>
+              <Button
+                variant={viewMode === 'list' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('list')}
+                className="rounded-l-none"
+              >
+                List
+              </Button>
+            </div>
+          </div>
+
+          {/* Results count */}
+          <div className="mt-4 mb-4 flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">
+              Showing {filteredMembers.length} of {members.length} members
+            </p>
+            {(searchTerm || roleFilter !== 'all' || specialtyFilter !== 'all') && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setSearchTerm('');
+                  setRoleFilter('all');
+                  setSpecialtyFilter('all');
+                }}
+              >
+                Clear Filters
+              </Button>
+            )}
+          </div>
+        {/* </CardContent>
+      </Card> */}
+
+      {/* Members Grid/List */}
+      {filteredMembers.length === 0 ? (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center py-8">
+              <Users className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold mb-2">No members found</h3>
+              <p className="text-muted-foreground">
+                Try adjusting your search criteria or filters.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className={
+          viewMode === 'grid' 
+            ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+            : "space-y-4"
+        }>
+          {filteredMembers.map((member) => (
+            <Card 
+              key={member.id} 
+              className={`cursor-pointer hover:shadow-lg transition-shadow ${
+                viewMode === 'list' ? 'p-4' : ''
+              }`}
+              onClick={() => handleMemberClick(member.id)}
+            >
+              <CardHeader className={viewMode === 'list' ? 'pb-2' : ''}>
+                <div className={`flex ${viewMode === 'list' ? 'flex-row items-center space-x-4' : 'flex-col items-center space-y-4'}`}>
+                  <Avatar className={viewMode === 'list' ? 'h-12 w-12' : 'h-16 w-16'}>
+                    {member.avatar ? (
+                      <AvatarImage src={member.avatar} alt={formatMemberName(member)} />
+                    ) : (
+                      <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                        {getInitials(member)}
+                      </AvatarFallback>
+                    )}
+                  </Avatar>
+                  
+                  <div className={viewMode === 'list' ? 'flex-1' : 'text-center'}>
+                    <CardTitle className="text-lg">
+                      {member.businessName || formatMemberName(member)}
+                    </CardTitle>
+                    {member.businessName && (
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {formatMemberName(member)}
+                      </p>
+                    )}
+                    <div className="flex gap-1 mt-2 flex-wrap justify-center">
+                      <Badge variant="secondary" className={getRoleColor(member.role)}>
+                        {member.role}
+                      </Badge>
+                      {member.specialties?.slice(0, 2).map(specialty => (
+                        <Badge key={specialty} variant="outline" className="text-xs">
+                          {specialty}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </CardHeader>
-              <CardContent className="p-1">
-                <CardDescription>
-                  {fullName &&
-                    <div className='flex flex-row items-center space-x-2 gap-2'>
-                      <CiClock2 />
-                      {fullName || ''}
-                    </div>
-                  }
-                  {member.phone &&
-                    <div className='flex flex-row items-center space-x-2 gap-2'>
-                      <CiPhone />
-                      <PhoneNumber phone={member.phone || ''} />
-                    </div>
-                  }
-                  {member.email &&
-                    <div className='flex flex-row items-center space-x-2 gap-2'>
-                      <CiMail />{member.email || ''}
-                    </div>
-                  }
-                  {member.website &&
-                    <div className='flex flex-row items-center space-x-2 gap-2'>
-                      <CiGlobe />
-                      <Url url={member.website} />
-                    </div>
-                  }
-                </CardDescription>
+
+              <CardContent className="space-y-2">
+                {member.email && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Mail className="h-4 w-4" />
+                    <span className="truncate">{member.email}</span>
+                  </div>
+                )}
+                
+                {member.phone && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Phone className="h-4 w-4" />
+                    <span>{member.phone}</span>
+                  </div>
+                )}
+                
+                {member.website && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Globe className="h-4 w-4" />
+                    <span className="truncate">{member.website}</span>
+                  </div>
+                )}
+                
+                {member.address && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <MapPin className="h-4 w-4" />
+                    <span>{member.address.city}, {member.address.state}</span>
+                  </div>
+                )}
+
+                {member.bio && viewMode === 'list' && (
+                  <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
+                    {member.bio}
+                  </p>
+                )}
               </CardContent>
             </Card>
-          );
-        })}
-      </div>
-    </section>
+          ))}
+        </div>
+      )}
+    </div>
   );
 };
 

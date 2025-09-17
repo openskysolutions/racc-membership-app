@@ -1,177 +1,224 @@
-// src/services/auth.service.ts
+// Better Auth PKCE authentication service
+// Implements OAuth 2.1/OIDC Authorization Code with PKCE flow per constitutional requirements
 
-interface LoginCredentials {
+interface PKCECredentials {
   email: string;
   password: string;
 }
-  
+
+interface AuthSession {
+  id: string;
+  memberId: string;
+  token: string;
+  expiresAt: string;
+  createdAt: string;
+}
+
 interface AuthResponse {
+  session: AuthSession;
   user: {
     id: string;
     name: string;
     email: string;
-    type: string;
-    persona: string;
-    organization?: {
-      id: string;
-      name: string;
-      type: string;
-    };
+    role: string;
+    status: string;
   };
-  token: string;
 }
-  
-// Define the API base URL with a fallback
-const GHL_API_BASE_URL = import.meta.env.VITE_GHL_API_URL || 'http://localhost:3000/api';
-const GHL_APP_DOMAIN = import.meta.env.VITE_GHL_APP_DOMAIN || 'localhost';
-const GHL_LOCATION_ID = import.meta.env.VITE_LOCATION_ID || '';
-const GHL_GROUP_ID = import.meta.env.VITE_GHL_GROUP_ID || 'default-group';
+
+// API base URL for RACC backend
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
 
 
-export async function login(credentials: LoginCredentials): Promise<AuthResponse> {
+/**
+ * Generate PKCE code verifier and challenge
+ */
+function generateCodeVerifier(): string {
+  const array = new Uint8Array(32);
+  crypto.getRandomValues(array);
+  return Array.from(array, byte => 
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~'[byte % 64]
+  ).join('');
+}
+
+async function generateCodeChallenge(verifier: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(verifier);
+  const buffer = await crypto.subtle.digest('SHA-256', data);
+  const bytes = new Uint8Array(buffer);
+  return btoa(String.fromCharCode(...bytes))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '');
+}
+
+/**
+ * Better Auth PKCE login implementation
+ */
+export async function login(credentials: PKCECredentials): Promise<AuthResponse> {
   try {
-    console.log('Attempting login at:', `${GHL_API_BASE_URL}/clientclub/auth/login`);
+    // Generate PKCE parameters
+    const codeVerifier = generateCodeVerifier();
+    const codeChallenge = await generateCodeChallenge(codeVerifier);
     
-    // prepare deviceId (persisted per client)
-    let deviceId = localStorage.getItem('deviceId');
-    if (!deviceId && window.crypto?.randomUUID) {
-      deviceId = window.crypto.randomUUID();
-      localStorage.setItem('deviceId', deviceId);
-    }
-    // assemble new API payload
-    const payload = {
-      email: credentials.email,
-      password: credentials.password,
-      userId: '',
-      deviceName: navigator.userAgent,
-      deviceId: deviceId || '',
-      deviceType: 'web',
-      releaseVersionCode: null,
-      appType: 'WL',
-      domainName: GHL_APP_DOMAIN,
-      locationId: GHL_LOCATION_ID,
-      ipAddress: '0.0.0.1',
-      redirectUrl: null,
-    };
-    const response = await fetch(`${GHL_API_BASE_URL}/clientclub/auth/login/email`, {
+    // Store code verifier in sessionStorage (constitutional requirement: ephemeral storage)
+    sessionStorage.setItem('pkce_code_verifier', codeVerifier);
+    
+    // Step 1: Request authorization with PKCE challenge
+    const authResponse = await fetch(`${API_BASE_URL}/auth/authorize`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        email: credentials.email,
+        password: credentials.password,
+        codeChallenge,
+        codeChallengeMethod: 'S256'
+      }),
     });
 
-    // Log the raw response for debugging
-    console.log('Login response status:', response.status);
-    const rawText = await response.text();
-    console.log('Raw login response:', rawText);
-
-    // Try to parse if there's content
-    let data;
-    try {
-      data = rawText ? JSON.parse(rawText) : null;
-    } catch (e) {
-      console.error('Failed to parse login JSON:', e);
-      throw new Error('Invalid response from server');
+    if (!authResponse.ok) {
+      const errorData = await authResponse.json().catch(() => ({}));
+      throw new Error(errorData.message || 'Authorization failed');
     }
 
-    if (!response.ok) {
-      throw new Error(data?.error || 'Login failed');
+    const authData = await authResponse.json();
+    const { authorizationCode } = authData;
+
+    // Step 2: Exchange authorization code for session using PKCE verifier
+    const tokenResponse = await fetch(`${API_BASE_URL}/auth/session`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        authorizationCode,
+        codeVerifier
+      }),
+    });
+
+    if (!tokenResponse.ok) {
+      const errorData = await tokenResponse.json().catch(() => ({}));
+      throw new Error(errorData.message || 'Token exchange failed');
     }
 
-    if (!data) {
-      throw new Error('Empty response from server');
-    }
-
-    // Exchange the custom token for a Firebase idToken
-    const customToken = data.token;
-    const googleCustomToken = await fetch(
-      `https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=${import.meta.env.VITE_GOOGLE_CUSTOM_TOKEN_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: customToken, returnSecureToken: true }),
-      }
-    );
-    const googleCustomTokenData = await googleCustomToken.json();
-    console.log('Firebase token exchange response:', googleCustomTokenData);
-    if (!googleCustomToken.ok) {
-      throw new Error(googleCustomTokenData.error?.message || 'Token exchange failed');
-    }
-    // Persist the Firebase idToken for subsequent API calls
-    localStorage.setItem('token-id', googleCustomTokenData.idToken);
-    // Fetch initial profile data now that we're authenticated
-    await fetchInitialData();
-    // Return the original user object and new idToken
-    return { user: data.user, token: googleCustomTokenData.idToken };
+    const sessionData = await tokenResponse.json();
+    
+    // Clean up code verifier after successful exchange
+    sessionStorage.removeItem('pkce_code_verifier');
+    
+    // Store complete session data in sessionStorage (constitutional requirement: ephemeral storage)
+    const authSessionData = {
+      sessionId: sessionData.session.id,
+      token: sessionData.session.token || sessionData.session.id, // Use token or fallback to session ID
+      memberId: sessionData.session.memberId,
+      expiresAt: sessionData.session.expiresAt,
+      user: sessionData.user
+    };
+    
+    sessionStorage.setItem('racc_auth_session', JSON.stringify(authSessionData));
+    
+    return sessionData;
   } catch (error) {
-    console.error('Login error:', error);
+    // Clean up on error
+    sessionStorage.removeItem('pkce_code_verifier');
+    console.error('PKCE login error:', error);
     throw error;
   }
 }
 
+/**
+ * Get current user profile using session authentication
+ */
 export async function getProfile(): Promise<AuthResponse['user']> {
   try {
-    const token = localStorage.getItem('token');
-    if (!token) throw new Error('No token found');
+    const sessionData = sessionStorage.getItem('racc_auth_session');
+    if (!sessionData) {
+      throw new Error('No active session found');
+    }
     
-    const response = await fetch(`${GHL_API_BASE_URL}/auth/profile`, {
+    const session = JSON.parse(sessionData);
+    const token = session.token;
+    
+    const response = await fetch(`${API_BASE_URL}/auth/profile`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
     });
-    const rawText = await response.text();
-
-    let data;
-    try {
-      data = rawText ? JSON.parse(rawText) : null;
-    } catch (e) {
-      console.error('Failed to parse profile JSON:', e);
-      throw new Error('Invalid response from server');
-    }
 
     if (!response.ok) {
-      throw new Error(data?.error || 'Failed to get profile');
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || 'Failed to get profile');
     }
 
-    if (!data) {
-      throw new Error('Empty response from server');
-    }
-
-    return data;
+    const userData = await response.json();
+    return userData;
   } catch (error) {
     console.error('Profile fetch error:', error);
     throw error;
   }
 }
 
+/**
+ * Logout and clear session (ephemeral storage as per constitution)
+ */
 export async function logout(): Promise<void> {
-  localStorage.removeItem('token');
-  localStorage.removeItem('token-id');
+  const sessionData = sessionStorage.getItem('racc_auth_session');
+  
+  if (sessionData) {
+    try {
+      const session = JSON.parse(sessionData);
+      const token = session.token;
+      
+      // Notify backend to invalidate session
+      await fetch(`${API_BASE_URL}/auth/logout`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+    } catch (error) {
+      console.error('Logout API error:', error);
+      // Continue with local cleanup even if API call fails
+    }
+  }
+  
+  // Clear all auth-related data from sessionStorage
+  sessionStorage.removeItem('racc_auth_session');
+  sessionStorage.removeItem('pkce_code_verifier');
 }
 
-
-export async function fetchInitialData() {
-  const idToken = localStorage.getItem('token-id');
-  if (!idToken) throw new Error('Missing token-id for profile fetch');
-  // Decode JWT to extract Firebase user_id
-  const parts = idToken.split('.');
-  if (parts.length !== 3) throw new Error('Invalid token format');
-  const payload = JSON.parse(atob(parts[1]));
-  const userId = payload.user_id;
-  if (!userId) throw new Error('Missing user_id in token payload');
-  const url = `${GHL_API_BASE_URL}/communities/${GHL_LOCATION_ID}/groups/${GHL_GROUP_ID}/users/${userId}`;
-  const response = await fetch(url, {
-    method: 'GET',
-    headers: {
-      'token-id': idToken,
-      'source': 'PORTAL_USER',
-      'channel': 'APP'
+/**
+ * Check if user has a valid session
+ */
+export async function checkSession(): Promise<boolean> {
+  try {
+    const sessionData = sessionStorage.getItem('racc_auth_session');
+    if (!sessionData) {
+      return false;
     }
-  });
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data.error || 'Failed to fetch user profile');
+
+    const session = JSON.parse(sessionData);
+    const token = session.token;
+
+    const response = await fetch(`${API_BASE_URL}/auth/check-session`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      // Session is invalid, clean up
+      sessionStorage.removeItem('racc_auth_session');
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Session validation error:', error);
+    // Clean up on error
+    sessionStorage.removeItem('racc_auth_session');
+    return false;
   }
-  return data;
 }

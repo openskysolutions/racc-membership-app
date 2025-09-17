@@ -1,4 +1,3 @@
-import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -126,10 +125,6 @@ function CheckCell({ active }: { active: boolean }) {
       {active ? <FaCheck className="w-3 h-3 md:w-5 md:h-5" /> : null}
     </div>
   );
-}
-
-function Money({ value }: { value: number }) {
-  return <span className="font-semibold">${value.toLocaleString()}</span>;
 }
 
 export default function ChamberMembershipBenefits() {

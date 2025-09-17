@@ -2,11 +2,16 @@
   "name": "highlevel-pit",
   "version": "1.0.0",
   "description": "Use HighLevel SDK usign PIT token",
-  "main": "src/server.js",
+  "main": "src/server.ts",
   "scripts": {
-    "start": "node src/server.js",
-    "dev": "nodemon src/server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc && tsc-alias",
+    "start": "node dist/server.js",
+    "dev": "npm run build && node dist/server.js",
+    "dev:ts": "ts-node -r tsconfig-paths/register src/server.ts",
+    "dev:watch": "tsc --watch",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:watch": "vitest --watch"
   },
   "keywords": [
     "highlevel",
@@ -26,10 +31,21 @@
     "lodash": "^4.17.21",
     "puppeteer": "^24.18.0",
     "swagger-jsdoc": "^6.2.8",
-    "swagger-ui-express": "^4.5.0"
+    "swagger-ui-express": "^4.5.0",
+    "tsconfig-paths": "^4.2.0",
+    "yaml": "^2.8.1"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
     "@types/node": "^24.3.0",
-    "nodemon": "^2.0.22"
+    "@types/swagger-jsdoc": "^6.0.4",
+    "@types/swagger-ui-express": "^4.1.8",
+    "nodemon": "^2.0.22",
+    "supertest": "^7.0.0",
+    "ts-node": "^10.9.2",
+    "tsc-alias": "^1.8.16",
+    "typescript": "^5.9.2",
+    "vitest": "^2.0.0"
   }
 }

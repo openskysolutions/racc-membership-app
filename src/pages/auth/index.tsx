@@ -54,6 +54,14 @@ export const AuthPage = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+            <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2">Demo Credentials</h4>
+            <div className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
+              <div><strong>Admin:</strong> admin@racc.com / admin123</div>
+              <div><strong>Member:</strong> demo@racc.com / demo123</div>
+              <div><strong>Moderator:</strong> moderator@racc.com / mod123</div>
+            </div>
+          </div>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="email" className="block text-sm font-medium">

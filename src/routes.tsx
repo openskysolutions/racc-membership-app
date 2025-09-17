@@ -16,6 +16,7 @@ import DiscussionsPage from '@/pages/Discussions';
 import CoursesPage from '@/pages/Courses';
 import ProfilePage from '@/pages/Profile';
 import AuthPage from "@/pages/auth";
+import AuthTestPage from '@/pages/AuthTest';
 import JoinPage from '@/pages/Join';
 import NominationsPage from '@/pages/Nominations';
 import Privacy from '@/pages/docs/Privacy';
@@ -51,6 +52,7 @@ export default function AppRoutes() {
         <Route path="about" element={<AboutPage />} />
         <Route path="privacy" element={<Privacy />} />
         <Route path="terms" element={<Terms />} />
+        <Route path="auth-test" element={<AuthTestPage />} />
         <Route path="leaderboard" element={protectedRoute(<LeaderboardPage />, '/leaderboard')} />
         <Route path="discussions" element={protectedRoute(<DiscussionsPage />, '/discussions')} />
         <Route path="courses" element={protectedRoute(<CoursesPage />, '/courses')} />

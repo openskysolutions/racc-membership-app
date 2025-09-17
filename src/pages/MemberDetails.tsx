@@ -1,159 +1,313 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
+import { ArrowLeft, Mail, Phone, Globe, MapPin, Calendar, Shield, User, Building } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { getContactById } from '@/services/members';
-import type { Member } from '@/types/member';
-import { FiUser, FiGlobe, FiMail, FiPhone, FiCheckCircle } from 'react-icons/fi';
-import { GrDocumentUser } from 'react-icons/gr';
-import { PhoneNumber } from '@/components/ui/phone-number';
-import { Url } from '@/components/ui/url';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { api } from '@/services/apiClient';
+import { useAuthStore } from '@/stores/authStore';
+
+interface Member {
+  id: string;
+  firstName?: string;
+  lastName?: string;
+  businessName?: string;
+  email: string;
+  phone?: string;
+  website?: string;
+  avatar?: string;
+  role: string;
+  status: string;
+  memberSince: string;
+  specialties?: string[];
+  bio?: string;
+  address?: {
+    street: string;
+    city: string;
+    state: string;
+    zipCode: string;
+  };
+}
 
 const MemberDetailsPage: React.FC = () => {
-  const { slug } = useParams<{ slug: string }>();
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { isAuthenticated, user } = useAuthStore();
+  
   const [member, setMember] = useState<Member | null>(null);
-  const [posts, setPosts] = useState<any[]>([]);
-  const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fullName = `${member?.firstName || ''} ${member?.lastName || ''}`.trim();
-
   useEffect(() => {
-    if (!slug) {
-      setError('Member id is missing.');
+
+    if (!id) {
+      setError('No member ID provided');
       setLoading(false);
       return;
     }
-    console.log('Fetching details for member slug:', slug);
 
-    const fetchData = async () => {
+    const fetchMember = async () => {
       try {
-        const [m] = await Promise.all([
-          getContactById(slug || ''),
-          // getMemberBySlug(slug),
-          // getMemberPosts(slug),
-          // getMemberEvents(slug)
-        ]);
-        setMember(m as Member);
-        // setPosts(p);
-        // setEvents(e);
-      } catch (err: any) {
-        setError(err.message);
+        setLoading(true);
+        const response = await api.get(`/members/${id}`);
+        
+        if (!response.ok) {
+          if (response.status === 404) {
+            setError('Member not found');
+          } else {
+            throw new Error(`Failed to fetch member: ${response.statusText}`);
+          }
+          return;
+        }
+        
+        const memberData: Member = await response.json();
+        setMember(memberData);
+      } catch (err) {
+        console.error('Error fetching member:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load member details');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchData();
-  }, [slug]);
+    fetchMember();
+  }, [id, isAuthenticated, navigate]);
 
-  if (loading) return <section className="container py-20">Loading member...</section>;
-  if (error) return <section className="container py-20">Error: {error}</section>;
-  if (!member) return <section className="container py-20">Member not found.</section>;
+  const formatMemberName = (member: Member) => {
+    const fullName = `${member.firstName || ''} ${member.lastName || ''}`.trim();
+    return fullName || member.email;
+  };
+
+  const getInitials = (member: Member) => {
+    if (member.businessName) {
+      return member.businessName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+    }
+    const firstName = member.firstName?.charAt(0) || '';
+    const lastName = member.lastName?.charAt(0) || '';
+    return (firstName + lastName).toUpperCase() || member.email.charAt(0).toUpperCase();
+  };
+
+  const getRoleColor = (role: string) => {
+    switch (role) {
+      case 'admin': return 'bg-red-100 text-red-800 border-red-200';
+      case 'moderator': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'member': return 'bg-green-100 text-green-800 border-green-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const getRoleIcon = (role: string) => {
+    switch (role) {
+      case 'admin': return <Shield className="h-4 w-4" />;
+      case 'moderator': return <User className="h-4 w-4" />;
+      default: return <User className="h-4 w-4" />;
+    }
+  };
+
+  const formatMemberSince = (dateString: string) => {
+    try {
+      return new Date(dateString).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    } catch {
+      return dateString;
+    }
+  };
+
+  const isOwnProfile = user?.id === member?.id;
+
+  if (loading) {
+    return (
+      <div className="container py-20 px-3 md:px-6">
+        <div className="flex items-center justify-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !member) {
+    return (
+      <div className="container py-20 px-3 md:px-6">
+        <Card className="max-w-md mx-auto">
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <p className="text-red-600 mb-4">{error || 'Member not found'}</p>
+              <Button onClick={() => navigate('/members')}>
+                Back to Members
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
-    <div className="py-10 px-4 mx-auto max-w-5xl">
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
-        {/* Left column: Member details and Upcoming Events */}
-        <div className="space-y-8 md:col-span-2">
-          {/* Member Info */}
-          <Card>
-            <CardHeader className="flex flex-row space-x-4 gap-4">
-              <Avatar className='size-16'>
-                {member.avatar ? (
-                  <AvatarImage src={member.profilePhoto} alt={fullName} />
-                ) : (
-                  <AvatarFallback className='bg-neutral-250 text-muted-foreground'>
-                    {
-                      // Initials of member.businessName
-                      member.companyName ? member.companyName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() :
-                      (member.firstName?.charAt(0) || '' + member.lastName?.charAt(0) || '').toUpperCase()
-                    }
-                  </AvatarFallback>
-                )}
-              </Avatar>
-              <CardTitle className='flex flex-col !ml-0'>
-                {member.companyName}
-                {/* {fullName &&
-                  <span className="flex flex-row items-center text-sm text-muted-foreground">Contact: {fullName}</span>
-                } */}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-                  {fullName &&
-                    <div className='flex flex-row items-center space-x-2 gap-2'>
-                      <FiUser /><span className='block font-semibold min-w-20'> Contact: </span>
-                      {fullName || ''}
-                    </div>
-                  }
-                  {member.tags[0] &&
-                    <div className='flex flex-row items-center space-x-2 gap-2'>
-                      <FiCheckCircle /><span className='font-semibold min-w-20'> Status: </span>
-                      {member.tags[0]}
-                    </div>
-                  }
-                  {member.phone &&
-                    <div className='flex flex-row items-center space-x-2 gap-2'>
-                      <FiPhone /><span className='font-semibold min-w-20'> Phone:  </span>
-                      <PhoneNumber phone={member.phone || ''} />
-                    </div>
-                  }
-                  {member.email &&
-                    <div className='flex flex-row items-center space-x-2 gap-2'>
-                      <FiMail /><span className='font-semibold min-w-20'> Email: </span>
-                      {member.email || ''}
-                    </div>
-                  }
-                  {member.website &&
-                    <div className='flex flex-row items-center space-x-2 gap-2'>
-                      <FiGlobe /><span className='font-semibold min-w-20'> Website: </span>
-                      <Url url={member.website} />
-                    </div>
-                  }
-                  {member.website &&
-                    <div className='flex flex-row items-center space-x-2 gap-2'>
-                      <GrDocumentUser /><span className='font-semibold min-w-20'> Bio: </span>
-                      <Url url={member.bio} />
-                    </div>
-                  }
-            </CardContent>
-          </Card>
-          {/* Upcoming Events */}
+    <div className="container py-20 px-3 md:px-6">
+      {/* Header */}
+      <div className="mb-6">
+        <Button
+          variant="ghost"
+          onClick={() => navigate('/members')}
+          className="mb-4"
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Members
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Main Profile Card */}
+        <div className="lg:col-span-2">
           <Card>
             <CardHeader>
-              <CardTitle>Upcoming Events</CardTitle>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                <Avatar className="h-20 w-20">
+                  {member.avatar ? (
+                    <AvatarImage src={member.avatar} alt={formatMemberName(member)} />
+                  ) : (
+                    <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xl">
+                      {getInitials(member)}
+                    </AvatarFallback>
+                  )}
+                </Avatar>
+                
+                <div className="flex-1">
+                  <CardTitle className="text-2xl mb-2">
+                    {member.businessName || formatMemberName(member)}
+                  </CardTitle>
+                  
+                  {member.businessName && (
+                    <p className="text-lg text-muted-foreground mb-2">
+                      {formatMemberName(member)}
+                    </p>
+                  )}
+                  
+                  <div className="flex flex-wrap gap-2">
+                    <Badge className={`${getRoleColor(member.role)} flex items-center gap-1`}>
+                      {getRoleIcon(member.role)}
+                      {member.role.charAt(0).toUpperCase() + member.role.slice(1)}
+                    </Badge>
+                    
+                    <Badge variant="outline" className="text-green-700 border-green-300">
+                      {member.status.charAt(0).toUpperCase() + member.status.slice(1)}
+                    </Badge>
+                    
+                    {isOwnProfile && (
+                      <Badge variant="secondary">Your Profile</Badge>
+                    )}
+                  </div>
+                </div>
+              </div>
             </CardHeader>
-            <CardContent>
-              {events.length ? (
-                <ul className="list-disc list-inside">
-                  {events.map((evt, i) => (
-                    <li key={i}>{evt.name || JSON.stringify(evt)}</li>
-                  ))}
-                </ul>
-              ) : (
-                <p>No events scheduled.</p>
+            
+            <CardContent className="space-y-6">
+              {/* Bio */}
+              {member.bio && (
+                <div>
+                  <h3 className="font-semibold mb-2 flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    About
+                  </h3>
+                  <p className="text-muted-foreground leading-relaxed">{member.bio}</p>
+                </div>
+              )}
+              
+              {/* Specialties */}
+              {member.specialties && member.specialties.length > 0 && (
+                <div>
+                  <h3 className="font-semibold mb-3 flex items-center gap-2">
+                    <Building className="h-4 w-4" />
+                    Specialties
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {member.specialties.map(specialty => (
+                      <Badge key={specialty} variant="outline" className="text-sm">
+                        {specialty}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
               )}
             </CardContent>
           </Card>
         </div>
-        {/* Right column: Recent Posts */}
-        <div className="space-y-8 md:col-span-3">
-          {/* Recent Posts */}
+
+        {/* Contact & Info Card */}
+        <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Recent Posts</CardTitle>
+              <CardTitle>Contact Information</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-3">
+                <Mail className="h-4 w-4 text-muted-foreground" />
+                <a 
+                  href={`mailto:${member.email}`}
+                  className="text-primary hover:underline flex-1 truncate"
+                >
+                  {member.email}
+                </a>
+              </div>
+              
+              {member.phone && (
+                <div className="flex items-center gap-3">
+                  <Phone className="h-4 w-4 text-muted-foreground" />
+                  <a 
+                    href={`tel:${member.phone}`}
+                    className="text-primary hover:underline"
+                  >
+                    {member.phone}
+                  </a>
+                </div>
+              )}
+              
+              {member.website && (
+                <div className="flex items-center gap-3">
+                  <Globe className="h-4 w-4 text-muted-foreground" />
+                  <a 
+                    href={member.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline flex-1 truncate"
+                  >
+                    {member.website.replace(/^https?:\/\//, '')}
+                  </a>
+                </div>
+              )}
+              
+              {member.address && (
+                <div className="flex items-start gap-3">
+                  <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm">{member.address.street}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {member.address.city}, {member.address.state} {member.address.zipCode}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Membership</CardTitle>
             </CardHeader>
             <CardContent>
-              {posts.length ? (
-                <ul className="list-disc list-inside">
-                  {posts.map((post, i) => (
-                    <li key={i}>{post.title || JSON.stringify(post)}</li>
-                  ))}
-                </ul>
-              ) : (
-                <p>No posts found.</p>
-              )}
+              <div className="flex items-center gap-3">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="text-sm font-medium">Member Since</p>
+                  <p className="text-sm text-muted-foreground">
+                    {formatMemberSince(member.memberSince)}
+                  </p>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
