@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import request from 'supertest';
-import app from '@/src/app.js';
+import app from '../../dist/app.js';
 
 describe('POST /auth/session', () => {
   it('should start authorization code with PKCE', async () => {

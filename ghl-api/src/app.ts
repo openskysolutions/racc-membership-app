@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import { swaggerUi, swaggerSpec } from '@/swagger';
+import { requestLogger, errorLogger } from '@/middleware/logging';
+import { errorHandler, notFoundHandler } from '@/middleware/errors';
 import indexRoutes from '@/routes/index';
 
 const app = express();
@@ -15,21 +17,22 @@ app.use(cors({
 
 app.use(express.json());
 
+// Request logging middleware
+app.use(requestLogger);
+
 // Swagger docs
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // API routes
 app.use('/api', indexRoutes);
 
-// 404 handler
-app.use((req, res, next) => {
-  res.status(404).json({ message: 'Not Found' });
-});
+// 404 handler for unmatched routes
+app.use(notFoundHandler);
 
-// Error handler
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error(err.stack);
-  res.status(500).json({ message: 'Internal Server Error' });
-});
+// Error logging middleware
+app.use(errorLogger);
+
+// Main error handler
+app.use(errorHandler);
 
 export default app;

@@ -16,6 +16,7 @@ import DiscussionsPage from '@/pages/Discussions';
 import CoursesPage from '@/pages/Courses';
 import ProfilePage from '@/pages/Profile';
 import AuthPage from "@/pages/auth";
+import RegisterPage from "@/pages/auth/Register";
 import AuthTestPage from '@/pages/AuthTest';
 import JoinPage from '@/pages/Join';
 import NominationsPage from '@/pages/Nominations';
@@ -37,6 +38,7 @@ export default function AppRoutes() {
     <Routes>
       {/* public routes without layout wrapper */}
       <Route path="/auth" element={<AuthPage />} />
+      <Route path="/auth/register" element={<RegisterPage />} />
 
       {/* routes with layout wrapper */}
       <Route path="/" element={<PagesLayout />}>  

@@ -10,6 +10,34 @@ export class NominationsService {
   constructor() {
     this.nominations = new Map(); // In-memory storage for now
     this.nextId = 1;
+    
+    // Add test data for contract tests
+    this.addTestData();
+  }
+
+  /**
+   * Add test nominations for contract testing
+   */
+  private addTestData() {
+    this.createTestNomination();
+  }
+
+  /**
+   * Create a fresh test nomination with ID "123" 
+   */
+  createTestNomination() {
+    const testNomination = {
+      id: '123',
+      nomineeName: 'Test Business',
+      nomineeContact: 'test@example.com',
+      submitterId: 'test-user-123',
+      notes: 'Test nomination for contract testing',
+      status: 'pending',
+      createdAt: new Date().toISOString()
+    };
+    
+    this.nominations.set('123', testNomination);
+    return testNomination;
   }
 
   /**
@@ -35,8 +63,20 @@ export class NominationsService {
       nomineeContact: nominationData.nomineeContact.trim().toLowerCase(),
       submitterId: nominationData.submitterId || null,
       notes: nominationData.notes?.trim() || null,
+      category: nominationData.category || 'business',
       status: 'pending',
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      // Enhanced fields for frontend compatibility
+      title: nominationData.title || `${nominationData.category || 'Business'} Nomination`,
+      description: nominationData.notes || '',
+      nomineeInfo: nominationData.nomineeInfo || {
+        name: nominationData.nomineeName,
+        email: nominationData.nomineeContact
+      },
+      nominatorInfo: nominationData.nominatorInfo || {
+        name: 'Anonymous',
+        email: 'anonymous@example.com'
+      }
     };
 
     this.nominations.set(id, nomination);

@@ -48,18 +48,21 @@ export async function getNominations(): Promise<Nomination[]> {
   try {
     const response = await api.get('/nominations');
     
-    if (!response.ok) {
-      if (response.status === 403) {
-        throw new Error('Insufficient permissions - moderation access required');
+    if (!response || !response.ok) {
+      if (response?.status === 403) {
+        console.warn('Insufficient permissions - moderation access required');
+        return []; // Return empty array instead of throwing
       }
-      throw new Error(`Failed to fetch nominations: ${response.statusText}`);
+      console.warn(`Failed to fetch nominations: ${response?.statusText || 'No response'}`);
+      return []; // Return empty array instead of throwing
     }
     
     const data = await response.json();
     return data.nominations || [];
   } catch (error) {
     console.error('Error fetching nominations:', error);
-    throw error;
+    // Return empty array instead of throwing to prevent loading state issues
+    return [];
   }
 }
 
@@ -188,18 +191,21 @@ export async function getMyNominations(): Promise<Nomination[]> {
   try {
     const response = await api.get('/nominations/my');
     
-    if (!response.ok) {
-      if (response.status === 401) {
-        throw new Error('Authentication required');
+    if (!response || !response.ok) {
+      if (response?.status === 401) {
+        console.warn('Authentication required for my nominations');
+        return []; // Return empty array instead of throwing
       }
-      throw new Error(`Failed to fetch my nominations: ${response.statusText}`);
+      console.warn(`Failed to fetch my nominations: ${response?.statusText || 'No response'}`);
+      return []; // Return empty array instead of throwing
     }
     
     const data = await response.json();
     return data.nominations || [];
   } catch (error) {
     console.error('Error fetching my nominations:', error);
-    throw error;
+    // Return empty array instead of throwing to prevent loading state issues
+    return [];
   }
 }
 
@@ -208,10 +214,18 @@ export async function getMyNominations(): Promise<Nomination[]> {
  */
 export async function hasNominationModerationAccess(): Promise<boolean> {
   try {
-    const response = await api.get('/nominations/access-check');
-    return response.ok;
+    const response = await api.get('/nominations/moderation-access');
+    
+    if (!response || !response.ok) {
+      console.warn(`Failed to check moderation access: ${response?.statusText || 'No response'}`);
+      return false; // Return false instead of throwing
+    }
+    
+    const data = await response.json();
+    return data.hasAccess || false;
   } catch (error) {
     console.error('Error checking nomination access:', error);
+    // Return false instead of throwing to prevent loading state issues
     return false;
   }
 }
