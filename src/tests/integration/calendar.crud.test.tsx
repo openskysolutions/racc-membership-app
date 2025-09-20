@@ -40,22 +40,41 @@ const TestWrapper = ({ children }: { children: React.ReactNode }) => (
   </BrowserRouter>
 );
 
-describe('Calendar CRUD Integration', () => {
+describe('Calendar Integration', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
     
     const { apiFetch } = await import('@/services/apiClient');
     const { getEventsList } = await import('@/services/events');
     
-    vi.mocked(getEventsList).mockResolvedValue([]);
+    // Mock some sample events
+    const mockEvents = [
+      {
+        id: '1',
+        title: 'Test Event',
+        description: 'Test Description',
+        startsAt: new Date().toISOString(),
+        endsAt: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
+        location: 'Test Location',
+        visibility: 'public' as const,
+        status: 'published' as const,
+        isVirtual: false,
+        maxAttendees: 50,
+        ownerId: 'user-1',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
+    ];
+    
+    vi.mocked(getEventsList).mockResolvedValue(mockEvents);
     
     vi.mocked(apiFetch).mockImplementation((url: string) => {
       if (url.includes('/events')) {
         return Promise.resolve({
           ok: true,
           json: () => Promise.resolve({
-            events: [],
-            total: 0
+            events: mockEvents,
+            total: 1
           })
         } as any);
       }
@@ -76,7 +95,42 @@ describe('Calendar CRUD Integration', () => {
     });
     
     await waitFor(() => {
-      expect(screen.getByText(/calendar/i)).toBeInTheDocument();
+      expect(screen.getByText(/Event Calendar/i)).toBeInTheDocument();
+    });
+  });
+
+  it('should display calendar navigation', async () => {
+    await act(async () => {
+      render(
+        <TestWrapper>
+          <Calendar />
+        </TestWrapper>
+      );
+    });
+    
+    await waitFor(() => {
+      expect(screen.getByText('Today')).toBeInTheDocument();
+      expect(screen.getByText('Create Event')).toBeInTheDocument();
+    });
+  });
+
+  it('should display days of the week', async () => {
+    await act(async () => {
+      render(
+        <TestWrapper>
+          <Calendar />
+        </TestWrapper>
+      );
+    });
+    
+    await waitFor(() => {
+      expect(screen.getByText('Sun')).toBeInTheDocument();
+      expect(screen.getByText('Mon')).toBeInTheDocument();
+      expect(screen.getByText('Tue')).toBeInTheDocument();
+      expect(screen.getByText('Wed')).toBeInTheDocument();
+      expect(screen.getByText('Thu')).toBeInTheDocument();
+      expect(screen.getByText('Fri')).toBeInTheDocument();
+      expect(screen.getByText('Sat')).toBeInTheDocument();
     });
   });
 });
