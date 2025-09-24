@@ -61,7 +61,7 @@ jobs:
           EOF
           
           npm install && npm run build
-          pm2 describe racc-api > /dev/null
+          pm2 describe racc-api > /dev/null 
           if [ $? -eq 0 ]; then
             pm2 restart racc-api
           else
