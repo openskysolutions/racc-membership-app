@@ -1,8 +1,10 @@
+
 name: Deploy to DigitalOcean
 
 on:
-  push:
-    branches: [main, dev, 001-a-membership-portal]
+  pull_request:
+    branches: [dev]
+    types: [closed]
 
 jobs:
   deploy:
@@ -17,6 +19,7 @@ jobs:
           ssh-private-key: ${{ secrets.DO_DEPLOY_KEY }}
 
       - name: Deploy to Droplet
+        if: github.event.pull_request.merged == true
         run: |
           ssh -o StrictHostKeyChecking=no root@racc-dev.openskydev.com << 'ENDSSH'
             cd /root/racc-membership-app || git clone https://github.com/openskysolutions/racc-membership-app.git && cd racc-membership-app
