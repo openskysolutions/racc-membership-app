@@ -1,0 +1,28 @@
+name: Deploy to DigitalOcean
+
+on:
+  push:
+    branches: [main, dev, 001-a-membership-portal]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.DO_DEPLOY_KEY }}
+
+      - name: Deploy to Droplet
+        run: |
+          ssh -o StrictHostKeyChecking=no root@racc-dev.openskydev.com << 'ENDSSH'
+            cd /root/racc-membership-app || git clone https://github.com/openskysolutions/racc-membership-app.git && cd racc-membership-app
+            git pull
+            cd ghl-api && npm install && npm run build
+            pm2 restart all || pm2 start dist/server.js --name racc-api
+            cd ../ && npm install && npm run build
+            pm2 restart racc-frontend || pm2 start node_modules/vite/bin/vite.js --name racc-frontend -- run dev
+          ENDSSH
