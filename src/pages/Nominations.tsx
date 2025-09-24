@@ -20,8 +20,8 @@ import {
 import { 
   approveNomination, 
   rejectNomination, 
-  bulkApproveNominations, 
-  bulkRejectNominations, 
+  // bulkApproveNominations, 
+  // bulkRejectNominations, 
   getNominationStats 
 } from '@/services/moderation';
 import { getMembersList } from '@/services/members';
@@ -59,14 +59,19 @@ const NominationsPage: React.FC = () => {
 
   // Bulk processing states
   const [selectedNominations, setSelectedNominations] = useState<string[]>([]);
-  const [bulkProcessing, setBulkProcessing] = useState(false);
-  const [showBulkReasonDialog, setShowBulkReasonDialog] = useState(false);
-  const [bulkAction, setBulkAction] = useState<'approve' | 'reject' | null>(null);
-  const [bulkReason, setBulkReason] = useState('');
+  // const [bulkProcessing, setBulkProcessing] = useState(false);
+  
+  // const [
+  //   showBulkReasonDialog, 
+  //   setShowBulkReasonDialog
+  // ] = useState(false);
+  // const [bulkAction, setBulkAction] = useState<'approve' | 'reject' | null>(null);
+  // const [bulkReason, setBulkReason] = useState('');
 
   // Status tracking states
   const [nominationStats, setNominationStats] = useState<any>(null);
-  const [showStatusTracking, setShowStatusTracking] = useState(false);
+  
+  // const [showStatusTracking, setShowStatusTracking] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -261,48 +266,49 @@ const NominationsPage: React.FC = () => {
   };
 
   // Bulk processing functions
-  const handleBulkActionStart = (action: 'approve' | 'reject') => {
-    if (selectedNominations.length === 0) {
-      alert('Please select nominations to process');
-      return;
-    }
-    setBulkAction(action);
-    setShowBulkReasonDialog(true);
-  };
+  // const handleBulkActionStart = (action: 'approve' | 'reject') => {
+  //   if (selectedNominations.length === 0) {
+  //     alert('Please select nominations to process');
+  //     return;
+  //   }
+  //   setBulkAction(action);
+  //   setShowBulkReasonDialog(true);
+  // };
 
-  const handleBulkActionSubmit = async () => {
-    if (!bulkAction || selectedNominations.length === 0) return;
+  
+  // const handleBulkActionSubmit = async () => {
+  //   if (!bulkAction || selectedNominations.length === 0) return;
 
-    try {
-      setBulkProcessing(true);
+  //   try {
+  //     setBulkProcessing(true);
       
-      if (bulkAction === 'approve') {
-        await bulkApproveNominations(selectedNominations, bulkReason);
-      } else {
-        await bulkRejectNominations(selectedNominations, bulkReason);
-      }
+  //     if (bulkAction === 'approve') {
+  //       await bulkApproveNominations(selectedNominations, bulkReason);
+  //     } else {
+  //       await bulkRejectNominations(selectedNominations, bulkReason);
+  //     }
 
-      // Reload nominations and stats
-      const updatedNominations = await getNominations();
-      setAllNominations(updatedNominations);
+  //     // Reload nominations and stats
+  //     const updatedNominations = await getNominations();
+  //     setAllNominations(updatedNominations);
       
-      const stats = await getNominationStats();
-      setNominationStats(stats);
+  //     const stats = await getNominationStats();
+  //     setNominationStats(stats);
 
-      // Reset state
-      setSelectedNominations([]);
-      setShowBulkReasonDialog(false);
-      setBulkAction(null);
-      setBulkReason('');
+  //     // Reset state
+  //     setSelectedNominations([]);
+  //     setShowBulkReasonDialog(false);
+  //     setBulkAction(null);
+  //     setBulkReason('');
 
-      alert(`Successfully ${bulkAction}ed ${selectedNominations.length} nominations`);
+  //     alert(`Successfully ${bulkAction}ed ${selectedNominations.length} nominations`);
 
-    } catch (err) {
-      setError(err instanceof Error ? err.message : `Failed to bulk ${bulkAction} nominations`);
-    } finally {
-      setBulkProcessing(false);
-    }
-  };
+  //   } catch (err) {
+  //     setError(err instanceof Error ? err.message : `Failed to bulk ${bulkAction} nominations`);
+  //   } finally {
+  //     setBulkProcessing(false);
+  //   }
+  // };
 
   const handleNominationSelect = (nominationId: string, selected: boolean) => {
     if (selected) {
@@ -868,8 +874,8 @@ const NominationsPage: React.FC = () => {
                         <Button
                           variant="default"
                           size="sm"
-                          onClick={() => handleBulkActionStart('approve')}
-                          disabled={selectedNominations.length === 0 || bulkProcessing}
+                          // onClick={() => handleBulkActionStart('approve')}
+                          disabled={selectedNominations.length === 0}
                           className="bg-green-600 hover:bg-green-700"
                         >
                           <Check className="h-4 w-4 mr-1" />
@@ -878,8 +884,8 @@ const NominationsPage: React.FC = () => {
                         <Button
                           variant="destructive"
                           size="sm"
-                          onClick={() => handleBulkActionStart('reject')}
-                          disabled={selectedNominations.length === 0 || bulkProcessing}
+                          // onClick={() => handleBulkActionStart('reject')}
+                          disabled={selectedNominations.length === 0}
                         >
                           <X className="h-4 w-4 mr-1" />
                           Bulk Reject ({selectedNominations.length})

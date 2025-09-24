@@ -3,7 +3,6 @@ import { Search, MapPin, Phone, Mail, Globe, Users } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { api } from '@/services/apiClient';
@@ -126,6 +125,7 @@ const MembersPage: React.FC = () => {
     return (firstName + lastName).toUpperCase() || member.email.charAt(0).toUpperCase();
   };
 
+  //@ts-ignore
   const getRoleColor = (role: string) => {
     switch (role) {
       case 'admin': return 'bg-red-100 text-red-800';
@@ -175,66 +175,68 @@ const MembersPage: React.FC = () => {
       {/* Search and Filters */}
       {/* <Card className="mb-6">
         <CardContent className="pt-6"> */}
-          <div className="flex flex-col lg:flex-row gap-4">
+          <div className="flex flex-col md:flex-row gap-4">
             {/* Search */}
-            <div className="flex-1">
-              <div className="relative">
+            <div className="flex flex-row flex-grow w-full">
+              <div className="relative w-full">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
                   placeholder="Search members by name, business, or specialty..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 w-full"
                 />
               </div>
             </div>
 
             {/* Role Filter */}
-            <Select value={roleFilter} onValueChange={setRoleFilter}>
-              <SelectTrigger className="w-full lg:w-40">
-                <SelectValue placeholder="Role" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Roles</SelectItem>
-                <SelectItem value="admin">Admin</SelectItem>
-                <SelectItem value="moderator">Moderator</SelectItem>
-                <SelectItem value="member">Member</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex flex-row flex-grow gap-4">
+              <Select value={roleFilter} onValueChange={setRoleFilter}>
+                <SelectTrigger className="w-full lg:w-40 min-w-30">
+                  <SelectValue placeholder="Role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Roles</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="moderator">Moderator</SelectItem>
+                  <SelectItem value="member">Member</SelectItem>
+                </SelectContent>
+              </Select>
 
-            {/* Specialty Filter */}
-            <Select value={specialtyFilter} onValueChange={setSpecialtyFilter}>
-              <SelectTrigger className="w-full lg:w-48">
-                <SelectValue placeholder="Specialty" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Specialties</SelectItem>
-                {allSpecialties.map(specialty => (
-                  <SelectItem key={specialty} value={specialty}>
-                    {specialty}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              {/* Specialty Filter */}
+              <Select value={specialtyFilter} onValueChange={setSpecialtyFilter}>
+                <SelectTrigger className="w-full lg:w-48 min-w-36">
+                  <SelectValue placeholder="Specialty" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Specialties</SelectItem>
+                  {allSpecialties.map(specialty => (
+                    <SelectItem key={specialty} value={specialty}>
+                      {specialty}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-            {/* View Mode Toggle */}
-            <div className="flex border rounded-md">
-              <Button
-                variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('grid')}
-                className="rounded-r-none"
-              >
-                Grid
-              </Button>
-              <Button
-                variant={viewMode === 'list' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('list')}
-                className="rounded-l-none"
-              >
-                List
-              </Button>
+              {/* View Mode Toggle */}
+              <div className="flex border rounded-md">
+                <Button
+                  variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('grid')}
+                  className="rounded-r-none h-full"
+                >
+                  Grid
+                </Button>
+                <Button
+                  variant={viewMode === 'list' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('list')}
+                  className="rounded-l-none h-full"
+                >
+                  List
+                </Button>
+              </div>
             </div>
           </div>
 
@@ -276,20 +278,20 @@ const MembersPage: React.FC = () => {
       ) : (
         <div className={
           viewMode === 'grid' 
-            ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-            : "space-y-4"
+            ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+            : "space-y-2 gap-2"
         }>
           {filteredMembers.map((member) => (
             <Card 
               key={member.id} 
               className={`cursor-pointer hover:shadow-lg transition-shadow ${
-                viewMode === 'list' ? 'p-4' : ''
+                viewMode === 'list' ? 'p-2 flex flex-col sm:flex-row mt-2' : 'p-4'
               }`}
               onClick={() => handleMemberClick(member.id)}
             >
-              <CardHeader className={viewMode === 'list' ? 'pb-2' : ''}>
-                <div className={`flex ${viewMode === 'list' ? 'flex-row items-center space-x-4' : 'flex-col items-center space-y-4'}`}>
-                  <Avatar className={viewMode === 'list' ? 'h-12 w-12' : 'h-16 w-16'}>
+              <CardHeader className={`${viewMode === 'list' ? 'flex-1 p-0' : 'p-0 pb-4'}`}>
+                <div className={`flex flex-row items-center space-x-4`}>
+                  <Avatar className={'h-12 w-12'}>
                     {member.avatar ? (
                       <AvatarImage src={member.avatar} alt={formatMemberName(member)} />
                     ) : (
@@ -299,16 +301,16 @@ const MembersPage: React.FC = () => {
                     )}
                   </Avatar>
                   
-                  <div className={viewMode === 'list' ? 'flex-1' : 'text-center'}>
-                    <CardTitle className="text-lg">
+                  <div className={'flex-1'}>
+                    <CardTitle className="text-md text-highlight-foreground hover:text-foreground">
                       {member.businessName || formatMemberName(member)}
                     </CardTitle>
                     {member.businessName && (
-                      <p className="text-sm text-muted-foreground mt-1">
+                      <p className="text-sm text-muted-foreground mt-1 capitalize">
                         {formatMemberName(member)}
                       </p>
                     )}
-                    <div className="flex gap-1 mt-2 flex-wrap justify-center">
+                    {/* <div className="flex gap-1 mt-2 flex-wrap justify-center">
                       <Badge variant="secondary" className={getRoleColor(member.role)}>
                         {member.role}
                       </Badge>
@@ -317,15 +319,15 @@ const MembersPage: React.FC = () => {
                           {specialty}
                         </Badge>
                       ))}
-                    </div>
+                    </div> */}
                   </div>
                 </div>
               </CardHeader>
 
-              <CardContent className="space-y-2">
+              <CardContent className="space-y-1 p-0 flex-1">
                 {member.email && (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Mail className="h-4 w-4" />
+                    <Mail className="email h-4 w-4" />
                     <span className="truncate">{member.email}</span>
                   </div>
                 )}
@@ -349,12 +351,6 @@ const MembersPage: React.FC = () => {
                     <MapPin className="h-4 w-4" />
                     <span>{member.address.city}, {member.address.state}</span>
                   </div>
-                )}
-
-                {member.bio && viewMode === 'list' && (
-                  <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
-                    {member.bio}
-                  </p>
                 )}
               </CardContent>
             </Card>
