@@ -22,7 +22,17 @@ jobs:
             cd /root/racc-membership-app || git clone https://github.com/openskysolutions/racc-membership-app.git && cd racc-membership-app
             git pull
             cd ghl-api && npm install && npm run build
-            pm2 restart all || pm2 start dist/server.js --name racc-api
+            pm2 describe racc-api > /dev/null
+            if [ $? -eq 0 ]; then
+              pm2 restart racc-api
+            else
+              pm2 start dist/server.js --name racc-api
+            fi
             cd ../ && npm install && npm run build
-            pm2 restart racc-frontend || pm2 start node_modules/vite/bin/vite.js --name racc-frontend -- run dev
+            pm2 describe racc-frontend > /dev/null
+            if [ $? -eq 0 ]; then
+              pm2 restart racc-frontend
+            else
+              pm2 start node_modules/vite/bin/vite.js --name racc-frontend -- run dev
+            fi
           ENDSSH
