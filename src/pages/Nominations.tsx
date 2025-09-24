@@ -20,8 +20,8 @@ import {
 import { 
   approveNomination, 
   rejectNomination, 
-  bulkApproveNominations, 
-  bulkRejectNominations, 
+  // bulkApproveNominations, 
+  // bulkRejectNominations, 
   getNominationStats 
 } from '@/services/moderation';
 import { getMembersList } from '@/services/members';
@@ -59,14 +59,14 @@ const NominationsPage: React.FC = () => {
 
   // Bulk processing states
   const [selectedNominations, setSelectedNominations] = useState<string[]>([]);
-  const [bulkProcessing, setBulkProcessing] = useState(false);
+  // const [bulkProcessing, setBulkProcessing] = useState(false);
   
-  const [
-    // showBulkReasonDialog, 
-    setShowBulkReasonDialog
-  ] = useState(false);
-  const [bulkAction, setBulkAction] = useState<'approve' | 'reject' | null>(null);
-  const [bulkReason, setBulkReason] = useState('');
+  // const [
+  //   showBulkReasonDialog, 
+  //   setShowBulkReasonDialog
+  // ] = useState(false);
+  // const [bulkAction, setBulkAction] = useState<'approve' | 'reject' | null>(null);
+  // const [bulkReason, setBulkReason] = useState('');
 
   // Status tracking states
   const [nominationStats, setNominationStats] = useState<any>(null);
@@ -266,14 +266,14 @@ const NominationsPage: React.FC = () => {
   };
 
   // Bulk processing functions
-  const handleBulkActionStart = (action: 'approve' | 'reject') => {
-    if (selectedNominations.length === 0) {
-      alert('Please select nominations to process');
-      return;
-    }
-    setBulkAction(action);
-    // setShowBulkReasonDialog(true);
-  };
+  // const handleBulkActionStart = (action: 'approve' | 'reject') => {
+  //   if (selectedNominations.length === 0) {
+  //     alert('Please select nominations to process');
+  //     return;
+  //   }
+  //   setBulkAction(action);
+  //   setShowBulkReasonDialog(true);
+  // };
 
   
   // const handleBulkActionSubmit = async () => {
@@ -874,8 +874,8 @@ const NominationsPage: React.FC = () => {
                         <Button
                           variant="default"
                           size="sm"
-                          onClick={() => handleBulkActionStart('approve')}
-                          disabled={selectedNominations.length === 0 || bulkProcessing}
+                          // onClick={() => handleBulkActionStart('approve')}
+                          disabled={selectedNominations.length === 0}
                           className="bg-green-600 hover:bg-green-700"
                         >
                           <Check className="h-4 w-4 mr-1" />
@@ -884,8 +884,8 @@ const NominationsPage: React.FC = () => {
                         <Button
                           variant="destructive"
                           size="sm"
-                          onClick={() => handleBulkActionStart('reject')}
-                          disabled={selectedNominations.length === 0 || bulkProcessing}
+                          // onClick={() => handleBulkActionStart('reject')}
+                          disabled={selectedNominations.length === 0}
                         >
                           <X className="h-4 w-4 mr-1" />
                           Bulk Reject ({selectedNominations.length})
