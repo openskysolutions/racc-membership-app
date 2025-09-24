@@ -16,6 +16,8 @@ import DiscussionsPage from '@/pages/Discussions';
 import CoursesPage from '@/pages/Courses';
 import ProfilePage from '@/pages/Profile';
 import AuthPage from "@/pages/auth";
+import RegisterPage from "@/pages/auth/Register";
+import AuthTestPage from '@/pages/AuthTest';
 import JoinPage from '@/pages/Join';
 import NominationsPage from '@/pages/Nominations';
 import Privacy from '@/pages/docs/Privacy';
@@ -35,10 +37,11 @@ export default function AppRoutes() {
   return (
     <Routes>
       {/* public routes without layout wrapper */}
-      <Route path="/auth" element={<AuthPage />} />
 
       {/* routes with layout wrapper */}
       <Route path="/" element={<PagesLayout />}>  
+        <Route path="/auth" element={<AuthPage />} />
+        <Route path="/auth/register" element={<RegisterPage />} />
         <Route index element={<HomePage />} />
         <Route path="join" element={<JoinPage />} />
         <Route path="nominations" element={<NominationsPage />} />
@@ -51,6 +54,7 @@ export default function AppRoutes() {
         <Route path="about" element={<AboutPage />} />
         <Route path="privacy" element={<Privacy />} />
         <Route path="terms" element={<Terms />} />
+        <Route path="auth-test" element={<AuthTestPage />} />
         <Route path="leaderboard" element={protectedRoute(<LeaderboardPage />, '/leaderboard')} />
         <Route path="discussions" element={protectedRoute(<DiscussionsPage />, '/discussions')} />
         <Route path="courses" element={protectedRoute(<CoursesPage />, '/courses')} />

@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { phoneNumberAutoFormat } from "@/lib/utils";
 
 interface PhoneNumberParams {

@@ -17,6 +17,19 @@
 - [x] Dark Mode
 - [x] Meta tags
 
+## Tech Stack
+
+- Frontend: React 18, Vite 5, TypeScript 5
+- UI: Tailwind CSS 3.4, shadcn/ui, Radix UI, tailwindcss-animate
+- Routing: react-router-dom 7 + vite-plugin-pages (file-based routes in `src/pages`)
+- State: Zustand 5
+- Assets/DX: SVGR, path alias `@` → `src`
+- Desktop: Electron 24 with electron-builder
+- Mobile: Capacitor 7 (iOS/Android), capacitor-plugin-safe-area
+- Integration service: Node/Express 5 in `ghl-api/` with `@gohighlevel/api-client`, Axios, Swagger
+- Auth: Better Auth PKCE (OAuth 2.1/OIDC Authorization Code with PKCE). See “Authentication” below and the Constitution
+	(`.specify/memory/constitution.md`).
+
 ## How to install
 
 1. Clone this repository:
@@ -80,3 +93,12 @@ npm run build
 ```bash
 npm run electron:build
 ```
+
+## Authentication (Better Auth PKCE)
+
+- Uses OAuth 2.1/OIDC Authorization Code flow with PKCE.
+- Generates `code_verifier` and S256 `code_challenge`, includes `state`/`nonce`, and exchanges the authorization code for tokens.
+- Access tokens are held in memory (or sessionStorage as a fallback). Do not persist long-lived tokens in localStorage.
+- For OIDC-protected APIs, send `Authorization: Bearer <access_token>`.
+- For HighLevel endpoints, continue using `token-id`, `source`, and `channel` headers as required by the API.
+

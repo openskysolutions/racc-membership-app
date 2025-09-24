@@ -2,26 +2,18 @@ import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 
 const JoinPage: React.FC = () => {
   const [membershipType, setMembershipType] = useState<'basic' | 'enhanced' | 'elite'>('basic');
-  const [formData, setFormData] = useState({
-    fullName: '',
-    email: '',
-    phone: '',
-    company: '',
-    address: '',
-    website: '',
-  });
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
-  };
+  const navitgate = useNavigate();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // TODO: submit membership application
-    console.log('Joining with data:', formData);
+    setMembershipType(membershipType);
+    navitgate('/auth/register', { state: { membershipType } });
+    console.log('Joining with data:', membershipType);
   };
 
   return (
@@ -113,34 +105,7 @@ const JoinPage: React.FC = () => {
                 </div>
               </label>
             </div>
-            {/* Contact fields */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6">
-              <div>
-                <label htmlFor="fullName" className="block text-sm font-medium">Full Name*</label>
-                <Input id="fullName" name="fullName" value={formData.fullName} onChange={handleChange} placeholder="John Doe" required />
-              </div>
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium">Email Address</label>
-                <Input id="email" name="email" type="email" value={formData.email} onChange={handleChange} placeholder="you@example.com" />
-              </div>
-              <div>
-                <label htmlFor="phone" className="block text-sm font-medium">Phone Number</label>
-                <Input id="phone" name="phone" type="tel" value={formData.phone} onChange={handleChange} placeholder="(555) 123-4567" />
-              </div>
-              <div>
-                <label htmlFor="company" className="block text-sm font-medium">Company/Organization</label>
-                <Input id="company" name="company" value={formData.company} onChange={handleChange} placeholder="Business Name" />
-              </div>
-              <div>
-                <label htmlFor="address" className="block text-sm font-medium">Business Address</label>
-                <Input id="address" name="address" value={formData.address} onChange={handleChange} placeholder="123 Main St, City, State" />
-              </div>
-              <div>
-                <label htmlFor="website" className="block text-sm font-medium">Website</label>
-                <Input id="website" name="website" type="url" value={formData.website} onChange={handleChange} placeholder="https://www.example.com" />
-              </div>
-            </div>
-            <Button type="submit" className="w-full bg-highlight-foreground">Submit</Button>
+            <Button type="submit" className="w-full bg-highlight-foreground">NEXT</Button>
           </form>
         </CardContent>
       </Card>
@@ -149,3 +114,4 @@ const JoinPage: React.FC = () => {
 };
 
 export default JoinPage;
+

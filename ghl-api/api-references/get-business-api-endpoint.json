@@ -1,0 +1,338 @@
+{
+  "endpoint": {
+    "name": "Get Business",
+    "description": "Get Business",
+    "method": "GET",
+    "url": "https://services.leadconnectorhq.com/businesses/{businessId}",
+    "basePath": "https://services.leadconnectorhq.com",
+    "path": "/businesses/{businessId}",
+    "tags": ["Business"],
+    "operationId": "getBusiness"
+  },
+  "security": {
+    "type": "Bearer Auth",
+    "description": "Use the Access Token generated with user type as Sub-Account (OR) Private Integration Token of Sub-Account. Provide your bearer token in the Authorization header when making requests to protected resources.",
+    "example": "Authorization: Bearer 123"
+  },
+  "parameters": {
+    "path": [
+      {
+        "name": "businessId",
+        "type": "string",
+        "required": true,
+        "description": "Business ID",
+        "example": "5DP4iH6HLkQsiKESj6rh"
+      }
+    ],
+    "headers": [
+      {
+        "name": "Authorization",
+        "type": "string",
+        "required": true,
+        "description": "Access Token",
+        "example": "Bearer 9c48df2694a849b6089f9d0d3513efe"
+      },
+      {
+        "name": "Version",
+        "type": "string",
+        "required": true,
+        "description": "API Version",
+        "allowedValues": ["2021-07-28"],
+        "example": "2021-07-28"
+      }
+    ]
+  },
+  "responses": {
+    "200": {
+      "description": "Successful response",
+      "contentType": "application/json",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "business": {
+            "type": "object",
+            "required": true,
+            "description": "Business Response",
+            "properties": {
+              "id": {
+                "type": "string",
+                "required": true,
+                "description": "Business Id",
+                "example": "63771dcac1116f0e21de8e12"
+              },
+              "name": {
+                "type": "string",
+                "required": true,
+                "description": "Business Name",
+                "example": "Microsoft"
+              },
+              "phone": {
+                "type": "string",
+                "required": false,
+                "description": "phone number"
+              },
+              "email": {
+                "type": "string",
+                "required": false,
+                "description": "email",
+                "example": "abc@microsoft.com"
+              },
+              "website": {
+                "type": "string",
+                "required": false,
+                "description": "website",
+                "example": "microsoft.com"
+              },
+              "address": {
+                "type": "string",
+                "required": false,
+                "description": "address"
+              },
+              "city": {
+                "type": "string",
+                "required": false,
+                "description": "city"
+              },
+              "description": {
+                "type": "string",
+                "required": false,
+                "description": "description"
+              },
+              "state": {
+                "type": "string",
+                "required": false,
+                "description": "state"
+              },
+              "postalCode": {
+                "type": "string",
+                "required": false,
+                "description": "postal code"
+              },
+              "country": {
+                "type": "string",
+                "required": false,
+                "description": "country",
+                "example": "united states"
+              },
+              "updatedBy": {
+                "type": "object",
+                "required": false,
+                "description": "updated By"
+              },
+              "locationId": {
+                "type": "string",
+                "required": true,
+                "description": "locaitonId"
+              },
+              "createdBy": {
+                "type": "object",
+                "required": false,
+                "description": "Created By"
+              },
+              "createdAt": {
+                "type": "string",
+                "format": "date-time",
+                "required": false,
+                "description": "Creation Time"
+              },
+              "updatedAt": {
+                "type": "string",
+                "format": "date-time",
+                "required": false,
+                "description": "Last updation time"
+              }
+            }
+          }
+        }
+      },
+      "example": {
+        "business": {
+          "id": "63771dcac1116f0e21de8e12",
+          "name": "Microsoft",
+          "phone": "string",
+          "email": "abc@microsoft.com",
+          "website": "microsoft.com",
+          "address": "string",
+          "city": "string",
+          "description": "string",
+          "state": "string",
+          "postalCode": "string",
+          "country": "united states",
+          "updatedBy": {},
+          "locationId": "string",
+          "createdBy": {},
+          "createdAt": "2019-08-24T14:15:22Z",
+          "updatedAt": "2019-08-24T14:15:22Z"
+        }
+      }
+    },
+    "400": {
+      "description": "Bad Request"
+    },
+    "401": {
+      "description": "Unauthorized"
+    },
+    "422": {
+      "description": "Unprocessable Entity"
+    }
+  },
+  "curlExample": "curl --request GET \\\n  --url https://services.leadconnectorhq.com/businesses/5DP4iH6HLkQsiKESj6rh \\\n  --header 'Accept: application/json' \\\n  --header 'Authorization: Bearer 123' \\\n  --header 'Version: 2021-07-28'",
+  "swagger": {
+    "openapi": "3.0.0",
+    "paths": {
+      "/businesses/{businessId}": {
+        "get": {
+          "summary": "Get Business",
+          "description": "Get Business",
+          "tags": ["Business"],
+          "security": [
+            {
+              "BearerAuth": []
+            }
+          ],
+          "parameters": [
+            {
+              "name": "businessId",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              },
+              "description": "Business ID",
+              "example": "5DP4iH6HLkQsiKESj6rh"
+            },
+            {
+              "name": "Authorization",
+              "in": "header",
+              "required": true,
+              "schema": {
+                "type": "string"
+              },
+              "description": "Access Token",
+              "example": "Bearer 9c48df2694a849b6089f9d0d3513efe"
+            },
+            {
+              "name": "Version",
+              "in": "header",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "enum": ["2021-07-28"]
+              },
+              "description": "API Version"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Successful response",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "business": {
+                        "type": "object",
+                        "required": ["id", "name", "locationId"],
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "description": "Business Id",
+                            "example": "63771dcac1116f0e21de8e12"
+                          },
+                          "name": {
+                            "type": "string",
+                            "description": "Business Name",
+                            "example": "Microsoft"
+                          },
+                          "phone": {
+                            "type": "string",
+                            "description": "phone number"
+                          },
+                          "email": {
+                            "type": "string",
+                            "description": "email",
+                            "example": "abc@microsoft.com"
+                          },
+                          "website": {
+                            "type": "string",
+                            "description": "website",
+                            "example": "microsoft.com"
+                          },
+                          "address": {
+                            "type": "string",
+                            "description": "address"
+                          },
+                          "city": {
+                            "type": "string",
+                            "description": "city"
+                          },
+                          "description": {
+                            "type": "string",
+                            "description": "description"
+                          },
+                          "state": {
+                            "type": "string",
+                            "description": "state"
+                          },
+                          "postalCode": {
+                            "type": "string",
+                            "description": "postal code"
+                          },
+                          "country": {
+                            "type": "string",
+                            "description": "country",
+                            "example": "united states"
+                          },
+                          "updatedBy": {
+                            "type": "object",
+                            "description": "updated By"
+                          },
+                          "locationId": {
+                            "type": "string",
+                            "description": "locaitonId"
+                          },
+                          "createdBy": {
+                            "type": "object",
+                            "description": "Created By"
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time",
+                            "description": "Creation Time"
+                          },
+                          "updatedAt": {
+                            "type": "string",
+                            "format": "date-time",
+                            "description": "Last updation time"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "Bad Request"
+            },
+            "401": {
+              "description": "Unauthorized"
+            },
+            "422": {
+              "description": "Unprocessable Entity"
+            }
+          }
+        }
+      }
+    },
+    "components": {
+      "securitySchemes": {
+        "BearerAuth": {
+          "type": "http",
+          "scheme": "bearer",
+          "description": "Use the Access Token generated with user type as Sub-Account (OR) Private Integration Token of Sub-Account."
+        }
+      }
+    }
+  }
+}

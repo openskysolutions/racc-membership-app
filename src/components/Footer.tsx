@@ -1,5 +1,5 @@
 import LogoDark from "@/assets/racc-logo-dark.png";
-import { useTheme } from "../providers/theme-provider";
+import { useTheme } from "@/providers/theme-provider";
 
 export const Footer = () => {
   const { theme } = useTheme();

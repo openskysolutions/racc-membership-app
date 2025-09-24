@@ -1,0 +1,912 @@
+{
+  "info": {
+    "name": "GoHighLevel API Community Collection",
+    "description": "GoHighLevel Community API endpoints extracted from HAR file analysis",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://services.leadconnectorhq.com",
+      "type": "string"
+    },
+    {
+      "key": "location_id",
+      "value": "5FAB1z0AhuVlEdqOzjVX",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "87L3XPFMDkL8ukFzfQup",
+      "type": "string"
+    },
+    {
+      "key": "group_id",
+      "value": "68adda340bfd81f359ce2de9",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login with OTP - Initial Request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json, text/plain, */*"
+              },
+              {
+                "key": "Channel",
+                "value": "APP"
+              },
+              {
+                "key": "Version",
+                "value": "2021-04-15"
+              },
+              {
+                "key": "Source",
+                "value": "cp-core"
+              },
+              {
+                "key": "Source-Type",
+                "value": "web"
+              },
+              {
+                "key": "User-Type",
+                "value": "PORTAL_USER"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{user_email}}\",\n  \"userId\": \"\",\n  \"token\": \"\",\n  \"otp\": null,\n  \"deviceName\": \"{{device_name}}\",\n  \"deviceId\": \"{{device_id}}\",\n  \"deviceType\": \"web\",\n  \"releaseVersionCode\": null,\n  \"appType\": \"WL\",\n  \"domainName\": \"{{domain_name}}\",\n  \"locationId\": \"{{location_id}}\",\n  \"ipAddress\": \"0.0.0.1\",\n  \"redirectUrl\": null,\n  \"action\": \"SIGN_IN\",\n  \"fullName\": null\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/clientclub/auth/login/otp",
+              "host": ["{{base_url}}"],
+              "path": ["clientclub", "auth", "login", "otp"]
+            }
+          }
+        },
+        {
+          "name": "Login with OTP - Verify Code",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json, text/plain, */*"
+              },
+              {
+                "key": "Channel",
+                "value": "APP"
+              },
+              {
+                "key": "Version",
+                "value": "2021-04-15"
+              },
+              {
+                "key": "Source",
+                "value": "cp-core"
+              },
+              {
+                "key": "Source-Type",
+                "value": "web"
+              },
+              {
+                "key": "User-Type",
+                "value": "PORTAL_USER"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{user_email}}\",\n  \"userId\": \"\",\n  \"token\": \"{{otp_token}}\",\n  \"otp\": {{otp_code}},\n  \"deviceName\": \"{{device_name}}\",\n  \"deviceId\": \"{{device_id}}\",\n  \"deviceType\": \"web\",\n  \"releaseVersionCode\": null,\n  \"appType\": \"WL\",\n  \"domainName\": \"{{domain_name}}\",\n  \"locationId\": \"{{location_id}}\",\n  \"ipAddress\": \"0.0.0.1\",\n  \"redirectUrl\": null,\n  \"action\": null,\n  \"fullName\": null\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/clientclub/auth/login/otp",
+              "host": ["{{base_url}}"],
+              "path": ["clientclub", "auth", "login", "otp"]
+            }
+          }
+        },
+        {
+          "name": "Generate IAM v2 Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json, text/plain, */*"
+              },
+              {
+                "key": "Channel",
+                "value": "APP"
+              },
+              {
+                "key": "Version",
+                "value": "2023-02-21"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{base_url}}/clientclub/auth/generate-iam-v2-token",
+              "host": ["{{base_url}}"],
+              "path": ["clientclub", "auth", "generate-iam-v2-token"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Client Portal",
+      "item": [
+        {
+          "name": "Get User Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json, text/plain, */*"
+              },
+              {
+                "key": "Channel",
+                "value": "APP"
+              },
+              {
+                "key": "Version",
+                "value": "2021-07-28"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/clientclub/{{location_id}}/users/{{user_id}}?getLocationId=true",
+              "host": ["{{base_url}}"],
+              "path": ["clientclub", "{{location_id}}", "users", "{{user_id}}"],
+              "query": [
+                {
+                  "key": "getLocationId",
+                  "value": "true"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get User Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json, text/plain, */*"
+              },
+              {
+                "key": "Channel",
+                "value": "APP"
+              },
+              {
+                "key": "Version",
+                "value": "2021-04-15"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/clientclub/{{location_id}}/users/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["clientclub", "{{location_id}}", "users", "{{user_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Notifications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json, text/plain, */*"
+              },
+              {
+                "key": "Channel",
+                "value": "APP"
+              },
+              {
+                "key": "Version",
+                "value": "2021-07-28"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/clientclub/notifications",
+              "host": ["{{base_url}}"],
+              "path": ["clientclub", "notifications"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Communities",
+      "item": [
+        {
+          "name": "Get Groups",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json, text/plain, */*"
+              },
+              {
+                "key": "Channel",
+                "value": "APP"
+              },
+              {
+                "key": "Version",
+                "value": "2023-02-21"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/communities/{{location_id}}/groups?limit=50",
+              "host": ["{{base_url}}"],
+              "path": ["communities", "{{location_id}}", "groups"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "50"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Group by Slug",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json, text/plain, */*"
+              },
+              {
+                "key": "Channel",
+                "value": "APP"
+              },
+              {
+                "key": "Version",
+                "value": "2023-02-21"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/communities/{{location_id}}/groups/slug/richfield-area-chamber",
+              "host": ["{{base_url}}"],
+              "path": ["communities", "{{location_id}}", "groups", "slug", "richfield-area-chamber"]
+            }
+          }
+        },
+        {
+          "name": "Get User Groups",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json, text/plain, */*"
+              },
+              {
+                "key": "Channel",
+                "value": "APP"
+              },
+              {
+                "key": "Version",
+                "value": "2021-04-15"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/communities/{{location_id}}/users/groups?contactId={{user_id}}&sort=descending&sortKey=lastVisitedAt&limit=3",
+              "host": ["{{base_url}}"],
+              "path": ["communities", "{{location_id}}", "users", "groups"],
+              "query": [
+                {
+                  "key": "contactId",
+                  "value": "{{user_id}}"
+                },
+                {
+                  "key": "sort",
+                  "value": "descending"
+                },
+                {
+                  "key": "sortKey",
+                  "value": "lastVisitedAt"
+                },
+                {
+                  "key": "limit",
+                  "value": "3"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Group User Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json, text/plain, */*"
+              },
+              {
+                "key": "Channel",
+                "value": "APP"
+              },
+              {
+                "key": "Version",
+                "value": "2023-02-21"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/communities/{{location_id}}/groups/{{group_id}}/users/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["communities", "{{location_id}}", "groups", "{{group_id}}", "users", "{{user_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Pinned Groups",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json, text/plain, */*"
+              },
+              {
+                "key": "Channel",
+                "value": "APP"
+              },
+              {
+                "key": "Version",
+                "value": "2023-02-21"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/communities/{{location_id}}/groups/pinned",
+              "host": ["{{base_url}}"],
+              "path": ["communities", "{{location_id}}", "groups", "pinned"]
+            }
+          }
+        },
+        {
+          "name": "Get Group Channels",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json, text/plain, */*"
+              },
+              {
+                "key": "Channel",
+                "value": "APP"
+              },
+              {
+                "key": "Version",
+                "value": "2023-02-21"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/communities/{{location_id}}/groups/{{group_id}}/channels",
+              "host": ["{{base_url}}"],
+              "path": ["communities", "{{location_id}}", "groups", "{{group_id}}", "channels"]
+            }
+          }
+        },
+        {
+          "name": "Get Group User Group Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json, text/plain, */*"
+              },
+              {
+                "key": "Channel",
+                "value": "APP"
+              },
+              {
+                "key": "Version",
+                "value": "2023-02-21"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/communities/{{location_id}}/groups/{{group_id}}/user-group-details",
+              "host": ["{{base_url}}"],
+              "path": ["communities", "{{location_id}}", "groups", "{{group_id}}", "user-group-details"]
+            }
+          }
+        },
+        {
+          "name": "Get Channel Metadata",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json, text/plain, */*"
+              },
+              {
+                "key": "Channel",
+                "value": "APP"
+              },
+              {
+                "key": "Version",
+                "value": "2023-02-21"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/communities/{{location_id}}/groups/{{group_id}}/channels/metadata",
+              "host": ["{{base_url}}"],
+              "path": ["communities", "{{location_id}}", "groups", "{{group_id}}", "channels", "metadata"]
+            }
+          }
+        },
+        {
+          "name": "Get Group Members List",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json, text/plain, */*"
+              },
+              {
+                "key": "Channel",
+                "value": "APP"
+              },
+              {
+                "key": "Version",
+                "value": "2023-02-21"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/communities/{{location_id}}/groups/{{group_id}}/users/list?memberRole=ADMIN,OWNER",
+              "host": ["{{base_url}}"],
+              "path": ["communities", "{{location_id}}", "groups", "{{group_id}}", "users", "list"],
+              "query": [
+                {
+                  "key": "memberRole",
+                  "value": "ADMIN,OWNER"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Group Members Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json, text/plain, */*"
+              },
+              {
+                "key": "Channel",
+                "value": "APP"
+              },
+              {
+                "key": "Version",
+                "value": "2023-02-21"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/communities/{{location_id}}/groups/{{group_id}}/users/details?memberStatus=Active&searchText=&limit=10&pageNo=1&showEmail=true",
+              "host": ["{{base_url}}"],
+              "path": ["communities", "{{location_id}}", "groups", "{{group_id}}", "users", "details"],
+              "query": [
+                {
+                  "key": "memberStatus",
+                  "value": "Active"
+                },
+                {
+                  "key": "searchText",
+                  "value": ""
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "pageNo",
+                  "value": "1"
+                },
+                {
+                  "key": "showEmail",
+                  "value": "true"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Conversations",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json, text/plain, */*"
+              },
+              {
+                "key": "Channel",
+                "value": "APP"
+              },
+              {
+                "key": "Version",
+                "value": "2023-02-21"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/communities/{{location_id}}/conversations",
+              "host": ["{{base_url}}"],
+              "path": ["communities", "{{location_id}}", "conversations"]
+            }
+          }
+        },
+        {
+          "name": "Get Unread Conversations",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json, text/plain, */*"
+              },
+              {
+                "key": "Channel",
+                "value": "APP"
+              },
+              {
+                "key": "Version",
+                "value": "2023-02-21"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/communities/{{location_id}}/conversations?limit=10&unread=true",
+              "host": ["{{base_url}}"],
+              "path": ["communities", "{{location_id}}", "conversations"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "unread",
+                  "value": "true"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Analytics & Tracking",
+      "item": [
+        {
+          "name": "Track Community Event",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json, text/plain, */*"
+              },
+              {
+                "key": "Channel",
+                "value": "APP"
+              },
+              {
+                "key": "Version",
+                "value": "2021-04-15"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventName\": \"{{event_name}}\",\n  \"eventProperties\": {\n    \"locationId\": \"{{location_id}}\",\n    \"userId\": \"{{user_id}}\",\n    \"timestamp\": \"{{$timestamp}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/communities/analytics/track-event",
+              "host": ["{{base_url}}"],
+              "path": ["communities", "analytics", "track-event"]
+            }
+          }
+        },
+        {
+          "name": "Track Communities Access Event",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json, text/plain, */*"
+              },
+              {
+                "key": "Channel",
+                "value": "APP"
+              },
+              {
+                "key": "Version",
+                "value": "2023-02-21"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventName\": \"communities_access\",\n  \"locationId\": \"{{location_id}}\",\n  \"userId\": \"{{user_id}}\",\n  \"timestamp\": \"{{$timestamp}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/communities/health/track-communities-access-event",
+              "host": ["{{base_url}}"],
+              "path": ["communities", "health", "track-communities-access-event"]
+            }
+          }
+        },
+        {
+          "name": "Track Pendo Analytics",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json, text/plain, */*"
+              },
+              {
+                "key": "Channel",
+                "value": "APP"
+              },
+              {
+                "key": "Version",
+                "value": "2021-04-15"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"{{event_name}}\",\n  \"properties\": {\n    \"locationId\": \"{{location_id}}\",\n    \"userId\": \"{{user_id}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/clientclub/{{location_id}}/users-analytics/track/pendo",
+              "host": ["{{base_url}}"],
+              "path": ["clientclub", "{{location_id}}", "users-analytics", "track", "pendo"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Membership & Products",
+      "item": [
+        {
+          "name": "Get All Products",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json, text/plain, */*"
+              },
+              {
+                "key": "Channel",
+                "value": "APP"
+              },
+              {
+                "key": "Version",
+                "value": "2021-04-15"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/membership/locations/{{location_id}}/user-purchase/get-all-products",
+              "host": ["{{base_url}}"],
+              "path": ["membership", "locations", "{{location_id}}", "user-purchase", "get-all-products"]
+            }
+          }
+        },
+        {
+          "name": "Get User Product Activity",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json, text/plain, */*"
+              },
+              {
+                "key": "Channel",
+                "value": "APP"
+              },
+              {
+                "key": "Version",
+                "value": "2021-04-15"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{base_url}}/membership/locations/{{location_id}}/products/user-activity/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["membership", "locations", "{{location_id}}", "products", "user-activity", "{{user_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Affiliate Program",
+      "item": [
+        {
+          "name": "Get Affiliate Info",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json, text/plain, */*"
+              },
+              {
+                "key": "Channel",
+                "value": "APP"
+              },
+              {
+                "key": "Version",
+                "value": "2021-04-15"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/affiliate-client-portal/{{location_id}}/affiliates/{{user_id}}/info",
+              "host": ["{{base_url}}"],
+              "path": ["affiliate-client-portal", "{{location_id}}", "affiliates", "{{user_id}}", "info"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,93 @@
+openapi: 3.0.3
+info:
+  title: Membership Portal API
+  version: 0.1.0
+servers:
+  - url: https://api.example.com
+paths:
+  /auth/session:
+    post:
+      summary: Start authorization code with PKCE
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+                code_verifier:
+                  type: string
+      responses:
+        '200':
+          description: Session established
+  /nominations:
+    post:
+      summary: Submit a nomination
+      responses:
+        '201':
+          description: Created
+  /members:
+    get:
+      summary: List members
+      responses:
+        '200':
+          description: OK
+  /events:
+    get:
+      summary: List events
+      responses:
+        '200':
+          description: OK
+    post:
+      summary: Create event
+      responses:
+        '201':
+          description: Created
+  /events/{id}:
+    patch:
+      summary: Update event (with version)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Updated
+    delete:
+      summary: Delete event
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Deleted
+  /moderation/posts/{id}:
+    post:
+      summary: Report a post
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '202':
+          description: Accepted
+    patch:
+      summary: Moderate a post (hide/remove/restore)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
