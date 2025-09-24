@@ -20,22 +20,54 @@ jobs:
 
       - name: Deploy to Droplet
         if: github.event.pull_request.merged == true
+        env:
+          # Backend environment variables (mix of secrets and vars)
+          PORT: ${{ vars.PORT }}
+          NODE_ENV: ${{ vars.NODE_ENV }}
+          PRIVATE_INTEGRATION_TOKEN: ${{ secrets.PRIVATE_INTEGRATION_TOKEN }}
+          LOCATION_ID: ${{ vars.LOCATION_ID }}
+          GROUP_ID: ${{ vars.GROUP_ID }}
+          GHL_API_BASE_URL: ${{ vars.GHL_API_BASE_URL }}
+          FRONTEND_URL: ${{ vars.FRONTEND_URL }}
+          # Frontend environment variables
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
+          TEMP_GHL_TOKEN: ${{ secrets.TEMP_GHL_TOKEN }}
         run: |
           ssh -o StrictHostKeyChecking=no root@racc-dev.openskydev.com << 'ENDSSH'
             cd /root/racc-membership-app || git clone https://github.com/openskysolutions/racc-membership-app.git && cd racc-membership-app
             git pull
-            cd ghl-api && npm install && npm run build
+            
+            # Create backend .env file
+            cd ghl-api
+            cat > .env << EOF
+          PORT=${PORT}
+          NODE_ENV=${NODE_ENV}
+          PRIVATE_INTEGRATION_TOKEN=${PRIVATE_INTEGRATION_TOKEN}
+          LOCATION_ID=${LOCATION_ID}
+          GROUP_ID=${GROUP_ID}
+          GHL_API_BASE_URL=${GHL_API_BASE_URL}
+          FRONTEND_URL=${FRONTEND_URL}
+          EOF
+            
+            npm install && npm run build
             pm2 describe racc-api > /dev/null
             if [ $? -eq 0 ]; then
               pm2 restart racc-api
             else
               pm2 start dist/server.js --name racc-api
             fi
-            cd ../ && npm install && npm run build
-            pm2 describe racc-frontend > /dev/null
-            if [ $? -eq 0 ]; then
-              pm2 restart racc-frontend
-            else
-              pm2 start node_modules/vite/bin/vite.js --name racc-frontend -- run dev
-            fi
+            
+            # Create frontend .env file
+            cd ../
+            cat > .env << EOF
+          VITE_API_BASE_URL=${VITE_API_BASE_URL}
+          TEMP_GHL_TOKEN=${TEMP_GHL_TOKEN}
+          EOF
+            
+            npm install && npm run build
+            
+            # Copy built files to /var/www/racc-membership-app/dist
+            cp -r dist/* /var/www/racc-membership-app/dist/
+            chmod -R 755 /var/www/racc-membership-app/dist
+            find /var/www/racc-membership-app/dist -type f -exec chmod 644 {} \;
           ENDSSH
