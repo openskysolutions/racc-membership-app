@@ -31,36 +31,36 @@ jobs:
           VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
           TEMP_GHL_TOKEN: ${{ secrets.TEMP_GHL_TOKEN }}
         run: |
-          ssh -o StrictHostKeyChecking=no root@racc-dev.openskydev.com << 'ENDSSH'
+          ssh -o StrictHostKeyChecking=no root@racc-dev.openskydev.com << ENDSSH
           cd /root/racc-membership-app || git clone https://github.com/openskysolutions/racc-membership-app.git && cd racc-membership-app
           git pull
           
           # Set all environment variables for the entire session
-          export PORT=${PORT}
-          export NODE_ENV=${NODE_ENV}
-          export PRIVATE_INTEGRATION_TOKEN=${PRIVATE_INTEGRATION_TOKEN}
-          export LOCATION_ID=${LOCATION_ID}
-          export GROUP_ID=${GROUP_ID}
-          export GHL_API_BASE_URL=${GHL_API_BASE_URL}
-          export FRONTEND_URL=${FRONTEND_URL}
-          export VITE_API_BASE_URL=${VITE_API_BASE_URL}
-          export TEMP_GHL_TOKEN=${TEMP_GHL_TOKEN}
+          export PORT="$PORT"
+          export NODE_ENV="$NODE_ENV"
+          export PRIVATE_INTEGRATION_TOKEN="$PRIVATE_INTEGRATION_TOKEN"
+          export LOCATION_ID="$LOCATION_ID"
+          export GROUP_ID="$GROUP_ID"
+          export GHL_API_BASE_URL="$GHL_API_BASE_URL"
+          export FRONTEND_URL="$FRONTEND_URL"
+          export VITE_API_BASE_URL="$VITE_API_BASE_URL"
+          export TEMP_GHL_TOKEN="$TEMP_GHL_TOKEN"
           
           # Create backend .env file
           cd ghl-api
           cat > .env << EOF
-          PORT=${PORT}
-          NODE_ENV=${NODE_ENV}
-          PRIVATE_INTEGRATION_TOKEN=${PRIVATE_INTEGRATION_TOKEN}
-          LOCATION_ID=${LOCATION_ID}
-          GROUP_ID=${GROUP_ID}
-          GHL_API_BASE_URL=${GHL_API_BASE_URL}
-          FRONTEND_URL=${FRONTEND_URL}
+          PORT=\$PORT
+          NODE_ENV=\$NODE_ENV
+          PRIVATE_INTEGRATION_TOKEN=\$PRIVATE_INTEGRATION_TOKEN
+          LOCATION_ID=\$LOCATION_ID
+          GROUP_ID=\$GROUP_ID
+          GHL_API_BASE_URL=\$GHL_API_BASE_URL
+          FRONTEND_URL=\$FRONTEND_URL
           EOF
           
           npm install && npm run build
-          pm2 describe racc-api > /dev/null 
-          if [ $? -eq 0 ]; then
+          pm2 describe racc-api > /dev/null
+          if [ \$? -eq 0 ]; then
             pm2 restart racc-api
           else
             pm2 start dist/server.js --name racc-api
@@ -69,9 +69,17 @@ jobs:
           # Create frontend .env file
           cd ../
           cat > .env << EOF
-          VITE_API_BASE_URL=${VITE_API_BASE_URL}
-          TEMP_GHL_TOKEN=${TEMP_GHL_TOKEN}
+          VITE_API_BASE_URL=\$VITE_API_BASE_URL
+          TEMP_GHL_TOKEN=\$TEMP_GHL_TOKEN
           EOF
+          
+          # Debug: Show environment variables
+          echo "=== Environment Variables for Frontend Build ==="
+          echo "VITE_API_BASE_URL=\$VITE_API_BASE_URL"
+          echo "TEMP_GHL_TOKEN=\$TEMP_GHL_TOKEN"
+          echo "=== Contents of .env file ==="
+          cat .env
+          echo "=== End Debug ==="
           
           # Build frontend with environment variables already exported
           npm install && npm run build
