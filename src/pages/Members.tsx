@@ -3,7 +3,6 @@ import { Search, MapPin, Phone, Mail, Globe, Users } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { api } from '@/services/apiClient';
@@ -126,6 +125,7 @@ const MembersPage: React.FC = () => {
     return (firstName + lastName).toUpperCase() || member.email.charAt(0).toUpperCase();
   };
 
+  //@ts-ignore
   const getRoleColor = (role: string) => {
     switch (role) {
       case 'admin': return 'bg-red-100 text-red-800';
