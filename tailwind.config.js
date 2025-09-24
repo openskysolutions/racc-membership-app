@@ -72,42 +72,42 @@ module.exports = {
         '18': '4.5rem', // 72px
       },
       colors: {
-        border: 'var(--border)',
-        input: 'var(--input)',
-        ring: 'var(--ring)',
-        background: 'var(--background)',
-        foreground: 'var(--foreground)',
+        border: 'rgb(from var(--border) r g b / <alpha-value>)',
+        input: 'rgb(from var(--input) r g b / <alpha-value>)',
+        ring: 'rgb(from var(--ring) r g b / <alpha-value>)',
+        background: 'rgb(from var(--background) r g b / <alpha-value>)',
+        foreground: 'rgb(from var(--foreground) r g b / <alpha-value>)',
         primary: {
-          DEFAULT: 'var(--primary)',
-          foreground: 'var(--primary-foreground)',
+          DEFAULT: 'rgb(from var(--primary) r g b / <alpha-value>)',
+          foreground: 'rgb(from var(--primary-foreground) r g b / <alpha-value>)',
         },
         secondary: {
-          DEFAULT: 'var(--secondary)',
-          foreground: 'var(--secondary-foreground)',
+          DEFAULT: 'rgb(from var(--secondary) r g b / <alpha-value>)',
+          foreground: 'rgb(from var(--secondary-foreground) r g b / <alpha-value>)',
         },
         destructive: {
-          DEFAULT: 'var(--destructive)',
-          foreground: 'var(--destructive-foreground)',
+          DEFAULT: 'rgb(from var(--destructive) r g b / <alpha-value>)',
+          foreground: 'rgb(from var(--destructive-foreground) r g b / <alpha-value>)',
         },
         muted: {
-          DEFAULT: 'var(--muted)',
-          foreground: 'var(--muted-foreground)',
+          DEFAULT: 'rgb(from var(--muted) r g b / <alpha-value>)',
+          foreground: 'rgb(from var(--muted-foreground) r g b / <alpha-value>)',
         },
         accent: {
-          DEFAULT: 'var(--accent)',
-          foreground: 'var(--accent-foreground)',
+          DEFAULT: 'rgb(from var(--accent) r g b / <alpha-value>)',
+          foreground: 'rgb(from var(--accent-foreground) r g b / <alpha-value>)',
         },
         highlight: {
-          DEFAULT: 'var(--highlight)',
-          foreground: 'var(--highlight-foreground)',
+          DEFAULT: 'rgb(from var(--highlight) r g b / <alpha-value>)',
+          foreground: 'rgb(from var(--highlight-foreground) r g b / <alpha-value>)',
         },
         popover: {
-          DEFAULT: 'var(--popover)',
-          foreground: 'var(--popover-foreground)',
+          DEFAULT: 'rgb(from var(--popover) r g b / <alpha-value>)',
+          foreground: 'rgb(from var(--popover-foreground) r g b / <alpha-value>)',
         },
         card: {
-          DEFAULT: 'var(--card)',
-          foreground: 'var(--card-foreground)',
+          DEFAULT: 'rgb(from var(--card) r g b / <alpha-value>)',
+          foreground: 'rgb(from var(--card-foreground) r g b / <alpha-value>)',
         },
         yellow: {
           50: '#fefce8',

@@ -29,14 +29,14 @@ interface RouteProps {
 }
 
 const routeList: RouteProps[] = [
-  {
-    href: "/discussions",
-    label: "Discussions",
-  },
-  {
-    href: "/courses",
-    label: "Courses",
-  },
+  // {
+  //   href: "/discussions",
+  //   label: "Discussions",
+  // },
+  // {
+  //   href: "/courses",
+  //   label: "Courses",
+  // },
   {
     href: "/news-events",
     label: "News & Events",

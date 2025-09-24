@@ -240,7 +240,7 @@ const CalendarPage: React.FC = () => {
                           e.stopPropagation();
                           handleEventClick(event);
                         }}
-                        className="text-xs p-1.5 bg-primary/80 text-primary-foreground hover:bg-primary rounded cursor-pointer transition-colors duration-200 truncate shadow-sm"
+                        className="text-xs p-1.5 bg-highlight-foreground text-primary-foreground hover:bg-highlight rounded cursor-pointer transition-colors duration-200 truncate shadow-sm"
                         title={event.title}
                       >
                         {event.title}
@@ -255,7 +255,7 @@ const CalendarPage: React.FC = () => {
                   
                   {/* Add Event Hint (only show on hover for current month days) */}
                   {day.isCurrentMonth && dayEvents.length === 0 && (
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 group-hover:bg-primary/5 group-hover:border-2 group-hover:border-primary/30 transition-all duration-200 rounded">
                       <div className="flex flex-col items-center gap-1 text-primary">
                         <Plus className="h-5 w-5" />
                         <span className="text-xs font-medium">Add Event</span>

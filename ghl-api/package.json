@@ -22,7 +22,9 @@
   "license": "ISC",
   "dependencies": {
     "@gohighlevel/api-client": "^1.0.0",
+    "@types/sqlite3": "^3.1.11",
     "axios": "^1.11.0",
+    "bcrypt": "^6.0.0",
     "cheerio": "^1.1.2",
     "cors": "^2.8.5",
     "crawl4ai": "^1.0.1",
@@ -30,6 +32,8 @@
     "express": "^5.1.0",
     "lodash": "^4.17.21",
     "puppeteer": "^24.18.0",
+    "sqlite": "^5.1.1",
+    "sqlite3": "^5.1.7",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^4.5.0",
     "tsconfig-paths": "^4.2.0",

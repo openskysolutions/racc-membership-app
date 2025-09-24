@@ -1,35 +1,617 @@
-// Auth routes - Better Auth PKCE session management
+// Enhanced Auth routes with Database and GoHighLevel Integration
 
 import express from 'express';
+import crypto from 'crypto';
 import { authSessionService } from '@/services/authSession';
+import { databaseService } from '@/services/database';
+import { ghlService } from '@/services/gohighlevel';
 
 const router = express.Router();
 
-// Simple in-memory user store (in production, this would be a database)
-interface RegisteredUser {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  password: string; // In production, this would be hashed
-  businessName?: string;
-  phone?: string;
-  website?: string;
-  role: string;
-  status: string;
-  emailVerified: boolean;
-  createdAt: string;
-}
+// Store for authorization codes (in production, use Redis or database)
+const authorizationCodes = new Map<string, {
+  userId: number;
+  codeChallenge: string;
+  codeChallengeMethod: string;
+  redirectUri?: string;
+  expiresAt: Date;
+}>();
 
-const registeredUsers: Map<string, RegisteredUser> = new Map();
+/**
+ * POST /auth/authorize
+ * PKCE OAuth 2.0 Authorization endpoint
+ */
+router.post('/authorize', async (req, res) => {
+  try {
+    const { 
+      email, 
+      password, 
+      codeChallenge, 
+      codeChallengeMethod = 'S256',
+      redirectUri 
+    } = req.body;
+
+    // Validate required parameters
+    if (!email || !password || !codeChallenge) {
+      return res.status(400).json({
+        error: 'invalid_request',
+        error_description: 'Missing required parameters: email, password, code_challenge'
+      });
+    }
+
+    // Validate code challenge method
+    if (codeChallengeMethod !== 'S256') {
+      return res.status(400).json({
+        error: 'invalid_request',
+        error_description: 'Only S256 code challenge method is supported'
+      });
+    }
+
+    // Authenticate user
+    const user = await databaseService.verifyPassword(email, password);
+    if (!user) {
+      return res.status(401).json({
+        error: 'invalid_grant',
+        error_description: 'Invalid email or password'
+      });
+    }
+
+    // Check if user is active
+    if (user.status !== 'active') {
+      return res.status(403).json({
+        error: 'access_denied',
+        error_description: `Account not active. Status: ${user.status}. Please complete registration and payment.`,
+        userStatus: user.status
+      });
+    }
+
+    // Generate authorization code
+    const authCode = crypto.randomBytes(32).toString('base64url');
+    
+    // Store authorization code with PKCE data
+    authorizationCodes.set(authCode, {
+      userId: user.id!,
+      codeChallenge,
+      codeChallengeMethod,
+      redirectUri,
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
+    });
+
+    console.log(`✅ Authorization code generated for user ${user.email}`);
+
+    res.json({
+      code: authCode,
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        membershipTier: user.membershipTier,
+        status: user.status
+      }
+    });
+
+  } catch (error: any) {
+    console.error('Authorization error:', error);
+    res.status(500).json({
+      error: 'server_error',
+      error_description: 'Internal server error during authorization'
+    });
+  }
+});
+
+/**
+ * POST /auth/token
+ * PKCE OAuth 2.0 Token endpoint
+ */
+router.post('/token', async (req, res) => {
+  try {
+    const { 
+      grant_type,
+      code,
+      code_verifier,
+      redirect_uri 
+    } = req.body;
+
+    // Validate grant type
+    if (grant_type !== 'authorization_code') {
+      return res.status(400).json({
+        error: 'unsupported_grant_type',
+        error_description: 'Only authorization_code grant type is supported'
+      });
+    }
+
+    // Validate required parameters
+    if (!code || !code_verifier) {
+      return res.status(400).json({
+        error: 'invalid_request',
+        error_description: 'Missing required parameters: code, code_verifier'
+      });
+    }
+
+    // Get authorization code data
+    const authData = authorizationCodes.get(code);
+    if (!authData) {
+      return res.status(400).json({
+        error: 'invalid_grant',
+        error_description: 'Invalid or expired authorization code'
+      });
+    }
+
+    // Check expiration
+    if (authData.expiresAt < new Date()) {
+      authorizationCodes.delete(code);
+      return res.status(400).json({
+        error: 'invalid_grant',
+        error_description: 'Authorization code expired'
+      });
+    }
+
+    // Verify PKCE code challenge
+    const codeChallenge = crypto
+      .createHash('sha256')
+      .update(code_verifier)
+      .digest('base64url');
+
+    if (codeChallenge !== authData.codeChallenge) {
+      authorizationCodes.delete(code);
+      return res.status(400).json({
+        error: 'invalid_grant',
+        error_description: 'Invalid code verifier'
+      });
+    }
+
+    // Code is valid, remove it (one-time use)
+    authorizationCodes.delete(code);
+
+    // Get user data
+    const user = await databaseService.getUserById(authData.userId);
+    if (!user) {
+      return res.status(400).json({
+        error: 'invalid_grant',
+        error_description: 'User not found'
+      });
+    }
+
+    // Create session and generate tokens
+    const accessToken = authSessionService.generateAccessToken(user.id);
+    const session = await authSessionService.createSession(user.id!, accessToken, 3600); // 1 hour
+    
+    console.log(`✅ Access token generated for user ${user.email}`);
+
+    res.json({
+      access_token: session.token,
+      token_type: 'Bearer',
+      expires_in: 3600, // 1 hour
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        businessName: user.businessName,
+        phone: user.phone,
+        membershipTier: user.membershipTier,
+        status: user.status,
+        role: user.role
+      }
+    });
+
+  } catch (error: any) {
+    console.error('Token error:', error);
+    res.status(500).json({
+      error: 'server_error',
+      error_description: 'Internal server error during token generation'
+    });
+  }
+});
+
+/**
+ * POST /auth/session  
+ * Convenience endpoint that combines token exchange with session creation
+ * Alternative to the standard /token endpoint for easier frontend integration
+ */
+router.post('/session', async (req, res) => {
+  try {
+    const { code, codeVerifier, code_verifier, email, password, codeChallenge, codeChallengeMethod } = req.body;
+    
+    // Support both camelCase and snake_case for flexibility
+    const verifier = codeVerifier || code_verifier;
+    
+    console.log('🔍 Session request received:', {
+      hasCode: !!code,
+      hasCodeVerifier: !!verifier,
+      hasEmail: !!email,
+      hasPassword: !!password,
+      hasCodeChallenge: !!codeChallenge
+    });
+    
+    // If no code but has email/password/codeChallenge, do the full flow
+    if (!code && email && password && codeChallenge && verifier) {
+      console.log('🔄 No code provided, performing full PKCE flow...');
+      
+      // Step 1: Authenticate and get authorization code
+      const user = await databaseService.verifyPassword(email, password);
+      if (!user) {
+        return res.status(401).json({
+          error: 'invalid_grant',
+          error_description: 'Invalid email or password'
+        });
+      }
+
+      if (user.status !== 'active') {
+        return res.status(403).json({
+          error: 'access_denied',
+          error_description: `Account not active. Status: ${user.status}. Please complete registration and payment.`,
+          userStatus: user.status
+        });
+      }
+
+      // Verify the code challenge matches the code verifier
+      const computedChallenge = crypto
+        .createHash('sha256')
+        .update(verifier)
+        .digest('base64url');
+
+      if (computedChallenge !== codeChallenge) {
+        return res.status(400).json({
+          error: 'invalid_request',
+          error_description: 'Code challenge does not match code verifier'
+        });
+      }
+
+      // Create session directly (skip authorization code step)
+      const accessToken = authSessionService.generateAccessToken(user.id);
+      const session = await authSessionService.createSession(user.id!, accessToken, 3600);
+      
+      console.log(`✅ Direct session created for user ${user.email}`);
+
+      return res.json({
+        success: true,
+        session: {
+          sessionId: session.id,
+          accessToken: session.token,
+          expiresAt: session.expiresAt
+        },
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          businessName: user.businessName,
+          phone: user.phone,
+          membershipTier: user.membershipTier,
+          status: user.status,
+          role: user.role
+        }
+      });
+    }
+    
+    // Original flow: requires both code and verifier
+    if (!code || !verifier) {
+      return res.status(400).json({
+        error: 'invalid_request',
+        error_description: 'Missing required parameters. Provide either: (1) code + codeVerifier, or (2) email + password + codeChallenge + codeVerifier'
+      });
+    }
+
+    // Get authorization code data
+    const authData = authorizationCodes.get(code);
+    if (!authData) {
+      return res.status(400).json({
+        error: 'invalid_grant',
+        error_description: 'Invalid or expired authorization code'
+      });
+    }
+
+    // Check expiration
+    if (authData.expiresAt < new Date()) {
+      authorizationCodes.delete(code);
+      return res.status(400).json({
+        error: 'invalid_grant',
+        error_description: 'Authorization code expired'
+      });
+    }
+
+    // Verify PKCE code challenge
+    const computedChallengeFromCode = crypto
+      .createHash('sha256')
+      .update(verifier)
+      .digest('base64url');
+
+    if (computedChallengeFromCode !== authData.codeChallenge) {
+      authorizationCodes.delete(code);
+      return res.status(400).json({
+        error: 'invalid_grant',
+        error_description: 'Invalid code verifier'
+      });
+    }
+
+    // Code is valid, remove it (one-time use)
+    authorizationCodes.delete(code);
+
+    // Get user data
+    const user = await databaseService.getUserById(authData.userId);
+    if (!user) {
+      return res.status(400).json({
+        error: 'invalid_grant',
+        error_description: 'User not found'
+      });
+    }
+
+    // Create session and generate tokens
+    const accessToken = authSessionService.generateAccessToken(user.id);
+    const session = await authSessionService.createSession(user.id!, accessToken, 3600); // 1 hour
+    
+    console.log(`✅ Session created for user ${user.email} via /session endpoint`);
+
+    res.json({
+      success: true,
+      session: {
+        sessionId: session.id,
+        accessToken: session.token,
+        expiresAt: session.expiresAt
+      },
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        businessName: user.businessName,
+        phone: user.phone,
+        membershipTier: user.membershipTier,
+        status: user.status,
+        role: user.role
+      }
+    });
+
+  } catch (error: any) {
+    console.error('Session creation error:', error);
+    res.status(500).json({
+      error: 'server_error',
+      error_description: 'Internal server error during session creation'
+    });
+  }
+});
+
+/**
+ * POST /auth/check-session
+ * Validate if the current session/token is still valid
+ */
+router.post('/check-session', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({
+        error: 'unauthorized',
+        error_description: 'Missing or invalid authorization header'
+      });
+    }
+
+    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+    
+    // Check if session exists and is valid
+    const session = await authSessionService.getSessionByToken(token);
+    
+    if (!session) {
+      return res.status(401).json({
+        error: 'invalid_token',
+        error_description: 'Session not found or expired'
+      });
+    }
+
+    // Check if session is expired
+    if (new Date(session.expiresAt) < new Date()) {
+      return res.status(401).json({
+        error: 'token_expired',
+        error_description: 'Session has expired'
+      });
+    }
+
+    // Session is valid, return user info
+    const user = await databaseService.getUserById(session.memberId);
+    if (!user) {
+      return res.status(401).json({
+        error: 'user_not_found',
+        error_description: 'User associated with session not found'
+      });
+    }
+
+    res.json({
+      valid: true,
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        businessName: user.businessName,
+        phone: user.phone,
+        membershipTier: user.membershipTier,
+        status: user.status,
+        role: user.role
+      },
+      session: {
+        sessionId: session.id,
+        expiresAt: session.expiresAt
+      }
+    });
+
+  } catch (error: any) {
+    console.error('Session check error:', error);
+    res.status(500).json({
+      error: 'server_error',
+      error_description: 'Internal server error during session validation'
+    });
+  }
+});
+
+/**
+ * GET /auth/profile
+ * Get current user profile using Bearer token authentication
+ */
+router.get('/profile', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({
+        error: 'unauthorized',
+        error_description: 'Missing or invalid authorization header'
+      });
+    }
+
+    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+    
+    // Check if session exists and is valid
+    const session = await authSessionService.getSessionByToken(token);
+    
+    if (!session) {
+      return res.status(401).json({
+        error: 'invalid_token',
+        error_description: 'Session not found or expired'
+      });
+    }
+
+    // Check if session is expired
+    if (new Date(session.expiresAt) < new Date()) {
+      return res.status(401).json({
+        error: 'token_expired',
+        error_description: 'Session has expired'
+      });
+    }
+
+    // Get user data
+    const user = await databaseService.getUserById(session.memberId);
+    if (!user) {
+      return res.status(401).json({
+        error: 'user_not_found',
+        error_description: 'User associated with session not found'
+      });
+    }
+
+    res.json({
+      id: user.id.toString(),
+      name: `${user.firstName} ${user.lastName}`,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      businessName: user.businessName,
+      phone: user.phone,
+      website: user.website,
+      role: user.role,
+      status: user.status,
+      membershipTier: user.membershipTier,
+      emailVerified: user.emailVerified,
+      ghlContactId: user.ghlContactId,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt
+    });
+
+  } catch (error: any) {
+    console.error('Profile fetch error:', error);
+    res.status(500).json({
+      error: 'server_error',
+      error_description: 'Internal server error while fetching profile'
+    });
+  }
+});
+
+/**
+ * POST /auth/logout
+ * Logout user and invalidate session
+ */
+router.post('/logout', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      // Even if no valid token, consider logout successful (cleanup local storage)
+      return res.json({
+        success: true,
+        message: 'Logged out successfully'
+      });
+    }
+
+    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+    
+    // Try to find and invalidate the session
+    try {
+      const session = await authSessionService.getSessionByToken(token);
+      
+      if (session) {
+        // Invalidate the session
+        await authSessionService.invalidateSession(session.id);
+        console.log(`✅ Session invalidated for user: ${session.memberId}`);
+      }
+    } catch (sessionError) {
+      // If session doesn't exist or is already invalid, that's fine for logout
+      console.log('Session not found or already invalid during logout');
+    }
+
+    res.json({
+      success: true,
+      message: 'Logged out successfully'
+    });
+
+  } catch (error: any) {
+    console.error('Logout error:', error);
+    // Even if there's an error, we should return success for logout
+    // The client will clear local storage regardless
+    res.json({
+      success: true,
+      message: 'Logged out successfully'
+    });
+  }
+});
+
+// Membership tier configurations
+const MEMBERSHIP_TIERS = {
+  standard: {
+    name: 'Standard Membership',
+    price: 50.00,
+    currency: 'USD',
+    description: 'Access to basic member benefits and networking events'
+  },
+  premium: {
+    name: 'Premium Membership',
+    price: 100.00,
+    currency: 'USD',
+    description: 'Full access to all member benefits, premium events, and business resources'
+  },
+  corporate: {
+    name: 'Corporate Membership',
+    price: 200.00,
+    currency: 'USD',
+    description: 'Corporate package with multiple member access and premium business services'
+  }
+};
+
+/**
+ * GET /auth/membership-tiers
+ * Get available membership tiers
+ */
+router.get('/membership-tiers', (req, res) => {
+  res.json({
+    tiers: MEMBERSHIP_TIERS
+  });
+});
 
 /**
  * POST /auth/register
- * User registration endpoint
+ * Enhanced user registration with database and GoHighLevel integration
  */
 router.post('/register', async (req, res) => {
   try {
-    const { firstName, lastName, email, password, businessName, phone, website } = req.body;
+    const { 
+      firstName, 
+      lastName, 
+      email, 
+      password, 
+      businessName, 
+      phone, 
+      website,
+      membershipTier = 'standard'
+    } = req.body;
 
     // Validate required fields
     if (!firstName || !lastName || !email || !password) {
@@ -48,80 +630,267 @@ router.post('/register', async (req, res) => {
     }
 
     // Validate password strength
-    if (password.length < 6) {
+    if (password.length < 8) {
       return res.status(400).json({
-        error: 'Password must be at least 6 characters long'
+        error: 'Password must be at least 8 characters long'
       });
     }
 
-    // Check if user already exists (for now, check demo users)
-    const existingUsers = [
-      'admin@racc.com', 'member@racc.com', 'moderator@racc.com', 'demo@racc.com'
-    ];
-    
-    if (existingUsers.includes(email.toLowerCase())) {
-      return res.status(409).json({
-        error: 'User already exists',
-        details: 'An account with this email address already exists'
+    // Validate membership tier
+    if (!MEMBERSHIP_TIERS[membershipTier]) {
+      return res.status(400).json({
+        error: 'Invalid membership tier',
+        availableTiers: Object.keys(MEMBERSHIP_TIERS)
       });
     }
 
     // Check if user already exists
-    const existingUser = Array.from(registeredUsers.values()).find(u => u.email === email);
+    const existingUser = await databaseService.getUserByEmail(email);
     if (existingUser) {
       return res.status(409).json({
         error: 'User already exists',
-        details: 'An account with this email already exists'
+        message: 'An account with this email address already exists'
       });
     }
 
-    // In a real implementation, this would:
-    // 1. Hash the password with bcrypt
-    // 2. Store user data in database
-    // 3. Send verification email
-    // 4. Generate proper user ID
+    // Create GoHighLevel contact first
+    let ghlContactId;
+    try {
+      console.log('🔍 Starting GHL contact creation process...');
+      ghlContactId = await ghlService.createContact({
+        firstName,
+        lastName,
+        email,
+        phone,
+        website,
+        businessName,
+        source: 'RACC Membership Registration',
+        tags: ['prospect', 'new-registration', `tier-${membershipTier}`],
+        customFields: {
+          'Business Name': businessName || '',
+          'Registration Date': new Date().toISOString(),
+          'Member Status': 'pending-payment',
+          'Membership Tier': membershipTier
+        }
+      });
+      console.log('✅ GHL contact created successfully:', ghlContactId);
+    } catch (ghlError) {
+      console.error('❌ Failed to create GHL contact - DETAILED ERROR:', ghlError);
+      console.error('Error stack:', ghlError.stack);
+      return res.status(500).json({
+        error: 'Failed to create contact in CRM',
+        message: 'Please try again later or contact support',
+        debug: process.env.NODE_ENV === 'development' ? ghlError.message : undefined
+      });
+    }
+
+    // Create user in database
+    let user;
+    try {
+      user = await databaseService.createUser({
+        firstName,
+        lastName,
+        email,
+        passwordHash: password, // This will be hashed in the service
+        businessName,
+        phone,
+        website,
+        role: 'member',
+        status: 'pending',
+        emailVerified: false,
+        ghlContactId,
+        paymentStatus: 'pending',
+        membershipTier
+      });
+    } catch (dbError) {
+      console.error('Failed to create user in database:', dbError);
+      
+      // Try to clean up GHL contact if database creation failed
+      try {
+        // Note: GoHighLevel doesn't have a direct delete API, so we'll tag as failed
+        await ghlService.updateContactTags(ghlContactId, ['registration-failed'], 'add');
+      } catch (cleanupError) {
+        console.error('Failed to cleanup GHL contact:', cleanupError);
+      }
+      
+      return res.status(500).json({
+        error: 'Failed to create user account',
+        message: 'Please try again later or contact support'
+      });
+    }
+
+    // Create payment link
+    const tierConfig = MEMBERSHIP_TIERS[membershipTier];
+    let paymentLink;
     
-    // For now, create a user object and store it
-    const newUser: RegisteredUser = {
-      id: `user_${Date.now()}`,
-      firstName,
-      lastName,
-      email,
-      password, // In production, hash this with bcrypt
-      businessName,
-      phone,
-      website,
-      role: 'member',
-      status: 'active',
-      emailVerified: false,
-      createdAt: new Date().toISOString()
-    };
+    try {
+      paymentLink = await ghlService.createPaymentLink({
+        contactId: ghlContactId,
+        amount: tierConfig.price,
+        currency: tierConfig.currency,
+        description: tierConfig.description,
+        membershipTier,
+        successUrl: `${process.env.FRONTEND_URL}/auth/payment-success`,
+        cancelUrl: `${process.env.FRONTEND_URL}/auth/payment-cancelled`
+      });
+    } catch (paymentError) {
+      console.error('Failed to create payment link:', paymentError);
+      // Continue without payment link for now
+      paymentLink = null;
+    }
 
-    // Store the user
-    registeredUsers.set(newUser.id, newUser);
-
-    // For demo purposes, we'll just return success
-    // In production, this would store in database and send verification email
+    // Return registration success response
     res.status(201).json({
       message: 'Registration successful',
       user: {
-        id: newUser.id,
-        firstName: newUser.firstName,
-        lastName: newUser.lastName,
-        email: newUser.email,
-        businessName: newUser.businessName,
-        role: newUser.role,
-        status: newUser.status,
-        emailVerified: newUser.emailVerified
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        businessName: user.businessName,
+        phone: user.phone,
+        website: user.website,
+        role: user.role,
+        status: user.status,
+        membershipTier: user.membershipTier,
+        ghlContactId: user.ghlContactId
       },
-      nextStep: 'login'
+      payment: {
+        required: true,
+        tier: tierConfig,
+        paymentLink
+      },
+      nextSteps: [
+        'Complete payment to activate your membership',
+        'Check your email for verification instructions',
+        'Access member portal after activation'
+      ]
     });
+
+    console.log(`Successfully registered user: ${email} with GHL contact: ${ghlContactId}`);
 
   } catch (error) {
     console.error('Registration error:', error);
     res.status(500).json({
-      error: 'Registration failed',
-      details: 'An internal server error occurred'
+      error: 'Internal server error',
+      message: 'An unexpected error occurred during registration'
+    });
+  }
+});
+
+/**
+ * POST /auth/login
+ * Enhanced login with database authentication
+ */
+router.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({
+        error: 'Missing required fields',
+        details: 'email and password are required'
+      });
+    }
+
+    // Verify user credentials
+    const user = await databaseService.verifyPassword(email, password);
+    if (!user) {
+      return res.status(401).json({
+        error: 'Invalid credentials',
+        message: 'Email or password is incorrect'
+      });
+    }
+
+    // Check if user is active
+    if (user.status !== 'active') {
+      return res.status(403).json({
+        error: 'Account not active',
+        message: 'Please complete your registration and payment',
+        userStatus: user.status
+      });
+    }
+
+    // Create session
+    const session = await authSessionService.createSession(user.id, 'access_token', 3600);
+
+    res.json({
+      message: 'Login successful',
+      user: {
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        businessName: user.businessName,
+        role: user.role,
+        status: user.status,
+        membershipTier: user.membershipTier
+      },
+      session: {
+        sessionId: session.id,
+        expiresAt: session.expiresAt
+      }
+    });
+
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({
+      error: 'Internal server error',
+      message: 'An unexpected error occurred during login'
+    });
+  }
+});
+
+/**
+ * POST /auth/payment-webhook
+ * Handle payment completion webhook from GoHighLevel
+ */
+router.post('/payment-webhook', async (req, res) => {
+  try {
+    const { contactId, paymentId, amount, status, membershipTier } = req.body;
+
+    if (status === 'completed' || status === 'success') {
+      // Find user by GHL contact ID
+      const users = await databaseService.getAllUsers(1000); // Get all users for search
+      const user = users.find(u => u.ghlContactId === contactId);
+      
+      if (!user) {
+        console.error(`User not found for contact ID: ${contactId}`);
+        return res.status(404).json({
+          error: 'User not found for contact'
+        });
+      }
+
+      // Update user payment status
+      await databaseService.updateUserPaymentStatus(user.id, 'completed', membershipTier);
+      await databaseService.updateUserStatus(user.id, 'active');
+
+      // Activate member in GoHighLevel
+      await ghlService.handlePaymentSuccess(contactId, {
+        paymentId,
+        amount,
+        membershipTier: membershipTier || user.membershipTier
+      });
+
+      console.log(`Payment completed for user ${user.email} (${contactId})`);
+
+      res.json({
+        message: 'Payment processed successfully',
+        userId: user.id,
+        status: 'active'
+      });
+    } else {
+      res.json({
+        message: 'Payment status received',
+        status
+      });
+    }
+
+  } catch (error) {
+    console.error('Payment webhook error:', error);
+    res.status(500).json({
+      error: 'Internal server error',
+      message: 'Failed to process payment webhook'
     });
   }
 });
@@ -134,8 +903,8 @@ router.get('/profile/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
 
-    // Find the user
-    const user = registeredUsers.get(userId);
+    // Find the user in database
+    const user = await databaseService.getUserById(parseInt(userId));
     if (!user) {
       return res.status(404).json({
         error: 'User not found'
@@ -153,471 +922,15 @@ router.get('/profile/:userId', async (req, res) => {
       website: user.website,
       role: user.role,
       status: user.status,
+      membershipTier: user.membershipTier,
       emailVerified: user.emailVerified,
       createdAt: user.createdAt
     });
 
   } catch (error) {
-    console.error('Profile fetch error:', error);
+    console.error('Profile retrieval error:', error);
     res.status(500).json({
-      error: 'Failed to fetch profile',
-      details: 'An internal server error occurred'
-    });
-  }
-});
-
-/**
- * PUT /auth/profile/:userId
- * Update user profile information
- */
-router.put('/profile/:userId', async (req, res) => {
-  try {
-    const { userId } = req.params;
-    const { firstName, lastName, businessName, phone, website } = req.body;
-
-    // Find the user
-    const user = registeredUsers.get(userId);
-    if (!user) {
-      return res.status(404).json({
-        error: 'User not found'
-      });
-    }
-
-    // Validate required fields
-    if (!firstName || !lastName) {
-      return res.status(400).json({
-        error: 'Missing required fields',
-        details: 'firstName and lastName are required'
-      });
-    }
-
-    // Update user profile (email cannot be changed for now)
-    const updatedUser: RegisteredUser = {
-      ...user,
-      firstName,
-      lastName,
-      businessName: businessName || user.businessName,
-      phone: phone || user.phone,
-      website: website || user.website
-    };
-
-    // Store the updated user
-    registeredUsers.set(userId, updatedUser);
-
-    // Return updated profile (without password)
-    res.json({
-      message: 'Profile updated successfully',
-      user: {
-        id: updatedUser.id,
-        firstName: updatedUser.firstName,
-        lastName: updatedUser.lastName,
-        email: updatedUser.email,
-        businessName: updatedUser.businessName,
-        phone: updatedUser.phone,
-        website: updatedUser.website,
-        role: updatedUser.role,
-        status: updatedUser.status,
-        emailVerified: updatedUser.emailVerified,
-        createdAt: updatedUser.createdAt
-      }
-    });
-
-  } catch (error) {
-    console.error('Profile update error:', error);
-    res.status(500).json({
-      error: 'Failed to update profile',
-      details: 'An internal server error occurred'
-    });
-  }
-});
-
-/**
- * POST /auth/authorize
- * PKCE authorization request (step 1)
- */
-router.post('/authorize', async (req, res) => {
-  try {
-    const { email, password, codeChallenge, codeChallengeMethod } = req.body;
-
-    // Validate required parameters
-    if (!email || !password || !codeChallenge || codeChallengeMethod !== 'S256') {
-      return res.status(400).json({
-        error: 'Missing or invalid required parameters',
-        details: 'email, password, codeChallenge (S256) are required'
-      });
-    }
-
-    // Check demo users first
-    const demoUsers = [
-      { email: 'admin@racc.com', password: 'admin123', role: 'admin', name: 'RACC Administrator' },
-      { email: 'member@racc.com', password: 'member123', role: 'member', name: 'John Doe' },
-      { email: 'moderator@racc.com', password: 'mod123', role: 'moderator', name: 'Jane Smith' },
-      { email: 'demo@racc.com', password: 'demo123', role: 'member', name: 'Demo User' }
-    ];
-
-    let user = demoUsers.find(u => u.email === email && u.password === password);
-    
-    // If not found in demo users, check registered users
-    if (!user) {
-      const registeredUser = Array.from(registeredUsers.values()).find(u => u.email === email && u.password === password);
-      if (registeredUser) {
-        user = {
-          email: registeredUser.email,
-          password: registeredUser.password,
-          role: registeredUser.role,
-          name: `${registeredUser.firstName} ${registeredUser.lastName}`
-        };
-      }
-    }
-    
-    if (!user) {
-      return res.status(401).json({
-        error: 'Invalid credentials',
-        details: 'Email or password is incorrect'
-      });
-    }
-
-    // Generate authorization code
-    const authorizationCode = authSessionService.generateAuthorizationCode();
-    
-    // Store challenge temporarily for later verification (includes user info)
-    await authSessionService.storePKCEChallenge(authorizationCode, codeChallenge, email, user);
-
-    res.status(200).json({
-      authorizationCode,
-      expiresIn: 600 // 10 minutes
-    });
-
-  } catch (error) {
-    console.error('Authorization error:', error);
-    res.status(500).json({
-      error: 'Authorization failed',
-      details: error.message
-    });
-  }
-});
-
-/**
- * POST /auth/session
- * Exchange PKCE authorization code for session (step 2)
- */
-router.post('/session', async (req, res) => {
-  try {
-    const { code, code_verifier } = req.body;
-
-    // Validate required parameters
-    if (!code || !code_verifier) {
-      return res.status(400).json({
-        error: 'Missing required parameters',
-        details: 'code and code_verifier are required'
-      });
-    }
-
-    // Exchange code for session
-    const result = await authSessionService.exchangeCodeForSession(
-      code,
-      code_verifier
-    );
-
-    console.log('Session result:', JSON.stringify(result, null, 2));
-    console.log('Session token:', result.session.token);
-
-    // Return session and user info with explicit token handling
-    const responseData = {
-      sessionId: result.session.id,
-      session: {
-        id: result.session.id,
-        memberId: result.session.memberId,
-        token: result.session.token,
-        expiresAt: result.session.expiresAt
-      },
-      user: result.user
-    };
-
-    console.log('Response data:', JSON.stringify(responseData, null, 2));
-    
-    res.status(200).json(responseData);
-
-  } catch (error) {
-    console.error('Auth session error:', error);
-    
-    if (error.message.includes('Invalid code') || error.message.includes('Invalid verifier')) {
-      return res.status(400).json({
-        error: 'Invalid PKCE parameters',
-        details: error.message
-      });
-    }
-
-    if (error.message.includes('not implemented')) {
-      return res.status(501).json({
-        error: 'Authentication not configured',
-        details: 'Better Auth PKCE integration not yet implemented'
-      });
-    }
-
-    res.status(500).json({
-      error: 'Authentication failed',
-      details: 'Please try again'
-    });
-  }
-});
-
-/**
- * GET /auth/session/:sessionId
- * Validate session and get member info
- */
-router.get('/session/:sessionId', async (req, res) => {
-  try {
-    const { sessionId } = req.params;
-
-    const session = await authSessionService.getSession(sessionId);
-    if (!session) {
-      return res.status(404).json({
-        error: 'Session not found or expired'
-      });
-    }
-
-    res.json({
-      sessionId: session.id,
-      memberId: session.memberId,
-      expiresAt: session.expiresAt,
-      valid: true
-    });
-
-  } catch (error) {
-    console.error('Session validation error:', error);
-    res.status(500).json({
-      error: 'Session validation failed'
-    });
-  }
-});
-
-/**
- * GET /auth/profile
- * Get current user profile from session
- */
-router.get('/profile', async (req, res) => {
-  try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({
-        error: 'Missing or invalid authorization header'
-      });
-    }
-
-    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
-    const session = await authSessionService.getSessionByToken(token);
-    
-    if (!session) {
-      return res.status(401).json({
-        error: 'Invalid or expired session'
-      });
-    }
-
-    // Return user profile (in real implementation, fetch from database)
-    res.json({
-      id: session.memberId,
-      name: session.user?.name || 'Demo User',
-      email: session.user?.email || 'demo@racc.com',
-      role: session.user?.role || 'member',
-      status: 'active'
-    });
-
-  } catch (error) {
-    console.error('Profile fetch error:', error);
-    res.status(500).json({
-      error: 'Failed to fetch profile'
-    });
-  }
-});
-
-/**
- * POST /auth/check-session
- * Check if session is valid
- */
-router.post('/check-session', async (req, res) => {
-  try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ valid: false });
-    }
-
-    const token = authHeader.substring(7);
-    const session = await authSessionService.getSessionByToken(token);
-    
-    if (!session) {
-      return res.status(401).json({ valid: false });
-    }
-
-    res.json({ 
-      valid: true,
-      expiresAt: session.expiresAt 
-    });
-
-  } catch (error) {
-    console.error('Session check error:', error);
-    res.status(500).json({ valid: false });
-  }
-});
-
-/**
- * DELETE /auth/session/:sessionId
- * Invalidate session (logout)
- */
-router.delete('/session/:sessionId', async (req, res) => {
-  try {
-    const { sessionId } = req.params;
-
-    await authSessionService.invalidateSession(sessionId);
-
-    res.status(204).send(); // No content
-
-  } catch (error) {
-    console.error('Session invalidation error:', error);
-    res.status(500).json({
-      error: 'Logout failed'
-    });
-  }
-});
-
-/**
- * POST /auth/refresh
- * Refresh session (extend expiration)
- */
-router.post('/refresh', async (req, res) => {
-  try {
-    const { sessionId } = req.body;
-
-    if (!sessionId) {
-      return res.status(400).json({
-        error: 'sessionId is required'
-      });
-    }
-
-    const session = await authSessionService.getSession(sessionId);
-    if (!session) {
-      return res.status(404).json({
-        error: 'Session not found or expired'
-      });
-    }
-
-    // In a real implementation, this would refresh the token with the OIDC provider
-    // For now, just return the existing session
-    res.json({
-      sessionId: session.id,
-      memberId: session.memberId,
-      expiresAt: session.expiresAt
-    });
-
-  } catch (error) {
-    console.error('Session refresh error:', error);
-    res.status(500).json({
-      error: 'Session refresh failed'
-    });
-  }
-});
-
-/**
- * GET /auth/validate
- * Validate session from Authorization header
- */
-router.get('/validate', async (req, res) => {
-  try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({
-        error: 'Missing or invalid authorization header'
-      });
-    }
-
-    const sessionId = authHeader.substring(7); // Remove 'Bearer '
-    const session = await authSessionService.getSession(sessionId);
-    
-    if (!session) {
-      return res.status(401).json({
-        error: 'Invalid or expired session'
-      });
-    }
-
-    res.json({
-      valid: true,
-      sessionId: session.id,
-      memberId: session.memberId,
-      expiresAt: session.expiresAt
-    });
-
-  } catch (error) {
-    console.error('Session validation error:', error);
-    res.status(500).json({
-      error: 'Session validation failed'
-    });
-  }
-});
-
-/**
- * GET /auth/profile
- * Get current user profile using session
- */
-router.get('/profile', async (req, res) => {
-  try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({
-        error: 'Missing or invalid authorization header'
-      });
-    }
-
-    const sessionId = authHeader.substring(7); // Remove 'Bearer '
-    const session = await authSessionService.getSession(sessionId);
-    
-    if (!session) {
-      return res.status(401).json({
-        error: 'Invalid or expired session'
-      });
-    }
-
-    // TODO: Fetch actual user profile from member database
-    // For now, return mock user data
-    const user = {
-      id: session.memberId,
-      name: 'Test Member',
-      email: 'test@example.com',
-      role: 'member',
-      status: 'active'
-    };
-
-    res.json(user);
-
-  } catch (error) {
-    console.error('Profile fetch error:', error);
-    res.status(500).json({
-      error: 'Profile fetch failed'
-    });
-  }
-});
-
-/**
- * POST /auth/logout
- * Logout using session from Authorization header
- */
-router.post('/logout', async (req, res) => {
-  try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({
-        error: 'Missing or invalid authorization header'
-      });
-    }
-
-    const sessionId = authHeader.substring(7); // Remove 'Bearer '
-    await authSessionService.invalidateSession(sessionId);
-
-    res.status(204).send(); // No content
-
-  } catch (error) {
-    console.error('Logout error:', error);
-    res.status(500).json({
-      error: 'Logout failed'
+      error: 'Failed to retrieve profile'
     });
   }
 });

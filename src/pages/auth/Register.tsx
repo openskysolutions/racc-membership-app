@@ -215,6 +215,7 @@ export const RegisterPage = () => {
                 value={formData.businessName}
                 onChange={handleChange}
                 placeholder="Your Business Name"
+                required
                 disabled={loading}
               />
             </div>
@@ -228,6 +229,7 @@ export const RegisterPage = () => {
                 value={formData.phone}
                 onChange={handleChange}
                 placeholder="(555) 123-4567"
+                required
                 disabled={loading}
               />
             </div>

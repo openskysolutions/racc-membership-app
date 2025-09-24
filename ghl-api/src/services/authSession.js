@@ -1,14 +1,25 @@
 // AuthSession service - implements Better Auth PKCE token exchange and session management
 // Follows OAuth 2.1/OIDC Authorization Code with PKCE flow
 
+const { databaseService } = require('./database');
+
 /**
  * Service for managing authentication sessions using Better Auth PKCE
  * Implements OAuth 2.1/OIDC Authorization Code with PKCE flow
  */
 class AuthSessionService {
   constructor() {
-    this.sessions = new Map(); // In-memory session store
     this.pkceChallenge = new Map(); // Temporary PKCE challenge storage
+    // Initialize database on startup
+    this.initializeDatabase();
+  }
+
+  async initializeDatabase() {
+    try {
+      await databaseService.initialize();
+    } catch (error) {
+      console.error('Failed to initialize database:', error);
+    }
   }
 
   /**
@@ -70,83 +81,102 @@ class AuthSessionService {
   /**
    * Create a new authentication session after PKCE token exchange
    */
-  async createSession(memberId, accessToken, expiresIn) {
+  async createSession(userId, accessToken, expiresIn) {
     const sessionId = this.generateSessionId();
     const expiresAt = new Date(Date.now() + (expiresIn * 1000)).toISOString();
     
-    const session = {
-      id: sessionId,
-      memberId,
-      token: accessToken,
-      expiresAt,
-      createdAt: new Date().toISOString()
-    };
+    try {
+      // Store session in database
+      await databaseService.createSession(userId, sessionId, accessToken, expiresAt);
+      
+      const session = {
+        id: sessionId,
+        userId,
+        token: accessToken,
+        expiresAt,
+        createdAt: new Date().toISOString()
+      };
 
-    // Store session in memory (constitution requirement: ephemeral tokens)
-    this.sessions.set(sessionId, session);
-
-    // Set cleanup timer for expired session
-    setTimeout(() => {
-      this.sessions.delete(sessionId);
-    }, expiresIn * 1000);
-
-    return session;
+      return session;
+    } catch (error) {
+      console.error('Failed to create session:', error);
+      throw new Error('Failed to create authentication session');
+    }
   }
 
   /**
    * Validate and retrieve session by ID
    */
   async getSession(sessionId) {
-    const session = this.sessions.get(sessionId);
-    
-    if (!session) {
+    try {
+      const session = await databaseService.getSessionBySessionId(sessionId);
+      
+      if (!session) {
+        return null;
+      }
+
+      // Check if session is expired
+      if (new Date(session.expiresAt) <= new Date()) {
+        await databaseService.deleteSession(sessionId);
+        return null;
+      }
+
+      return {
+        id: session.sessionId,
+        userId: session.userId,
+        token: session.accessToken,
+        expiresAt: session.expiresAt,
+        createdAt: session.createdAt
+      };
+    } catch (error) {
+      console.error('Failed to get session:', error);
       return null;
     }
-
-    // Check if session has expired
-    if (new Date(session.expiresAt) <= new Date()) {
-      this.sessions.delete(sessionId);
-      return null;
-    }
-
-    return session;
-  }
-
   /**
    * Exchange PKCE authorization code for session
    */
   async exchangeCodeForSession(authorizationCode, codeVerifier) {
-    // 1. Verify PKCE challenge
-    const email = await this.verifyCodeChallenge(authorizationCode, codeVerifier);
-    
-    // 2. Clean up used authorization code
-    this.pkceChallenge.delete(authorizationCode);
-    
-    // 3. TODO: Fetch member info from database using email
-    // For now, create mock member data
-    const memberId = `member_${Date.now()}`;
-    const user = {
-      id: memberId,
-      name: 'Test Member',
-      email: email,
-      role: 'member',
-      status: 'active'
-    };
-    
-    // 4. Create session
-    const session = await this.createSession(memberId, 'mock_token', 3600); // 1 hour
-    
-    return {
-      session,
-      user
-    };
+    try {
+      // 1. Verify PKCE challenge
+      const email = await this.verifyCodeChallenge(authorizationCode, codeVerifier);
+      
+      // 2. Clean up used authorization code
+      this.pkceChallenge.delete(authorizationCode);
+      
+      // 3. Fetch user from database using email
+      const user = await databaseService.getUserByEmail(email);
+      if (!user) {
+        throw new Error('User not found');
+      }
+      
+      // 4. Create session
+      const session = await this.createSession(user.id, 'mock_token', 3600); // 1 hour
+      
+      return {
+        session,
+        user: {
+          id: user.id,
+          name: `${user.firstName} ${user.lastName}`,
+          email: user.email,
+          role: user.role,
+          status: user.status
+        }
+      };
+    } catch (error) {
+      console.error('Failed to exchange code for session:', error);
+      throw error;
+    }
   }
 
   /**
    * Invalidate session (logout)
    */
   async invalidateSession(sessionId) {
-    this.sessions.delete(sessionId);
+    try {
+      await databaseService.deleteSession(sessionId);
+    } catch (error) {
+      console.error('Failed to invalidate session:', error);
+    }
   }
 
   /**

@@ -53,6 +53,7 @@ async function generateCodeChallenge(verifier: string): Promise<string> {
 
 /**
  * Better Auth PKCE login implementation
+ * Updated to use the streamlined /session endpoint
  */
 export async function login(credentials: PKCECredentials): Promise<AuthResponse> {
   try {
@@ -60,65 +61,129 @@ export async function login(credentials: PKCECredentials): Promise<AuthResponse>
     const codeVerifier = generateCodeVerifier();
     const codeChallenge = await generateCodeChallenge(codeVerifier);
     
-    // Store code verifier in sessionStorage (constitutional requirement: ephemeral storage)
-    sessionStorage.setItem('pkce_code_verifier', codeVerifier);
+    console.log('🔐 Starting PKCE login flow...');
     
-    // Step 1: Request authorization with PKCE challenge
-    const authResponse = await fetch(`${API_BASE_URL}/auth/authorize`, {
+    // Use the streamlined /session endpoint that handles the full PKCE flow
+    const sessionResponse = await fetch(`${API_BASE_URL}/auth/session`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         email: credentials.email,
         password: credentials.password,
         codeChallenge,
-        codeChallengeMethod: 'S256'
-      }),
-    });
-
-    if (!authResponse.ok) {
-      const errorData = await authResponse.json().catch(() => ({}));
-      throw new Error(errorData.message || 'Authorization failed');
-    }
-
-    const authData = await authResponse.json();
-    const { authorizationCode } = authData;
-
-    // Step 2: Exchange authorization code for session using PKCE verifier
-    const tokenResponse = await fetch(`${API_BASE_URL}/auth/session`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        authorizationCode,
         codeVerifier
       }),
     });
 
-    if (!tokenResponse.ok) {
-      const errorData = await tokenResponse.json().catch(() => ({}));
-      throw new Error(errorData.message || 'Token exchange failed');
+    if (!sessionResponse.ok) {
+      const errorData = await sessionResponse.json().catch(() => ({}));
+      console.error('❌ Login failed:', errorData);
+      throw new Error(errorData.error_description || errorData.message || 'Login failed');
     }
 
-    const sessionData = await tokenResponse.json();
-    
-    // Clean up code verifier after successful exchange
-    sessionStorage.removeItem('pkce_code_verifier');
+    const sessionData = await sessionResponse.json();
+    console.log('✅ Login successful:', sessionData.user?.email);
     
     // Store complete session data in sessionStorage (constitutional requirement: ephemeral storage)
     const authSessionData = {
-      sessionId: sessionData.session.id,
-      token: sessionData.session.token || sessionData.session.id, // Use token or fallback to session ID
-      memberId: sessionData.session.memberId,
+      sessionId: sessionData.session.sessionId,
+      token: sessionData.session.accessToken,
+      memberId: sessionData.user.id,
       expiresAt: sessionData.session.expiresAt,
       user: sessionData.user
     };
     
     sessionStorage.setItem('racc_auth_session', JSON.stringify(authSessionData));
     
-    return sessionData;
+    return {
+      session: {
+        id: sessionData.session.sessionId,
+        memberId: sessionData.user.id.toString(),
+        token: sessionData.session.accessToken,
+        expiresAt: sessionData.session.expiresAt,
+        createdAt: new Date().toISOString()
+      },
+      user: {
+        id: sessionData.user.id.toString(),
+        name: `${sessionData.user.firstName} ${sessionData.user.lastName}`,
+        email: sessionData.user.email,
+        role: sessionData.user.role,
+        status: sessionData.user.status
+      }
+    };
   } catch (error) {
-    // Clean up on error
-    sessionStorage.removeItem('pkce_code_verifier');
     console.error('PKCE login error:', error);
+    throw error;
+  }
+}
+
+/**
+ * Registration interface
+ */
+interface RegistrationData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  phone?: string;
+  businessName?: string;
+  website?: string;
+  membershipTier?: 'standard' | 'premium' | 'corporate';
+}
+
+interface RegistrationResponse {
+  message: string;
+  user: {
+    id: number;
+    firstName: string;
+    lastName: string;
+    email: string;
+    businessName?: string;
+    phone?: string;
+    website?: string;
+    role: string;
+    status: string;
+    membershipTier: string;
+    ghlContactId: string;
+  };
+  payment: {
+    required: boolean;
+    tier: {
+      name: string;
+      price: number;
+      currency: string;
+      description: string;
+    };
+    paymentLink: string;
+  };
+  nextSteps: string[];
+}
+
+/**
+ * User registration with GoHighLevel integration
+ */
+export async function register(data: RegistrationData): Promise<RegistrationResponse> {
+  try {
+    console.log('📝 Starting user registration...');
+    
+    const response = await fetch(`${API_BASE_URL}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('❌ Registration failed:', errorData);
+      throw new Error(errorData.message || 'Registration failed');
+    }
+
+    const registrationData = await response.json();
+    console.log('✅ Registration successful:', registrationData.user?.email);
+    
+    return registrationData;
+  } catch (error) {
+    console.error('Registration error:', error);
     throw error;
   }
 }

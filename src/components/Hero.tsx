@@ -7,11 +7,11 @@ export const Hero = () => {
   const navigate = useNavigate();
   return (
     <section className={cn(
-      ` bg-[url(@/assets/meeting-image.jpg)] bg-cover bg-center bg-no-repeat bg-[#0f172a] bg-opacity-30 bg-blend-multiply`,
+      ` bg-[url(@/assets/radio-show.jpg)] bg-cover bg-center bg-no-repeat bg-[#0f172a] bg-opacity-30 bg-blend-multiply`,
       'relative'
     )}>
       <div className={cn(
-        "w-full h-full backdrop-blur-[3px] backdrop-brightness-50",
+        "w-full h-full backdrop-blur-[0px] backdrop-brightness-50",
         "container grid 2xl:grid-cols-1 place-items-top py-20 md:py-32 md:px-16 gap-10 max-w-full"
       )}>
         <div className="text-center lg:text-start space-y-6 mb-12">
