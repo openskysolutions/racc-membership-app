@@ -139,7 +139,7 @@ const mockMembers = [
 // GET /api/members - Public route for member directory
 app.get('/api/members', (req, res) => {
   try {
-    const { limit = 20, offset = 0, search = '', role = '' } = req.query;
+    const { limit = 100, offset = 0, search = '', role = '' } = req.query;
     
     let filteredMembers = mockMembers.filter(member => member.status === 'active');
     
@@ -162,7 +162,7 @@ app.get('/api/members', (req, res) => {
     
     // Apply pagination
     const startIndex = parseInt(offset) || 0;
-    const pageSize = parseInt(limit) || 20;
+    const pageSize = parseInt(limit) || 100;
     const paginatedMembers = filteredMembers.slice(startIndex, startIndex + pageSize);
     
     res.json({

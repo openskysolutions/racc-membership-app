@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Search, MapPin, Phone, Mail, Globe, Users } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -6,23 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { api } from '@/services/apiClient';
-import { useAuthStore } from '@/stores/authStore';
+import type { Member as BaseMember } from '@/types/member';
 import { useNavigate } from 'react-router-dom';
 
-interface Member {
-  id: string;
-  firstName?: string;
-  lastName?: string;
-  businessName?: string;
-  email: string;
-  phone?: string;
-  website?: string;
-  avatar?: string;
-  role: string;
-  status: string;
-  memberSince: string;
+// Extended member type for the directory page
+interface Member extends BaseMember {
+  memberSince?: string;
   specialties?: string[];
-  bio?: string;
   address?: {
     street: string;
     city: string;
@@ -31,15 +21,7 @@ interface Member {
   };
 }
 
-interface MembersResponse {
-  members: Member[];
-  total: number;
-  limit: number;
-  offset: number;
-}
-
 const MembersPage: React.FC = () => {
-  const { isAuthenticated } = useAuthStore();
   const navigate = useNavigate();
   
   const [members, setMembers] = useState<Member[]>([]);
@@ -49,33 +31,47 @@ const MembersPage: React.FC = () => {
   const [roleFilter, setRoleFilter] = useState('all');
   const [specialtyFilter, setSpecialtyFilter] = useState('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  
+  // Client-side pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [displayedMembers, setDisplayedMembers] = useState<Member[]>([]);
 
-  // Fetch members data
-  useEffect(() => {
+  const pageSize = 20; // Display 20 members at a time
+  const hasFetchedRef = useRef(false);
 
-    const fetchMembers = async () => {
-      try {
-        setLoading(true);
-        const response = await api.get('/members?limit=50');
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch members: ${response.statusText}`);
-        }
-        
-        const data: MembersResponse = await response.json();
-        setMembers(data.members || []);
-      } catch (err) {
-        console.error('Error fetching members:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load members');
-      } finally {
-        setLoading(false);
+  // Fetch all members data once
+  const getMembers = async () => {
+    if (hasFetchedRef.current) {
+      console.log('🚫 getMembers skipped - already fetched');
+      return;
+    }
+    
+    console.log(`🔍 getMembers called - fetching all members from Members page`);
+    hasFetchedRef.current = true;
+    
+    try {
+      setLoading(true);
+      
+      // Fetch all members directly from our API (which will fetch from GoHighLevel once)
+      const response = await api.get('/members?source=MembersPage');
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch members: ${response.statusText}`);
       }
-    };
+      
+      const data = await response.json();
+      setMembers(data.members || []);
+      
+    } catch (err) {
+      console.error('Error fetching members:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load members');
+      hasFetchedRef.current = false; // Reset so it can be retried
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchMembers();
-  }, [isAuthenticated, navigate]);
-
-  // Filter and search members
+  // Filter members on client side
   const filteredMembers = useMemo(() => {
     return members.filter(member => {
       // Search filter
@@ -97,6 +93,52 @@ const MembersPage: React.FC = () => {
       return matchesSearch && matchesRole && matchesSpecialty;
     });
   }, [members, searchTerm, roleFilter, specialtyFilter]);
+
+  const loadMore = useCallback(() => {
+    // Increase the number of displayed items
+    const currentlyDisplayed = displayedMembers.length;
+    const nextBatch = filteredMembers.slice(currentlyDisplayed, currentlyDisplayed + pageSize);
+    setDisplayedMembers(prev => [...prev, ...nextBatch]);
+  }, [displayedMembers.length, filteredMembers, pageSize]);
+
+  const hasMore = displayedMembers.length < filteredMembers.length;
+
+  // Intersection observer target for scroll pagination
+  const observerTarget = useRef<HTMLDivElement>(null);
+
+  // Intersection observer for infinite scroll
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore) {
+          loadMore();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (observerTarget.current) {
+      observer.observe(observerTarget.current);
+    }
+
+    return () => {
+      if (observerTarget.current) {
+        observer.unobserve(observerTarget.current);
+      }
+    };
+  }, [hasMore, loadMore]);
+
+  // Initial fetch on mount
+  useEffect(() => {
+    console.log('🚀 Initial mount useEffect - calling getMembers');
+    getMembers();
+  }, []); // Empty dependency array - only run on mount
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    console.log(`🔄 Filter change - resetting pagination`);
+    setDisplayedMembers(filteredMembers.slice(0, pageSize));
+  }, [filteredMembers, pageSize]);
 
   // Get unique specialties for filter dropdown
   const allSpecialties = useMemo(() => {
@@ -263,7 +305,7 @@ const MembersPage: React.FC = () => {
       </Card> */}
 
       {/* Members Grid/List */}
-      {filteredMembers.length === 0 ? (
+      {displayedMembers.length === 0 ? (
         <Card>
           <CardContent className="pt-6">
             <div className="text-center py-8">
@@ -276,12 +318,13 @@ const MembersPage: React.FC = () => {
           </CardContent>
         </Card>
       ) : (
-        <div className={
-          viewMode === 'grid' 
-            ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
-            : "space-y-2 gap-2"
-        }>
-          {filteredMembers.map((member) => (
+        <>
+          <div className={
+            viewMode === 'grid' 
+              ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+              : "space-y-2 gap-2"
+          }>
+            {displayedMembers.map((member) => (
             <Card 
               key={member.id} 
               className={`cursor-pointer hover:shadow-lg transition-shadow ${
@@ -356,6 +399,25 @@ const MembersPage: React.FC = () => {
             </Card>
           ))}
         </div>
+        
+        <div className="mt-8 space-y-4">
+          {/* Intersection Observer Target for Infinite Scroll */}
+          {hasMore && (
+            <div ref={observerTarget} className="h-4 flex justify-center">
+              <div className="text-sm text-muted-foreground">
+                Loading more members...
+              </div>
+            </div>
+          )}
+
+          {/* Stats */}
+          <div className="flex justify-center">
+            <p className="text-sm text-muted-foreground">
+              Showing {displayedMembers.length} of {filteredMembers.length} members
+            </p>
+          </div>
+        </div>
+        </>
       )}
     </div>
   );

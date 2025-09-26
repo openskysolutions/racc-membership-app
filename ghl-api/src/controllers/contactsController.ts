@@ -15,7 +15,7 @@ const groupId = process.env.GROUP_ID;
 async function searchContactsAdvanced(req, res, next) {
   try {
     req.body.locationId = process.env.LOCATION_ID;
-    req.body.pageLimit = req.body.pageLimit || 20;
+    req.body.pageLimit = req.body.pageLimit || 500;
     const result = await svc.searchContactsAdvanced(req.body);
     res.json(result);
   } catch (err) {
@@ -43,7 +43,7 @@ async function membersList(req, res, next) {
     const reqBody = {
       "locationId": locationId,
       "page": req.body?.page || 1,
-      "pageLimit": req.body?.pageLimit || 20,
+      "pageLimit": req.body?.pageLimit || 100,
       "sort": req.body?.sort || [],
       "filters": [
         {

@@ -38,15 +38,15 @@ class MembersController {
    */
   async getMembers(req: Request, res: Response) {
     try {
-      const { limit = 50, offset = 0, search = '', role = '' } = req.query;
+      const { search = '', role = '' } = req.query;
       
-      // Fetch active contacts from GoHighLevel
-      const contacts = await ghlService.getContactsWithTags(['active'], parseInt(limit as string || '50'));
+      // Fetch all active contacts from GoHighLevel once
+      const contacts = await ghlService.getContactsWithTags(['active'], 10000);
       
       // Transform GoHighLevel contacts to our Member format
       let transformedMembers = contacts.map(contact => this.transformContactToMember(contact));
       
-      // Filter by search term (name, business, email)
+      // Filter by search term (name, business, email) - only if search is provided
       if (search && typeof search === 'string') {
         const searchLower = search.toLowerCase();
         transformedMembers = transformedMembers.filter(member => 
@@ -58,21 +58,15 @@ class MembersController {
         );
       }
       
-      // Filter by role (based on tags)
+      // Filter by role (based on tags) - only if role is provided
       if (role && typeof role === 'string') {
         transformedMembers = transformedMembers.filter(member => member.role === role);
       }
       
-      // Apply pagination (client-side since GHL filtering might be limited)
-      const startIndex = parseInt(offset as string || '0');
-      const pageSize = Math.min(parseInt(limit as string || '50'), 100); // Cap at 100
-      const paginatedMembers = transformedMembers.slice(startIndex, startIndex + pageSize);
-      
+      // Return all members - let frontend handle pagination
       res.json({
-        members: paginatedMembers,
-        total: transformedMembers.length,
-        limit: pageSize,
-        offset: startIndex
+        members: transformedMembers,
+        total: transformedMembers.length
       });
     } catch (error) {
       console.error('Error fetching members from GoHighLevel:', error);

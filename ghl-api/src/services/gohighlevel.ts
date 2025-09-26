@@ -33,7 +33,14 @@ class GoHighLevelService {
   private developmentMode: boolean;
 
   constructor() {
+    // Debug: Log environment variables
+    console.log('🔍 GoHighLevel Debug:');
+    console.log('NODE_ENV:', process.env.NODE_ENV);
+    console.log('PRIVATE_INTEGRATION_TOKEN:', process.env.PRIVATE_INTEGRATION_TOKEN ? 'SET' : 'NOT SET');
+    console.log('LOCATION_ID:', process.env.LOCATION_ID ? 'SET' : 'NOT SET');
+    
     this.developmentMode = process.env.NODE_ENV === 'development' || !process.env.PRIVATE_INTEGRATION_TOKEN || !process.env.LOCATION_ID;
+    console.log('Development Mode:', this.developmentMode);
     
     if (this.developmentMode) {
       console.log('🚧 GoHighLevel service running in DEVELOPMENT MODE (mock responses)');
@@ -467,9 +474,68 @@ class GoHighLevelService {
   }
 
   /**
-   * Get contacts with specific tags
+   * Get all contacts from GoHighLevel (no filtering)
+   * @returns Promise<any[]> Array of all contacts
    */
-  async getContactsWithTags(tags: string[] = ['active'], limit: number = 100): Promise<any[]> {
+  async getAllContacts(): Promise<any[]> {
+    if (this.developmentMode) {
+      console.log(`🚧 DEV MODE: Mock fetching all contacts`);
+      // Return mock data for development
+      return [
+        {
+          id: '1',
+          firstName: 'John',
+          lastName: 'Doe',
+          email: 'john.doe@example.com',
+          phone: '(435) 555-0101',
+          tags: ['member'],
+          dateAdded: '2023-01-15T00:00:00.000Z',
+          customFields: [
+            { id: 'memberSince', value: '2023-01-15' },
+            { id: 'specialties', value: 'Business Development, Marketing' }
+          ]
+        },
+        {
+          id: '2',
+          firstName: 'Jane',
+          lastName: 'Smith',
+          email: 'jane.smith@example.com',
+          phone: '(435) 555-0102',
+          tags: ['active', 'board'],
+          dateAdded: '2022-11-20T00:00:00.000Z',
+          customFields: [
+            { id: 'memberSince', value: '2022-11-20' },
+            { id: 'specialties', value: 'Real Estate, Investment' }
+          ]
+        }
+      ];
+    }
+
+    if (!this.client) {
+      throw new Error('GoHighLevel client not initialized');
+    }
+
+    try {
+      console.log(`🔍 Fetching all contacts from GoHighLevel...`);
+      // Fetch all contacts for the location
+      const response = await this.client.get(`/contacts/?locationId=${this.locationId}`);
+
+      if (response.data && response.data.contacts) {
+        console.log(`📊 Retrieved ${response.data.contacts.length} total contacts from GoHighLevel`);
+        return response.data.contacts;
+      }
+      
+      return [];
+    } catch (error: any) {
+      console.error('Failed to fetch all contacts:', error);
+      throw new Error(`Failed to fetch contacts: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get contacts with specific tags (with pagination support)
+   */
+  async getContactsWithTags(tags: string[] = ['active'], limit: number = 20): Promise<any[]> {
     if (this.developmentMode) {
       console.log(`🚧 DEV MODE: Mock fetching contacts with tags:`, tags);
       // Return mock active members for development
@@ -530,19 +596,50 @@ class GoHighLevelService {
     }
 
     try {
-      // Fetch all contacts for the location (no limit or tag filtering in API call)
-      const response = await this.client.get(`/contacts/?locationId=${this.locationId}`);
+      let allContacts: any[] = [];
+      let page = 1;
+      const pageSize = 20; // GHL API hard limit
+      let hasMore = true;
 
-      if (response.data && response.data.contacts) {
-        // Filter contacts in memory by tags
-        return response.data.contacts.filter((contact: any) => {
-          if (!contact.tags || !Array.isArray(contact.tags)) return false;
-          // All requested tags must be present
-          return tags.every(tag => contact.tags.includes(tag));
-        });
+      while (hasMore && allContacts.length < limit) {
+        console.log(`Fetching contacts page ${page} (pageSize: ${pageSize}), total so far: ${allContacts.length}`);
+        
+        const response = await this.client.get(
+          `/contacts/?locationId=${this.locationId}&limit=${pageSize}&page=${page}`
+        );
+
+        if (response.data && response.data.contacts) {
+          const contacts = response.data.contacts;
+          console.log(`Received ${contacts.length} contacts from API on page ${page}`);
+          
+          // Filter contacts by tags
+          const filteredContacts = contacts.filter((contact: any) => {
+            if (!contact.tags || !Array.isArray(contact.tags)) return false;
+            // All requested tags must be present
+            return tags.every(tag => contact.tags.includes(tag));
+          });
+
+          console.log(`After filtering by tags [${tags.join(', ')}]: ${filteredContacts.length} contacts`);
+          allContacts.push(...filteredContacts);
+          
+          // Check if we have more pages
+          hasMore = contacts.length === pageSize;
+          console.log(`hasMore: ${hasMore} (received ${contacts.length}, pageSize: ${pageSize})`);
+          page++;
+
+          // Add small delay to avoid rate limiting
+          if (hasMore) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+          }
+        } else {
+          hasMore = false;
+        }
       }
+
+      console.log(`Fetched ${allContacts.length} contacts with tags [${tags.join(', ')}]`);
       
-      return [];
+      // Return up to the requested limit
+      return allContacts.slice(0, limit);
     } catch (error: any) {
       console.error('Failed to fetch contacts with tags:', error);
       throw new Error(`Failed to fetch contacts: ${error.message}`);
