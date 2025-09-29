@@ -1,18 +1,21 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, MapPin, Users, Plus } from 'lucide-react';
-import { getEventsList, Event } from '@/services/events';
+import { getCurrentYearEvents, CalendarEvent } from '@/services/calendar';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useNavigate } from 'react-router-dom';
 
+// GoHighLevel Calendar ID - RACC Events
+const GHL_CALENDAR_ID = '9XpDcFHv3SmCUuHeuOOg';
+
 const CalendarPage: React.FC = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [events, setEvents] = useState<Event[]>([]);
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [createEventDialogOpen, setCreateEventDialogOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -22,17 +25,18 @@ const CalendarPage: React.FC = () => {
     const fetchEvents = async () => {
       try {
         setLoading(true);
-        const eventsData = await getEventsList({ status: 'published' });
-        setEvents(eventsData);
+        const ghlEventsData = await getCurrentYearEvents(GHL_CALENDAR_ID);
+        setEvents(ghlEventsData);
       } catch (error) {
         console.error('Error loading events:', error);
+        setEvents([]);
       } finally {
         setLoading(false);
       }
     };
 
     fetchEvents();
-  }, []);
+  }, [currentDate]); // Re-fetch when month changes
 
   // Calendar computation
   const monthNames = [
@@ -97,7 +101,7 @@ const CalendarPage: React.FC = () => {
   // Get events for a specific day
   const getEventsForDay = (date: Date) => {
     return events.filter(event => {
-      const eventDate = new Date(event.startsAt);
+      const eventDate = new Date(event.startTime);
       return eventDate.toDateString() === date.toDateString();
     });
   };
@@ -116,7 +120,7 @@ const CalendarPage: React.FC = () => {
   };
 
   // Event handlers
-  const handleEventClick = (event: Event) => {
+  const handleEventClick = (event: CalendarEvent) => {
     setSelectedEvent(event);
     setDialogOpen(true);
   };
@@ -149,9 +153,9 @@ const CalendarPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="container py-20">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="container flex flex-grow py-8 px-3 md:px-6 w-full h-full">
+        <div className="flex w-full items-center justify-center">
+          <div className="animate-spin rounded-full h-20 w-20 border-b-2 border-primary"></div>
         </div>
       </div>
     );
@@ -288,13 +292,13 @@ const CalendarPage: React.FC = () => {
               <div className="space-y-4">
                 <div className="flex items-center gap-2 text-sm">
                   <Clock className="h-4 w-4 text-muted-foreground" />
-                  <span>{formatEventDate(selectedEvent.startsAt)}</span>
+                  <span>{formatEventDate(selectedEvent.startTime)}</span>
                   <span>•</span>
-                  <span>{formatEventTime(selectedEvent.startsAt)}</span>
-                  {selectedEvent.endsAt && (
+                  <span>{formatEventTime(selectedEvent.startTime)}</span>
+                  {selectedEvent.endTime && (
                     <>
                       <span>-</span>
-                      <span>{formatEventTime(selectedEvent.endsAt)}</span>
+                      <span>{formatEventTime(selectedEvent.endTime)}</span>
                     </>
                   )}
                 </div>
@@ -306,19 +310,19 @@ const CalendarPage: React.FC = () => {
                   </div>
                 )}
                 
-                {selectedEvent.maxAttendees && (
+                {selectedEvent.attendees && selectedEvent.attendees.length > 0 && (
                   <div className="flex items-center gap-2 text-sm">
                     <Users className="h-4 w-4 text-muted-foreground" />
-                    <span>Max {selectedEvent.maxAttendees} attendees</span>
+                    <span>{selectedEvent.attendees.length} attendees</span>
                   </div>
                 )}
                 
                 <div className="flex gap-2">
-                  <Badge variant={selectedEvent.visibility === 'public' ? 'default' : 'secondary'}>
-                    {selectedEvent.visibility}
+                  <Badge variant={selectedEvent.status === 'confirmed' ? 'default' : 'secondary'}>
+                    {selectedEvent.status}
                   </Badge>
-                  {selectedEvent.isVirtual && (
-                    <Badge variant="outline">Virtual</Badge>
+                  {selectedEvent.isAllDay && (
+                    <Badge variant="outline">All Day</Badge>
                   )}
                 </div>
               </div>

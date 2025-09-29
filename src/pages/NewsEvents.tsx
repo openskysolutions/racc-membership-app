@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Calendar as CalendarIcon, MapPin, Users, Clock, Plus, Edit, Eye, Shield, Check, X } from 'lucide-react';
 import { getEventsList, Event, createEvent, updateEvent, createOrUpdateRSVP, getMyRSVP, RSVP } from '@/services/events';
 import { getModerationQueue, approveEvent, rejectEvent, checkModerationAccess } from '@/services/eventModeration';
+import { getUpcomingEvents, CalendarEvent } from '@/services/calendar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -12,8 +13,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
+// GoHighLevel Calendar ID - RACC Events
+const GHL_CALENDAR_ID = '9XpDcFHv3SmCUuHeuOOg';
+
 const NewsEventsPages: React.FC = () => {
   const [events, setEvents] = useState<Event[]>([]);
+  const [ghlEvents, setGhlEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('view');
@@ -53,8 +58,28 @@ const NewsEventsPages: React.FC = () => {
     const fetchEvents = async () => {
       try {
         setLoading(true);
-        const eventsData = await getEventsList({ status: 'published' });
-        setEvents(eventsData);
+        
+        // Fetch both local events and GoHighLevel events in parallel
+        const [eventsData, ghlEventsData] = await Promise.allSettled([
+          getEventsList({ status: 'published' }),
+          getUpcomingEvents(GHL_CALENDAR_ID)
+        ]);
+        
+        // Handle local events
+        if (eventsData.status === 'fulfilled') {
+          setEvents(eventsData.value);
+        } else {
+          console.error('Failed to fetch local events:', eventsData.reason);
+        }
+        
+        // Handle GoHighLevel events
+        if (ghlEventsData.status === 'fulfilled') {
+          setGhlEvents(ghlEventsData.value);
+        } else {
+          console.error('Failed to fetch GoHighLevel events:', ghlEventsData.reason);
+          // Don't fail the whole page if GHL events fail
+          setGhlEvents([]);
+        }
         
         // Check moderation access
         try {
@@ -319,14 +344,11 @@ const NewsEventsPages: React.FC = () => {
 
   if (loading) {
     return (
-      <section className="container py-20">
-        <div className="flex items-center justify-center">
-          <div className="text-center">
-            <CalendarIcon className="h-8 w-8 animate-spin mx-auto mb-4" />
-            <p>Loading events...</p>
-          </div>
+      <div className="container flex flex-grow py-8 px-3 md:px-6 w-full h-full">
+        <div className="flex w-full items-center justify-center">
+          <div className="animate-spin rounded-full h-20 w-20 border-b-2 border-primary"></div>
         </div>
-      </section>
+      </div>
     );
   }
 
@@ -372,7 +394,83 @@ const NewsEventsPages: React.FC = () => {
         </TabsList>
 
         <TabsContent value="view" className="space-y-6">
-          {events.length === 0 ? (
+          {/* GoHighLevel Events Section */}
+          {ghlEvents.length > 0 && (
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h2 className="text-xl font-semibold">RACC Calendar Events</h2>
+                <Badge variant="secondary">From GoHighLevel</Badge>
+              </div>
+              
+              <div className="grid gap-6">
+                {ghlEvents.map((event) => (
+                  <Card key={`ghl-${event.id}`} className="hover:shadow-lg transition-shadow border-l-4 border-l-blue-500">
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <CardTitle className="text-xl mb-2">{event.title}</CardTitle>
+                          {event.description && (
+                            <CardDescription className="text-base">
+                              {event.description}
+                            </CardDescription>
+                          )}
+                        </div>
+                        <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                          Calendar Event
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+                        <div className="flex items-center gap-2">
+                          <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm">
+                            {new Date(event.startTime).toLocaleDateString('en-US', {
+                              weekday: 'short',
+                              month: 'short',
+                              day: 'numeric'
+                            })}
+                          </span>
+                        </div>
+                        
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm">
+                            {new Date(event.startTime).toLocaleTimeString('en-US', {
+                              hour: 'numeric',
+                              minute: '2-digit',
+                              hour12: true
+                            })}
+                            {event.endTime && ` - ${new Date(event.endTime).toLocaleTimeString('en-US', {
+                              hour: 'numeric',
+                              minute: '2-digit',
+                              hour12: true
+                            })}`}
+                          </span>
+                        </div>
+                        
+                        {event.location && (
+                          <div className="flex items-center gap-2">
+                            <MapPin className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm">{event.location}</span>
+                          </div>
+                        )}
+                        
+                        <div className="flex items-center gap-2">
+                          <Badge variant={event.status === 'confirmed' ? 'default' : 'secondary'}>
+                            {event.status}
+                          </Badge>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Local Events Section */}
+          {events.length === 0 && ghlEvents.length === 0 ? (
             <Card>
               <CardContent className="py-12">
                 <div className="text-center">
@@ -386,10 +484,11 @@ const NewsEventsPages: React.FC = () => {
                 </div>
               </CardContent>
             </Card>
-          ) : (
+          ) : events.length > 0 ? (
             <div className="space-y-6">
+              {ghlEvents.length > 0 && <hr className="my-8" />}
               <div className="flex justify-between items-center">
-                <h2 className="text-xl font-semibold">Upcoming Events</h2>
+                <h2 className="text-xl font-semibold">Member-Created Events</h2>
                 <Button onClick={handleCreateEvent}>
                   <Plus className="h-4 w-4 mr-2" />
                   Create Event
@@ -471,7 +570,15 @@ const NewsEventsPages: React.FC = () => {
                 ))}
               </div>
             </div>
-          )}
+          ) : ghlEvents.length > 0 ? (
+            // Only show create button when there are GHL events but no local events
+            <div className="text-center py-6">
+              <Button onClick={handleCreateEvent}>
+                <Plus className="h-4 w-4 mr-2" />
+                Create Your First Event
+              </Button>
+            </div>
+          ) : null}
         </TabsContent>
 
         <TabsContent value="create" className="space-y-6">

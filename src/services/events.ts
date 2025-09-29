@@ -4,16 +4,25 @@ export interface Event {
   id: string;
   title: string;
   description?: string;
-  startsAt: string;
-  endsAt: string;
+  startTime: string; // GoHighLevel format
+  endTime: string;   // GoHighLevel format
   location?: string;
-  isVirtual: boolean;
+  isAllDay?: boolean;
+  status: 'confirmed' | 'cancelled' | 'tentative';
+  calendarId?: string;
+  attendees?: Array<{
+    email: string;
+    name?: string;
+    responseStatus: string;
+  }>;
+  timezone?: string;
+  // Keep some local event properties as optional for backwards compatibility
   maxAttendees?: number;
-  ownerId: string;
-  status: 'draft' | 'published' | 'cancelled';
-  visibility: 'public' | 'members' | 'restricted';
-  createdAt: string;
-  updatedAt: string;
+  ownerId?: string;
+  visibility?: 'public' | 'members' | 'restricted';
+  isVirtual?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface RSVP {

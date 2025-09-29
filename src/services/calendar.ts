@@ -1,0 +1,193 @@
+/**
+ * Calendar Service - Handles GoHighLevel calendar event integration
+ */
+
+import { api } from './apiClient';
+
+export interface CalendarEvent {
+  id: string;
+  title: string;
+  description?: string;
+  startTime: string;
+  endTime: string;
+  location?: string;
+  calendarId: string;
+  status: 'confirmed' | 'cancelled' | 'tentative';
+  attendees?: Array<{
+    email: string;
+    name?: string;
+    responseStatus: string;
+  }>;
+  isAllDay?: boolean;
+  timezone?: string;
+}
+
+export interface Calendar {
+  id: string;
+  name: string;
+  description?: string;
+  locationId: string;
+  timezone: string;
+}
+
+/**
+ * Get calendar events from GoHighLevel
+ * @param calendarId - The GoHighLevel calendar ID
+ * @param startDate - Optional start date filter
+ * @param endDate - Optional end date filter
+ */
+export async function getCalendarEvents(
+  calendarId: string, 
+  startDate?: Date, 
+  endDate?: Date
+): Promise<CalendarEvent[]> {
+  try {
+    const params = new URLSearchParams();
+    if (startDate) {
+      params.append('startDate', startDate.toISOString());
+    }
+    if (endDate) {
+      params.append('endDate', endDate.toISOString());
+    }
+
+    const queryString = params.toString();
+    const url = `/calendars/${calendarId}/events${queryString ? `?${queryString}` : ''}`;
+    
+    console.log('Fetching calendar events from:', url);
+    const response = await api.get(url);
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch calendar events: ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    
+    // Handle different response structures from GoHighLevel
+    const events = data?.events || data || [];
+    
+    console.log(`Retrieved ${events.length} calendar events`);
+    
+    // Transform GoHighLevel event format to our format if needed
+    return events.map((event: any) => ({
+      id: event.id,
+      title: event.title || event.name || 'Untitled Event',
+      description: event.description,
+      startTime: event.startTime || event.start_time,
+      endTime: event.endTime || event.end_time,
+      location: event.location,
+      calendarId: event.calendarId || calendarId,
+      status: event.status || 'confirmed',
+      attendees: event.attendees || [],
+      isAllDay: event.isAllDay || event.all_day || false,
+      timezone: event.timezone || 'America/Denver'
+    }));
+  } catch (error: any) {
+    console.error('Error fetching calendar events:', error);
+    throw new Error(`Failed to fetch calendar events: ${error.message}`);
+  }
+}
+
+/**
+ * Get calendar information
+ * @param calendarId - The GoHighLevel calendar ID
+ */
+export async function getCalendar(calendarId: string): Promise<Calendar> {
+  try {
+    const response = await api.get(`/calendars/${calendarId}`);
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch calendar: ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    const calendar = data?.calendar || data;
+    
+    return {
+      id: calendar.id,
+      name: calendar.name || 'RACC Events',
+      description: calendar.description,
+      locationId: calendar.locationId,
+      timezone: calendar.timezone || 'America/Denver'
+    };
+  } catch (error: any) {
+    console.error('Error fetching calendar:', error);
+    throw new Error(`Failed to fetch calendar: ${error.message}`);
+  }
+}
+
+/**
+ * Get events for the current year (12 months from now)
+ * @param calendarId - The GoHighLevel calendar ID
+ */
+export async function getCurrentYearEvents(calendarId: string): Promise<CalendarEvent[]> {
+  const now = new Date();
+  const startOfYear = new Date(now.getFullYear(), now.getMonth(), 1); // Start from current month
+  const endOfYear = new Date(now.getFullYear() + 1, now.getMonth(), 0, 23, 59, 59); // End 12 months from now
+  
+  return getCalendarEvents(calendarId, startOfYear, endOfYear);
+}
+
+/**
+ * Get events for the current month (keeping for backward compatibility)
+ * @param calendarId - The GoHighLevel calendar ID
+ */
+export async function getCurrentMonthEvents(calendarId: string): Promise<CalendarEvent[]> {
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+  
+  return getCalendarEvents(calendarId, startOfMonth, endOfMonth);
+}
+
+/**
+ * Get upcoming events (next year)
+ * @param calendarId - The GoHighLevel calendar ID
+ */
+export async function getUpcomingEvents(calendarId: string): Promise<CalendarEvent[]> {
+  const now = new Date();
+  const oneYearFromNow = new Date();
+  oneYearFromNow.setFullYear(now.getFullYear() + 1);
+  
+  const events = await getCalendarEvents(calendarId, now, oneYearFromNow);
+  
+  // Sort by start time
+  return events.sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+}
+
+/**
+ * Format event date and time for display
+ */
+export function formatEventDateTime(startTime: string, endTime: string, isAllDay?: boolean): string {
+  const start = new Date(startTime);
+  const end = new Date(endTime);
+  
+  const dateOptions: Intl.DateTimeFormatOptions = {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  };
+  
+  const timeOptions: Intl.DateTimeFormatOptions = {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  };
+  
+  if (isAllDay) {
+    return start.toLocaleDateString('en-US', dateOptions);
+  }
+  
+  const dateStr = start.toLocaleDateString('en-US', dateOptions);
+  const startTimeStr = start.toLocaleTimeString('en-US', timeOptions);
+  const endTimeStr = end.toLocaleTimeString('en-US', timeOptions);
+  
+  // If same day
+  if (start.toDateString() === end.toDateString()) {
+    return `${dateStr}, ${startTimeStr} - ${endTimeStr}`;
+  }
+  
+  // Multi-day event
+  const endDateStr = end.toLocaleDateString('en-US', dateOptions);
+  return `${dateStr} ${startTimeStr} - ${endDateStr} ${endTimeStr}`;
+}

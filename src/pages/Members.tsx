@@ -33,7 +33,6 @@ const MembersPage: React.FC = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   
   // Client-side pagination state
-  const [currentPage, setCurrentPage] = useState(1);
   const [displayedMembers, setDisplayedMembers] = useState<Member[]>([]);
 
   const pageSize = 20; // Display 20 members at a time
@@ -179,9 +178,9 @@ const MembersPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="container py-20 px-3 md:px-6">
-        <div className="flex items-center justify-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      <div className="container flex flex-grow py-8 px-3 md:px-6 w-full h-full">
+        <div className="flex w-full items-center justify-center">
+          <div className="animate-spin rounded-full h-20 w-20 border-b-2 border-primary"></div>
         </div>
       </div>
     );
@@ -189,7 +188,7 @@ const MembersPage: React.FC = () => {
 
   if (error) {
     return (
-      <div className="container py-20 px-3 md:px-6">
+      <div className="container py-8 px-3 md:px-6">
         <Card className="max-w-md mx-auto">
           <CardContent className="pt-6">
             <div className="text-center">
@@ -205,7 +204,7 @@ const MembersPage: React.FC = () => {
   }
 
   return (
-    <div className="container py-20 px-3 md:px-6">
+    <div className="container py-8 px-3 md:px-6">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Member Directory</h1>

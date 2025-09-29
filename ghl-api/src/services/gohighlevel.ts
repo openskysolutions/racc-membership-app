@@ -61,7 +61,11 @@ class GoHighLevelService {
           'Authorization': `Bearer ${process.env.PRIVATE_INTEGRATION_TOKEN}`,
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          'Version': '2021-07-28',
+          'Version': '2021-04-15',
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36',
+          'Accept-Encoding': 'gzip, deflate, br',
+          'Accept-Language': 'en-US,en;q=0.9',
+          'Cache-Control': 'no-cache'
         }
       });
       
@@ -643,6 +647,83 @@ class GoHighLevelService {
     } catch (error: any) {
       console.error('Failed to fetch contacts with tags:', error);
       throw new Error(`Failed to fetch contacts: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get calendar events from GoHighLevel using the exact format that works in Stoplight
+   */
+  async getCalendarEvents(calendarId: string, startDate?: Date, endDate?: Date): Promise<any[]> {
+    console.log(`🔍 Production mode: Fetching real calendar events for calendar: ${calendarId}`);
+    console.log(`Development mode status: ${this.developmentMode}`);
+    
+    if (!this.client) {
+      throw new Error('GoHighLevel client not initialized');
+    }
+
+    try {
+      console.log(`Fetching calendar events for calendar: ${calendarId}`);
+      console.log(`Date range: ${startDate?.toISOString()} - ${endDate?.toISOString()}`);
+      
+      const now = new Date();
+      const defaultStartDate = startDate || new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000)); // 30 days ago
+      const defaultEndDate = endDate || new Date(now.getTime() + (30 * 24 * 60 * 60 * 1000)); // 30 days ahead
+      
+      // Convert dates to timestamps (milliseconds) like the working Stoplight request
+      const startTimestamp = defaultStartDate.getTime();
+      const endTimestamp = defaultEndDate.getTime();
+      
+      console.log(`Using timestamps - Start: ${startTimestamp}, End: ${endTimestamp}`);
+      
+      // Use the exact format that worked in Stoplight
+      const params = {
+        locationId: this.locationId,
+        calendarId: calendarId,
+        startTime: startTimestamp,
+        endTime: endTimestamp
+      };
+
+      console.log(`🔄 Making request to /calendars/events with params:`, params);
+      
+      const response = await this.client.get('/calendars/events', {
+        params: params
+      });
+      
+      console.log(`✅ Success - Status: ${response.status}`);
+      console.log(`Response data keys:`, Object.keys(response.data || {}));
+      console.log(`Full response data:`, JSON.stringify(response.data, null, 2));
+      
+      // Handle the events array from response
+      const events = response.data?.events || [];
+      console.log(`Retrieved ${events.length} events from GoHighLevel`);
+      
+      // Log first few events for debugging
+      if (events.length > 0) {
+        console.log(`Sample event data:`, JSON.stringify(events[0], null, 2));
+      }
+      
+      // Return events in the format expected by the frontend
+      return events.map((event: any) => ({
+        id: event.id,
+        title: event.title || 'Untitled Event',
+        startTime: event.startTime,
+        endTime: event.endTime,
+        description: event.description || '',
+        location: event.address || '',
+        calendarId: event.calendarId || calendarId,
+        appointmentStatus: event.appointmentStatus,
+        contactId: event.contactId,
+        locationId: event.locationId,
+        isRecurring: event.isRecurring,
+        rrule: event.rrule,
+        ...event
+      }));
+      
+    } catch (error: any) {
+      console.error('Failed to fetch calendar events:', error);
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      throw new Error(`Failed to fetch calendar events: ${error.message}`);
     }
   }
 }

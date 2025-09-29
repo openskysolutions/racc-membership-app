@@ -47,7 +47,7 @@ export default function AppRoutes() {
         <Route path="nominations" element={<NominationsPage />} />
         <Route path="news-events" element={<NewsEventsPage />} />
         <Route path="members" element={<MembersPage />} />
-        <Route path="members/:slug" element={<MemberDetailsPage />} />
+        <Route path="members/:id" element={<MemberDetailsPage />} />
         <Route path="job-postings" element={<JobPostingsPage />} />
         <Route path="contact" element={<ContactPage />} />
         <Route path="calendar" element={<CalendarPage />} />

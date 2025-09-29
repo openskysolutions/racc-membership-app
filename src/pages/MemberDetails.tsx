@@ -1,34 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Mail, Phone, Globe, MapPin, Calendar, Shield, User, Building } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, Globe, Calendar, Shield, User } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { api } from '@/services/apiClient';
 import { useAuthStore } from '@/stores/authStore';
-
-interface Member {
-  id: string;
-  firstName?: string;
-  lastName?: string;
-  businessName?: string;
-  email: string;
-  phone?: string;
-  website?: string;
-  avatar?: string;
-  role: string;
-  status: string;
-  memberSince: string;
-  specialties?: string[];
-  bio?: string;
-  address?: {
-    street: string;
-    city: string;
-    state: string;
-    zipCode: string;
-  };
-}
+import type { Member } from '@/types/member';
 
 const MemberDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -105,25 +84,13 @@ const MemberDetailsPage: React.FC = () => {
     }
   };
 
-  const formatMemberSince = (dateString: string) => {
-    try {
-      return new Date(dateString).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
-    } catch {
-      return dateString;
-    }
-  };
-
   const isOwnProfile = user?.id === member?.id;
 
   if (loading) {
     return (
-      <div className="container py-20 px-3 md:px-6">
-        <div className="flex items-center justify-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      <div className="container flex flex-grow py-8 px-3 md:px-6 w-full h-full">
+        <div className="flex w-full items-center justify-center">
+          <div className="animate-spin rounded-full h-20 w-20 border-b-2 border-primary"></div>
         </div>
       </div>
     );
@@ -131,7 +98,7 @@ const MemberDetailsPage: React.FC = () => {
 
   if (error || !member) {
     return (
-      <div className="container py-20 px-3 md:px-6">
+      <div className="container py-8 px-3 md:px-6">
         <Card className="max-w-md mx-auto">
           <CardContent className="pt-6">
             <div className="text-center">
@@ -147,13 +114,13 @@ const MemberDetailsPage: React.FC = () => {
   }
 
   return (
-    <div className="container py-20 px-3 md:px-6">
+    <div className="container py-8 px-3 md:px-6">
       {/* Header */}
-      <div className="mb-6">
+      <div className="mb-0">
         <Button
           variant="ghost"
           onClick={() => navigate('/members')}
-          className="mb-4"
+          className="mb-0"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Members
@@ -218,21 +185,23 @@ const MemberDetailsPage: React.FC = () => {
               )}
               
               {/* Specialties */}
-              {member.specialties && member.specialties.length > 0 && (
-                <div>
-                  <h3 className="font-semibold mb-3 flex items-center gap-2">
-                    <Building className="h-4 w-4" />
-                    Specialties
-                  </h3>
-                  <div className="flex flex-wrap gap-2">
+                            {/* member.specialties && member.specialties.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Shield className="h-4 w-4" />
+                      Specialties
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
                     {member.specialties.map(specialty => (
-                      <Badge key={specialty} variant="outline" className="text-sm">
+                      <Badge key={specialty} variant="secondary" className="mr-2 mb-2">
                         {specialty}
                       </Badge>
                     ))}
-                  </div>
-                </div>
-              )}
+                  </CardContent>
+                </Card>
+              ) */}
             </CardContent>
           </Card>
         </div>
@@ -280,7 +249,7 @@ const MemberDetailsPage: React.FC = () => {
                 </div>
               )}
               
-              {member.address && (
+              {/* member.address && (
                 <div className="flex items-start gap-3">
                   <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
                   <div className="flex-1">
@@ -290,7 +259,7 @@ const MemberDetailsPage: React.FC = () => {
                     </p>
                   </div>
                 </div>
-              )}
+              ) */}
             </CardContent>
           </Card>
           
@@ -304,7 +273,8 @@ const MemberDetailsPage: React.FC = () => {
                 <div>
                   <p className="text-sm font-medium">Member Since</p>
                   <p className="text-sm text-muted-foreground">
-                    {formatMemberSince(member.memberSince)}
+                    {/* formatMemberSince(member.memberSince) */}
+                    {member.createdAt ? new Date(member.createdAt).toLocaleDateString() : 'Unknown'}
                   </p>
                 </div>
               </div>

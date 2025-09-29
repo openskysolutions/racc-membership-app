@@ -134,9 +134,9 @@ const EventsCalendar: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="container py-20 px-3 md:px-6">
-        <div className="flex items-center justify-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      <div className="container flex flex-grow py-8 px-3 md:px-6 w-full h-full">
+        <div className="flex w-full items-center justify-center">
+          <div className="animate-spin rounded-full h-20 w-20 border-b-2 border-primary"></div>
         </div>
       </div>
     );

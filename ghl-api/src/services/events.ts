@@ -44,7 +44,7 @@ export class EventsService {
   private nextId = 1;
 
   constructor() {
-    this.initializeDefaultEvents();
+    // No default events - they will come from GoHighLevel
   }
 
   /**
@@ -257,48 +257,7 @@ export class EventsService {
   /**
    * Initialize default events for testing
    */
-  private initializeDefaultEvents(): void {
-    const now = new Date();
-    const futureDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-    const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-    
-    // Test event for contract tests
-    const testEvent: Event = {
-      id: '123',
-      title: 'Test Event',
-      description: 'A test event for contract testing',
-      startsAt: tomorrow.toISOString(),
-      endsAt: new Date(tomorrow.getTime() + 2 * 60 * 60 * 1000).toISOString(),
-      location: 'Test Location',
-      isVirtual: false,
-      maxAttendees: 50,
-      ownerId: 'member_001',
-      status: 'published',
-      visibility: 'public',
-      createdAt: now.toISOString(),
-      updatedAt: now.toISOString()
-    };
-
-    const defaultEvent: Event = {
-      id: 'evt_1',
-      title: 'Monthly Member Meeting',
-      description: 'Join us for our monthly member meeting.',
-      startsAt: futureDate.toISOString(),
-      endsAt: new Date(futureDate.getTime() + 2 * 60 * 60 * 1000).toISOString(),
-      location: 'Chamber Office',
-      isVirtual: false,
-      maxAttendees: 50,
-      ownerId: 'admin',
-      status: 'published',
-      visibility: 'members',
-      createdAt: now.toISOString(),
-      updatedAt: now.toISOString()
-    };
-
-    this.events.set(testEvent.id, testEvent);
-    this.events.set(defaultEvent.id, defaultEvent);
-    this.nextId = 2;
-  }
+  // Removed initializeDefaultEvents method - events now come from GoHighLevel only
 }
 
 // Export a singleton instance

@@ -1,4 +1,5 @@
 const { HighLevel } = require('@gohighlevel/api-client');
+const { ghlService } = require('@/services/gohighlevel');
 const client = new HighLevel({ privateIntegrationToken: process.env.PRIVATE_INTEGRATION_TOKEN });
 const svc = client.calendars;
 
@@ -11,9 +12,19 @@ async function listCalendars(req, res, next) {
 
 async function getCalendarById(req, res, next) {
   try {
-    const result = await svc.getCalendar({ calendarId: req.params.id }, { headers: req.headers });
+    const result = await ghlService.getCalendar(req.params.id);
     res.json(result);
-  } catch (err) { next(err); }
+  } catch (err) { 
+    console.error('Error in getCalendarById:', err);
+    res.status(500).json({
+      error: {
+        message: err.message || 'Failed to fetch calendar',
+        code: 'INTERNAL_ERROR',
+        statusCode: 500,
+        timestamp: new Date().toISOString()
+      }
+    });
+  }
 }
 
 async function createCalendar(req, res, next) {
@@ -98,9 +109,52 @@ async function editAppointment(req, res, next) {
 // Calendar Events
 async function getCalendarEvents(req, res, next) {
   try {
-    const result = await svc.getCalendarEvents({ calendarId: req.params.calendarId }, { headers: req.headers });
-    res.json(result);
-  } catch (err) { next(err); }
+    console.log('Getting calendar events for calendarId:', req.params.calendarId);
+    console.log('Query params:', req.query);
+    
+    const calendarId = req.params.calendarId;
+    const { startDate, endDate } = req.query;
+    
+    // Parse date parameters if provided
+    const start = startDate ? new Date(startDate) : undefined;
+    const end = endDate ? new Date(endDate) : undefined;
+    
+    // Use our custom GoHighLevel service instead of the SDK
+    const events = await ghlService.getCalendarEvents(calendarId, start, end);
+    
+    console.log(`Retrieved ${events.length} events from GoHighLevel service`);
+    
+    // Return the events array directly (not wrapped in events object)
+    res.json(events);
+  } catch (err) { 
+    console.error('Error in getCalendarEvents:', err);
+    next(err); 
+  }
+}
+
+// Get all events for location (without specific calendar)
+async function getAllLocationEvents(req, res, next) {
+  try {
+    console.log('Getting all events for location');
+    console.log('Query params:', req.query);
+    
+    const { startDate, endDate } = req.query;
+    
+    // Parse date parameters if provided
+    const start = startDate ? new Date(startDate) : undefined;
+    const end = endDate ? new Date(endDate) : undefined;
+    
+    // Use our custom GoHighLevel service without specific calendar ID
+    const events = await ghlService.getCalendarEvents(null, start, end);
+    
+    console.log(`Retrieved ${events.length} events from GoHighLevel service (all calendars)`);
+    
+    // Return the events array directly
+    res.json(events);
+  } catch (err) { 
+    console.error('Error in getAllLocationEvents:', err);
+    next(err); 
+  }
 }
 
 async function deleteEvent(req, res, next) {
@@ -255,7 +309,7 @@ module.exports = {
   // Appointments
   createAppointment, getAppointment, editAppointment,
   // Events
-  getCalendarEvents, deleteEvent,
+  getCalendarEvents, getAllLocationEvents, deleteEvent,
   // Blocked Slots
   getBlockedSlots, createBlockSlot, editBlockSlot,
   // Slots

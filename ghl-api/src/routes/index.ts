@@ -8,6 +8,7 @@ import membersRoutes from '@/routes/members';
 import eventsRoutes from '@/routes/events';
 import jobsRoutes from '@/routes/jobs';
 import newsRoutes from '@/routes/news';
+import calendarsRoutes from '@/routes/calendars';
 
 // CommonJS imports
 const moderationRoutes = require('@/routes/moderation');
@@ -23,5 +24,6 @@ router.use('/events', eventsRoutes);
 router.use('/moderation', moderationRoutes);
 router.use('/jobs', jobsRoutes);
 router.use('/news', newsRoutes);
+router.use('/calendars', calendarsRoutes);
 
 export default router;
