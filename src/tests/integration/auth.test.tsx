@@ -40,8 +40,8 @@ describe('Authentication Flow Integration', () => {
     
     // Setup auth service mocks
     mockAuthService.login.mockResolvedValue({
-      session: { id: 'session-123', memberId: 'member-123', token: 'token-123', expiresAt: '2024-12-31', createdAt: '2024-01-01' },
-      user: { id: 'user-123', name: 'Test User', email: 'test@example.com', role: 'member', status: 'active' }
+      user: { id: 'user-123', name: 'Test User', email: 'test@example.com', type: 'member', persona: 'active' },
+      token: 'token-123'
     });
     
     // Setup auth store mocks

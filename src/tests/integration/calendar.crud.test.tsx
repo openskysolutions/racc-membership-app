@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, act } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
-import Calendar from '@/pages/Calendar';
+import Calendar from '../../pages/Calendar';
 import '@testing-library/jest-dom';
 
 // Mock the API client
-vi.mock('@/services/apiClient', () => ({
+vi.mock('../../services/apiClient', () => ({
   api: {
     get: vi.fn(),
     post: vi.fn(),
@@ -16,7 +16,7 @@ vi.mock('@/services/apiClient', () => ({
 }));
 
 // Mock auth store
-vi.mock('@/stores/authStore', () => ({
+vi.mock('../../stores/authStore', () => ({
   useAuthStore: vi.fn(() => ({
     user: { role: 'member', id: 'test-user' },
     isAuthenticated: true
@@ -24,7 +24,7 @@ vi.mock('@/stores/authStore', () => ({
 }));
 
 // Mock events service
-vi.mock('@/services/events', () => ({
+vi.mock('../../services/events', () => ({
   getEventsList: vi.fn(),
   getEventById: vi.fn(),
   createEvent: vi.fn(),

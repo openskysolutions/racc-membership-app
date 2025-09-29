@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { logout, getProfile, checkSession } from '@/services/auth';
+import { logout, getProfile, hasToken } from '@/services/auth';
 
 interface AuthState {
   user: any;
@@ -26,7 +26,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
     
     try {
       // Check if session is valid (uses sessionStorage internally per constitutional requirements)
-      const isValid = await checkSession();
+      const isValid = await hasToken();
       
       if (!isValid) {
         set({ user: null, isAuthenticated: false, isLoading: false, role: null });
@@ -39,7 +39,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
         user: userData, 
         isAuthenticated: true, 
         isLoading: false, 
-        role: userData.role || null 
+        role: userData.type || null 
       });
     } catch (error) {
       console.error('Auth check failed:', error);
