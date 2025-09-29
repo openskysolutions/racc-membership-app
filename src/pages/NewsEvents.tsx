@@ -40,13 +40,13 @@ const NewsEventsPages: React.FC = () => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    startsAt: '',
-    endsAt: '',
+    startTime: '',
+    endTime: '',
     location: '',
     isVirtual: false,
     maxAttendees: '',
     visibility: 'public' as 'public' | 'members' | 'restricted',
-    status: 'draft' as 'draft' | 'published' | 'cancelled'
+    status: 'confirmed' as 'confirmed' | 'cancelled' | 'tentative'
   });
 
   // Moderation state
@@ -125,7 +125,7 @@ const NewsEventsPages: React.FC = () => {
     });
   };
 
-  const getVisibilityColor = (visibility: string) => {
+  const getVisibilityColor = (visibility?: string) => {
     switch (visibility) {
       case 'public':
         return 'bg-green-100 text-green-800';
@@ -150,13 +150,13 @@ const NewsEventsPages: React.FC = () => {
     setFormData({
       title: '',
       description: '',
-      startsAt: '',
-      endsAt: '',
+      startTime: '',
+      endTime: '',
       location: '',
       isVirtual: false,
       maxAttendees: '',
       visibility: 'public',
-      status: 'draft'
+      status: 'confirmed'
     });
     setActiveTab('create');
   };
@@ -166,12 +166,12 @@ const NewsEventsPages: React.FC = () => {
     setFormData({
       title: event.title,
       description: event.description || '',
-      startsAt: event.startsAt.slice(0, 16), // Format for datetime-local input
-      endsAt: event.endsAt.slice(0, 16),
+      startTime: event.startTime.slice(0, 16), // Format for datetime-local input
+      endTime: event.endTime.slice(0, 16),
       location: event.location || '',
-      isVirtual: event.isVirtual,
+      isVirtual: event.isVirtual || false,
       maxAttendees: event.maxAttendees?.toString() || '',
-      visibility: event.visibility,
+      visibility: event.visibility || 'public',
       status: event.status
     });
     setActiveTab('create');
@@ -186,8 +186,8 @@ const NewsEventsPages: React.FC = () => {
       const eventData = {
         title: formData.title,
         description: formData.description,
-        startsAt: new Date(formData.startsAt).toISOString(),
-        endsAt: new Date(formData.endsAt).toISOString(),
+        startTime: new Date(formData.startTime).toISOString(),
+        endTime: new Date(formData.endTime).toISOString(),
         location: formData.location,
         isVirtual: formData.isVirtual,
         maxAttendees: formData.maxAttendees ? parseInt(formData.maxAttendees) : undefined,
@@ -209,8 +209,8 @@ const NewsEventsPages: React.FC = () => {
         savedEvent = await createEvent(eventData);
         alert('Event created successfully!');
         
-        // Add new event to local state if it's published
-        if (savedEvent.status === 'published') {
+        // Add new event to local state if it's confirmed
+        if (savedEvent.status === 'confirmed') {
           setEvents(prev => [savedEvent, ...prev]);
         }
       }
@@ -219,19 +219,19 @@ const NewsEventsPages: React.FC = () => {
       setFormData({
         title: '',
         description: '',
-        startsAt: '',
-        endsAt: '',
+        startTime: '',
+        endTime: '',
         location: '',
         isVirtual: false,
         maxAttendees: '',
         visibility: 'public',
-        status: 'draft'
+        status: 'confirmed'
       });
       setEditingEvent(null);
       setActiveTab('view');
       
-      // Refresh events list
-      const eventsData = await getEventsList({ status: 'published' });
+      // Refresh events list - don't filter by status since GoHighLevel events have different status values
+      const eventsData = await getEventsList();
       setEvents(eventsData);
       
     } catch (err) {
@@ -521,14 +521,14 @@ const NewsEventsPages: React.FC = () => {
                         <div className="flex items-center gap-2">
                           <CalendarIcon className="h-4 w-4 text-muted-foreground" />
                           <span className="text-sm">
-                            {formatEventDate(event.startsAt)}
+                            {formatEventDate(event.startTime)}
                           </span>
                         </div>
                         
                         <div className="flex items-center gap-2">
                           <Clock className="h-4 w-4 text-muted-foreground" />
                           <span className="text-sm">
-                            {formatEventTime(event.startsAt)} - {formatEventTime(event.endsAt)}
+                            {formatEventTime(event.startTime)} - {formatEventTime(event.endTime)}
                           </span>
                         </div>
                         
@@ -632,22 +632,22 @@ const NewsEventsPages: React.FC = () => {
 
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="startsAt">Start Date & Time *</Label>
+                    <Label htmlFor="startTime">Start Date & Time *</Label>
                     <Input
-                      id="startsAt"
+                      id="startTime"
                       type="datetime-local"
-                      value={formData.startsAt}
-                      onChange={(e) => handleInputChange('startsAt', e.target.value)}
+                      value={formData.startTime}
+                      onChange={(e) => handleInputChange('startTime', e.target.value)}
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="endsAt">End Date & Time *</Label>
+                    <Label htmlFor="endTime">End Date & Time *</Label>
                     <Input
-                      id="endsAt"
+                      id="endTime"
                       type="datetime-local"
-                      value={formData.endsAt}
-                      onChange={(e) => handleInputChange('endsAt', e.target.value)}
+                      value={formData.endTime}
+                      onChange={(e) => handleInputChange('endTime', e.target.value)}
                       required
                     />
                   </div>
@@ -778,11 +778,11 @@ const NewsEventsPages: React.FC = () => {
                               <div className="flex flex-wrap gap-2 text-sm text-muted-foreground mb-3">
                                 <div className="flex items-center gap-1">
                                   <CalendarIcon className="h-4 w-4" />
-                                  {formatEventDate(event.startsAt)}
+                                  {formatEventDate(event.startTime)}
                                 </div>
                                 <div className="flex items-center gap-1">
                                   <Clock className="h-4 w-4" />
-                                  {formatEventTime(event.startsAt)}
+                                  {formatEventTime(event.startTime)}
                                 </div>
                                 {event.location && (
                                   <div className="flex items-center gap-1">
@@ -839,7 +839,7 @@ const NewsEventsPages: React.FC = () => {
             <DialogDescription>
               {selectedEvent && (
                 <div className="text-sm text-muted-foreground">
-                  {formatEventDate(selectedEvent.startsAt)} at {formatEventTime(selectedEvent.startsAt)}
+                  {formatEventDate(selectedEvent.startTime)} at {formatEventTime(selectedEvent.startTime)}
                   {selectedEvent.location && ` • ${selectedEvent.isVirtual ? 'Virtual' : selectedEvent.location}`}
                 </div>
               )}
