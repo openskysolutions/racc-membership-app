@@ -84,8 +84,17 @@ jobs:
           cat .env
           echo "=== End Debug ==="
           
-          # Build frontend with environment variables explicitly set
+          # Clean any existing build and node_modules cache
+          rm -rf dist/ node_modules/.vite/
+          
+          # Install dependencies and build frontend with environment variables explicitly set
+          npm install
           VITE_API_BASE_URL="\$VITE_API_BASE_URL" TEMP_GHL_TOKEN="\$TEMP_GHL_TOKEN" npm run build
+          
+          # Verify the build used the correct API URL
+          echo "=== Checking built files for API URL ==="
+          grep -r "localhost:3000" dist/ || echo "No localhost:3000 found in build"
+          grep -r "racc-dev.openskydev.com" dist/ | head -3 || echo "No production URL found in build"
           
           # Copy built files to /var/www/racc-membership-app/dist
           cp -r dist/* /var/www/racc-membership-app/dist/
