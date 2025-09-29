@@ -24,7 +24,8 @@ jobs:
           NODE_ENV: ${{ vars.NODE_ENV }}
           PRIVATE_INTEGRATION_TOKEN: ${{ secrets.PRIVATE_INTEGRATION_TOKEN }}
           LOCATION_ID: ${{ vars.LOCATION_ID }}
-          GROUP_ID: ${{ vars.GROUP_ID }}
+          CALENDAR_ID: ${{ vars.CALENDAR_ID }}
+          TEST_CONTACT_ID: ${{ vars.TEST_CONTACT_ID }}
           GHL_API_BASE_URL: ${{ vars.GHL_API_BASE_URL }}
           FRONTEND_URL: ${{ vars.FRONTEND_URL }}
           # Frontend environment variables
@@ -40,7 +41,8 @@ jobs:
           export NODE_ENV="$NODE_ENV"
           export PRIVATE_INTEGRATION_TOKEN="$PRIVATE_INTEGRATION_TOKEN"
           export LOCATION_ID="$LOCATION_ID"
-          export GROUP_ID="$GROUP_ID"
+          export CALENDAR_ID="$CALENDAR_ID"
+          export TEST_CONTACT_ID="$TEST_CONTACT_ID"
           export GHL_API_BASE_URL="$GHL_API_BASE_URL"
           export FRONTEND_URL="$FRONTEND_URL"
           export VITE_API_BASE_URL="$VITE_API_BASE_URL"
@@ -53,7 +55,8 @@ jobs:
           NODE_ENV=\$NODE_ENV
           PRIVATE_INTEGRATION_TOKEN=\$PRIVATE_INTEGRATION_TOKEN
           LOCATION_ID=\$LOCATION_ID
-          GROUP_ID=\$GROUP_ID
+          CALENDAR_ID=\$CALENDAR_ID
+          TEST_CONTACT_ID=\$TEST_CONTACT_ID
           GHL_API_BASE_URL=\$GHL_API_BASE_URL
           FRONTEND_URL=\$FRONTEND_URL
           EOF
