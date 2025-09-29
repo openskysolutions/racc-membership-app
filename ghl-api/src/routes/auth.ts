@@ -47,7 +47,7 @@ router.post('/authorize', async (req, res) => {
       });
     }
 
-    // Authenticate user
+    // Authenticate user - first check database, then verify active status in GoHighLevel
     const user = await databaseService.verifyPassword(email, password);
     if (!user) {
       return res.status(401).json({
@@ -56,13 +56,31 @@ router.post('/authorize', async (req, res) => {
       });
     }
 
-    // Check if user is active
-    if (user.status !== 'active') {
+    // Check if user has "active" tag in GoHighLevel
+    console.log(`🔍 Checking GoHighLevel active status for user: ${email}`);
+    const { isActive, contact } = await ghlService.isUserActive(email);
+    
+    if (!isActive) {
+      console.log(`❌ User ${email} does not have 'active' tag in GoHighLevel`);
       return res.status(403).json({
         error: 'access_denied',
-        error_description: `Account not active. Status: ${user.status}. Please complete registration and payment.`,
-        userStatus: user.status
+        error_description: 'Account not active. Please ensure your membership is current and you have the "active" tag in GoHighLevel.',
+        userStatus: 'inactive',
+        requiresActivation: true
       });
+    }
+
+    console.log(`✅ User ${email} verified as active in GoHighLevel`);
+
+    // Update local database status to match GoHighLevel if needed
+    if (user.status !== 'active') {
+      try {
+        await databaseService.updateUserStatus(user.id!, 'active');
+        console.log(`📝 Updated local database status to 'active' for user ${email}`);
+      } catch (updateError) {
+        console.error('Failed to update user status in database:', updateError);
+        // Continue with auth even if database update fails
+      }
     }
 
     // Generate authorization code
@@ -238,12 +256,31 @@ router.post('/session', async (req, res) => {
         });
       }
 
-      if (user.status !== 'active') {
+      // Check if user has "active" tag in GoHighLevel
+      console.log(`🔍 Checking GoHighLevel active status for user: ${email}`);
+      const { isActive, contact } = await ghlService.isUserActive(email);
+      
+      if (!isActive) {
+        console.log(`❌ User ${email} does not have 'active' tag in GoHighLevel`);
         return res.status(403).json({
           error: 'access_denied',
-          error_description: `Account not active. Status: ${user.status}. Please complete registration and payment.`,
-          userStatus: user.status
+          error_description: 'Account not active. Please ensure your membership is current and you have the "active" tag in GoHighLevel.',
+          userStatus: 'inactive',
+          requiresActivation: true
         });
+      }
+
+      console.log(`✅ User ${email} verified as active in GoHighLevel`);
+
+      // Update local database status to match GoHighLevel if needed
+      if (user.status !== 'active') {
+        try {
+          await databaseService.updateUserStatus(user.id!, 'active');
+          console.log(`📝 Updated local database status to 'active' for user ${email}`);
+        } catch (updateError) {
+          console.error('Failed to update user status in database:', updateError);
+          // Continue with auth even if database update fails
+        }
       }
 
       // Verify the code challenge matches the code verifier

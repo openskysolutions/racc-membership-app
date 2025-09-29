@@ -151,7 +151,60 @@ class GoHighLevelService {
   }
 
   /**
-   * Find contact by email
+   * Check if a user is active (has "active" tag) in GoHighLevel
+   */
+  async isUserActive(email: string): Promise<{ isActive: boolean; contact?: any }> {
+    console.log(`🔍 Checking if user ${email} has 'active' tag in GoHighLevel...`);
+    
+    if (this.developmentMode) {
+      console.log(`🚧 DEV MODE: Mock active check for email: ${email}`);
+      return { 
+        isActive: true, // Allow all users in dev mode
+        contact: {
+          id: `dev_contact_${Date.now()}`,
+          email: email,
+          firstName: 'Dev',
+          lastName: 'User',
+          tags: ['active']
+        }
+      };
+    }
+
+    try {
+      const contact = await this.findContactByEmail(email);
+      
+      if (!contact) {
+        console.log(`❌ No contact found for email: ${email}`);
+        return { isActive: false };
+      }
+
+      console.log(`✅ Found contact:`, {
+        id: contact.id,
+        email: contact.email,
+        firstName: contact.firstName,
+        lastName: contact.lastName,
+        tags: contact.tags
+      });
+
+      // Check if contact has "active" tag
+      const hasActiveTag = contact.tags && contact.tags.includes('active');
+      
+      console.log(`🏷️ Contact tags:`, contact.tags);
+      console.log(`✓ Has 'active' tag:`, hasActiveTag);
+
+      return {
+        isActive: hasActiveTag,
+        contact: contact
+      };
+
+    } catch (error: any) {
+      console.error('❌ Failed to check user active status:', error);
+      return { isActive: false };
+    }
+  }
+
+  /**
+   * Find contact by email using the proper search contacts API
    */
   async findContactByEmail(email: string): Promise<any> {
     if (this.developmentMode) {
@@ -164,15 +217,49 @@ class GoHighLevelService {
     }
 
     try {
-      const response = await this.client.get(`/contacts/?locationId=${this.locationId}&email=${email}&limit=1`);
+      console.log(`🔍 Searching for contact with email: ${email} using search API`);
+      
+      // Use the proper search contacts endpoint
+      const searchBody = {
+        filters: [
+          {
+            field: "email",
+            operator: "eq",
+            value: email
+          }
+        ],
+        locationId: this.locationId,
+        pageLimit: 1
+      };
+      
+      console.log(`� Search request body:`, JSON.stringify(searchBody, null, 2));
+      
+      const response = await this.client.post('/contacts/search', searchBody);
+      
+      console.log(`📡 GoHighLevel search response:`, {
+        status: response.status,
+        dataKeys: Object.keys(response.data || {}),
+        contactsCount: response.data?.contacts?.length || 0,
+        total: response.data?.total || 0
+      });
 
       if (response.data && response.data.contacts && response.data.contacts.length > 0) {
-        return response.data.contacts[0];
+        const contact = response.data.contacts[0];
+        console.log(`✅ Found contact in GoHighLevel:`, {
+          id: contact.id,
+          email: contact.email,
+          firstName: contact.firstName,
+          lastName: contact.lastName,
+          tags: contact.tags,
+          allContactData: contact
+        });
+        return contact;
       }
       
+      console.log(`❌ No contact found in GoHighLevel for email: ${email}`);
       return null;
-    } catch (error) {
-      console.error('Failed to search for contact by email:', error);
+    } catch (error: any) {
+      console.error('Failed to search for contact by email:', error.response?.data || error.message);
       return null;
     }
   }
