@@ -10,6 +10,9 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./src/tests/setup.ts'],
+    typecheck: {
+      tsconfig: './tsconfig.test.json'
+    }
   },
   resolve: {
     alias: [

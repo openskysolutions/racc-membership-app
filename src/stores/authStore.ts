@@ -39,7 +39,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
         user: userData, 
         isAuthenticated: true, 
         isLoading: false, 
-        role: userData.type || null 
+        role: userData.role || null 
       });
     } catch (error) {
       console.error('Auth check failed:', error);
