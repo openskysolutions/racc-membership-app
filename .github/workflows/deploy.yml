@@ -87,8 +87,8 @@ jobs:
           # Clean any existing build and node_modules cache
           rm -rf dist/ node_modules/.vite/
           
-          # Install dependencies and build frontend with environment variables explicitly set
-          npm install
+          # Install dependencies including devDependencies for build
+          NODE_ENV=development npm install
           VITE_API_BASE_URL="\$VITE_API_BASE_URL" TEMP_GHL_TOKEN="\$TEMP_GHL_TOKEN" npm run build
           
           # Verify the build used the correct API URL
