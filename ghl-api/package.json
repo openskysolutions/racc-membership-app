@@ -36,7 +36,9 @@
     "sqlite3": "^5.1.7",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^4.5.0",
+    "tsc-alias": "^1.8.16",
     "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.9.2",
     "yaml": "^2.8.1"
   },
   "devDependencies": {
@@ -48,8 +50,6 @@
     "nodemon": "^2.0.22",
     "supertest": "^7.0.0",
     "ts-node": "^10.9.2",
-    "tsc-alias": "^1.8.16",
-    "typescript": "^5.9.2",
     "vitest": "^2.0.0"
   }
 }
