@@ -41,6 +41,15 @@ const MemberDetailsPage: React.FC = () => {
   });
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  // Debug user data
+  console.log('🔍 User data in MemberDetails:', {
+    userExists: !!user,
+    userId: user?.id,
+    userGhlContactId: user?.ghlContactId,
+    userRole: user?.role,
+    userEmail: user?.email
+  });
+
   useEffect(() => {
     if (!id) {
       setError('No member ID provided');
@@ -63,6 +72,12 @@ const MemberDetailsPage: React.FC = () => {
         }
         
         const memberData: Member = await response.json();
+        console.log('🔍 Fetched member data:', {
+          id: memberData.id,
+          contactId: memberData.contactId,
+          email: memberData.email,
+          fullName: memberData.fullName
+        });
         setMember(memberData);
         
         // Initialize form data
@@ -116,7 +131,19 @@ const MemberDetailsPage: React.FC = () => {
     }
   };
 
-  const canEdit = user && member && (user.id === member.id || user.role === 'admin');
+  const canEdit = user && member && (user.ghlContactId === member.id || user.role === 'admin');
+
+  // Debug logging for authorization
+  console.log('🔍 MemberDetails Authorization Debug:', {
+    userExists: !!user,
+    memberExists: !!member,
+    userGhlContactId: user?.ghlContactId,
+    memberContactId: member?.contactId,
+    userRole: user?.role,
+    idsMatch: user?.ghlContactId === member?.contactId,
+    isAdmin: user?.role === 'admin',
+    canEdit
+  });
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData(prev => ({
