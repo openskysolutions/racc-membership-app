@@ -15,7 +15,7 @@ const groupId = process.env.GROUP_ID;
 async function searchContactsAdvanced(req, res, next) {
   try {
     req.body.locationId = process.env.LOCATION_ID;
-    req.body.pageLimit = req.body.pageLimit || 500;
+    req.body.pageLimit = req.body.pageLimit || 100;
     const result = await svc.searchContactsAdvanced(req.body);
     res.json(result);
   } catch (err) {

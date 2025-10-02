@@ -7,6 +7,7 @@ interface AuthState {
   isLoading: boolean;
   handleLogout: () => Promise<void>;
   checkAuth: () => Promise<void>;
+  setUser: (user: any) => void;
   role: string | null;
 }
 
@@ -19,6 +20,15 @@ export const useAuthStore = create<AuthState>()((set) => ({
   handleLogout: async () => {
     await logout();
     set({ user: null, isAuthenticated: false, role: null });
+  },
+
+  setUser: (user: any) => {
+    set({ 
+      user, 
+      isAuthenticated: true, 
+      isLoading: false, 
+      role: user?.role || null 
+    });
   },
 
   checkAuth: async () => {

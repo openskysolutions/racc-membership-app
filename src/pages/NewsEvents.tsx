@@ -404,7 +404,7 @@ const NewsEventsPages: React.FC = () => {
               
               <div className="grid gap-6">
                 {ghlEvents.map((event) => (
-                  <Card key={`ghl-${event.id}`} className="hover:shadow-lg transition-shadow border-l-4 border-l-blue-500">
+                  <Card key={`ghl-${event.id}`} className="hover:shadow-lg transition-shadow">
                     <CardHeader>
                       <div className="flex items-start justify-between">
                         <div className="flex-1">

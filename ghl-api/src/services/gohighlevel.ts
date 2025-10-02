@@ -538,6 +538,9 @@ class GoHighLevelService {
    * Update contact information
    */
   async updateContact(contactId: string, updateData: Partial<ContactData>): Promise<void> {
+    console.log(`🔧 updateContact called with developmentMode: ${this.developmentMode}`);
+    console.log(`🔧 Update data:`, updateData);
+    
     if (this.developmentMode) {
       console.log(`🚧 DEV MODE: Mock update contact ${contactId}`, updateData);
       return;
@@ -552,14 +555,16 @@ class GoHighLevelService {
         })) : []
       };
 
+      console.log(`🔧 Sending PUT request to /contacts/${contactId} with payload:`, payload);
+      
       await this.client.put(`/contacts/${contactId}`, payload, {
         headers: {
           'Version': '2021-07-28'
         }
       });
-      console.log(`Successfully updated contact ${contactId}`);
+      console.log(`✅ Successfully updated contact ${contactId}`);
     } catch (error: any) {
-      console.error('Failed to update contact:', error);
+      console.error('❌ Failed to update contact:', error);
       throw new Error(`Failed to update contact: ${error.message}`);
     }
   }
@@ -713,10 +718,16 @@ class GoHighLevelService {
           console.log(`After filtering by tags [${tags.join(', ')}]: ${filteredContacts.length} contacts`);
           allContacts.push(...filteredContacts);
           
-          // Check if we have more pages
-          hasMore = contacts.length === pageSize;
-          console.log(`hasMore: ${hasMore} (received ${contacts.length}, pageSize: ${pageSize})`);
+          // Check if we have enough contacts or if there are more pages
+          hasMore = contacts.length === pageSize && allContacts.length < limit;
+          console.log(`hasMore: ${hasMore} (received ${contacts.length}, pageSize: ${pageSize}, total found: ${allContacts.length})`);
           page++;
+
+          // Stop early if we've reached our limit
+          if (allContacts.length >= limit) {
+            console.log(`✅ Reached target limit of ${limit} contacts, stopping early`);
+            break;
+          }
 
           // Add small delay to avoid rate limiting
           if (hasMore) {
@@ -734,6 +745,170 @@ class GoHighLevelService {
     } catch (error: any) {
       console.error('Failed to fetch contacts with tags:', error);
       throw new Error(`Failed to fetch contacts: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get contacts with 'active' tag and at least one membership package tag
+   * Using GoHighLevel's search API for server-side filtering
+   */
+  async getContactsWithMembershipTags(limit: number = 10000): Promise<any[]> {
+    const membershipPackageTags = [
+      'basic membership package',
+      'enhanced membership package', 
+      'elite membership package'
+    ];
+
+    if (this.developmentMode) {
+      console.log(`🚧 DEV MODE: Mock fetching contacts with active + membership package tags`);
+      // Return mock members with membership package tags for development
+      return [
+        {
+          id: 'mock_contact_1',
+          firstName: 'Sarah',
+          lastName: 'Johnson',
+          email: 'admin@racc.com',
+          phone: '(435) 555-0101',
+          website: 'https://johnsonrealestate.com',
+          businessName: 'Johnson Real Estate Group',
+          tags: ['active', 'admin', 'basic membership package'],
+          dateAdded: '2020-01-15T00:00:00.000Z',
+          customFields: [
+            { id: 'memberSince', value: '2020-01-15' },
+            { id: 'specialties', value: 'Commercial Real Estate, Property Management' },
+            { id: 'bio', value: 'Leading commercial real estate expert in Richfield with over 15 years of experience.' }
+          ]
+        },
+        {
+          id: 'mock_contact_2',
+          firstName: 'Michael',
+          lastName: 'Davis',
+          email: 'demo@racc.com',
+          phone: '(435) 555-0102',
+          website: 'https://davisconstruction.com',
+          businessName: 'Davis Construction LLC',
+          tags: ['active', 'member', 'enhanced membership package'],
+          dateAdded: '2021-03-22T00:00:00.000Z',
+          customFields: [
+            { id: 'memberSince', value: '2021-03-22' },
+            { id: 'specialties', value: 'Residential Construction, Home Renovation' },
+            { id: 'bio', value: 'Quality construction services for Central Utah families and businesses.' }
+          ]
+        },
+        {
+          id: 'mock_contact_3',
+          firstName: 'Jennifer',
+          lastName: 'Smith',
+          email: 'moderator@racc.com',
+          phone: '(435) 555-0103',
+          website: 'https://smithfinancial.com',
+          businessName: 'Smith Financial Services',
+          tags: ['active', 'moderator', 'elite membership package'],
+          dateAdded: '2019-08-10T00:00:00.000Z',
+          customFields: [
+            { id: 'memberSince', value: '2019-08-10' },
+            { id: 'specialties', value: 'Financial Planning, Insurance, Investment Management' },
+            { id: 'bio', value: 'Helping Central Utah families and businesses achieve their financial goals.' }
+          ]
+        }
+      ];
+    }
+
+    if (!this.client) {
+      throw new Error('GoHighLevel client not initialized');
+    }
+
+    // Use GoHighLevel's search API with tag filters for server-side filtering
+    console.log(`🎯 Using GHL search API to filter contacts with active + membership package tags...`);
+    
+    try {
+      let allContacts: any[] = [];
+      let page = 1;
+      const pageLimit = 100; // Use larger page size for search API
+      let hasMore = true;
+
+      while (hasMore && allContacts.length < limit) {
+        console.log(`Searching contacts page ${page} with server-side tag filtering...`);
+        
+        // Build search filters for GoHighLevel API
+        const searchBody = {
+          locationId: this.locationId,
+          page: page,
+          pageLimit: pageLimit,
+          filters: [
+            {
+              group: "AND",
+              filters: [
+                // Must have 'active' tag
+                {
+                  field: "tags",
+                  operator: "contains",
+                  value: "active"
+                },
+                // Must have at least one membership package tag (OR condition)
+                {
+                  group: "OR",
+                  filters: membershipPackageTags.map(tag => ({
+                    field: "tags",
+                    operator: "contains", 
+                    value: tag
+                  }))
+                }
+              ]
+            }
+          ]
+        };
+
+        console.log(`🔍 Search request:`, JSON.stringify(searchBody, null, 2));
+
+        const response = await this.client.post('/contacts/search', searchBody);
+
+        if (response.data && response.data.contacts) {
+          const contacts = response.data.contacts;
+          console.log(`✅ Received ${contacts.length} filtered contacts from GHL search API on page ${page}`);
+          console.log(`📊 Total matching contacts in GHL: ${response.data.total || 'unknown'}`);
+          
+          allContacts.push(...contacts);
+          
+          // Check if we have more pages
+          hasMore = contacts.length === pageLimit && allContacts.length < limit;
+          console.log(`hasMore: ${hasMore} (received ${contacts.length}, pageLimit: ${pageLimit}, total collected: ${allContacts.length})`);
+          page++;
+
+          // Stop early if we've reached our limit
+          if (allContacts.length >= limit) {
+            console.log(`✅ Reached target limit of ${limit} contacts, stopping early`);
+            break;
+          }
+
+          // Add small delay to avoid rate limiting
+          if (hasMore) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+          }
+        } else {
+          console.log(`❌ No contacts found or invalid response structure`);
+          hasMore = false;
+        }
+      }
+
+      console.log(`🎉 Server-side filtered: Found ${allContacts.length} contacts with 'active' + membership package tags`);
+      return allContacts.slice(0, limit);
+      
+    } catch (error: any) {
+      console.error('❌ Failed to search contacts with membership tags:', error);
+      console.error('Error response:', error.response?.data);
+      
+      // Fallback to the old method if search API fails
+      console.log('🔄 Falling back to client-side filtering...');
+      const activeContacts = await this.getContactsWithTags(['active'], limit);
+      
+      const filteredContacts = activeContacts.filter((contact: any) => {
+        if (!contact.tags || !Array.isArray(contact.tags)) return false;
+        return membershipPackageTags.some(tag => contact.tags.includes(tag));
+      });
+
+      console.log(`⚠️ Fallback: Filtered ${activeContacts.length} active contacts to ${filteredContacts.length} with membership packages`);
+      return filteredContacts.slice(0, limit);
     }
   }
 

@@ -12,9 +12,9 @@ function App() {
   const { setLocationInfo, setLoading, setError } = useLocationStore();
 
   useEffect(() => {
-    // Check for existing session (Better Auth PKCE uses sessionStorage per constitutional requirements)
-    const sessionData = sessionStorage.getItem('racc_auth_session');
-    if (sessionData) {
+    // Check for existing authentication token
+    const token = localStorage.getItem('token');
+    if (token) {
       checkAuth();
     } else {
       // Not logged in: clear loading state without fetching

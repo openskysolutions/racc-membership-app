@@ -29,24 +29,101 @@ interface Member {
 }
 
 class MembersController {
+  private membersCache: any = null;
+  private cacheTimestamp: number = 0;
+  private readonly CACHE_DURATION = 2 * 60 * 1000; // 2 minutes instead of 5 for fresher data
+  private fetchPromise: Promise<any> | null = null; // For request deduplication
+  
+  // Cache for individual member details
+  private memberDetailsCache: Map<string, { member: any; timestamp: number }> = new Map();
+  private readonly MEMBER_CACHE_DURATION = 10 * 60 * 1000; // 10 minutes for individual members
+
   constructor() {
     // Members are now fetched from GoHighLevel instead of mock data
   }
 
   /**
-   * Get list of active members from GoHighLevel
+   * Get list of active members from GoHighLevel with server-side pagination
    */
   async getMembers(req: Request, res: Response) {
     try {
-      const { search = '', role = '' } = req.query;
+      const { search = '', role = '', limit = 20, offset = 0 } = req.query;
+      const pageLimit = Math.min(parseInt(limit as string) || 20, 100); // Cap at 100
+      const pageOffset = parseInt(offset as string) || 0;
       
-      // Fetch all active contacts from GoHighLevel once
-      const contacts = await ghlService.getContactsWithTags(['active'], 10000);
+      console.log(`📄 Fetching members with server-side pagination: offset=${pageOffset}, limit=${pageLimit}`);
+      
+      // Calculate how many contacts we need to fetch to account for filtering
+      // We'll fetch more than needed and then apply client-side filters
+      const fetchLimit = Math.max(pageLimit * 3, 100); // Fetch 3x more to account for filtering
+      
+      // Check for force refresh parameter
+      const forceRefresh = req.query.refresh === 'true';
+      
+      // Check if we have cached data that's still valid
+      const now = Date.now();
+      const isCacheValid = !forceRefresh && this.membersCache && (now - this.cacheTimestamp) < this.CACHE_DURATION;
+      
+      let allContacts;
+      if (isCacheValid) {
+        console.log('📋 Using cached member data');
+        allContacts = this.membersCache;
+      } else {
+        if (forceRefresh) {
+          console.log('🔄 Force refresh requested - fetching fresh data...');
+        }
+        // Check if there's already a fetch in progress
+        if (this.fetchPromise) {
+          console.log('⏳ Waiting for existing fetch to complete...');
+          allContacts = await this.fetchPromise;
+        } else {
+          console.log('🔄 Fetching fresh member data from GoHighLevel...');
+          // Create the fetch promise for deduplication
+          this.fetchPromise = this.fetchContactsWithTimeout();
+          
+          try {
+            allContacts = await this.fetchPromise;
+            // Update cache
+            this.membersCache = allContacts;
+            this.cacheTimestamp = now;
+            console.log(`✅ Cached ${allContacts.length} contacts`);
+          } catch (error) {
+            console.error('❌ Failed to fetch contacts:', error);
+            // Return cached data if available, even if stale
+            if (this.membersCache) {
+              console.log('⚠️ Using stale cached data due to fetch error');
+              allContacts = this.membersCache;
+            } else {
+              throw error;
+            }
+          } finally {
+            // Clear the fetch promise
+            this.fetchPromise = null;
+          }
+        }
+      }
       
       // Transform GoHighLevel contacts to our Member format
-      let transformedMembers = contacts.map(contact => this.transformContactToMember(contact));
+      let transformedMembers = allContacts.map(contact => this.transformContactToMember(contact));
       
-      // Filter by search term (name, business, email) - only if search is provided
+      // Cache individual member details while we have them
+      const cacheTimestamp = Date.now();
+      transformedMembers.forEach(member => {
+        const memberWithComputedFields = {
+          ...member,
+          name: `${member.firstName} ${member.lastName}`.trim(),
+          membershipTier: this.getMembershipTier(member)
+        };
+        
+        this.memberDetailsCache.set(member.id, {
+          member: memberWithComputedFields,
+          timestamp: cacheTimestamp
+        });
+      });
+      
+      console.log(`💾 Cached ${transformedMembers.length} individual member details`);
+      
+      // Apply search filter to the full dataset
       if (search && typeof search === 'string') {
         const searchLower = search.toLowerCase();
         transformedMembers = transformedMembers.filter(member => 
@@ -54,7 +131,9 @@ class MembersController {
           member.lastName?.toLowerCase().includes(searchLower) ||
           member.businessName?.toLowerCase().includes(searchLower) ||
           member.email?.toLowerCase().includes(searchLower) ||
-          member.specialties?.some(s => s.toLowerCase().includes(searchLower))
+          member.specialties?.some((specialty: string) => 
+            specialty.toLowerCase().includes(searchLower)
+          )
         );
       }
       
@@ -63,15 +142,35 @@ class MembersController {
         transformedMembers = transformedMembers.filter(member => member.role === role);
       }
       
-      // Return all members - let frontend handle pagination
+      // Apply pagination to the filtered results
+      const totalMembers = transformedMembers.length;
+      const paginatedMembers = transformedMembers.slice(pageOffset, pageOffset + pageLimit);
+      
+      console.log(`📄 Returning page: offset=${pageOffset}, limit=${pageLimit}, total=${totalMembers}, returned=${paginatedMembers.length}`);
+      
       res.json({
-        members: transformedMembers,
-        total: transformedMembers.length
+        members: paginatedMembers,
+        total: totalMembers,
+        limit: pageLimit,
+        offset: pageOffset,
+        hasMore: pageOffset + pageLimit < totalMembers
       });
     } catch (error) {
       console.error('Error fetching members from GoHighLevel:', error);
       res.status(500).json({ error: 'Failed to fetch members', details: error.message });
     }
+  }
+
+  /**
+   * Fetch contacts with timeout protection
+   */
+  private async fetchContactsWithTimeout(): Promise<any[]> {
+    const fetchPromise = ghlService.getContactsWithMembershipTags();
+    const timeoutPromise = new Promise<never>((_, reject) => 
+      setTimeout(() => reject(new Error('Request timeout')), 30000) // 30 second timeout
+    );
+    
+    return Promise.race([fetchPromise, timeoutPromise]);
   }
 
   /**
@@ -124,11 +223,25 @@ class MembersController {
     try {
       const { id } = req.params;
       
-      // Fetch all active contacts and find the specific one
-      const contacts = await ghlService.getContactsWithTags(['active'], 100);
-      const contact = contacts.find(c => c.id === id);
+      // Check cache first
+      const cachedMember = this.memberDetailsCache.get(id);
+      const now = Date.now();
+      
+      if (cachedMember && (now - cachedMember.timestamp) < this.MEMBER_CACHE_DURATION) {
+        console.log(`💾 Serving member ${id} from cache`);
+        return res.json(cachedMember.member);
+      }
+      
+      // Try to get the contact directly by ID
+      const contact = await ghlService.getContact(id);
       
       if (!contact) {
+        return res.status(404).json({ error: 'Member not found' });
+      }
+      
+      // Check if contact has active tag
+      const hasActiveTag = contact.tags?.includes('active');
+      if (!hasActiveTag) {
         return res.status(404).json({ error: 'Member not found' });
       }
       
@@ -142,10 +255,87 @@ class MembersController {
         membershipTier: this.getMembershipTier(member)
       };
       
+      // Cache the result
+      this.memberDetailsCache.set(id, {
+        member: memberWithComputedFields,
+        timestamp: now
+      });
+      
       res.json(memberWithComputedFields);
     } catch (error) {
       console.error('Error fetching member by ID:', error);
       res.status(500).json({ error: 'Failed to fetch member', details: error.message });
+    }
+  }
+
+  /**
+   * Update member information
+   */
+  async updateMember(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const updateData = req.body;
+      
+      // Validate that the user can update this member
+      // Either it's their own profile (compare GHL contact IDs) or they're an admin
+      const userGhlContactId = (req as any).user?.ghlContactId;
+      const userRole = (req as any).user?.role;
+      
+      if (userGhlContactId !== id && userRole !== 'admin') {
+        return res.status(403).json({ error: 'You can only update your own profile or admin access required' });
+      }
+      
+      // Get current member to verify it exists and is active
+      const contact = await ghlService.getContact(id);
+      if (!contact || !contact.tags?.includes('active')) {
+        return res.status(404).json({ error: 'Member not found' });
+      }
+      
+      // Prepare update data for GoHighLevel
+      const ghlUpdateData = {
+        firstName: updateData.firstName,
+        lastName: updateData.lastName,
+        phone: updateData.phone,
+        website: updateData.website,
+        companyName: updateData.businessName, // Map businessName to GoHighLevel's companyName field
+        customFields: {
+          bio: updateData.bio || ''
+        }
+      };
+      
+      // Update contact in GoHighLevel
+      await ghlService.updateContact(id, ghlUpdateData);
+      
+      // Clear cache for this member
+      this.memberDetailsCache.delete(id);
+      
+      // Add a small delay to allow GoHighLevel to propagate changes
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Fetch updated member data
+      console.log(`🔄 Fetching updated contact data for ${id}`);
+      const updatedContact = await ghlService.getContact(id);
+      console.log(`🔄 Updated contact data:`, JSON.stringify(updatedContact, null, 2));
+      
+      const updatedMember = this.transformContactToMember(updatedContact);
+      console.log(`🔄 Transformed member data:`, updatedMember);
+      
+      const memberWithComputedFields = {
+        ...updatedMember,
+        name: `${updatedMember.firstName} ${updatedMember.lastName}`.trim(),
+        membershipTier: this.getMembershipTier(updatedMember)
+      };
+      
+      // Update cache with new data
+      this.memberDetailsCache.set(id, {
+        member: memberWithComputedFields,
+        timestamp: Date.now()
+      });
+      
+      res.json(memberWithComputedFields);
+    } catch (error) {
+      console.error('Error updating member:', error);
+      res.status(500).json({ error: 'Failed to update member', details: error.message });
     }
   }
 
@@ -202,6 +392,55 @@ class MembersController {
       console.error('Error fetching member statistics:', error);
       res.status(500).json({ error: 'Failed to fetch member statistics', details: error.message });
     }
+  }
+
+  /**
+   * Warm the members cache (useful for scheduled jobs)
+   */
+  async warmCache(req: Request, res: Response) {
+    try {
+      console.log('🔥 Warming members cache...');
+      const startTime = Date.now();
+      
+      // Force refresh the cache
+      this.membersCache = null;
+      this.cacheTimestamp = 0;
+      
+      // Fetch fresh data
+      const contacts = await this.fetchContactsWithTimeout();
+      this.membersCache = contacts;
+      this.cacheTimestamp = Date.now();
+      
+      const duration = Date.now() - startTime;
+      
+      res.json({
+        message: 'Cache warmed successfully',
+        contactCount: contacts.length,
+        duration: `${duration}ms`,
+        cacheValidUntil: new Date(this.cacheTimestamp + this.CACHE_DURATION).toISOString()
+      });
+    } catch (error) {
+      console.error('Failed to warm cache:', error);
+      res.status(500).json({ error: 'Failed to warm cache', details: error.message });
+    }
+  }
+
+  /**
+   * Get cache status
+   */
+  async getCacheStatus(req: Request, res: Response) {
+    const now = Date.now();
+    const isCacheValid = this.membersCache && (now - this.cacheTimestamp) < this.CACHE_DURATION;
+    const cacheAge = this.cacheTimestamp ? now - this.cacheTimestamp : null;
+    
+    res.json({
+      hasCachedData: !!this.membersCache,
+      isCacheValid,
+      cacheAge: cacheAge ? `${Math.round(cacheAge / 1000)}s` : null,
+      cachedContactCount: this.membersCache ? this.membersCache.length : 0,
+      cacheValidUntil: this.cacheTimestamp ? 
+        new Date(this.cacheTimestamp + this.CACHE_DURATION).toISOString() : null
+    });
   }
 
   /**

@@ -104,7 +104,7 @@ class AuthSessionService {
   /**
    * Create a new authentication session after PKCE token exchange
    */
-  async createSession(memberId, accessToken, expiresIn) {
+  async createSession(memberId, accessToken, expiresIn, user = null) {
     const sessionId = this.generateSessionId();
     const expiresAt = new Date(Date.now() + (expiresIn * 1000)).toISOString();
     
@@ -114,7 +114,7 @@ class AuthSessionService {
       token: accessToken,
       expiresAt,
       createdAt: new Date().toISOString(),
-      user: null // Will be set during token exchange
+      user: user // Store complete user data
     };
 
     // Store session in memory (constitution requirement: ephemeral tokens)

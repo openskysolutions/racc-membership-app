@@ -15,15 +15,15 @@ export const AuthPage = () => {
   const [remember, setRemember] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
-  const checkAuth = useAuthStore(state => state.checkAuth);
+  const setUser = useAuthStore(state => state.setUser);
   const { theme } = useTheme();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     try {
-      await login({ email, password });
-      await checkAuth();
+      const response = await login({ email, password });
+      setUser(response.user);
       navigate('/');
     } catch (e: any) {
       setError(e.message || 'Login failed');

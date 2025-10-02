@@ -75,6 +75,8 @@ export const Navbar = () => {
     navigate('/');
   };
 
+  console.log('Navbar user:', user);
+
   return (
     <header className="sticky border-b-[1px] top-0 z-40 w-full bg-white dark:border-b-popover dark:bg-accent-foreground shadow-md">
       <NavigationMenu className="mx-auto">
@@ -159,8 +161,8 @@ export const Navbar = () => {
                 {isAuthenticated &&
                   <>
                     <DropdownMenuLabel>
-                      <span className="block text-sm font-semibold">{user?.fullName || 'User'}</span>
-                      <span className="block truncate text-sm font-normal">{user?.email || 'test@test.com'}</span>
+                      <span className="block text-sm font-semibold">{user?.name || 'User'}</span>
+                      {/* <span className="block truncate text-sm font-normal">{user?.email || 'test@test.com'}</span> */}
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => navigate('/profile')}>Profile</DropdownMenuItem>

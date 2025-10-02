@@ -1,25 +1,47 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Mail, Phone, Globe, Calendar, Shield, User } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, Globe, Calendar, Shield, User, Edit, Save, X } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { api } from '@/services/apiClient';
 import { useAuthStore } from '@/stores/authStore';
 import type { Member } from '@/types/member';
 
+interface MemberFormData {
+  firstName: string;
+  lastName: string;
+  businessName: string;
+  phone: string;
+  website: string;
+  bio: string;
+}
+
 const MemberDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { isAuthenticated, user } = useAuthStore();
+  const { user } = useAuthStore();
   
   const [member, setMember] = useState<Member | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [updating, setUpdating] = useState(false);
+  const [formData, setFormData] = useState<MemberFormData>({
+    firstName: '',
+    lastName: '',
+    businessName: '',
+    phone: '',
+    website: '',
+    bio: ''
+  });
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
-
     if (!id) {
       setError('No member ID provided');
       setLoading(false);
@@ -42,6 +64,16 @@ const MemberDetailsPage: React.FC = () => {
         
         const memberData: Member = await response.json();
         setMember(memberData);
+        
+        // Initialize form data
+        setFormData({
+          firstName: memberData.firstName || '',
+          lastName: memberData.lastName || '',
+          businessName: memberData.businessName || '',
+          phone: memberData.phone || '',
+          website: memberData.website || '',
+          bio: memberData.bio || ''
+        });
       } catch (err) {
         console.error('Error fetching member:', err);
         setError(err instanceof Error ? err.message : 'Failed to load member details');
@@ -51,7 +83,7 @@ const MemberDetailsPage: React.FC = () => {
     };
 
     fetchMember();
-  }, [id, isAuthenticated, navigate]);
+  }, [id]);
 
   const formatMemberName = (member: Member) => {
     const fullName = `${member.firstName || ''} ${member.lastName || ''}`.trim();
@@ -84,7 +116,57 @@ const MemberDetailsPage: React.FC = () => {
     }
   };
 
-  const isOwnProfile = user?.id === member?.id;
+  const canEdit = user && member && (user.id === member.id || user.role === 'admin');
+
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData(prev => ({
+      ...prev,
+      [e.target.name]: e.target.value
+    }));
+  };
+
+  const handleSave = async () => {
+    if (!member) return;
+
+    setUpdating(true);
+    setMessage(null);
+
+    try {
+      const response = await api.put(`/members/${member.id}`, formData);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to update member: ${response.statusText}`);
+      }
+      
+      const updatedMember: Member = await response.json();
+      setMember(updatedMember);
+      setIsEditing(false);
+      setMessage({ type: 'success', text: 'Profile updated successfully!' });
+    } catch (err) {
+      console.error('Error updating member:', err);
+      setMessage({ 
+        type: 'error', 
+        text: err instanceof Error ? err.message : 'Failed to update profile' 
+      });
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleCancel = () => {
+    if (member) {
+      setFormData({
+        firstName: member.firstName || '',
+        lastName: member.lastName || '',
+        businessName: member.businessName || '',
+        phone: member.phone || '',
+        website: member.website || '',
+        bio: member.bio || ''
+      });
+    }
+    setIsEditing(false);
+    setMessage(null);
+  };
 
   if (loading) {
     return (
@@ -116,7 +198,7 @@ const MemberDetailsPage: React.FC = () => {
   return (
     <div className="container py-8 px-3 md:px-6">
       {/* Header */}
-      <div className="mb-0">
+      <div className="flex items-center justify-between mb-6">
         <Button
           variant="ghost"
           onClick={() => navigate('/members')}
@@ -125,54 +207,173 @@ const MemberDetailsPage: React.FC = () => {
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Members
         </Button>
+        
+        {canEdit && !isEditing && (
+          <Button onClick={() => setIsEditing(true)}>
+            <Edit className="h-4 w-4 mr-2" />
+            Edit Profile
+          </Button>
+        )}
+        
+        {isEditing && (
+          <div className="flex gap-2">
+            <Button 
+              onClick={handleSave} 
+              disabled={updating}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              <Save className="h-4 w-4 mr-2" />
+              {updating ? 'Saving...' : 'Save'}
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={handleCancel}
+              disabled={updating}
+            >
+              <X className="h-4 w-4 mr-2" />
+              Cancel
+            </Button>
+          </div>
+        )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Profile Card */}
-        <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                <Avatar className="h-20 w-20">
-                  {member.avatar ? (
-                    <AvatarImage src={member.avatar} alt={formatMemberName(member)} />
-                  ) : (
-                    <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xl">
-                      {getInitials(member)}
-                    </AvatarFallback>
-                  )}
-                </Avatar>
+      {message && (
+        <Alert className={`mb-6 ${message.type === 'error' ? 'border-red-500' : 'border-green-500'}`}>
+          <AlertDescription className={message.type === 'error' ? 'text-red-700' : 'text-green-700'}>
+            {message.text}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Single Card with All Information */}
+      <Card className="max-w-4xl mx-auto">
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <Avatar className="h-20 w-20">
+              {member.avatar ? (
+                <AvatarImage src={member.avatar} alt={formatMemberName(member)} />
+              ) : (
+                <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xl">
+                  {getInitials(member)}
+                </AvatarFallback>
+              )}
+            </Avatar>
+            
+            <div className="flex-1">
+              <CardTitle className="text-2xl mb-2">
+                {member.businessName || formatMemberName(member)}
+              </CardTitle>
+              
+              {member.businessName && (
+                <p className="text-lg text-muted-foreground mb-2">
+                  {formatMemberName(member)}
+                </p>
+              )}
+              
+              <div className="flex flex-wrap gap-2">
+                <Badge className={`${getRoleColor(member.role)} flex items-center gap-1`}>
+                  {getRoleIcon(member.role)}
+                  {member.role.charAt(0).toUpperCase() + member.role.slice(1)}
+                </Badge>
                 
-                <div className="flex-1">
-                  <CardTitle className="text-2xl mb-2">
-                    {member.businessName || formatMemberName(member)}
-                  </CardTitle>
-                  
-                  {member.businessName && (
-                    <p className="text-lg text-muted-foreground mb-2">
-                      {formatMemberName(member)}
-                    </p>
-                  )}
-                  
-                  <div className="flex flex-wrap gap-2">
-                    <Badge className={`${getRoleColor(member.role)} flex items-center gap-1`}>
-                      {getRoleIcon(member.role)}
-                      {member.role.charAt(0).toUpperCase() + member.role.slice(1)}
-                    </Badge>
-                    
-                    <Badge variant="outline" className="text-green-700 border-green-300">
-                      {member.status.charAt(0).toUpperCase() + member.status.slice(1)}
-                    </Badge>
-                    
-                    {isOwnProfile && (
-                      <Badge variant="secondary">Your Profile</Badge>
-                    )}
-                  </div>
+                <Badge variant="outline" className="text-green-700 border-green-300">
+                  {member.status.charAt(0).toUpperCase() + member.status.slice(1)}
+                </Badge>
+                
+                {user?.id === member.id && (
+                  <Badge variant="secondary">Your Profile</Badge>
+                )}
+              </div>
+            </div>
+          </div>
+        </CardHeader>
+        
+        <CardContent className="space-y-6">
+          {isEditing ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="firstName" className="block text-sm font-medium mb-1">
+                    First Name *
+                  </label>
+                  <Input
+                    id="firstName"
+                    name="firstName"
+                    value={formData.firstName}
+                    onChange={handleFormChange}
+                    required
+                  />
+                </div>
+                <div>
+                  <label htmlFor="lastName" className="block text-sm font-medium mb-1">
+                    Last Name *
+                  </label>
+                  <Input
+                    id="lastName"
+                    name="lastName"
+                    value={formData.lastName}
+                    onChange={handleFormChange}
+                    required
+                  />
                 </div>
               </div>
-            </CardHeader>
-            
-            <CardContent className="space-y-6">
+
+              <div>
+                <label htmlFor="businessName" className="block text-sm font-medium mb-1">
+                  Business Name
+                </label>
+                <Input
+                  id="businessName"
+                  name="businessName"
+                  value={formData.businessName}
+                  onChange={handleFormChange}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="phone" className="block text-sm font-medium mb-1">
+                    Phone Number
+                  </label>
+                  <Input
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    value={formData.phone}
+                    onChange={handleFormChange}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="website" className="block text-sm font-medium mb-1">
+                    Website
+                  </label>
+                  <Input
+                    id="website"
+                    name="website"
+                    type="url"
+                    value={formData.website}
+                    onChange={handleFormChange}
+                    placeholder="https://example.com"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="bio" className="block text-sm font-medium mb-1">
+                  Bio / About
+                </label>
+                <Textarea
+                  id="bio"
+                  name="bio"
+                  value={formData.bio}
+                  onChange={handleFormChange}
+                  placeholder="Tell us about yourself or your business..."
+                  rows={4}
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-6 sm:ml-24">
               {/* Bio */}
               {member.bio && (
                 <div>
@@ -183,105 +384,84 @@ const MemberDetailsPage: React.FC = () => {
                   <p className="text-muted-foreground leading-relaxed">{member.bio}</p>
                 </div>
               )}
-              
-              {/* Specialties */}
-                            {/* member.specialties && member.specialties.length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Shield className="h-4 w-4" />
-                      Specialties
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {member.specialties.map(specialty => (
-                      <Badge key={specialty} variant="secondary" className="mr-2 mb-2">
-                        {specialty}
-                      </Badge>
-                    ))}
-                  </CardContent>
-                </Card>
-              ) */}
-            </CardContent>
-          </Card>
-        </div>
 
-        {/* Contact & Info Card */}
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Contact Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-3">
-                <Mail className="h-4 w-4 text-muted-foreground" />
-                <a 
-                  href={`mailto:${member.email}`}
-                  className="text-primary hover:underline flex-1 truncate"
-                >
-                  {member.email}
-                </a>
+              {/* Contact Information */}
+              <div>
+                <h3 className="font-semibold mb-3 flex items-center gap-2">
+                  <Mail className="h-4 w-4" />
+                  Contact Information
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-center gap-3">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    <a 
+                      href={`mailto:${member.email}`}
+                      className="text-primary hover:underline flex-1 truncate"
+                    >
+                      {member.email}
+                    </a>
+                  </div>
+                  
+                  {member.phone && (
+                    <div className="flex items-center gap-3">
+                      <Phone className="h-4 w-4 text-muted-foreground" />
+                      <a 
+                        href={`tel:${member.phone}`}
+                        className="text-primary hover:underline"
+                      >
+                        {member.phone}
+                      </a>
+                    </div>
+                  )}
+                  
+                  {member.website && (
+                    <div className="flex items-center gap-3">
+                      <Globe className="h-4 w-4 text-muted-foreground" />
+                      <a 
+                        href={member.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline flex-1 truncate"
+                      >
+                        {member.website.replace(/^https?:\/\//, '')}
+                      </a>
+                    </div>
+                  )}
+                </div>
               </div>
-              
-              {member.phone && (
-                <div className="flex items-center gap-3">
-                  <Phone className="h-4 w-4 text-muted-foreground" />
-                  <a 
-                    href={`tel:${member.phone}`}
-                    className="text-primary hover:underline"
-                  >
-                    {member.phone}
-                  </a>
-                </div>
-              )}
-              
-              {member.website && (
-                <div className="flex items-center gap-3">
-                  <Globe className="h-4 w-4 text-muted-foreground" />
-                  <a 
-                    href={member.website}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary hover:underline flex-1 truncate"
-                  >
-                    {member.website.replace(/^https?:\/\//, '')}
-                  </a>
-                </div>
-              )}
-              
-              {/* member.address && (
-                <div className="flex items-start gap-3">
-                  <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
-                  <div className="flex-1">
-                    <p className="text-sm">{member.address.street}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {member.address.city}, {member.address.state} {member.address.zipCode}
-                    </p>
+
+              {/* Membership Information */}
+              <div>
+                <h3 className="font-semibold mb-3 flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  Membership
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-center gap-3">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="text-sm font-medium">Member Since</p>
+                      <p className="text-sm text-muted-foreground">
+                        {member.createdAt ? new Date(member.createdAt).toLocaleDateString() : 'Unknown'}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-3">
+                    <Shield className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="text-sm font-medium">Membership Tier</p>
+                      <p className="text-sm text-muted-foreground">
+                        {(member as any).membershipTier || 'Standard'}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              ) */}
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Membership</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-3">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-                <div>
-                  <p className="text-sm font-medium">Member Since</p>
-                  <p className="text-sm text-muted-foreground">
-                    {/* formatMemberSince(member.memberSince) */}
-                    {member.createdAt ? new Date(member.createdAt).toLocaleDateString() : 'Unknown'}
-                  </p>
-                </div>
               </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };

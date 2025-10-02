@@ -193,9 +193,10 @@ router.post('/token', async (req, res) => {
 
     // Create session and generate tokens
     const accessToken = authSessionService.generateAccessToken(user.id);
-    const session = await authSessionService.createSession(user.id!, accessToken, 3600); // 1 hour
+    const session = await authSessionService.createSession(user.id!, accessToken, 3600, user); // Pass complete user data
     
-    console.log(`✅ Access token generated for user ${user.email}`);
+    console.log(`✅ Access token generated for user ${user.email}:`, accessToken);
+    console.log(`✅ Session created:`, { sessionId: session.id, expiresAt: session.expiresAt });
 
     res.json({
       access_token: session.token,
@@ -499,8 +500,12 @@ router.get('/profile', async (req, res) => {
 
     const token = authHeader.substring(7); // Remove 'Bearer ' prefix
     
+    console.log(`🔍 Profile request - Token received:`, token);
+    
     // Check if session exists and is valid
     const session = await authSessionService.getSessionByToken(token);
+    
+    console.log(`🔍 Session lookup result:`, session ? { id: session.id, expiresAt: session.expiresAt } : 'null');
     
     if (!session) {
       return res.status(401).json({

@@ -34,11 +34,35 @@ router.get('/search/:email', async (req, res) => {
 });
 
 /**
+ * PUT /members/:id
+ * Update member information (authenticated - own profile or admin only)
+ */
+router.put('/:id', requireAuth, async (req, res) => {
+  return membersController.updateMember(req, res);
+});
+
+/**
  * GET /members/stats
  * Get member statistics (admin only)
  */
 router.get('/stats', requireAuth, requireAdmin, async (req, res) => {
   return membersController.getMemberStats(req, res);
+});
+
+/**
+ * POST /members/cache/warm
+ * Warm the members cache (admin only)
+ */
+router.post('/cache/warm', requireAuth, requireAdmin, async (req, res) => {
+  return membersController.warmCache(req, res);
+});
+
+/**
+ * GET /members/cache/status
+ * Get cache status (admin only)
+ */
+router.get('/cache/status', requireAuth, requireAdmin, async (req, res) => {
+  return membersController.getCacheStatus(req, res);
 });
 
 export default router;

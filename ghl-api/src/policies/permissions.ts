@@ -3,7 +3,10 @@
 /**
  * Service for role-based permission checking
  */
-class PermissionService {
+export class PermissionService {
+  static isModerator(memberId: any) {
+    throw new Error('Method not implemented.');
+  }
   private roles: Map<string, any>;
   private memberRoles: Map<string, string[]>;
 

@@ -9,15 +9,11 @@ console.log('API_BASE_URL configured as:', API_BASE_URL);
 console.log('Environment VITE_API_BASE_URL:', import.meta.env.VITE_API_BASE_URL);
 
 /**
- * Get authentication token from sessionStorage (Better Auth PKCE)
+ * Get authentication token from localStorage (OAuth 2.0 PKCE)
  */
 function getAuthToken(): string | null {
   try {
-    const sessionData = sessionStorage.getItem('racc_auth_session');
-    if (sessionData) {
-      const session = JSON.parse(sessionData);
-      return session.token || null;
-    }
+    return localStorage.getItem('token');
   } catch (error) {
     console.warn('Failed to retrieve auth token:', error);
   }

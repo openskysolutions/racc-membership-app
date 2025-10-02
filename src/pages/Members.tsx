@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { Search, MapPin, Phone, Mail, Globe, Users } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Search, MapPin, Phone, Mail, Globe, Users, RefreshCw } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -21,86 +21,124 @@ interface Member extends BaseMember {
   };
 }
 
+// Custom debounce hook
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
+
 const MembersPage: React.FC = () => {
   const navigate = useNavigate();
+  const searchInputRef = useRef<HTMLInputElement>(null);
   
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(true);
+  const [totalMembers, setTotalMembers] = useState(0);
+  
+  // Filter states
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [specialtyFilter, setSpecialtyFilter] = useState('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   
-  // Client-side pagination state
-  const [displayedMembers, setDisplayedMembers] = useState<Member[]>([]);
+  // Debounce search term to avoid triggering API calls on every keystroke
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
+  
+  // Pagination state
+  const [currentOffset, setCurrentOffset] = useState(0);
+  const pageSize = 20; // Load 20 members at a time
 
-  const pageSize = 20; // Display 20 members at a time
-  const hasFetchedRef = useRef(false);
-
-  // Fetch all members data once
-  const getMembers = async () => {
-    if (hasFetchedRef.current) {
-      console.log('🚫 getMembers skipped - already fetched');
-      return;
+  // Load members with pagination
+  const loadMembers = useCallback(async (offset = 0, append = false, forceRefresh = false) => {
+    console.log(`� Loading members - offset: ${offset}, append: ${append}`);
+    
+    if (append) {
+      setLoadingMore(true);
+    } else {
+      setLoading(true);
+      // Don't clear members immediately to prevent input unfocus
+      // setMembers([]); // Clear existing members for fresh load
     }
     
-    console.log(`🔍 getMembers called - fetching all members from Members page`);
-    hasFetchedRef.current = true;
-    
     try {
-      setLoading(true);
-      
-      // Fetch all members directly from our API (which will fetch from GoHighLevel once)
-      const response = await api.get('/members?source=MembersPage');
+      // Build query parameters
+      const params = new URLSearchParams({
+        source: 'MembersPage',
+        limit: pageSize.toString(),
+        offset: offset.toString()
+      });
+
+      // Add filters if present
+      if (debouncedSearchTerm) params.append('search', debouncedSearchTerm);
+      if (roleFilter !== 'all') params.append('role', roleFilter);
+
+      if (forceRefresh) params.append('refresh', 'true');
+
+      const response = await api.get(`/members?${params.toString()}`);
       
       if (!response.ok) {
         throw new Error(`Failed to fetch members: ${response.statusText}`);
       }
       
       const data = await response.json();
-      setMembers(data.members || []);
+      const newMembers = data.members || [];
+      
+      if (append) {
+        setMembers(prev => [...prev, ...newMembers]);
+      } else {
+        setMembers(newMembers);
+      }
+      
+      setTotalMembers(data.total || 0);
+      setHasMore(data.hasMore || false);
+      setCurrentOffset(offset + newMembers.length);
       
     } catch (err) {
       console.error('Error fetching members:', err);
       setError(err instanceof Error ? err.message : 'Failed to load members');
-      hasFetchedRef.current = false; // Reset so it can be retried
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
-  };
+  }, [debouncedSearchTerm, roleFilter, pageSize]);
 
-  // Filter members on client side
+  // Refresh function to force reload
+  const refreshMembers = useCallback(() => {
+    console.log('🔄 Force refreshing members...');
+    setCurrentOffset(0);
+    loadMembers(0, false, true);
+  }, [loadMembers]);
+
+  // Load more members for infinite scroll
+  const loadMore = useCallback(() => {
+    if (!hasMore || loadingMore) return;
+    loadMembers(currentOffset, true);
+  }, [hasMore, loadingMore, currentOffset, loadMembers]);
+
+  // Filter members on client side for search/role filters
   const filteredMembers = useMemo(() => {
     return members.filter(member => {
-      // Search filter
-      const searchLower = searchTerm.toLowerCase();
-      const matchesSearch = !searchTerm || 
-        member.firstName?.toLowerCase().includes(searchLower) ||
-        member.lastName?.toLowerCase().includes(searchLower) ||
-        member.businessName?.toLowerCase().includes(searchLower) ||
-        member.email?.toLowerCase().includes(searchLower) ||
-        member.specialties?.some(s => s.toLowerCase().includes(searchLower));
-
-      // Role filter
-      const matchesRole = roleFilter === 'all' || member.role === roleFilter;
-
-      // Specialty filter
+      // Specialty filter (client-side only since API doesn't support this yet)
       const matchesSpecialty = specialtyFilter === 'all' || 
         member.specialties?.includes(specialtyFilter);
 
-      return matchesSearch && matchesRole && matchesSpecialty;
+      return matchesSpecialty;
     });
-  }, [members, searchTerm, roleFilter, specialtyFilter]);
-
-  const loadMore = useCallback(() => {
-    // Increase the number of displayed items
-    const currentlyDisplayed = displayedMembers.length;
-    const nextBatch = filteredMembers.slice(currentlyDisplayed, currentlyDisplayed + pageSize);
-    setDisplayedMembers(prev => [...prev, ...nextBatch]);
-  }, [displayedMembers.length, filteredMembers, pageSize]);
-
-  const hasMore = displayedMembers.length < filteredMembers.length;
+  }, [members, specialtyFilter]);
 
   // Intersection observer target for scroll pagination
   const observerTarget = useRef<HTMLDivElement>(null);
@@ -109,7 +147,7 @@ const MembersPage: React.FC = () => {
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasMore) {
+        if (entries[0].isIntersecting && hasMore && !loadingMore) {
           loadMore();
         }
       },
@@ -125,19 +163,36 @@ const MembersPage: React.FC = () => {
         observer.unobserve(observerTarget.current);
       }
     };
-  }, [hasMore, loadMore]);
+  }, [hasMore, loadMore, loadingMore]);
 
   // Initial fetch on mount
   useEffect(() => {
-    console.log('🚀 Initial mount useEffect - calling getMembers');
-    getMembers();
-  }, []); // Empty dependency array - only run on mount
+    console.log('🚀 Initial mount useEffect - loading first page');
+    loadMembers(0, false);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run on mount to avoid infinite loops
 
-  // Reset pagination when filters change
+  // Reset and reload when search/role filters change (using debounced search)
   useEffect(() => {
-    console.log(`🔄 Filter change - resetting pagination`);
-    setDisplayedMembers(filteredMembers.slice(0, pageSize));
-  }, [filteredMembers, pageSize]);
+    console.log('🔄 Filter change - reloading from start');
+    setCurrentOffset(0);
+    loadMembers(0, false);
+  }, [debouncedSearchTerm, roleFilter, loadMembers]);
+
+  // Restore focus to search input after members update (but only if user was actively searching)
+  useEffect(() => {
+    const input = searchInputRef.current;
+    if (input && searchTerm && document.activeElement !== input) {
+      // Only restore focus if user was actually searching and input isn't already focused
+      const focusTimeout = setTimeout(() => {
+        input.focus();
+        // Restore cursor position to end
+        input.setSelectionRange(input.value.length, input.value.length);
+      }, 50); // Small delay to ensure DOM updates are complete
+      
+      return () => clearTimeout(focusTimeout);
+    }
+  }, [filteredMembers, searchTerm]);
 
   // Get unique specialties for filter dropdown
   const allSpecialties = useMemo(() => {
@@ -209,7 +264,10 @@ const MembersPage: React.FC = () => {
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Member Directory</h1>
         <p className="text-muted-foreground">
-          Connect with {members.length} active RACC members
+          {searchTerm || roleFilter !== 'all' || specialtyFilter !== 'all' 
+            ? `Showing ${filteredMembers.length} of ${totalMembers} RACC members`
+            : `Connect with ${totalMembers} active RACC members`
+          }
         </p>
       </div>
 
@@ -218,16 +276,27 @@ const MembersPage: React.FC = () => {
         <CardContent className="pt-6"> */}
           <div className="flex flex-col md:flex-row gap-4">
             {/* Search */}
-            <div className="flex flex-row flex-grow w-full">
+            <div className="flex flex-row flex-grow w-full gap-2">
               <div className="relative w-full">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
+                  ref={searchInputRef}
                   placeholder="Search members by name, business, or specialty..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10 w-full"
                 />
               </div>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={refreshMembers}
+                disabled={loading}
+                title="Refresh member list"
+                className={loading ? "animate-spin" : ""}
+              >
+                <RefreshCw className="h-4 w-4" />
+              </Button>
             </div>
 
             {/* Role Filter */}
@@ -286,7 +355,7 @@ const MembersPage: React.FC = () => {
             <p className="text-sm text-muted-foreground">
               Showing {filteredMembers.length} of {members.length} members
             </p>
-            {(searchTerm || roleFilter !== 'all' || specialtyFilter !== 'all') && (
+            {(debouncedSearchTerm || roleFilter !== 'all' || specialtyFilter !== 'all') && (
               <Button
                 variant="outline"
                 size="sm"
@@ -304,7 +373,7 @@ const MembersPage: React.FC = () => {
       </Card> */}
 
       {/* Members Grid/List */}
-      {displayedMembers.length === 0 ? (
+      {filteredMembers.length === 0 ? (
         <Card>
           <CardContent className="pt-6">
             <div className="text-center py-8">
@@ -323,7 +392,7 @@ const MembersPage: React.FC = () => {
               ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
               : "space-y-2 gap-2"
           }>
-            {displayedMembers.map((member) => (
+            {filteredMembers.map((member) => (
             <Card 
               key={member.id} 
               className={`cursor-pointer hover:shadow-lg transition-shadow ${
@@ -366,7 +435,7 @@ const MembersPage: React.FC = () => {
                 </div>
               </CardHeader>
 
-              <CardContent className="space-y-1 p-0 flex-1">
+              <CardContent className="space-y-1 p-0 flex-1 ml-16">
                 {member.email && (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Mail className="email h-4 w-4" />
@@ -412,7 +481,7 @@ const MembersPage: React.FC = () => {
           {/* Stats */}
           <div className="flex justify-center">
             <p className="text-sm text-muted-foreground">
-              Showing {displayedMembers.length} of {filteredMembers.length} members
+              Showing {filteredMembers.length} of {filteredMembers.length} members
             </p>
           </div>
         </div>
