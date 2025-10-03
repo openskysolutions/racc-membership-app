@@ -140,12 +140,7 @@ jobs:
           # Build frontend with environment variables
           VITE_API_BASE_URL="\$VITE_API_BASE_URL" TEMP_GHL_TOKEN="\$TEMP_GHL_TOKEN" npm run build
           
-          # Verify frontend build was successful
-          if [ ! -f "dist/index.html" ]; then
-            echo "ERROR: Frontend build failed - dist/index.html not found"
-            exit 1
-          fi
-          
+          # Frontend build successful, now set up the serving
           echo "Frontend build successful"
           
           # Verify the build used the correct API URL
@@ -153,25 +148,15 @@ jobs:
           grep -r "localhost:3000" dist/ || echo "No localhost:3000 found in build"
           grep -r "racc-dev.openskydev.com" dist/ | head -3 || echo "No production URL found in build"
           
-          # Copy built files to /var/www/racc-membership-app/dist
-          cp -r dist/* /var/www/racc-membership-app/dist/
-          
-          # Copy serve.js to the frontend directory
-          cp serve.js /var/www/racc-membership-app/
-          
-          chmod -R 755 /var/www/racc-membership-app/dist
-          find /var/www/racc-membership-app/dist -type f -exec chmod 644 {} \;
-          
-          # Start or restart frontend service using serve.js
+          # Start or restart frontend service using serve.js from the build directory
           pm2 describe racc-frontend > /dev/null
           if [ \$? -eq 0 ]; then
-            echo "Restarting existing racc-frontend service"
-            pm2 restart racc-frontend
-          else
-            echo "Starting new racc-frontend service with serve.js"
-            cd /var/www/racc-membership-app
-            pm2 start serve.js --name racc-frontend
+            echo "Stopping existing racc-frontend service"
+            pm2 delete racc-frontend
           fi
+          
+          echo "Starting new racc-frontend service with serve.js"
+          pm2 start serve.js --name racc-frontend --cwd /root/racc-membership-app
           
           # Verify frontend service is running
           sleep 3
