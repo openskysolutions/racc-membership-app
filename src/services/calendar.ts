@@ -22,6 +22,39 @@ export interface CalendarEvent {
   timezone?: string;
 }
 
+export interface CreateEventPayload {
+  calendarId: string;
+  title: string;
+  description?: string;
+  startTime: string;
+  endTime: string;
+  location?: string;
+  contactId: string;
+  appointmentStatus?: 'new' | 'scheduled' | 'confirmed' | 'cancelled';
+  toNotify?: boolean;
+  ignoreDateRange?: boolean;
+  ignoreFreeSlotValidation?: boolean;
+  selectedTimezone?: string;
+  address?: string;
+  meetingLocationType?: 'custom' | 'physical' | 'phone' | 'video';
+  calendarNotes?: string;
+  internalNote?: string;
+  source?: string;
+  channel?: string;
+}
+
+export interface UpdateEventPayload {
+  title?: string;
+  description?: string;
+  startTime?: string;
+  endTime?: string;
+  location?: string;
+  appointmentStatus?: 'new' | 'scheduled' | 'confirmed' | 'cancelled';
+  address?: string;
+  calendarNotes?: string;
+  internalNote?: string;
+}
+
 export interface Calendar {
   id: string;
   name: string;
@@ -190,4 +223,107 @@ export function formatEventDateTime(startTime: string, endTime: string, isAllDay
   // Multi-day event
   const endDateStr = end.toLocaleDateString('en-US', dateOptions);
   return `${dateStr} ${startTimeStr} - ${endDateStr} ${endTimeStr}`;
+}
+
+/**
+ * Create a new calendar event/appointment in GoHighLevel
+ * @param eventData - The event data to create
+ */
+export async function createCalendarEvent(eventData: CreateEventPayload): Promise<CalendarEvent> {
+  try {
+    console.log('Creating calendar event with data:', eventData);
+    
+    const response = await api.post('/calendars/appointments', eventData);
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(`Failed to create calendar event: ${response.statusText} - ${errorData.message || ''}`);
+    }
+    
+    const data = await response.json();
+    const appointment = data?.appointment || data;
+    
+    console.log('Created calendar event:', appointment);
+    
+    // Transform response to CalendarEvent format
+    return {
+      id: appointment.id,
+      title: appointment.title,
+      description: appointment.description || appointment.calendarNotes,
+      startTime: appointment.startTime,
+      endTime: appointment.endTime,
+      location: appointment.address || appointment.location,
+      calendarId: appointment.calendarId,
+      status: appointment.appointmentStatus || 'confirmed',
+      attendees: [],
+      isAllDay: false,
+      timezone: appointment.selectedTimezone || 'America/Denver'
+    };
+  } catch (error: any) {
+    console.error('Error creating calendar event:', error);
+    throw new Error(`Failed to create calendar event: ${error.message}`);
+  }
+}
+
+/**
+ * Update an existing calendar event/appointment in GoHighLevel
+ * @param eventId - The event ID to update
+ * @param eventData - The event data to update
+ */
+export async function updateCalendarEvent(eventId: string, eventData: UpdateEventPayload): Promise<CalendarEvent> {
+  try {
+    console.log('Updating calendar event:', eventId, 'with data:', eventData);
+    
+    const response = await api.put(`/calendars/appointments/${eventId}`, eventData);
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(`Failed to update calendar event: ${response.statusText} - ${errorData.message || ''}`);
+    }
+    
+    const data = await response.json();
+    const appointment = data?.appointment || data;
+    
+    console.log('Updated calendar event:', appointment);
+    
+    // Transform response to CalendarEvent format
+    return {
+      id: appointment.id,
+      title: appointment.title,
+      description: appointment.description || appointment.calendarNotes,
+      startTime: appointment.startTime,
+      endTime: appointment.endTime,
+      location: appointment.address || appointment.location,
+      calendarId: appointment.calendarId,
+      status: appointment.appointmentStatus || 'confirmed',
+      attendees: [],
+      isAllDay: false,
+      timezone: appointment.selectedTimezone || 'America/Denver'
+    };
+  } catch (error: any) {
+    console.error('Error updating calendar event:', error);
+    throw new Error(`Failed to update calendar event: ${error.message}`);
+  }
+}
+
+/**
+ * Delete a calendar event/appointment in GoHighLevel
+ * @param eventId - The event ID to delete
+ */
+export async function deleteCalendarEvent(eventId: string): Promise<void> {
+  try {
+    console.log('Deleting calendar event:', eventId);
+    
+    const response = await api.delete(`/calendars/appointments/${eventId}`);
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(`Failed to delete calendar event: ${response.statusText} - ${errorData.message || ''}`);
+    }
+    
+    console.log('Deleted calendar event:', eventId);
+  } catch (error: any) {
+    console.error('Error deleting calendar event:', error);
+    throw new Error(`Failed to delete calendar event: ${error.message}`);
+  }
 }

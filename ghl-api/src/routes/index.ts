@@ -12,6 +12,8 @@ import calendarsRoutes from '@/routes/calendars';
 
 // CommonJS imports
 const moderationRoutes = require('@/routes/moderation');
+const mediasRoutes = require('@/routes/medias');
+const testRoutes = require('@/routes/test');
 
 const router = express.Router();
 
@@ -25,5 +27,7 @@ router.use('/moderation', moderationRoutes);
 router.use('/jobs', jobsRoutes);
 router.use('/news', newsRoutes);
 router.use('/calendars', calendarsRoutes);
+router.use('/medias', mediasRoutes);
+router.use('/test', testRoutes);
 
 export default router;

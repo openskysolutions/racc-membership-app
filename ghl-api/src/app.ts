@@ -20,7 +20,8 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-app.use(express.json());
+// Increase body parser limit for avatar uploads (base64 encoded images)
+app.use(express.json({ limit: '10mb' }));
 
 // Request logging middleware
 app.use(requestLogger);

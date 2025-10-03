@@ -6,10 +6,12 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import EventFormDialog from '@/components/EventFormDialog';
 
 // GoHighLevel Calendar ID - RACC Events
 const GHL_CALENDAR_ID = '9XpDcFHv3SmCUuHeuOOg';
+const GHL_LOCATION_ID = '5FAB1z0AhuVlEdqOzjVX';
 
 const CalendarPage: React.FC = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -19,7 +21,17 @@ const CalendarPage: React.FC = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [createEventDialogOpen, setCreateEventDialogOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+
+  // Check for URL parameters to trigger create event dialog
+  useEffect(() => {
+    if (searchParams.get('create') === 'true') {
+      setCreateEventDialogOpen(true);
+      // Clean up URL parameter
+      navigate('/calendar', { replace: true });
+    }
+  }, [searchParams, navigate]);
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -37,6 +49,30 @@ const CalendarPage: React.FC = () => {
 
     fetchEvents();
   }, [currentDate]); // Re-fetch when month changes
+
+  // Event handlers
+  const handleCreateEvent = (date?: Date) => {
+    setSelectedDate(date || null);
+    setCreateEventDialogOpen(true);
+  };
+
+  const handleEditEvent = (event: CalendarEvent) => {
+    setSelectedEvent(event);
+    setCreateEventDialogOpen(true);
+  };
+
+  const handleEventCreated = (newEvent: CalendarEvent) => {
+    setEvents(prev => [...prev, newEvent]);
+    // Optionally refresh events from server
+    // fetchEvents();
+  };
+
+  const handleEventUpdated = (updatedEvent: CalendarEvent) => {
+    setEvents(prev => prev.map(event => 
+      event.id === updatedEvent.id ? updatedEvent : event
+    ));
+    setSelectedEvent(null);
+  };
 
   // Calendar computation
   const monthNames = [
@@ -130,10 +166,6 @@ const CalendarPage: React.FC = () => {
     setCreateEventDialogOpen(true);
   };
 
-  const handleCreateEvent = () => {
-    navigate('/news-events');
-  };
-
   const formatEventTime = (dateString: string) => {
     return new Date(dateString).toLocaleTimeString('en-US', {
       hour: 'numeric',
@@ -172,7 +204,7 @@ const CalendarPage: React.FC = () => {
               View and manage upcoming RACC events and activities.
             </p>
           </div>
-          <Button onClick={handleCreateEvent} className="w-fit">
+          <Button onClick={() => handleCreateEvent()} className="w-fit">
             <Plus className="h-4 w-4 mr-2" />
             Create Event
           </Button>
@@ -360,76 +392,17 @@ const CalendarPage: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Create Event Dialog */}
-      <Dialog open={createEventDialogOpen} onOpenChange={setCreateEventDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Create New Event</DialogTitle>
-            <DialogDescription>
-              Create a new event for {selectedDate?.toLocaleDateString('en-US', {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-              })}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="event-title" className="text-sm font-medium">
-                Event Title
-              </label>
-              <input
-                id="event-title"
-                type="text"
-                placeholder="Enter event title..."
-                className="w-full mt-1 px-3 py-2 border border-input rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="event-description" className="text-sm font-medium">
-                Description
-              </label>
-              <textarea
-                id="event-description"
-                placeholder="Enter event description..."
-                rows={3}
-                className="w-full mt-1 px-3 py-2 border border-input rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none"
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="event-location" className="text-sm font-medium">
-                Location
-              </label>
-              <input
-                id="event-location"
-                type="text"
-                placeholder="Enter event location..."
-                className="w-full mt-1 px-3 py-2 border border-input rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-            </div>
-          </div>
-          
-          <div className="flex justify-end gap-2 pt-4">
-            <Button 
-              variant="outline" 
-              onClick={() => setCreateEventDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button onClick={() => {
-              // Navigate to news-events page with the selected date
-              const dateParam = selectedDate ? selectedDate.toISOString().split('T')[0] : '';
-              navigate(`/news-events?date=${dateParam}&tab=create`);
-              setCreateEventDialogOpen(false);
-            }}>
-              Create Event
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Event Form Dialog */}
+      <EventFormDialog
+        open={createEventDialogOpen}
+        onOpenChange={setCreateEventDialogOpen}
+        calendarId={GHL_CALENDAR_ID}
+        locationId={GHL_LOCATION_ID}
+        event={selectedEvent}
+        selectedDate={selectedDate}
+        onEventCreated={handleEventCreated}
+        onEventUpdated={handleEventUpdated}
+      />
     </div>
   );
 };

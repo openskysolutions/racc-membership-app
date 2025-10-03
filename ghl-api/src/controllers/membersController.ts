@@ -193,6 +193,10 @@ class MembersController {
     const specialtiesStr = getCustomField('specialties');
     const specialties = specialtiesStr ? specialtiesStr.split(',').map(s => s.trim()).filter(s => s) : [];
 
+    // Get avatar URL from custom fields, fall back to placeholder
+    // Use the actual custom field ID for avatar_url: 331dKIcjgTa8z8a6mu37
+    const avatarUrl = getCustomField('331dKIcjgTa8z8a6mu37') || getCustomField('avatar_url') || getCustomField('profile_photo') || '/profile-placeholder.png';
+
     return {
       id: contact.id,
       email: contact.email || '',
@@ -201,7 +205,7 @@ class MembersController {
       businessName: contact.businessName || contact.companyName || '',
       phone: contact.phone || '',
       website: contact.website || '',
-      avatar: '/profile-placeholder.png', // Default avatar
+      avatar: avatarUrl,
       role,
       status: 'active', // All fetched contacts have 'active' tag
       memberSince: getCustomField('memberSince') || contact.dateAdded?.substring(0, 10) || new Date().toISOString().substring(0, 10),
@@ -340,6 +344,64 @@ class MembersController {
   }
 
   /**
+   * Update contact avatar URL in custom field
+   */
+  async updateContactAvatar(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const { avatarUrl } = req.body;
+      
+      console.log(`Updating avatar for contact ${id} with URL: ${avatarUrl}`);
+      
+      // Validate that the user can update this contact's avatar
+      const userGhlContactId = (req as any).user?.ghlContactId;
+      const userRole = (req as any).user?.role;
+      
+      if (userGhlContactId !== id && userRole !== 'admin') {
+        return res.status(403).json({ error: 'You can only update your own avatar or admin access required' });
+      }
+      
+      if (!avatarUrl) {
+        return res.status(400).json({ error: 'Avatar URL is required' });
+      }
+      
+      // Get current contact to verify it exists
+      const contact = await ghlService.getContact(id);
+      if (!contact) {
+        return res.status(404).json({ error: 'Contact not found' });
+      }
+      
+      // Update contact with avatar URL in custom fields
+      const updateData = {
+        customFields: {
+          ...contact.customFields,
+          avatar_url: avatarUrl,
+          profile_photo: avatarUrl
+        }
+      };
+      
+      // Update contact in GoHighLevel
+      await ghlService.updateContact(id, updateData);
+      
+      // Clear cache for this member AND the main members cache to show updated avatar immediately
+      this.memberDetailsCache.delete(id);
+      this.membersCache = null; // Clear main cache so avatars refresh immediately
+      this.cacheTimestamp = 0;
+      
+      console.log(`Avatar URL updated successfully for contact ${id}`);
+      
+      res.json({ 
+        success: true, 
+        message: 'Avatar URL updated successfully',
+        avatarUrl: avatarUrl
+      });
+    } catch (error) {
+      console.error('Error updating contact avatar:', error);
+      res.status(500).json({ error: 'Failed to update avatar', details: error.message });
+    }
+  }
+
+  /**
    * Get member by email from GoHighLevel
    */
   async getMemberByEmail(req: Request, res: Response) {
@@ -440,6 +502,25 @@ class MembersController {
       cachedContactCount: this.membersCache ? this.membersCache.length : 0,
       cacheValidUntil: this.cacheTimestamp ? 
         new Date(this.cacheTimestamp + this.CACHE_DURATION).toISOString() : null
+    });
+  }
+
+  /**
+   * Clear all caches (useful for immediate avatar updates)
+   */
+  async clearCache(req: Request, res: Response) {
+    console.log('🗑️ Clearing all member caches...');
+    
+    // Clear main members cache
+    this.membersCache = null;
+    this.cacheTimestamp = 0;
+    
+    // Clear individual member details cache
+    this.memberDetailsCache.clear();
+    
+    res.json({
+      message: 'All member caches cleared successfully',
+      timestamp: new Date().toISOString()
     });
   }
 

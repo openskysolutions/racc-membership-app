@@ -27,6 +27,11 @@ router.get('/events', getAllLocationEvents);
 router.get('/:calendarId/events', getCalendarEvents);
 router.delete('/events/:eventId', deleteEvent);
 
+// Appointment routes
+router.post('/appointments', requireAuth, createAppointment);
+router.get('/appointments/:id', getAppointment);
+router.put('/appointments/:id', requireAuth, editAppointment);
+
 // Other routes can be added as needed...
 
 export default router;

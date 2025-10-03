@@ -42,6 +42,14 @@ router.put('/:id', requireAuth, async (req, res) => {
 });
 
 /**
+ * PUT /members/:id/avatar
+ * Update member avatar (authenticated - own profile or admin only)
+ */
+router.put('/:id/avatar', requireAuth, async (req, res) => {
+  return membersController.updateContactAvatar(req, res);
+});
+
+/**
  * GET /members/stats
  * Get member statistics (admin only)
  */
@@ -63,6 +71,14 @@ router.post('/cache/warm', requireAuth, requireAdmin, async (req, res) => {
  */
 router.get('/cache/status', requireAuth, requireAdmin, async (req, res) => {
   return membersController.getCacheStatus(req, res);
+});
+
+/**
+ * DELETE /members/cache
+ * Clear all member caches (admin only)
+ */
+router.delete('/cache', requireAuth, requireAdmin, async (req, res) => {
+  return membersController.clearCache(req, res);
 });
 
 export default router;

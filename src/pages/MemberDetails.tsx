@@ -11,6 +11,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { api } from '@/services/apiClient';
 import { useAuthStore } from '@/stores/authStore';
 import type { Member } from '@/types/member';
+import AvatarUpload from '@/components/AvatarUpload';
 
 interface MemberFormData {
   firstName: string;
@@ -354,6 +355,22 @@ const MemberDetailsPage: React.FC = () => {
                   name="businessName"
                   value={formData.businessName}
                   onChange={handleFormChange}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Profile Picture
+                </label>
+                <AvatarUpload
+                  contactId={member?.id || ''}
+                  currentAvatar={member?.avatar}
+                  fallbackText={getInitials(member || {} as Member)}
+                  onAvatarUpdated={(newAvatarUrl: string) => {
+                    if (member) {
+                      setMember({ ...member, avatar: newAvatarUrl });
+                    }
+                  }}
                 />
               </div>
 

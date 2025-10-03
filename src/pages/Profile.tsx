@@ -11,6 +11,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Mail, Phone, Globe, Calendar, Shield, User, Edit, Save, X } from 'lucide-react';
 import { api } from '@/services/apiClient';
 import type { Member } from '@/types/member';
+import AvatarUpload from '@/components/AvatarUpload';
 
 interface ExtendedUpdateProfileRequest extends UpdateProfileRequest {
   bio?: string;
@@ -296,6 +297,22 @@ const ProfilePage: React.FC = () => {
                   name="businessName"
                   value={formData.businessName}
                   onChange={handleChange}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Profile Picture
+                </label>
+                <AvatarUpload
+                  contactId={user?.ghlContactId || ''}
+                  currentAvatar={profile?.avatar}
+                  fallbackText={getInitials(profile || {} as Member)}
+                  onAvatarUpdated={(newAvatarUrl: string) => {
+                    if (profile) {
+                      setProfile({ ...profile, avatar: newAvatarUrl });
+                    }
+                  }}
                 />
               </div>
 
