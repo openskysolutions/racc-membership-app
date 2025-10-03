@@ -34,7 +34,10 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no root@racc-dev.openskydev.com << ENDSSH
           cd /root/racc-membership-app || git clone https://github.com/openskysolutions/racc-membership-app.git && cd racc-membership-app
-          git pull
+          
+          # Handle potential conflicts by resetting any local changes
+          git fetch origin
+          git reset --hard origin/dev
           
           # Set all environment variables for the entire session
           export PORT="$PORT"
