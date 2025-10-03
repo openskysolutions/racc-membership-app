@@ -1,17 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar as CalendarIcon, MapPin, Users, Clock, Plus, Edit, Eye, Shield, Check, X } from 'lucide-react';
-import { getEventsList, Event, createEvent, updateEvent, createOrUpdateRSVP, getMyRSVP, RSVP } from '@/services/events';
-import { getModerationQueue, approveEvent, rejectEvent, checkModerationAccess } from '@/services/eventModeration';
+import { Calendar as CalendarIcon, MapPin, Clock, Plus, } from 'lucide-react';
+import { getEventsList, Event } from '@/services/events';
 import { getUpcomingEvents, CalendarEvent } from '@/services/calendar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+
 import { useNavigate } from 'react-router-dom';
 
 // GoHighLevel Calendar ID - RACC Events
@@ -23,38 +17,6 @@ const NewsEventsPages: React.FC = () => {
   const [ghlEvents, setGhlEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState('view');
-  
-  // RSVP state
-  const [rsvpDialogOpen, setRsvpDialogOpen] = useState(false);
-  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
-  const [currentRSVP, setCurrentRSVP] = useState<RSVP | null>(null);
-  const [rsvpLoading, setRsvpLoading] = useState(false);
-  const [rsvpFormData, setRsvpFormData] = useState({
-    status: 'attending' as 'attending' | 'not-attending' | 'maybe',
-    notes: '',
-    guestCount: 0
-  });
-  
-  // Event form state
-  const [isCreating, setIsCreating] = useState(false);
-  const [editingEvent, setEditingEvent] = useState<Event | null>(null);
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    startTime: '',
-    endTime: '',
-    location: '',
-    isVirtual: false,
-    maxAttendees: '',
-    visibility: 'public' as 'public' | 'members' | 'restricted',
-    status: 'confirmed' as 'confirmed' | 'cancelled' | 'tentative'
-  });
-
-  // Moderation state
-  const [hasModerationAccess, setHasModerationAccess] = useState(false);
-  const [pendingEvents, setPendingEvents] = useState<Event[]>([]);
-  const [moderationLoading, setModerationLoading] = useState(false);
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -81,21 +43,6 @@ const NewsEventsPages: React.FC = () => {
           console.error('Failed to fetch GoHighLevel events:', ghlEventsData.reason);
           // Don't fail the whole page if GHL events fail
           setGhlEvents([]);
-        }
-        
-        // Check moderation access
-        try {
-          const { hasAccess } = await checkModerationAccess();
-          setHasModerationAccess(hasAccess);
-          
-          // If user has moderation access, fetch pending events
-          if (hasAccess) {
-            const { events: pending } = await getModerationQueue();
-            setPendingEvents(pending);
-          }
-        } catch (err) {
-          console.warn('Failed to check moderation access:', err);
-          setHasModerationAccess(false);
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load events');

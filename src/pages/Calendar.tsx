@@ -56,10 +56,10 @@ const CalendarPage: React.FC = () => {
     setCreateEventDialogOpen(true);
   };
 
-  const handleEditEvent = (event: CalendarEvent) => {
-    setSelectedEvent(event);
-    setCreateEventDialogOpen(true);
-  };
+  // const handleEditEvent = (event: CalendarEvent) => {
+  //   setSelectedEvent(event);
+  //   setCreateEventDialogOpen(true);
+  // };
 
   const handleEventCreated = (newEvent: CalendarEvent) => {
     setEvents(prev => [...prev, newEvent]);
