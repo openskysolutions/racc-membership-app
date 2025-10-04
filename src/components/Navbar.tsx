@@ -284,7 +284,7 @@ export const Navbar = () => {
                       <Button
                         size="sm"
                         variant={"outline"}
-                        onClick={() => navigate('/auth')}
+                        onClick={() => navigate('/login')}
                         className=""
                       >
                         Member Login
