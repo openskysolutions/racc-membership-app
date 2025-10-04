@@ -40,8 +40,8 @@ export default function AppRoutes() {
 
       {/* routes with layout wrapper */}
       <Route path="/" element={<PagesLayout />}>  
-        <Route path="/auth" element={<AuthPage />} />
-        <Route path="/auth/register" element={<RegisterPage />} />
+        <Route path="/login" element={<AuthPage />} />
+        <Route path="/register" element={<RegisterPage />} />
         <Route index element={<HomePage />} />
         <Route path="join" element={<JoinPage />} />
         <Route path="nominations" element={<NominationsPage />} />

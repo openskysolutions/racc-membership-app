@@ -12,7 +12,7 @@ const JoinPage: React.FC = () => {
     e.preventDefault();
     // TODO: submit membership application
     setMembershipType(membershipType);
-    navitgate('/auth/register', { state: { membershipType } });
+    navitgate('/register', { state: { membershipType } });
     console.log('Joining with data:', membershipType);
   };
 

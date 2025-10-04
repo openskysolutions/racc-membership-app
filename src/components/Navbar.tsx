@@ -139,7 +139,7 @@ export const Navbar = () => {
                   size="sm"
                   color="red"
                   variant={"outline"}
-                  onClick={() => navigate('/auth')}
+                  onClick={() => navigate('/login')}
                   className={cn(
                     "hidden md:inline-flex",
                     // "p-2 h-7 text-xs"
