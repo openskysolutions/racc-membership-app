@@ -28,7 +28,7 @@ export default function AppRoutes() {
   const { isAuthenticated, isLoading } = useAuthStore();
 
   const protectedRoute = (component: ReactNode, pathname: string) => {
-    return isAuthenticated ? component : <Navigate to="/auth" state={{ from: { pathname: pathname } }} replace />
+    return isAuthenticated ? component : <Navigate to="/login" state={{ from: { pathname: pathname } }} replace />
   }
 
   if (isLoading) {
