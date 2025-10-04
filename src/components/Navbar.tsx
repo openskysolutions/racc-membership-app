@@ -228,38 +228,43 @@ export const Navbar = () => {
                 </SheetHeader>
                 <nav className="flex flex-col justify-start items-start -mt-4">
                   {isAuthenticated &&
-                    <a
-                      rel="noreferrer noopener"
-                      href="/profile"
-                      onClick={() => setIsOpen(false)}
+                    <button
+                      onClick={() => {
+                        setIsOpen(false);
+                        navigate('/profile');
+                      }}
                       className={cn(
                         // buttonVariants({ variant: "ghost" }),  
-                        "border-b-1 border-b-stone-300 dark:border-b-stone-400 text-sm rounded-none w-full py-2 -mt-4 !justify-start"
+                        "border-b-1 border-b-stone-300 dark:border-b-stone-400 text-sm rounded-none w-full py-2 -mt-4 !justify-start text-left"
                       )}
                     >
                       <span className="block text-sm font-semibold">{user?.fullName}</span>
                       <span className="block truncate text-sm font-normal">{user?.email}</span>
-                    </a>
+                    </button>
                   }   
                   {routeList.map(({ href, label }: RouteProps) => (
-                    <a
-                      rel="noreferrer noopener"
+                    <button
                       key={label}
-                      href={href}
-                      onClick={() => setIsOpen(false)}
+                      onClick={() => {
+                        setIsOpen(false);
+                        navigate(href);
+                      }}
                       className={cn(
                         // buttonVariants({ variant: "ghost" }),  
-                        "border-b-1 border-b-stone-300 dark:border-b-stone-400 text-sm rounded-none w-full py-2 !justify-start"
+                        "border-b-1 border-b-stone-300 dark:border-b-stone-400 text-sm rounded-none w-full py-2 !justify-start text-left"
                       )}
                     >
                       {label}
-                    </a>
+                    </button>
                   ))}
                 </nav>
                 <div className="flex-grow"/>
                 <Button
                   size="sm"
-                  onClick={() => navigate('/nominations')}
+                  onClick={() => {
+                    setIsOpen(false);
+                    navigate('/nominations');
+                  }}
                   className="bg-card-foreground text-card"
                 >
                   Nominations
@@ -268,7 +273,10 @@ export const Navbar = () => {
                   ? <Button
                       size="sm"
                       variant={"outline"}
-                      onClick={logout}
+                      onClick={() => {
+                        setIsOpen(false);
+                        logout();
+                      }}
                       className=""
                     >
                       Sign out
@@ -276,7 +284,10 @@ export const Navbar = () => {
                   : <>
                       <Button
                         size="sm"
-                        onClick={() => navigate('/join')}
+                        onClick={() => {
+                          setIsOpen(false);
+                          navigate('/join');
+                        }}
                         className="bg-highlight-foreground hover:bg-highlight-foreground/90 text-white"
                       >
                         Join Now
@@ -284,7 +295,10 @@ export const Navbar = () => {
                       <Button
                         size="sm"
                         variant={"outline"}
-                        onClick={() => navigate('/login')}
+                        onClick={() => {
+                          setIsOpen(false);
+                          navigate('/login');
+                        }}
                         className=""
                       >
                         Member Login
@@ -294,7 +308,10 @@ export const Navbar = () => {
 
                 <div 
                   className="flex flex-row justify-between items-center w-full py-4 border-t-1 border-t-stone-300 dark:border-t-stone-400"
-                  onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                  onClick={() => {
+                    setIsOpen(false);
+                    setTheme(theme === "dark" ? "light" : "dark");
+                  }}
                 >
                   <div className="text-foreground text-sm">Toggle theme</div>
                   <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />

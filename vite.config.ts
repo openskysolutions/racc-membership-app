@@ -24,10 +24,9 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://services.leadconnectorhq.com',
+        target: 'http://localhost:3000',
         changeOrigin: true,
-        secure: true,
-        rewrite: path => path.replace(/^\/api/, ''),
+        secure: false,
       },
     },
   },
