@@ -277,16 +277,27 @@ const MemberDetailsPage: React.FC = () => {
       <Card className="max-w-4xl mx-auto">
         <CardHeader>
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            <Avatar className="h-20 w-20">
-              {member.avatar ? (
-                <AvatarImage src={member.avatar} alt={formatMemberName(member)} />
-              ) : (
-                <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xl">
-                  {getInitials(member)}
-                </AvatarFallback>
-              )}
-            </Avatar>
-            
+            {canEdit && isEditing 
+              ? <AvatarUpload
+                  contactId={member?.id || ''}
+                  currentAvatar={member?.avatar}
+                  fallbackText={getInitials(member || {} as Member)}
+                  onAvatarUpdated={(newAvatarUrl: string) => {
+                    if (member) {
+                      setMember({ ...member, avatar: newAvatarUrl });
+                    }
+                  }}
+                />
+              : <Avatar className="h-20 w-20">
+                  {member.avatar ? (
+                    <AvatarImage src={member.avatar} alt={formatMemberName(member)} />
+                  ) : (
+                    <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xl">
+                      {getInitials(member)}
+                    </AvatarFallback>
+                  )}
+                </Avatar>
+            }
             <div className="flex-1">
               <CardTitle className="text-2xl mb-2">
                 {member.businessName || formatMemberName(member)}
@@ -357,23 +368,6 @@ const MemberDetailsPage: React.FC = () => {
                   onChange={handleFormChange}
                 />
               </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Profile Picture
-                </label>
-                <AvatarUpload
-                  contactId={member?.id || ''}
-                  currentAvatar={member?.avatar}
-                  fallbackText={getInitials(member || {} as Member)}
-                  onAvatarUpdated={(newAvatarUrl: string) => {
-                    if (member) {
-                      setMember({ ...member, avatar: newAvatarUrl });
-                    }
-                  }}
-                />
-              </div>
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="phone" className="block text-sm font-medium mb-1">

@@ -221,15 +221,28 @@ const ProfilePage: React.FC = () => {
       <Card className="max-w-4xl mx-auto">
         <CardHeader>
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            <Avatar className="h-20 w-20">
-              {profile?.avatar ? (
-                <AvatarImage src={profile.avatar} alt={formatMemberName(profile)} />
-              ) : (
-                <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xl">
-                  {profile ? getInitials(profile) : 'U'}
-                </AvatarFallback>
-              )}
-            </Avatar>
+
+            {isEditing 
+              ? <AvatarUpload
+                  contactId={profile?.id || ''}
+                  currentAvatar={profile?.avatar}
+                  fallbackText={getInitials(profile || {} as Member)}
+                  onAvatarUpdated={(newAvatarUrl: string) => {
+                    if (profile) {
+                      setProfile({ ...profile, avatar: newAvatarUrl });
+                    }
+                  }}
+                />
+              : <Avatar className="h-20 w-20">
+                  {profile?.avatar ? (
+                    <AvatarImage src={profile.avatar} alt={formatMemberName(profile)} />
+                  ) : (
+                    <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xl">
+                      {getInitials(profile || {} as Member)}
+                    </AvatarFallback>
+                  )}
+                </Avatar>
+            }
             
             <div className="flex-1">
               <CardTitle className="text-2xl mb-2">
@@ -299,23 +312,6 @@ const ProfilePage: React.FC = () => {
                   onChange={handleChange}
                 />
               </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Profile Picture
-                </label>
-                <AvatarUpload
-                  contactId={user?.ghlContactId || ''}
-                  currentAvatar={profile?.avatar}
-                  fallbackText={getInitials(profile || {} as Member)}
-                  onAvatarUpdated={(newAvatarUrl: string) => {
-                    if (profile) {
-                      setProfile({ ...profile, avatar: newAvatarUrl });
-                    }
-                  }}
-                />
-              </div>
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="phone" className="block text-sm font-medium mb-1">

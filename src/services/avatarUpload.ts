@@ -99,11 +99,11 @@ export async function updateContactAvatar(contactId: string, avatarUrl: string):
  */
 export function validateAvatarFile(file: File): { valid: boolean; error?: string } {
   // Check file type
-  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
   if (!allowedTypes.includes(file.type)) {
     return {
       valid: false,
-      error: 'Please select a valid image file (JPEG, PNG, GIF, or WebP)'
+      error: 'Please select a valid image file (JPEG, PNG)'
     };
   }
   

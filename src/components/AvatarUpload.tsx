@@ -177,7 +177,7 @@ const AvatarUpload: React.FC<AvatarUploadProps> = ({
       {/* Upload Instructions */}
       {!previewUrl && !uploading && (
         <div className="text-center">
-          <Button
+          {/* <Button
             type="button"
             variant="outline"
             size="sm"
@@ -187,10 +187,10 @@ const AvatarUpload: React.FC<AvatarUploadProps> = ({
           >
             <Upload className="h-3 w-3 mr-1" />
             Upload Photo
-          </Button>
-          <p className="text-xs text-muted-foreground mt-1">
-            JPEG, PNG, GIF, WebP (max 5MB)
-          </p>
+          </Button> */}
+          {/* <p className="text-xs text-muted-foreground mt-1">
+            JPEG, PNG (max 5MB)
+          </p> */}
         </div>
       )}
 
