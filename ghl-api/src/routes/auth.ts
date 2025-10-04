@@ -5,8 +5,18 @@ import crypto from 'crypto';
 import { authSessionService } from '@/services/authSession';
 import { databaseService } from '@/services/database';
 import { ghlService } from '@/services/gohighlevel';
+import { emailService } from '@/services/emailService';
 
 const router = express.Router();
+
+// Global type declarations for temporary storage
+declare global {
+  var confirmationCodes: Map<string, {
+    email: string;
+    code: string;
+    expiresAt: number;
+  }> | undefined;
+}
 
 // Store for authorization codes (in production, use Redis or database)
 const authorizationCodes = new Map<string, {
@@ -973,6 +983,451 @@ router.get('/profile/:userId', async (req, res) => {
     console.error('Profile retrieval error:', error);
     res.status(500).json({
       error: 'Failed to retrieve profile'
+    });
+  }
+});
+
+/**
+ * POST /auth/verify-contact
+ * Verify if a contact exists in GoHighLevel
+ */
+router.post('/verify-contact', async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        error: 'Missing required field',
+        details: 'email is required'
+      });
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        error: 'Invalid email format'
+      });
+    }
+
+    // Check if user already exists in our database
+    const existingUser = await databaseService.getUserByEmail(email);
+    if (existingUser) {
+      return res.status(409).json({
+        error: 'Account already exists',
+        message: 'An account with this email address already exists. Please sign in instead.'
+      });
+    }
+
+    // Search for contact in GoHighLevel with improved error handling
+    let contact = null;
+    let hasGhlError = false;
+    
+    try {
+      contact = await ghlService.findContactByEmail(email);
+    } catch (ghlError) {
+      console.error('Error searching GoHighLevel:', ghlError);
+      hasGhlError = true;
+      // Log the error but don't expose it to prevent information leakage
+      console.error('GoHighLevel API error during contact verification:', {
+        email: email.replace(/(.{2}).*(@.*)/, '$1***$2'), // Partially mask email in logs
+        error: ghlError.message,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // If there was a GoHighLevel error, return a generic server error
+    if (hasGhlError) {
+      return res.status(500).json({
+        error: 'Service temporarily unavailable',
+        message: 'Unable to verify contact at this time. Please try again in a few moments.'
+      });
+    }
+
+    const result = {
+      exists: !!contact,
+      contact: contact ? {
+        id: contact.id,
+        firstName: contact.firstName || '',
+        lastName: contact.lastName || '',
+        email: contact.email,
+        phone: contact.phone || '',
+        businessName: contact.customFields?.['Business Name'] || contact.businessName || '',
+        website: contact.website || ''
+      } : null
+    };
+
+    res.json(result);
+
+  } catch (error) {
+    console.error('Contact verification error:', error);
+    res.status(500).json({
+      error: 'Service temporarily unavailable',
+      message: 'Unable to verify contact at this time. Please try again in a few moments.'
+    });
+  }
+});
+
+/**
+ * POST /auth/send-confirmation
+ * Send email confirmation code
+ */
+router.post('/send-confirmation', async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        error: 'Missing required field',
+        details: 'email is required'
+      });
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        error: 'Invalid email format'
+      });
+    }
+
+    // Generate 6-digit confirmation code
+    const confirmationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    
+    // Store the code temporarily (in production, use Redis or similar)
+    // For now, we'll store it in memory with expiration
+    const confirmationData = {
+      email,
+      code: confirmationCode,
+      expiresAt: Date.now() + (10 * 60 * 1000) // 10 minutes
+    };
+    
+    // In a real implementation, you'd store this in Redis or a database
+    // For demo purposes, we'll store in a temporary in-memory store
+    global.confirmationCodes = global.confirmationCodes || new Map();
+    global.confirmationCodes.set(email, confirmationData);
+
+    // Send confirmation email
+    try {
+      const emailSent = await emailService.sendConfirmationCode(email, confirmationCode);
+      
+      if (!emailSent) {
+        // Email sending failed, but we'll still return success to prevent information leakage
+        console.error(`Failed to send confirmation email to ${email}`);
+      } else {
+        console.log(`✅ Confirmation email sent successfully to ${email}`);
+      }
+    } catch (emailError) {
+      console.error('Email sending error:', emailError);
+      // Continue anyway - don't fail the request due to email issues
+    }
+    
+    // In development mode, also log the code for testing
+    const isDevelopment = process.env.NODE_ENV === 'development';
+    if (isDevelopment) {
+      console.log(`📧 [DEV] Confirmation code for ${email}: ${confirmationCode}`);
+    }
+    
+    res.json({
+      message: 'Confirmation code sent successfully',
+      ...(isDevelopment && { code: confirmationCode }) // Only include in development
+    });
+
+  } catch (error) {
+    console.error('Send confirmation error:', error);
+    res.status(500).json({
+      error: 'Failed to send confirmation code',
+      message: 'Please try again later'
+    });
+  }
+});
+
+/**
+ * POST /auth/verify-confirmation
+ * Verify email confirmation code
+ */
+router.post('/verify-confirmation', async (req, res) => {
+  try {
+    const { email, code } = req.body;
+
+    if (!email || !code) {
+      return res.status(400).json({
+        error: 'Missing required fields',
+        details: 'email and code are required'
+      });
+    }
+
+    // Retrieve stored confirmation data
+    const confirmationData = global.confirmationCodes?.get(email);
+    
+    if (!confirmationData) {
+      return res.status(400).json({
+        error: 'Invalid or expired code',
+        message: 'Please request a new confirmation code'
+      });
+    }
+
+    // Check if code has expired
+    if (Date.now() > confirmationData.expiresAt) {
+      global.confirmationCodes.delete(email);
+      return res.status(400).json({
+        error: 'Code expired',
+        message: 'Please request a new confirmation code'
+      });
+    }
+
+    // Verify the code
+    if (confirmationData.code !== code) {
+      return res.status(400).json({
+        error: 'Invalid code',
+        message: 'Please check your code and try again'
+      });
+    }
+
+    // Code is valid - remove it from storage
+    global.confirmationCodes.delete(email);
+
+    res.json({
+      message: 'Email confirmed successfully'
+    });
+
+  } catch (error) {
+    console.error('Verify confirmation error:', error);
+    res.status(500).json({
+      error: 'Failed to verify confirmation code',
+      message: 'Please try again later'
+    });
+  }
+});
+
+/**
+ * POST /auth/register-existing
+ * Registration for users with existing GoHighLevel contacts
+ */
+router.post('/register-existing', async (req, res) => {
+  try {
+    const { 
+      firstName, 
+      lastName, 
+      email, 
+      password, 
+      businessName, 
+      phone, 
+      website,
+      existingContactId,
+      isExistingContact = false,
+      membershipTier = 'standard'
+    } = req.body;
+
+    // Validate required fields
+    if (!firstName || !lastName || !email || !password) {
+      return res.status(400).json({
+        error: 'Missing required fields',
+        details: 'firstName, lastName, email, and password are required'
+      });
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        error: 'Invalid email format'
+      });
+    }
+
+    // Validate password strength
+    if (password.length < 8) {
+      return res.status(400).json({
+        error: 'Password must be at least 8 characters long'
+      });
+    }
+
+    // Check if user already exists in our database
+    const existingUser = await databaseService.getUserByEmail(email);
+    if (existingUser) {
+      return res.status(409).json({
+        error: 'User already exists',
+        message: 'An account with this email address already exists'
+      });
+    }
+
+    let ghlContactId = existingContactId;
+
+    // If no existing contact, create one in GoHighLevel
+    if (!isExistingContact || !existingContactId) {
+      try {
+        console.log('🔍 Creating new GHL contact for existing member registration...');
+        ghlContactId = await ghlService.createContact({
+          firstName,
+          lastName,
+          email,
+          phone,
+          website,
+          businessName,
+          source: 'RACC Existing Member Registration',
+          tags: ['prospect', 'existing-member-registration', `tier-${membershipTier}`],
+          customFields: {
+            'Business Name': businessName || '',
+            'Registration Date': new Date().toISOString(),
+            'Member Status': 'pending-payment',
+            'Membership Tier': membershipTier,
+            'Registration Type': 'existing-member'
+          }
+        });
+        console.log('✅ New GHL contact created:', ghlContactId);
+      } catch (ghlError) {
+        console.error('❌ Failed to create GHL contact:', ghlError);
+        return res.status(500).json({
+          error: 'Failed to create contact in CRM',
+          message: 'Please try again later or contact support'
+        });
+      }
+    } else {
+      // Update existing contact with registration info
+      try {
+        console.log('🔄 Updating existing GHL contact:', existingContactId);
+        await ghlService.updateContactTags(existingContactId, [
+          'existing-member-registration',
+          `tier-${membershipTier}`,
+          'prospect'
+        ], 'add');
+        
+        // Update contact custom fields
+        await ghlService.updateContact(existingContactId, {
+          firstName,
+          lastName,
+          phone,
+          website,
+          businessName,
+          customFields: {
+            'Business Name': businessName || '',
+            'Registration Date': new Date().toISOString(),
+            'Member Status': 'pending-payment',
+            'Membership Tier': membershipTier,
+            'Registration Type': 'existing-member'
+          }
+        });
+        console.log('✅ Existing GHL contact updated');
+      } catch (ghlError) {
+        console.error('❌ Failed to update existing GHL contact:', ghlError);
+        // Continue with registration even if GHL update fails
+      }
+    }
+
+    // Create user in database
+    let user;
+    try {
+      user = await databaseService.createUser({
+        firstName,
+        lastName,
+        email,
+        passwordHash: password, // This will be hashed in the service
+        businessName,
+        phone,
+        website,
+        role: 'member',
+        status: 'pending',
+        emailVerified: false,
+        ghlContactId,
+        paymentStatus: 'pending',
+        membershipTier
+      });
+    } catch (dbError) {
+      console.error('Failed to create user in database:', dbError);
+      return res.status(500).json({
+        error: 'Failed to create user account',
+        message: 'Please try again later or contact support'
+      });
+    }
+
+    // Create payment link
+    const tierConfig = MEMBERSHIP_TIERS[membershipTier];
+    let paymentLink;
+    
+    try {
+      paymentLink = await ghlService.createPaymentLink({
+        contactId: ghlContactId,
+        amount: tierConfig.price,
+        currency: tierConfig.currency,
+        description: tierConfig.description,
+        membershipTier,
+        successUrl: `${process.env.FRONTEND_URL}/auth/payment-success`,
+        cancelUrl: `${process.env.FRONTEND_URL}/auth/payment-cancelled`
+      });
+    } catch (paymentError) {
+      console.error('Failed to create payment link:', paymentError);
+      // Continue without payment link for now
+      paymentLink = null;
+    }
+
+    // Return registration success response
+    res.status(201).json({
+      message: 'Registration successful',
+      registrationType: isExistingContact ? 'existing-contact' : 'new-contact',
+      user: {
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        businessName: user.businessName,
+        phone: user.phone,
+        website: user.website,
+        role: user.role,
+        status: user.status,
+        membershipTier: user.membershipTier,
+        ghlContactId: user.ghlContactId
+      },
+      payment: {
+        required: true,
+        amount: tierConfig.price,
+        currency: tierConfig.currency,
+        description: tierConfig.description,
+        link: paymentLink
+      },
+      nextSteps: [
+        'Complete payment to activate membership',
+        'Check email for payment confirmation',
+        'Access member portal after payment verification'
+      ]
+    });
+
+    console.log(`Successfully registered existing member: ${email} with GHL contact: ${ghlContactId}`);
+
+  } catch (error) {
+    console.error('Existing member registration error:', error);
+    res.status(500).json({
+      error: 'Registration failed',
+      message: 'Please try again later or contact support'
+    });
+  }
+});
+
+/**
+ * GET /auth/test-email
+ * Test email service configuration
+ */
+router.get('/test-email', async (req, res) => {
+  try {
+    const connectionTest = await emailService.testConnection();
+    
+    if (!connectionTest) {
+      return res.status(500).json({
+        error: 'Email service not configured',
+        message: 'Please check your email environment variables'
+      });
+    }
+
+    res.json({
+      message: 'Email service is configured correctly',
+      provider: process.env.EMAIL_PROVIDER || 'smtp',
+      fromEmail: process.env.EMAIL_FROM || 'noreply@racc.com'
+    });
+
+  } catch (error) {
+    console.error('Email test error:', error);
+    res.status(500).json({
+      error: 'Email service test failed',
+      message: error.message
     });
   }
 });

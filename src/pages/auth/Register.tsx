@@ -286,14 +286,25 @@ export const RegisterPage = () => {
               {loading ? 'Creating Account...' : 'Create Account'}
             </Button>
 
-            <div className="text-sm text-center pt-4">
-              <span>Already have an account? </span>
-              <Link 
-                to="/auth" 
-                className="font-medium text-highlight-foreground hover:underline"
-              >
-                Sign in
-              </Link>
+            <div className="text-sm text-center pt-4 space-y-2">
+              <div>
+                <span>Already have an account? </span>
+                <Link 
+                  to="/login" 
+                  className="font-medium text-highlight-foreground hover:underline"
+                >
+                  Sign in
+                </Link>
+              </div>
+              <div>
+                <span>Already a member? </span>
+                <Link 
+                  to="/register-existing" 
+                  className="font-medium text-highlight-foreground hover:underline"
+                >
+                  Connect your account
+                </Link>
+              </div>
             </div>
           </form>
         </CardContent>

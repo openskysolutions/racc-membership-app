@@ -46,22 +46,12 @@ export const AuthPage = () => {
       </a>
       <Card className="w-full max-w-md bg-popover dark:bg-neutral-750 border-stone-500">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl">Sign in to your 
-          Richfield Area Chamber of Commerce account</CardTitle>
+          <CardTitle className="text-2xl">Sign in</CardTitle>
           <CardDescription>
-            Enter your email and password below
             {error && <span className="block text-sm text-destructive mt-1">{error}</span>}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-            <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2">Demo Credentials</h4>
-            <div className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
-              <div><strong>Admin:</strong> admin@racc.com / admin123</div>
-              <div><strong>Member:</strong> demo@racc.com / demo123</div>
-              <div><strong>Moderator:</strong> moderator@racc.com / mod123</div>
-            </div>
-          </div>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="email" className="block text-sm font-medium">
@@ -105,11 +95,19 @@ export const AuthPage = () => {
             <Button type="submit" className="w-full bg-highlight-foreground">
               Sign in
             </Button>
-            <div className="text-sm text-center pt-4">
-              <span>Don't have an account? </span>
-              <a href="/auth/register" className="font-medium text-highlight-foreground hover:underline">
-                Create one
-              </a>
+            <div className="text-sm text-center pt-4 space-y-2">
+              <div>
+                <span>Don't have an account? </span>
+                <a href="/register" className="font-medium text-highlight-foreground hover:underline">
+                  Create one
+                </a>
+              </div>
+              <div>
+                <span>Existing RACC member? </span>
+                <a href="/register-existing" className="font-medium text-highlight-foreground hover:underline">
+                  Register with existing contact
+                </a>
+              </div>
             </div>
           </form>
         </CardContent>

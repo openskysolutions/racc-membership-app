@@ -17,6 +17,7 @@ import CoursesPage from '@/pages/Courses';
 import ProfilePage from '@/pages/Profile';
 import AuthPage from "@/pages/auth";
 import RegisterPage from "@/pages/auth/Register";
+import ConnectAccountPage from "@/pages/auth/ConnectAccount";
 import AuthTestPage from '@/pages/AuthTest';
 import JoinPage from '@/pages/Join';
 import NominationsPage from '@/pages/Nominations';
@@ -41,9 +42,10 @@ export default function AppRoutes() {
 
       {/* routes with layout wrapper */}
       <Route path="/" element={<PagesLayout />}>  
-        <Route path="/login" element={<AuthPage />} />
-        <Route path="/register" element={<RegisterPage />} />
         <Route index element={<HomePage />} />
+        <Route path="login" element={<AuthPage />} />
+        <Route path="register" element={<RegisterPage />} />
+        <Route path="connect-account" element={<ConnectAccountPage />} />
         <Route path="join" element={<JoinPage />} />
         <Route path="nominations" element={<NominationsPage />} />
         <Route path="news-events" element={<NewsEventsPage />} />

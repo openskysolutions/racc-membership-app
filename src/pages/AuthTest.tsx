@@ -71,20 +71,6 @@ const AuthTestPage: React.FC = () => {
               )}
             </CardContent>
           </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Demo Credentials</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2 text-sm">
-                <div><strong>Admin:</strong> admin@racc.com / admin123</div>
-                <div><strong>Member:</strong> demo@racc.com / demo123</div>
-                <div><strong>Moderator:</strong> moderator@racc.com / mod123</div>
-              </div>
-            </CardContent>
-          </Card>
-
           <div className="flex gap-4">
             {!isAuthenticated ? (
               <Button onClick={() => navigate('/auth')}>

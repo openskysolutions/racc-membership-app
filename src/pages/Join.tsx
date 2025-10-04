@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 const JoinPage: React.FC = () => {
   const [membershipType, setMembershipType] = useState<'basic' | 'enhanced' | 'elite'>('basic');
@@ -106,6 +106,18 @@ const JoinPage: React.FC = () => {
               </label>
             </div>
             <Button type="submit" className="w-full bg-highlight-foreground">NEXT</Button>
+            
+            <div className="text-center text-sm space-y-2 pt-4">
+              <div>
+                Already a member in our system?{' '}
+                <Link 
+                  to="/register-existing" 
+                  className="font-medium text-highlight-foreground hover:underline"
+                >
+                  Register with existing contact
+                </Link>
+              </div>
+            </div>
           </form>
         </CardContent>
       </Card>
