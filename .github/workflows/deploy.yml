@@ -176,7 +176,7 @@ jobs:
           
           # Test that the frontend handles client-side routing
           echo "Testing client-side routing..."
-          curl -f http://localhost:3001/auth/register > /dev/null || {
+          curl -f http://localhost:3001/register > /dev/null || {
             echo "ERROR: Frontend service not handling client-side routes properly"
             pm2 logs racc-frontend --lines 10
             exit 1
@@ -214,6 +214,11 @@ jobs:
                   proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
                   proxy_set_header X-Forwarded-Proto \$scheme;
                   proxy_cache_bypass \$http_upgrade;
+                  
+                  # Cache busting headers for development
+                  add_header Cache-Control "no-cache, no-store, must-revalidate";
+                  add_header Pragma "no-cache";
+                  add_header Expires "0";
               }
           }
           NGINXEOF
