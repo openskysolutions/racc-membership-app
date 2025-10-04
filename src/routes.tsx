@@ -26,6 +26,7 @@ import { ReactNode } from 'react';
 
 export default function AppRoutes() {
   const { isAuthenticated, isLoading } = useAuthStore();
+  // Force rebuild - updated routing Oct 4, 2025
 
   const protectedRoute = (component: ReactNode, pathname: string) => {
     return isAuthenticated ? component : <Navigate to="/login" state={{ from: { pathname: pathname } }} replace />
