@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RACC Template Preview</title>
+    
+    <!-- Import Montserrat font -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Extracted CSS from template for preview */
+        
+        /* CSS Variables matching React app exactly */
+        :root {
+          --background: 245 245 245;
+          --foreground: 146 64 14;
+          --card: 250 250 249;
+          --card-foreground: 82 82 91;
+          --popover: 250 250 249;
+          --popover-foreground: 23 23 23;
+          --primary: 202 138 4;
+          --primary-foreground: 255 255 255;
+          --secondary: 229 229 229;
+          --secondary-foreground: 23 23 23;
+          --muted: 245 245 245;
+          --muted-foreground: 82 82 91;
+          --accent: 115 115 115;
+          --accent-foreground: 255 255 255;
+          --highlight: 234 179 8;
+          --highlight-foreground: 202 138 4;
+          --destructive: 220 38 38;
+          --destructive-foreground: 255 255 255;
+          --border: 212 212 212;
+          --input: 163 163 163;
+          --ring: 82 82 91;
+          --radius: 0.5rem;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Montserrat', sans-serif;
+            background-color: rgb(var(--background));
+            color: rgb(var(--foreground));
+        }
+
+        /* Mobile Menu Button Styling */
+        .racc-mobile-menu-btn {
+          background: none !important;
+          border: none !important;
+          cursor: pointer !important;
+          padding: 8px !important;
+          color: #374151 !important;
+          display: block !important;
+          transition: color 0.2s ease !important;
+        }
+
+        .racc-mobile-menu-btn:hover {
+          color: #2c5530 !important;
+        }
+
+        @media (min-width: 768px) {
+          .racc-mobile-menu-btn {
+            display: none !important;
+          }
+        }
+
+        /* Header styles */
+        .header {
+            height: 80px;
+            display: flex;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 9999;
+            background: #ffffff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 0 20px;
+        }
+
+        .logo {
+            height: 60px;
+            width: auto;
+            object-fit: contain;
+            max-width: 200px;
+        }
+
+        .nav {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+        }
+
+        .nav a {
+            color: #374151;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav a:hover {
+            color: #2c5530;
+        }
+
+        @media (max-width: 768px) {
+            .nav {
+                display: none;
+            }
+        }
+
+        /* Content area */
+        .content {
+            padding: 40px 20px;
+            min-height: 400px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Footer styles */
+        .footer {
+            background-color: #2c5530;
+            color: white;
+            padding: 60px 20px 30px;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+        }
+
+        .footer h4 {
+            margin-bottom: 1rem;
+            font-size: 18px;
+        }
+
+        .footer a {
+            color: #d1d5db;
+            text-decoration: none;
+            font-size: 14px;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .footer a:hover {
+            color: white;
+        }
+
+        .copyright {
+            background-color: rgba(0,0,0,0.2);
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #d1d5db;
+        }
+
+        /* Mobile menu overlay styles */
+        .racc-mobile-menu-overlay {
+          position: fixed;
+          top: 0;
+          left: -100%;
+          width: 300px;
+          height: 100vh;
+          z-index: 10000;
+          transition: left 0.3s ease;
+          box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+          overflow-y: auto;
+          background-color: #ffffff;
+          padding: 20px;
+        }
+
+        .racc-mobile-menu-overlay.open {
+          left: 0;
+        }
+
+        .racc-mobile-menu-backdrop {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100vw;
+          height: 100vh;
+          background-color: rgba(0, 0, 0, 0.5);
+          z-index: 9999;
+          opacity: 0;
+          visibility: hidden;
+          transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .racc-mobile-menu-backdrop.open {
+          opacity: 1;
+          visibility: visible;
+        }
+
+        .mobile-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e9ecef;
+            margin-bottom: 20px;
+        }
+
+        .mobile-nav a {
+            color: #374151;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #f3f4f6;
+            font-size: 18px;
+            display: block;
+        }
+
+        body.mobile-menu-open {
+          overflow: hidden;
+        }
+
+        .test-notice {
+            background: #fef3cd;
+            border: 1px solid #ffd60a;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-notice">
+        <strong>📱 RACC Template Preview</strong> - This shows how your template will look. 
+        <br>Test the mobile menu button on smaller screens!
+    </div>
+
+    <!-- Header -->
+    <header class="header">
+        <img src="https://via.placeholder.com/200x60/2c5530/ffffff?text=RACC+Logo" alt="RACC Logo" class="logo">
+        <nav class="nav">
+            <a href="#">News & Events</a>
+            <a href="#">Calendar</a>
+            <a href="#">Members</a>
+            <a href="#">Job Postings</a>
+            <a href="#">Contact</a>
+            <a href="#">About</a>
+        </nav>
+        <button class="racc-mobile-menu-btn" id="racc-mobile-menu-btn" aria-label="Open mobile menu">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+        </button>
+    </header>
+
+    <!-- Main Content -->
+    <main class="content">
+        <h1>Welcome to the RACC</h1>
+        <p><strong>TEMPLATE PREVIEW:</strong> This is where your actual page content goes. In the real template, you would delete this content and add your own using DIVI Builder modules like:</p>
+        <ul>
+            <li>Text modules for content</li>
+            <li>Image modules for photos</li>
+            <li>Button modules for calls-to-action</li>
+            <li>Contact forms</li>
+            <li>Gallery modules</li>
+            <li>And any other DIVI modules you need</li>
+        </ul>
+        <p>This template provides the RACC header and footer structure while giving you complete freedom to design your page content.</p>
+        
+        <button style="background-color: #ca8a04; color: white; border: none; padding: 10px 20px; border-radius: 4px; margin-top: 2rem; cursor: pointer;">
+            Join Our Chamber
+        </button>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div>
+                <img src="https://via.placeholder.com/200x80/ffffff/2c5530?text=RACC+Logo" alt="RACC Logo" style="height: 80px; width: auto; filter: brightness(0) invert(1);">
+                <p style="margin-top: 1rem; font-size: 14px;">Supporting local business growth and community development in the Richfield area. Join our chamber to connect, grow, and make a difference.</p>
+            </div>
+            <div>
+                <h4>Quick Links</h4>
+                <a href="#">News & Events</a>
+                <a href="#">Calendar</a>
+                <a href="#">Business Directory</a>
+                <a href="#">Job Postings</a>
+            </div>
+            <div>
+                <h4>Member Resources</h4>
+                <a href="#">Member Portal</a>
+                <a href="#">Member Benefits</a>
+                <a href="#">Resources</a>
+                <a href="#">Forms</a>
+            </div>
+            <div>
+                <h4>Contact Us</h4>
+                <a href="#">Contact</a>
+                <a href="tel:+1234567890">(123) 456-7890</a>
+                <a href="mailto:info@racchamber.com">info@racchamber.com</a>
+                <a href="#">Location & Hours</a>
+            </div>
+        </div>
+        <div class="copyright">
+            <p>&copy; 2025 Richfield Area Chamber of Commerce. All rights reserved. | 
+            <a href="#" style="color: #d1d5db;">Privacy Policy</a> | 
+            <a href="#" style="color: #d1d5db;">Terms of Service</a></p>
+        </div>
+    </footer>
+
+    <!-- Mobile Menu Overlay -->
+    <div class="racc-mobile-menu-overlay" id="mobile-menu">
+        <div class="mobile-header">
+            <img src="https://via.placeholder.com/150x50/2c5530/ffffff?text=RACC" alt="RACC Logo" style="height: 50px;">
+            <button id="close-mobile-menu" style="background: none; border: none; cursor: pointer; padding: 8px; color: #374151;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <nav class="mobile-nav">
+            <a href="#">News & Events</a>
+            <a href="#">Calendar</a>
+            <a href="#">Members</a>
+            <a href="#">Job Postings</a>
+            <a href="#">Contact</a>
+            <a href="#">About</a>
+        </nav>
+    </div>
+
+    <div class="racc-mobile-menu-backdrop" id="backdrop"></div>
+
+    <script>
+        // Mobile menu functionality for preview
+        const menuBtn = document.getElementById('racc-mobile-menu-btn');
+        const closeBtn = document.getElementById('close-mobile-menu');
+        const mobileMenu = document.getElementById('mobile-menu');
+        const backdrop = document.getElementById('backdrop');
+
+        function openMenu() {
+            mobileMenu.classList.add('open');
+            backdrop.classList.add('open');
+            document.body.classList.add('mobile-menu-open');
+        }
+
+        function closeMenu() {
+            mobileMenu.classList.remove('open');
+            backdrop.classList.remove('open');
+            document.body.classList.remove('mobile-menu-open');
+        }
+
+        menuBtn.addEventListener('click', openMenu);
+        closeBtn.addEventListener('click', closeMenu);
+        backdrop.addEventListener('click', closeMenu);
+
+        // Close on escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeMenu();
+            }
+        });
+
+        console.log('RACC Template Preview loaded successfully!');
+    </script>
+</body>
+</html>
