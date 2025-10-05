@@ -1,6 +1,8 @@
 # RACC DIVI Templates
 🏢 **Professional WordPress Templates for Chamber of Commerce Websites**
 
+**⚡ LATEST UPDATE**: Fixed header/footer layout and color system to match React app exactly. Template now includes proper 2-row header design, corrected footer grid layout, and accurate color variables for consistent branding.
+
 A mobile-responsive template system designed specifically for the Richfield Area Chamber of Commerce (RACC) and adaptable for any chamber or business organization.
 
 ## 🎯 **What's Included:**
@@ -29,6 +31,28 @@ A mobile-responsive template system designed specifically for the Richfield Area
 5. **Customize:** Add your content and upload your logo
 
 **👉 See `INSTALLATION.md` for detailed instructions**
+
+## 🔧 **Recent Layout Fixes:**
+
+### ✅ **Header Structure Corrected**
+- **Two-row design**: 80px main header + 40px navigation bar (matches React app)
+- **Proper column layout**: Logo and user actions positioned correctly
+- **Mobile responsiveness**: Logo positioning with `ml-10 md:ml-0` classes
+
+### ✅ **Footer Layout Updated**  
+- **Grid structure**: 2/5 + 3/5 column layout for better content distribution
+- **Three-column links**: Platforms, About, Community sections
+- **Responsive behavior**: Mobile-friendly single column stacking
+
+### ✅ **Color System Fixed**
+- **CSS variables**: Updated to match React app color scheme exactly
+- **Highlight colors**: Consistent blue accent (#3b82f6) throughout
+- **Footer styling**: Proper dark background using card-foreground variable
+
+### ✅ **Enhanced Responsiveness**
+- **Additional utilities**: Flex, spacing, and responsive helper classes
+- **Better mobile support**: Improved breakpoints and layout behavior
+- **Container system**: Proper max-width constraints and padding
 
 ## ✨ **Features:**
 

@@ -13,28 +13,121 @@
         
         /* CSS Variables matching React app exactly */
         :root {
-          --background: 245 245 245;
-          --foreground: 146 64 14;
-          --card: 250 250 249;
-          --card-foreground: 82 82 91;
-          --popover: 250 250 249;
-          --popover-foreground: 23 23 23;
-          --primary: 202 138 4;
+          --background: 255 255 255;
+          --foreground: 15 23 42;
+          --card: 255 255 255;
+          --card-foreground: 15 23 42;
+          --popover: 255 255 255;
+          --popover-foreground: 15 23 42;
+          --primary: 34 197 94;
           --primary-foreground: 255 255 255;
-          --secondary: 229 229 229;
-          --secondary-foreground: 23 23 23;
-          --muted: 245 245 245;
-          --muted-foreground: 82 82 91;
-          --accent: 115 115 115;
-          --accent-foreground: 255 255 255;
-          --highlight: 234 179 8;
-          --highlight-foreground: 202 138 4;
-          --destructive: 220 38 38;
+          --secondary: 241 245 249;
+          --secondary-foreground: 15 23 42;
+          --muted: 248 250 252;
+          --muted-foreground: 100 116 139;
+          --accent: 241 245 249;
+          --accent-foreground: 15 23 42;
+          --highlight: 59 130 246;
+          --highlight-foreground: 255 255 255;
+          --destructive: 239 68 68;
           --destructive-foreground: 255 255 255;
-          --border: 212 212 212;
-          --input: 163 163 163;
-          --ring: 82 82 91;
+          --border: 226 232 240;
+          --input: 226 232 240;
+          --ring: 59 130 246;
           --radius: 0.5rem;
+        }
+
+        /* Tailwind-style Utility Classes */
+        
+        /* Layout */
+        .flex { display: flex !important; }
+        .inline-flex { display: inline-flex !important; }
+        .grid { display: grid !important; }
+        .hidden { display: none !important; }
+        .block { display: block !important; }
+        
+        /* Flexbox */
+        .items-center { align-items: center !important; }
+        .items-start { align-items: flex-start !important; }
+        .justify-center { justify-content: center !important; }
+        .justify-between { justify-content: space-between !important; }
+        .justify-end { justify-content: flex-end !important; }
+        .flex-1 { flex: 1 1 0% !important; }
+        .ml-auto { margin-left: auto !important; }
+        .flex-col { flex-direction: column !important; }
+        
+        /* Gap */
+        .gap-2 { gap: 0.5rem !important; }
+        .gap-4 { gap: 1rem !important; }
+        .gap-6 { gap: 1.5rem !important; }
+        .gap-8 { gap: 2rem !important; }
+        
+        /* Grid */
+        .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)) !important; }
+        .grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+        
+        /* Spacing */
+        .p-2 { padding: 0.5rem !important; }
+        .px-2 { padding-left: 0.5rem !important; padding-right: 0.5rem !important; }
+        .px-3 { padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
+        .py-1 { padding-top: 0.25rem !important; padding-bottom: 0.25rem !important; }
+        .py-1\.5 { padding-top: 0.375rem !important; padding-bottom: 0.375rem !important; }
+        .ml-10 { margin-left: 2.5rem !important; }
+        .mb-4 { margin-bottom: 1rem !important; }
+        .mt-6 { margin-top: 1.5rem !important; }
+        
+        /* Typography */
+        .text-xs { font-size: 0.75rem !important; line-height: 1rem !important; }
+        .text-sm { font-size: 0.875rem !important; line-height: 1.25rem !important; }
+        .text-base { font-size: 1rem !important; line-height: 1.5rem !important; }
+        .font-medium { font-weight: 500 !important; }
+        .font-semibold { font-weight: 600 !important; }
+        .text-center { text-align: center !important; }
+        
+        /* Colors */
+        .text-white { color: rgb(255 255 255) !important; }
+        .text-gray-700 { color: rgb(55 65 81) !important; }
+        .text-gray-900 { color: rgb(17 24 39) !important; }
+        .text-stone-200 { color: rgb(231 229 228) !important; }
+        .bg-white { background-color: rgb(255 255 255) !important; }
+        .bg-gray-50 { background-color: rgb(249 250 251) !important; }
+        .bg-gray-800 { background-color: rgb(31 41 55) !important; }
+        .bg-gray-900 { background-color: rgb(17 24 39) !important; }
+        .bg-yellow-600 { background-color: rgb(202 138 4) !important; }
+        .bg-yellow-700 { background-color: rgb(161 98 7) !important; }
+        
+        /* Borders */
+        .border { border-width: 1px !important; }
+        .border-gray-300 { border-color: rgb(209 213 219) !important; }
+        .rounded { border-radius: 0.25rem !important; }
+        
+        /* Effects */
+        .transition-colors { transition-property: color, background-color, border-color !important; transition-duration: 150ms !important; }
+        .transition-all { transition-property: all !important; transition-duration: 150ms !important; }
+        .hover\:bg-gray-50:hover { background-color: rgb(249 250 251) !important; }
+        .hover\:bg-gray-800:hover { background-color: rgb(31 41 55) !important; }
+        .hover\:bg-yellow-700:hover { background-color: rgb(161 98 7) !important; }
+        .hover\:text-gray-900:hover { color: rgb(17 24 39) !important; }
+        .hover\:text-white:hover { color: rgb(255 255 255) !important; }
+        .hover\:text-blue-300:hover { color: rgb(147 197 253) !important; }
+        .hover\:underline:hover { text-decoration: underline !important; }
+        
+        /* Opacity */
+        .opacity-60 { opacity: 0.6 !important; }
+        .opacity-80 { opacity: 0.8 !important; }
+        .hover\:opacity-100:hover { opacity: 1 !important; }
+        
+        /* Responsive */
+        @media (min-width: 768px) {
+          .md\:flex { display: flex !important; }
+          .md\:hidden { display: none !important; }
+          .md\:ml-0 { margin-left: 0 !important; }
+          .md\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+        }
+        
+        @media (max-width: 767px) {
+          .max-md\:grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)) !important; }
+          .max-md\:gap-6 { gap: 1.5rem !important; }
         }
 
         body {
@@ -120,7 +213,7 @@
 
         /* Footer styles */
         .footer {
-            background-color: #2c5530;
+            background-color: #0f0e0f;
             color: white;
             padding: 60px 20px 30px;
         }
@@ -236,23 +329,39 @@
     </div>
 
     <!-- Header -->
-    <header class="header">
-        <img src="https://via.placeholder.com/200x60/2c5530/ffffff?text=RACC+Logo" alt="RACC Logo" class="logo">
-        <nav class="nav">
-            <a href="#">News & Events</a>
-            <a href="#">Calendar</a>
-            <a href="#">Members</a>
-            <a href="#">Job Postings</a>
-            <a href="#">Contact</a>
-            <a href="#">About</a>
-        </nav>
-        <button class="racc-mobile-menu-btn" id="racc-mobile-menu-btn" aria-label="Open mobile menu">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="3" y1="6" x2="21" y2="6"></line>
-                <line x1="3" y1="12" x2="21" y2="12"></line>
-                <line x1="3" y1="18" x2="21" y2="18"></line>
-            </svg>
-        </button>
+    <header>
+        <!-- Main Header Row (80px) -->
+        <div class="flex items-center justify-between bg-white border-b" style="height: 80px; padding: 0 1.5rem; position: sticky; top: 0; z-index: 40; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);">
+            <img src="https://via.placeholder.com/200x60/2c5530/ffffff?text=RACC+Logo" alt="RACC Logo" style="height: 60px; width: auto; margin-left: 2.5rem;" class="ml-10 md:ml-0">
+            
+            <!-- Desktop User Actions -->
+            <div class="hidden md:flex items-center gap-2 ml-auto">
+                <a href="#" class="bg-gray-900 text-white px-3 py-1.5 text-sm font-medium rounded hover:bg-gray-800 transition-colors">Nominations</a>
+                <a href="#" class="bg-yellow-600 text-white px-3 py-1.5 text-sm font-medium rounded hover:bg-yellow-700 transition-colors">Join Now</a>
+                <a href="#" class="border border-gray-300 px-3 py-1.5 text-sm font-medium rounded hover:bg-gray-50 transition-colors">Sign in</a>
+            </div>
+            
+            <!-- Mobile Menu Button -->
+            <button class="racc-mobile-menu-btn md:hidden p-2 text-gray-700" id="racc-mobile-menu-btn" aria-label="Open mobile menu">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        
+        <!-- Navigation Row (40px) -->
+        <div class="hidden md:flex items-center justify-center bg-gray-50 border-t" style="height: 40px;">
+            <nav class="flex justify-center items-center gap-8">
+                <a href="#" class="text-gray-700 hover:text-gray-900 px-2 py-1 text-sm font-medium transition-colors">News & Events</a>
+                <a href="#" class="text-gray-700 hover:text-gray-900 px-2 py-1 text-sm font-medium transition-colors">Calendar</a>
+                <a href="#" class="text-gray-700 hover:text-gray-900 px-2 py-1 text-sm font-medium transition-colors">Members</a>
+                <a href="#" class="text-gray-700 hover:text-gray-900 px-2 py-1 text-sm font-medium transition-colors">Job Postings</a>
+                <a href="#" class="text-gray-700 hover:text-gray-900 px-2 py-1 text-sm font-medium transition-colors">Contact</a>
+                <a href="#" class="text-gray-700 hover:text-gray-900 px-2 py-1 text-sm font-medium transition-colors">About</a>
+            </nav>
+        </div>
     </header>
 
     <!-- Main Content -->
@@ -275,38 +384,50 @@
     </main>
 
     <!-- Footer -->
-    <footer class="footer">
-        <div class="footer-content">
-            <div>
-                <img src="https://via.placeholder.com/200x80/ffffff/2c5530?text=RACC+Logo" alt="RACC Logo" style="height: 80px; width: auto; filter: brightness(0) invert(1);">
-                <p style="margin-top: 1rem; font-size: 14px;">Supporting local business growth and community development in the Richfield area. Join our chamber to connect, grow, and make a difference.</p>
+    <footer style="background-color: #0f0e0f; color: white; padding: 60px 20px 30px;">
+        <div style="max-width: 1200px; margin: 0 auto; border-top: 1px solid rgb(229, 231, 235); padding: 2rem 1.5rem; display: flex; align-items: start;">
+            <!-- Left Column: Logo & Description (2/5) -->
+            <div style="flex: 2; margin-right: 3rem;">
+                <img src="https://via.placeholder.com/200x80/ffffff/0f0e0f?text=RACC+Logo" alt="RACC Logo" style="height: auto; width: 12rem; object-fit: contain; margin: 0 auto; display: block;">
+                <p class="text-stone-200 text-sm text-center mt-6 opacity-80">The Chamber of Commerce is an organization of businesses who have joined together for business promotion and information. The Chamber is your business partner and resource. <a href="#" style="color: #60a5fa;">Learn more</a></p>
             </div>
-            <div>
-                <h4>Quick Links</h4>
-                <a href="#">News & Events</a>
-                <a href="#">Calendar</a>
-                <a href="#">Business Directory</a>
-                <a href="#">Job Postings</a>
-            </div>
-            <div>
-                <h4>Member Resources</h4>
-                <a href="#">Member Portal</a>
-                <a href="#">Member Benefits</a>
-                <a href="#">Resources</a>
-                <a href="#">Forms</a>
-            </div>
-            <div>
-                <h4>Contact Us</h4>
-                <a href="#">Contact</a>
-                <a href="tel:+1234567890">(123) 456-7890</a>
-                <a href="mailto:info@racchamber.com">info@racchamber.com</a>
-                <a href="#">Location & Hours</a>
+            
+            <!-- Right Column: Links Grid (3/5) -->
+            <div style="flex: 3;">
+                <div class="grid grid-cols-3 gap-8 max-md:grid-cols-1 max-md:gap-6">
+                    <div>
+                        <h4 class="text-white text-base font-semibold mb-4">Platforms</h4>
+                        <div class="flex flex-col gap-2">
+                            <a href="#" class="text-stone-200 hover:text-white opacity-60 hover:opacity-100 transition-all text-sm">Web</a>
+                            <a href="#" class="text-stone-200 hover:text-white opacity-60 hover:opacity-100 transition-all text-sm">Mobile</a>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h4 class="text-white text-base font-semibold mb-4">About</h4>
+                        <div class="flex flex-col gap-2">
+                            <a href="#" class="text-stone-200 hover:text-white opacity-60 hover:opacity-100 transition-all text-sm">Benefits</a>
+                            <a href="#" class="text-stone-200 hover:text-white opacity-60 hover:opacity-100 transition-all text-sm">Pricing</a>
+                            <a href="#" class="text-stone-200 hover:text-white opacity-60 hover:opacity-100 transition-all text-sm">FAQ</a>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h4 class="text-white text-base font-semibold mb-4">Community</h4>
+                        <div class="flex flex-col gap-2">
+                            <a href="#" class="text-stone-200 hover:text-white opacity-60 hover:opacity-100 transition-all text-sm">Facebook</a>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="copyright">
-            <p>&copy; 2025 Richfield Area Chamber of Commerce. All rights reserved. | 
-            <a href="#" style="color: #d1d5db;">Privacy Policy</a> | 
-            <a href="#" style="color: #d1d5db;">Terms of Service</a></p>
+        
+        <!-- Copyright Row -->
+        <div style="padding: 20px; text-align: center;">
+            <p class="text-stone-200 text-xs text-center">Copyright © 2025 Richfield Area Chamber of Commerce | 
+            <a href="#" style="color: #60a5fa;" class="hover:text-blue-300 transition-colors hover:underline">Privacy</a> | 
+            <a href="#" style="color: #60a5fa;" class="hover:text-blue-300 transition-colors hover:underline">Terms</a> | 
+            Powered by <a href="https://openskydev.com" target="_blank" style="color: #60a5fa;" class="hover:text-blue-300 transition-colors hover:underline">Open Sky Solutions</a></p>
         </div>
     </footer>
 
