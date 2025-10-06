@@ -1,33 +1,26 @@
     </main>
     <!-- Footer exactly matching React Footer component -->
     <footer id="footer" class="border-t border-t-border dark:border-b-ring bg-card-foreground dark:bg-accent-foreground text-stone-100 text-sm">
-        <section class="container py-8 md:pt-0 grid grid-rows-2 grid-cols-3 sm:grid-cols-3 md:grid-cols-5 gap-8 lg:gap-4 px-6">
+        <section class="py-8 md:pt-0 grid grid-rows-2 grid-cols-3 sm:grid-cols-3 md:grid-cols-5 gap-8 lg:gap-4 px-6">
             <!-- Logo Section -->
             <div class="row-span-1 md:row-span-2 col-span-3 sm:col-span-3 md:col-span-2 justify-center items-center flex">
                 <a href="<?php echo esc_url(home_url('/')); ?>" class="flex w-48 h-auto justify-center items-center">
-                    <?php 
-                    $footer_logo = get_theme_mod('racc_footer_logo');
-                    if ($footer_logo) {
-                        echo '<img src="' . esc_url($footer_logo) . '" alt="' . esc_attr(get_bloginfo('name')) . ' Logo" class="h-full w-full" />';
-                    } else {
-                        // Fallback to theme logo
-                        echo '<img src="' . get_stylesheet_directory_uri() . '/images/racc-logo-dark.png" alt="' . esc_attr(get_bloginfo('name')) . ' Logo" class="h-full w-full" />';
-                    }
-                    ?>
+                    <img src="<?php echo get_stylesheet_directory_uri(); ?>/images/racc-logo-dark.png" alt="<?php echo esc_attr(get_bloginfo('name')); ?> Logo" class="h-full w-full" />
                 </a>
             </div>
 
             <!-- Description Section -->
-            <div class="text-sm mt-6 my-4 dark:text-neutral-350 row-span-1 col-span-full sm:col-span-2 md:col-span-3 justify-center items-center inline-flex">
+            <div class="text-sm mt-6 md:pt-12 my-4 mr-12 dark:text-neutral-350 row-span-1 col-span-full sm:col-span-2 md:col-span-3 justify-center items-center inline-flex">
                 <p>
                     <?php echo esc_html(get_theme_mod('racc_footer_description', 'The Chamber of Commerce is an organization of businesses who have joined together for business promotion and information. The Chamber is your business partner and resource.')); ?>
                     <a href="<?php echo esc_url(home_url('/about')); ?>" class="text-nowrap text-highlight hover:text-highlight-foreground">
                         Learn more
                     </a>
                 </p>
+
             </div>
             
-            <div class="hidden flex-col md:col-span-2" />
+            <div class="hidden flex-col md:col-span-2" ></div>  
 
             <!-- Platforms Column -->
             <div class="flex flex-col col-span-1 text-sm">
@@ -39,7 +32,6 @@
                             'theme_location' => 'footer_platforms',
                             'container' => false,
                             'items_wrap' => '%3$s',
-                            'walker' => new RACC_Footer_Walker(),
                         ));
                     } else {
                         // Fallback links
@@ -60,7 +52,6 @@
                             'theme_location' => 'footer_about',
                             'container' => false,
                             'items_wrap' => '%3$s',
-                            'walker' => new RACC_Footer_Walker(),
                         ));
                     } else {
                         // Fallback links
@@ -82,7 +73,6 @@
                             'theme_location' => 'footer_community',
                             'container' => false,
                             'items_wrap' => '%3$s',
-                            'walker' => new RACC_Footer_Walker(),
                         ));
                     } else {
                         // Fallback links

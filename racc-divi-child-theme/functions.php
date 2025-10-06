@@ -22,6 +22,9 @@ function racc_divi_child_setup() {
     register_nav_menus(array(
         'primary' => esc_html__('Primary Menu', 'racc-divi-child'),
         'mobile' => esc_html__('Mobile Menu', 'racc-divi-child'),
+        'footer_platforms' => __('Footer Membership Menu', 'racc-divi-child'),
+        'footer_about'     => __('Footer About Menu', 'racc-divi-child'),
+        'footer_community' => __('Footer Community Menu', 'racc-divi-child'),
     ));
 }
 add_action('after_setup_theme', 'racc_divi_child_setup');
@@ -243,18 +246,6 @@ function racc_customize_register($wp_customize) {
     ));
 }
 add_action('customize_register', 'racc_customize_register');
-
-/**
- * Register footer menu areas
- */
-function racc_register_footer_menus() {
-    register_nav_menus(array(
-        'footer_platforms' => __('Footer Platforms Menu', 'racc-divi-child'),
-        'footer_about'     => __('Footer About Menu', 'racc-divi-child'),
-        'footer_community' => __('Footer Community Menu', 'racc-divi-child'),
-    ));
-}
-add_action('after_setup_theme', 'racc_register_footer_menus');
 
 /**
  * Custom walker for footer menus
