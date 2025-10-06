@@ -9,138 +9,153 @@
 
 <div id="page-container" class="flex flex-col min-h-screen">
 
-<header class="sticky border-b top-0 z-40 w-full bg-white shadow-md">
-    <!-- Main Navigation Container -->
+<!-- Main Header exactly matching React Header component -->
+<header id="header" class="sticky border-b-[1px] top-0 z-40 w-full bg-white dark:border-b-popover dark:bg-accent-foreground shadow-md">
+    <!-- Main Navigation -->
     <nav class="mx-auto">
-        <ul class="container h-20 px-4 w-screen flex justify-between items-center">
+        <div class="container h-20 px-4 w-screen flex justify-between">
             <!-- Logo Section -->
-            <li>
-                <a href="<?php echo esc_url(home_url('/')); ?>" class="flex flex-row flex-grow flex-shrink-0 h-20 py-1 justify-center md:justify-start ml-10 md:ml-0">
-                    <img 
-                        src="<?php echo get_stylesheet_directory_uri(); ?>/images/racc-logo.png" 
-                        alt="<?php bloginfo('name'); ?> Logo"
-                        class="h-full w-auto p-1"
-                    />
-                </a>
-            </li>
+            <a href="<?php echo esc_url(home_url('/')); ?>" class="flex flex-row flex-grow flex-shrink-0 h-20 py-1 justify-center md:justify-start ml-10 md:ml-0">
+                <?php 
+                $logo_url = get_theme_mod('racc_logo_setting');
+                if ($logo_url) {
+                    echo '<img src="' . esc_url($logo_url) . '" alt="' . esc_attr(get_bloginfo('name')) . ' Logo" class="h-full w-auto p-1" />';
+                } else {
+                    // Fallback to theme logo
+                    echo '<img src="' . get_stylesheet_directory_uri() . '/images/racc-logo.png" alt="' . esc_attr(get_bloginfo('name')) . ' Logo" class="h-full w-auto p-1" />';
+                }
+                ?>
+            </a>
 
             <!-- Desktop Right Side Actions -->
-            <li class="md:order-2 gap-2 items-center ml-3 hidden md:inline-flex">
+            <div class="md:order-2 gap-2 items-center ml-3 hidden md:inline-flex">
                 <!-- Nominations Button -->
-                <a href="<?php echo esc_url(home_url('/nominations')); ?>" class="racc-btn racc-btn-nominations">
+                <button onclick="window.location.href='<?php echo esc_url('members.richfieldareachamber.com/nominations'); ?>'" class="btn btn-sm bg-card-foreground dark:bg-card-foreground text-card">
                     Nominations
-                </a>
+                </button>
 
                 <!-- Join Now Button (show when not authenticated) -->
-                <a href="<?php echo esc_url(home_url('/join')); ?>" class="racc-btn racc-btn-join">
+                <button onclick="window.location.href='<?php echo esc_url(home_url('/join-now')); ?>'" class="btn btn-sm bg-highlight-foreground hover:bg-highlight-foreground/90 text-card">
                     Join Now
-                </a>
+                </button>
 
                 <!-- Sign In Button (show when not authenticated) -->
-                <a href="<?php echo esc_url(home_url('/auth')); ?>" class="racc-btn racc-btn-signin">
+                <button onclick="window.location.href='<?php echo esc_url('members.richfieldareachamber.com/login'); ?>'" class="btn btn-sm btn-ghost">
                     Sign in
-                </a>
-            </li>
+                </button>
+            </div>
 
             <!-- Mobile Menu Button -->
-            <li class="flex md:hidden">
+            <span class="flex md:hidden">
                 <button class="px-2" id="mobile-menu-button">
-                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="flex md:hidden h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
                     </svg>
                     <span class="sr-only">Menu</span>
                 </button>
-            </li>
-        </ul>
+            </span>
+        </div>
     </nav>
 
-    <!-- Desktop Secondary Navigation (exactly matching React component) -->
-    <nav class="hidden md:flex max-w-full w-full bg-background border-t">
-        <ul class="container h-10 px-0 w-screen flex justify-around items-center">
+    <!-- Desktop Secondary Navigation (matching React component structure) -->
+    <nav class="hidden md:flex max-w-full w-full bg-background border-t border-t-border dark:bg-neutral-800 dark:border-t-popover">
+        <div class="container h-10 px-0 w-screen flex justify-around items-center">
             <?php
-            // Navigation menu items exactly matching React routeList
-            $menu_items = array(
-                array('href' => '/news-events', 'label' => 'News & Events'),
-                array('href' => '/calendar', 'label' => 'Calendar'),
-                array('href' => '/members', 'label' => 'Members'),
-                array('href' => '/job-postings', 'label' => 'Jobs Postings'),
-                array('href' => '/contact', 'label' => 'Contact'),
-                array('href' => '/about', 'label' => 'About'),
-            );
-
             // Check if WordPress menu exists, otherwise use fallback
             if (has_nav_menu('primary')) {
                 wp_nav_menu(array(
                     'theme_location' => 'primary',
                     'container' => false,
-                    'menu_class' => 'flex justify-around items-center w-full',
+                    'menu_class' => 'container h-10 px-0 w-screen flex justify-around items-center',
                     'items_wrap' => '%3$s',
                     'fallback_cb' => false,
+                    'walker' => new class extends Walker_Nav_Menu {
+                        public function start_el(&$output, $item, $depth = 0, $args = null, $id = 0) {
+                            $output .= '<a href="' . esc_url($item->url) . '" class="px-1 py-1 h-6 hover:bg-highlight-foreground rounded-md">';
+                            $output .= esc_html($item->title);
+                            $output .= '</a>';
+                        }
+                    }
                 ));
-            } else {
-                // Fallback menu matching React component exactly
+            } 
+            else {
+                // Fallback menu items
+                $menu_items = array(
+                    array('href' => '/news-events', 'label' => 'News & Events'),
+                    array('href' => '/calendar', 'label' => 'Calendar'),
+                    array('href' => '/members', 'label' => 'Members'),
+                    array('href' => '/job-postings', 'label' => 'Job Postings'),
+                    array('href' => '/contact', 'label' => 'Contact'),
+                    array('href' => '/about', 'label' => 'About'),
+                );
+                
                 foreach ($menu_items as $item) {
-                    echo '<li>';
-                    echo '<a href="' . esc_url(home_url($item['href'])) . '" class="px-1 py-1 text-foreground hover:bg-highlight-foreground rounded-md text-sm transition-colors">';
+                    echo '<a href="' . esc_url(home_url($item['href'])) . '" class="px-2 py-1 h-6 text-foreground racc-subnav-link-color rounded-md transition-colors ring-offset-background font-medium text-sm whitespace-nowrap gap-2 justify-center items-center inline-flex">';
                     echo esc_html($item['label']);
                     echo '</a>';
-                    echo '</li>';
                 }
             }
             ?>
-        </ul>
+        </div>
     </nav>
 </header>
 
 <!-- Mobile Menu Drawer (exactly matching React Sheet component) -->
-<div class="racc-mobile-menu-drawer fixed top-0 left-0 h-full w-80 bg-white transform -translate-x-full z-50 border-r flex flex-col transition-transform" id="mobile-menu-drawer">
-    <!-- Mobile Menu Content -->
-    <div class="flex-1 p-4">
-        <!-- Mobile Header with Logo -->
-        <div class="flex items-center justify-between border-b pb-2 mb-4">
+<div class="fixed inset-y-0 left-0 z-50 w-80 bg-white shadow-lg transform -translate-x-full transition-transform duration-300 ease-in-out md:hidden flex flex-col border-r-1 border-r-stone-400" id="mobile-menu-drawer">
+    <!-- Sheet Header -->
+    <div class="p-4">
+        <div class="font-medium text-md items-center flex flex-col border-b-1 border-b-stone-300 dark:border-b-stone-400 pb-2 relative">
             <img 
                 src="<?php echo get_stylesheet_directory_uri(); ?>/images/racc-logo.png" 
                 alt="<?php bloginfo('name'); ?> Logo"
                 class="h-16 w-auto p-1"
             />
-            <button class="text-2xl" id="mobile-menu-close">×</button>
+            <button class="absolute top-2 right-2 text-2xl w-8 h-8 flex items-center justify-center rounded hover:bg-gray-100" id="mobile-menu-close">×</button>
         </div>
-
-        <!-- User Profile Section (when authenticated) -->
-        <div class="border-b border-stone-300 py-2 mb-4 hidden" id="mobile-user-profile">
-            <div class="text-sm font-semibold">User Name</div>
-            <div class="text-sm text-muted-foreground truncate">user@example.com</div>
-        </div>
-
-        <!-- Mobile Navigation Links -->
-        <nav class="flex flex-col">
-            <?php
-            foreach ($menu_items as $item) {
-                echo '<a href="' . esc_url(home_url($item['href'])) . '" class="border-b border-stone-300 text-sm rounded-none w-full py-2 block transition-colors hover:bg-highlight-foreground">';
-                echo esc_html($item['label']);
-                echo '</a>';
-            }
-            ?>
-        </nav>
     </div>
 
-    <!-- Mobile Menu Footer Actions -->
-    <div class="p-4 space-y-2">
-        <!-- Action Buttons -->
-        <a href="<?php echo esc_url(home_url('/nominations')); ?>" class="racc-btn bg-card-foreground text-card w-full text-center block">
-            Nominations
-        </a>
-        <a href="<?php echo esc_url(home_url('/join')); ?>" class="racc-btn bg-highlight-foreground text-white w-full text-center block">
-            Join Now
-        </a>
-        <a href="<?php echo esc_url(home_url('/auth')); ?>" class="racc-btn racc-btn-signin w-full text-center block">
-            Member Login
-        </a>
+    <!-- Navigation Items -->
+    <nav class="flex flex-col justify-start items-start -mt-4 px-4 flex-1">
+      <?php
+        // Check if WordPress menu exists, otherwise use fallback
+          wp_nav_menu(array(
+              'theme_location' => 'primary',
+              'container' => false,
+              'menu_class' => 'container h-10 px-0 w-screen flex justify-around items-center',
+              'items_wrap' => '%3$s',
+              'fallback_cb' => false,
+              'walker' => new class extends Walker_Nav_Menu {
+                  public function start_el(&$output, $item, $depth = 0, $args = null, $id = 0) {
+                      $output .= '<a href="' . esc_url($item->url) . '" class="btn btn-ghost btn-xs px-1 py-1 h-6 hover:bg-highlight-foreground rounded-md">';
+                      $output .= esc_html($item->title);
+                      $output .= '</a>';
+                  }
+              }
+          ));
+      ?>
+    </nav>
 
-        <!-- Theme Toggle -->
-        <div class="flex justify-between items-center w-full py-4 border-t border-stone-300">
-            <span class="text-sm">Toggle theme</span>
-            <button class="racc-theme-toggle" id="mobile-theme-toggle">
+    <!-- Spacer to push footer content to bottom -->
+    <div class="flex-grow"></div>
+
+    <!-- Footer Actions - matching React exactly -->
+    <div class="p-4 space-y-2">
+        <button onclick="window.location.href='<?php echo esc_url('members.richfieldareachamber.com/nominations'); ?>'" class="bg-card-foreground text-card h-9 px-3 rounded-md text-sm font-medium w-full inline-flex items-center justify-center">
+            Nominations
+        </button>
+        
+        <button onclick="window.location.href='<?php echo esc_url(home_url('/join-nom')); ?>'" class="bg-highlight-foreground hover:bg-highlight-foreground/90 text-white h-9 px-3 rounded-md text-sm font-medium w-full inline-flex items-center justify-center">
+            Join Now
+        </button>
+        
+        <button onclick="window.location.href='<?php echo esc_url('members.richfieldareachamber.com/login'); ?>'" class="border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-3 rounded-md text-sm font-medium w-full inline-flex items-center justify-center">
+            Member Login
+        </button>
+
+        <!-- Theme Toggle exactly matching React -->
+        <div class="flex flex-row justify-between items-center w-full py-4 border-t-1 border-t-stone-300 dark:border-t-stone-400" id="mobile-theme-toggle-container">
+            <div class="text-foreground text-sm">Toggle theme</div>
+            <button class="h-5 w-5" id="mobile-theme-toggle">
                 <span class="theme-icon">🌙</span>
             </button>
         </div>
@@ -148,7 +163,7 @@
 </div>
 
 <!-- Mobile Menu Overlay -->
-<div class="racc-mobile-menu-overlay fixed inset-0 bg-black bg-opacity-50 z-40 hidden" id="mobile-menu-overlay"></div>
+<div class="fixed inset-0 z-40 bg-black bg-opacity-50 opacity-0 pointer-events-none transition-opacity duration-300 ease-in-out md:hidden" id="mobile-menu-overlay"></div>
 
 <!-- Main Content Area -->
 <main id="main" class="flex flex-grow">

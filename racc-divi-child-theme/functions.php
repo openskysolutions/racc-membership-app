@@ -139,3 +139,130 @@ function racc_optimize_wp() {
     remove_action('wp_head', 'adjacent_posts_rel_link_wp_head');
 }
 add_action('init', 'racc_optimize_wp');
+
+/**
+ * WordPress Customizer Support
+ */
+function racc_customize_register($wp_customize) {
+    // RACC Logo Section
+    $wp_customize->add_section('racc_logo_section', array(
+        'title'    => __('RACC Logo Settings', 'racc-divi-child'),
+        'priority' => 30,
+    ));
+
+    // Header Logo
+    $wp_customize->add_setting('racc_header_logo', array(
+        'default'           => '',
+        'sanitize_callback' => 'esc_url_raw',
+    ));
+
+    $wp_customize->add_control(new WP_Customize_Media_Control($wp_customize, 'racc_header_logo', array(
+        'label'       => __('Header Logo', 'racc-divi-child'),
+        'description' => __('Upload your header logo image', 'racc-divi-child'),
+        'section'     => 'racc_logo_section',
+        'mime_type'   => 'image',
+    )));
+
+    // Footer Logo
+    $wp_customize->add_setting('racc_footer_logo', array(
+        'default'           => '',
+        'sanitize_callback' => 'esc_url_raw',
+    ));
+
+    $wp_customize->add_control(new WP_Customize_Media_Control($wp_customize, 'racc_footer_logo', array(
+        'label'       => __('Footer Logo', 'racc-divi-child'),
+        'description' => __('Upload your footer logo image', 'racc-divi-child'),
+        'section'     => 'racc_logo_section',
+        'mime_type'   => 'image',
+    )));
+
+    // RACC Footer Section
+    $wp_customize->add_section('racc_footer_section', array(
+        'title'    => __('RACC Footer Settings', 'racc-divi-child'),
+        'priority' => 35,
+    ));
+
+    // Footer Description
+    $wp_customize->add_setting('racc_footer_description', array(
+        'default'           => 'The Chamber of Commerce is an organization of businesses who have joined together for business promotion and information. The Chamber is your business partner and resource.',
+        'sanitize_callback' => 'sanitize_textarea_field',
+    ));
+
+    $wp_customize->add_control('racc_footer_description', array(
+        'label'   => __('Footer Description', 'racc-divi-child'),
+        'section' => 'racc_footer_section',
+        'type'    => 'textarea',
+    ));
+
+    // Footer Copyright Text
+    $wp_customize->add_setting('racc_footer_copyright', array(
+        'default'           => 'Copyright © ' . date('Y') . ' Richfield Area Chamber of Commerce',
+        'sanitize_callback' => 'sanitize_text_field',
+    ));
+
+    $wp_customize->add_control('racc_footer_copyright', array(
+        'label'   => __('Footer Copyright Text', 'racc-divi-child'),
+        'section' => 'racc_footer_section',
+        'type'    => 'text',
+    ));
+
+    // Footer Links - Platforms Column
+    $wp_customize->add_setting('racc_footer_platforms_title', array(
+        'default'           => 'Platforms',
+        'sanitize_callback' => 'sanitize_text_field',
+    ));
+
+    $wp_customize->add_control('racc_footer_platforms_title', array(
+        'label'   => __('Platforms Column Title', 'racc-divi-child'),
+        'section' => 'racc_footer_section',
+        'type'    => 'text',
+    ));
+
+    // Footer Links - About Column
+    $wp_customize->add_setting('racc_footer_about_title', array(
+        'default'           => 'About',
+        'sanitize_callback' => 'sanitize_text_field',
+    ));
+
+    $wp_customize->add_control('racc_footer_about_title', array(
+        'label'   => __('About Column Title', 'racc-divi-child'),
+        'section' => 'racc_footer_section',
+        'type'    => 'text',
+    ));
+
+    // Footer Links - Community Column
+    $wp_customize->add_setting('racc_footer_community_title', array(
+        'default'           => 'Community',
+        'sanitize_callback' => 'sanitize_text_field',
+    ));
+
+    $wp_customize->add_control('racc_footer_community_title', array(
+        'label'   => __('Community Column Title', 'racc-divi-child'),
+        'section' => 'racc_footer_section',
+        'type'    => 'text',
+    ));
+}
+add_action('customize_register', 'racc_customize_register');
+
+/**
+ * Register footer menu areas
+ */
+function racc_register_footer_menus() {
+    register_nav_menus(array(
+        'footer_platforms' => __('Footer Platforms Menu', 'racc-divi-child'),
+        'footer_about'     => __('Footer About Menu', 'racc-divi-child'),
+        'footer_community' => __('Footer Community Menu', 'racc-divi-child'),
+    ));
+}
+add_action('after_setup_theme', 'racc_register_footer_menus');
+
+/**
+ * Custom walker for footer menus
+ */
+class RACC_Footer_Walker extends Walker_Nav_Menu {
+    public function start_el(&$output, $item, $depth = 0, $args = null, $id = 0) {
+        $output .= '<a href="' . esc_url($item->url) . '" style="color: rgb(245, 245, 244); text-decoration: none; opacity: 0.6; transition: opacity 0.2s; display: block; margin-bottom: 0.25rem;" class="hover:opacity-100">';
+        $output .= esc_html($item->title);
+        $output .= '</a>';
+    }
+}

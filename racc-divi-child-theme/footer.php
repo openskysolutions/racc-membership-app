@@ -1,26 +1,27 @@
     </main>
     <!-- Footer exactly matching React Footer component -->
-    <footer id="footer" class="racc-footer bg-card-foreground border-t-border border-t-1 text-stone-100 text-sm">
-        <!-- <hr class="w-full mx-auto border-t-border mt-0" /> -->
-        
-        <section class="py-8 md:pt-4 grid grid-rows-2 grid-cols-3 sm:grid-cols-3 md:grid-cols-5 gap-8 lg:gap-4 px-6">
+    <footer id="footer" class="border-t border-t-border dark:border-b-ring bg-card-foreground dark:bg-accent-foreground text-stone-100 text-sm">
+        <section class="container py-8 md:pt-0 grid grid-rows-2 grid-cols-3 sm:grid-cols-3 md:grid-cols-5 gap-8 lg:gap-4 px-6">
             <!-- Logo Section -->
-            <div class="rows-span-1 md:row-span-2 col-span-3 sm:col-span-3 md:col-span-2 justify-center items-center flex">
+            <div class="row-span-1 md:row-span-2 col-span-3 sm:col-span-3 md:col-span-2 justify-center items-center flex">
                 <a href="<?php echo esc_url(home_url('/')); ?>" class="flex w-48 h-auto justify-center items-center">
-                    <img
-                        src="<?php echo get_stylesheet_directory_uri(); ?>/images/racc-logo-dark.png"
-                        alt="<?php bloginfo('name'); ?> Logo"
-                        class="h-full w-full" 
-                    />
+                    <?php 
+                    $footer_logo = get_theme_mod('racc_footer_logo');
+                    if ($footer_logo) {
+                        echo '<img src="' . esc_url($footer_logo) . '" alt="' . esc_attr(get_bloginfo('name')) . ' Logo" class="h-full w-full" />';
+                    } else {
+                        // Fallback to theme logo
+                        echo '<img src="' . get_stylesheet_directory_uri() . '/images/racc-logo-dark.png" alt="' . esc_attr(get_bloginfo('name')) . ' Logo" class="h-full w-full" />';
+                    }
+                    ?>
                 </a>
             </div>
 
             <!-- Description Section -->
-            <div class="text-sm mt-6 my-4 row-span-1 col-span-full sm:cols-span-2 md:col-span-3 justify-center items-center item inline-flex">
+            <div class="text-sm mt-6 my-4 dark:text-neutral-350 row-span-1 col-span-full sm:col-span-2 md:col-span-3 justify-center items-center inline-flex">
                 <p>
-                    The Chamber of Commerce is an organization of businesses who have joined together for business promotion and information.
-                    The Chamber is your business partner and resource.
-                    <a href="<?php echo esc_url(home_url('/about')); ?>" class="text-nowrap highlight-link">
+                    <?php echo esc_html(get_theme_mod('racc_footer_description', 'The Chamber of Commerce is an organization of businesses who have joined together for business promotion and information. The Chamber is your business partner and resource.')); ?>
+                    <a href="<?php echo esc_url(home_url('/about')); ?>" class="text-nowrap text-highlight hover:text-highlight-foreground">
                         Learn more
                     </a>
                 </p>
@@ -30,16 +31,22 @@
 
             <!-- Platforms Column -->
             <div class="flex flex-col col-span-1 text-sm">
-                <h3 class="font-medium text-md">Platforms</h3>
+                <h3 class="font-medium text-md"><?php echo esc_html(get_theme_mod('racc_footer_platforms_title', 'Platforms')); ?></h3>
                 <div>
-                    <a href="#" class="opacity-60 hover:opacity-100">
-                        Web
-                    </a>
-                </div>
-                <div>
-                    <a href="#" class="opacity-60 hover:opacity-100">
-                        Mobile
-                    </a>
+                    <?php
+                    if (has_nav_menu('footer_platforms')) {
+                        wp_nav_menu(array(
+                            'theme_location' => 'footer_platforms',
+                            'container' => false,
+                            'items_wrap' => '%3$s',
+                            'walker' => new RACC_Footer_Walker(),
+                        ));
+                    } else {
+                        // Fallback links
+                        echo '<a href="#" class="opacity-60 hover:opacity-100 transition-opacity">Web</a>';
+                        echo '<a href="#" class="opacity-60 hover:opacity-100 transition-opacity">Mobile</a>';
+                    }
+                    ?>
                 </div>
             </div>
 
@@ -47,19 +54,21 @@
             <div class="flex flex-col col-span-1 text-sm">
                 <h3 class="font-medium">About</h3>
                 <div>
-                    <a href="#" class="opacity-60 hover:opacity-100">
-                        Benefits
-                    </a>
-                </div>
-                <div>
-                    <a href="#" class="opacity-60 hover:opacity-100">
-                        Pricing
-                    </a>
-                </div>
-                <div>
-                    <a href="#" class="opacity-60 hover:opacity-100">
-                        FAQ
-                    </a>
+                    <?php
+                    if (has_nav_menu('footer_about')) {
+                        wp_nav_menu(array(
+                            'theme_location' => 'footer_about',
+                            'container' => false,
+                            'items_wrap' => '%3$s',
+                            'walker' => new RACC_Footer_Walker(),
+                        ));
+                    } else {
+                        // Fallback links
+                        echo '<a href="#" class="opacity-60 hover:opacity-100 transition-opacity">Benefits</a>';
+                        echo '<a href="#" class="opacity-60 hover:opacity-100 transition-opacity">Pricing</a>';
+                        echo '<a href="#" class="opacity-60 hover:opacity-100 transition-opacity">FAQ</a>';
+                    }
+                    ?>
                 </div>
             </div>
 
@@ -67,36 +76,43 @@
             <div class="flex flex-col col-span-1 text-sm">
                 <h3 class="font-medium text-md">Community</h3>
                 <div>
-                    <a href="https://www.facebook.com/profile.php?id=100063232268373" 
-                       target="_blank" 
-                       rel="noopener noreferrer"
-                       class="opacity-60 hover:opacity-100">
-                        Facebook
-                    </a>
+                    <?php
+                    if (has_nav_menu('footer_community')) {
+                        wp_nav_menu(array(
+                            'theme_location' => 'footer_community',
+                            'container' => false,
+                            'items_wrap' => '%3$s',
+                            'walker' => new RACC_Footer_Walker(),
+                        ));
+                    } else {
+                        // Fallback links
+                        echo '<a href="https://www.facebook.com/profile.php?id=100063232268373" target="_blank" rel="noopener noreferrer" class="opacity-60 hover:opacity-100 transition-opacity">Facebook</a>';
+                    }
+                    ?>
                 </div>
             </div>
         </section>
 
         <!-- Footer Bottom Copyright Section -->
-        <section class="container pb-4 text-stone-100 text-center text-xs px-3">
-            <h3 class="text-center text-stone-100 text-xs">
-                Copyright &copy; <?php echo date('Y'); ?> <?php bloginfo('name'); ?>
+        <section class="container pb-4 text-card text-center text-xs px-3">
+            <h3 class="text-center text-card text-xs">
+                <?php echo esc_html(get_theme_mod('racc_footer_copyright', 'Copyright © ' . date('Y') . ' ' . get_bloginfo('name'))); ?>
                 |
-                <a href="<?php echo esc_url(home_url('/privacy')); ?>" class="highlight-link hover:no-underline hover:border-b-0">
+                <a href="<?php echo esc_url(home_url('/privacy')); ?>" class="text-highlight hover:text-highlight-foreground underline decoration-dotted underline-offset-4 hover:decoration-solid transition-all">
                     Privacy
                 </a>
                 |
-                <a href="<?php echo esc_url(home_url('/terms')); ?>" class="highlight-link hover:no-underline hover:border-b-0">
+                <a href="<?php echo esc_url(home_url('/terms')); ?>" class="text-highlight hover:text-highlight-foreground underline decoration-dotted underline-offset-4 hover:decoration-solid transition-all">
                     Terms
                 </a>
                 |
                 <span class="text-nowrap">
                     Powered by
-                    <a href="https://monroemountainmarketing.com/" 
+                    <a href="https://openskydev.com/" 
                        target="_blank" 
                        rel="noopener noreferrer"
-                       class="highlight-link hover:no-underline hover:border-b-0">
-                        Monroe Moutain Marketing
+                       class="text-highlight hover:text-highlight-foreground underline decoration-dotted underline-offset-4 hover:decoration-solid transition-all">
+                        Open Sky Solutions
                     </a>
                 </span>
             </h3>

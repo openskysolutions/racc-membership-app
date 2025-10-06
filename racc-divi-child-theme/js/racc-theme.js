@@ -6,10 +6,11 @@
 (function($) {
     'use strict';
 
-    // Theme management
+    // Theme management exactly matching React useTheme hook
     const ThemeManager = {
         init: function() {
             this.currentTheme = this.getTheme();
+            this.applyTheme();
             this.updateThemeDisplay();
             this.bindEvents();
         },
@@ -21,21 +22,24 @@
         setTheme: function(theme) {
             localStorage.setItem('racc_theme', theme);
             this.currentTheme = theme;
-            this.updateThemeDisplay();
             this.applyTheme();
-        },
-
-        updateThemeDisplay: function() {
-            const isDark = this.currentTheme === 'dark';
-            $('.theme-icon').text(isDark ? '☀️' : '🌙');
+            this.updateThemeDisplay();
         },
 
         applyTheme: function() {
             if (this.currentTheme === 'dark') {
+                $('html').addClass('dark');
                 $('body').addClass('dark');
             } else {
+                $('html').removeClass('dark');
                 $('body').removeClass('dark');
             }
+        },
+
+        updateThemeDisplay: function() {
+            // Update theme toggle icons (matching React icons)
+            const isDark = this.currentTheme === 'dark';
+            $('.theme-icon').text(isDark ? '☀️' : '🌙');
         },
 
         toggle: function() {
@@ -46,8 +50,119 @@
         bindEvents: function() {
             const self = this;
             
-            // Desktop theme toggle
-            $(document).on('click', '#theme-toggle', function(e) {
+            // Desktop and mobile theme toggle
+            $(document).on('click', '#theme-toggle, #mobile-theme-toggle', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                self.toggle();
+            });
+        }
+    };
+
+    // Mobile Menu Manager exactly matching React Sheet component behavior
+    const MobileMenuManager = {
+        init: function() {
+            this.isOpen = false;
+            this.drawer = $('#mobile-menu-drawer');
+            this.overlay = $('#mobile-menu-overlay');
+            this.bindEvents();
+        },
+
+        open: function() {
+            if (this.isOpen) return;
+            
+            this.isOpen = true;
+            $('body').addClass('mobile-menu-open');
+            
+            // Show overlay
+            this.overlay.removeClass('opacity-0 pointer-events-none').addClass('opacity-100 pointer-events-auto');
+            
+            // Show drawer with transform
+            this.drawer.removeClass('-translate-x-full').addClass('translate-x-0');
+            
+            // Add open class for CSS transitions
+            this.drawer.addClass('open');
+            this.overlay.addClass('open');
+        },
+
+        close: function() {
+            if (!this.isOpen) return;
+            
+            this.isOpen = false;
+            $('body').removeClass('mobile-menu-open');
+            
+            // Hide overlay
+            this.overlay.removeClass('opacity-100 pointer-events-auto').addClass('opacity-0 pointer-events-none');
+            
+            // Hide drawer
+            this.drawer.removeClass('translate-x-0').addClass('-translate-x-full');
+            
+            // Remove open class
+            this.drawer.removeClass('open');
+            this.overlay.removeClass('open');
+        },
+
+        toggle: function() {
+            if (this.isOpen) {
+                this.close();
+            } else {
+                this.open();
+            }
+        },
+
+        bindEvents: function() {
+            const self = this;
+            
+            // Mobile menu button
+            $(document).on('click', '#mobile-menu-button', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                self.open();
+            });
+            
+            // Mobile menu close button
+            $(document).on('click', '#mobile-menu-close', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                self.close();
+            });
+            
+            // Close on overlay click
+            $(document).on('click', '#mobile-menu-overlay', function(e) {
+                if (e.target === this) {
+                    self.close();
+                }
+            });
+            
+            // Close on navigation
+            $(document).on('click', '#mobile-menu-drawer button[onclick]', function() {
+                self.close();
+            });
+            
+            // Handle theme toggle in mobile menu
+            $(document).on('click', '#mobile-theme-toggle-container', function(e) {
+                e.preventDefault();
+                ThemeManager.toggle();
+            });
+            
+            // Close menu on escape key
+            $(document).on('keydown', function(e) {
+                if (e.keyCode === 27 && self.isOpen) { // ESC key
+                    self.close();
+                }
+            });
+        }
+    };
+
+    // Initialize everything when DOM is ready
+    $(document).ready(function() {
+        ThemeManager.init();
+        MobileMenuManager.init();
+        
+        console.log('RACC Theme initialized with mobile menu and theme management');
+    });
+
+})(jQuery);
                 e.preventDefault();
                 self.toggle();
             });
@@ -90,9 +205,12 @@
                 self.close();
             });
 
-            // Close on link click
-            $(document).on('click', '.racc-mobile-menu-drawer a', function(e) {
-                self.close();
+            // Close on menu item click
+            $(document).on('click', '#mobile-menu-drawer button', function(e) {
+                // Only close if it's a navigation button, not action buttons
+                if (!$(this).closest('.p-4.space-y-2').length) {
+                    self.close();
+                }
             });
 
             // Close on escape key
@@ -108,9 +226,6 @@
             this.drawer.addClass('open');
             this.overlay.addClass('open');
             $('body').addClass('mobile-menu-open');
-            
-            // Add hamburger animation if present
-            $('#mobile-menu-button .hamburger-icon').addClass('open');
         },
 
         close: function() {
@@ -118,9 +233,6 @@
             this.drawer.removeClass('open');
             this.overlay.removeClass('open');
             $('body').removeClass('mobile-menu-open');
-            
-            // Remove hamburger animation if present
-            $('#mobile-menu-button .hamburger-icon').removeClass('open');
         }
     };
 
