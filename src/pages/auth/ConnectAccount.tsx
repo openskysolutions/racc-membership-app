@@ -6,9 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, CheckCircle, AlertCircle } from 'lucide-react';
-import { useTheme } from '@/providers/theme-provider';
-import LogoLight from '@/assets/racc-logo.png';
-import LogoDark from '@/assets/racc-logo-dark.png';
 import { apiFetch } from '@/services/apiClient';
 
 interface ExistingRegistrationData {
@@ -40,7 +37,6 @@ export const ConnectAccountPage = () => {
   const [loading, setLoading] = useState(false);
   const [emailFromUrl, setEmailFromUrl] = useState<string | null>(null);
   const navigate = useNavigate();
-  const { theme } = useTheme();
   const location = useLocation();
 
   // Extract email from URL parameters on component mount
