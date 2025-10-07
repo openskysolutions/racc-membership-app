@@ -37,10 +37,10 @@ const routeList: RouteProps[] = [
   //   href: "/courses",
   //   label: "Courses",
   // },
-  {
-    href: "/news-events",
-    label: "News & Events",
-  },
+  // {
+  //   href: "/news-events",
+  //   label: "News & Events",
+  // },
   {
     href: "/calendar",
     label: "Calendar",
@@ -49,10 +49,10 @@ const routeList: RouteProps[] = [
     href: "/members",
     label: "Members",
   },
-  {
-    href: "/job-postings",
-    label: "Jobs Postings"
-  },
+  // {
+  //   href: "/job-postings",
+  //   label: "Jobs Postings"
+  // },
   {
     href: "/contact",
     label: "Contact",
@@ -235,10 +235,10 @@ export const Navbar = () => {
                       }}
                       className={cn(
                         // buttonVariants({ variant: "ghost" }),  
-                        "border-b-1 border-b-stone-300 dark:border-b-stone-400 text-sm rounded-none w-full py-2 -mt-4 !justify-start text-left"
+                        "border-b-1 border-b-stone-300 dark:border-b-stone-400 text-sm rounded-none w-full py-2 !justify-start text-left"
                       )}
                     >
-                      <span className="block text-sm font-semibold">{user?.fullName}</span>
+                      <span className="block text-lg font-semibold">{user?.firstName} {user?.lastName}</span>
                       <span className="block truncate text-sm font-normal">{user?.email}</span>
                     </button>
                   }   

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -15,31 +15,20 @@ interface ExistingRegistrationData {
   email: string;
   password: string;
   confirmPassword: string;
-  // These fields might be pre-populated from GoHighLevel contact
-  firstName?: string;
-  lastName?: string;
-  businessName?: string;
-  phone?: string;
-  website?: string;
 }
 
 interface ContactVerificationResult {
   exists: boolean;
   contact?: {
     id: string;
-    firstName?: string;
-    lastName?: string;
     email: string;
-    phone?: string;
-    businessName?: string;
-    website?: string;
   };
 }
 
 export const ConnectAccountPage = () => {
   const [step, setStep] = useState<'verify' | 'confirm-email' | 'not-found' | 'register'>('verify');
   const [email, setEmail] = useState('');
-  const [confirmationCode, setConfirmationCode] = useState('');
+  const [confirmationCode, setConfirmationCode] = useState(['', '', '', '', '', '']);
   const [verificationResult, setVerificationResult] = useState<ContactVerificationResult | null>(null);
   const [formData, setFormData] = useState<ExistingRegistrationData>({
     email: '',
@@ -49,8 +38,28 @@ export const ConnectAccountPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [emailFromUrl, setEmailFromUrl] = useState<string | null>(null);
   const navigate = useNavigate();
   const { theme } = useTheme();
+  const location = useLocation();
+
+  // Extract email from URL parameters on component mount
+  useEffect(() => {
+    // Parse the search string manually to preserve + characters
+    const searchString = location.search;
+    const emailMatch = searchString.match(/[?&]email=([^&]*)/);
+    
+    if (emailMatch && emailMatch[1]) {
+      // URL decode the email parameter
+      const emailParam = decodeURIComponent(emailMatch[1]);
+      setEmailFromUrl(emailParam);
+      setEmail(emailParam);
+      setFormData(prev => ({
+        ...prev,
+        email: emailParam
+      }));
+    }
+  }, [location.search]);
 
   const handleEmailVerification = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,11 +117,6 @@ export const ConnectAccountPage = () => {
             setFormData(prev => ({
               ...prev,
               email,
-              firstName: result.contact?.firstName || '',
-              lastName: result.contact?.lastName || '',
-              businessName: result.contact?.businessName || '',
-              phone: result.contact?.phone || '',
-              website: result.contact?.website || ''
             }));
             setStep('register');
           }
@@ -122,11 +126,6 @@ export const ConnectAccountPage = () => {
           setFormData(prev => ({
             ...prev,
             email,
-            firstName: result.contact?.firstName || '',
-            lastName: result.contact?.lastName || '',
-            businessName: result.contact?.businessName || '',
-            phone: result.contact?.phone || '',
-            website: result.contact?.website || ''
           }));
           setStep('register');
         }
@@ -148,9 +147,10 @@ export const ConnectAccountPage = () => {
     setLoading(true);
 
     try {
+      const codeString = confirmationCode.join('');
       const response = await apiFetch('/auth/verify-confirmation', {
         method: 'POST',
-        body: JSON.stringify({ email, code: confirmationCode })
+        body: JSON.stringify({ email, code: codeString })
       });
 
       if (!response.ok) {
@@ -164,11 +164,6 @@ export const ConnectAccountPage = () => {
         setFormData(prev => ({
           ...prev,
           email,
-          firstName: verificationResult.contact?.firstName || '',
-          lastName: verificationResult.contact?.lastName || '',
-          businessName: verificationResult.contact?.businessName || '',
-          phone: verificationResult.contact?.phone || '',
-          website: verificationResult.contact?.website || ''
         }));
       }
       setStep('register');
@@ -266,6 +261,10 @@ export const ConnectAccountPage = () => {
     setStep('verify');
     setError(null);
     setVerificationResult(null);
+    // If there's an email from URL, keep it; otherwise reset to empty
+    if (!emailFromUrl) {
+      setEmail('');
+    }
   };
 
   const getStepTitle = () => {
@@ -301,8 +300,8 @@ export const ConnectAccountPage = () => {
   };
 
   return (
-    <div className="flex items-center justify-center flex-col p-8 pb-36">
-      <Link
+    <div className="flex items-center justify-center flex-col p-4 pt-24 pb-24">
+      {/* <Link
         to="/"
         className="w-full max-w-md p-8 pb-12"
       >
@@ -311,7 +310,7 @@ export const ConnectAccountPage = () => {
           alt="Richfield Area Chamber of Commerce Logo"
           className="w-full"
         />
-      </Link>
+      </Link> */}
       
       <Card className="w-full max-w-md bg-popover dark:bg-neutral-750 border-stone-500">
         <CardHeader className="space-y-1">
@@ -352,8 +351,24 @@ export const ConnectAccountPage = () => {
                   }}
                   placeholder="Enter your email address"
                   required
-                  disabled={loading}
+                  disabled={loading || emailFromUrl !== null}
+                  className={emailFromUrl ? "bg-gray-50 dark:bg-gray-800" : ""}
                 />
+                {emailFromUrl && (
+                  <p className="text-sm text-muted-foreground">
+                    Email provided from URL. To use a different email, 
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        setEmailFromUrl(null);
+                        setEmail('');
+                      }}
+                      className="ml-1 font-semibold text-highlight-foreground hover:underline"
+                    >
+                      click here
+                    </button>
+                  </p>
+                )}
               </div>
               
               <Button 
@@ -369,40 +384,94 @@ export const ConnectAccountPage = () => {
 
           {step === 'confirm-email' && (
             <div className="space-y-4">
-              <Alert className="border-blue-200 bg-blue-50 text-blue-800">
+              <Alert className="border-blue-200 bg-blue-50 text-blue-800 flex mb-8">
                 <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
+                <AlertDescription className=''>
                   We've sent a confirmation code to: <strong>{email}</strong>. <br/>
                   Please check your inbox and enter the code below. Or, {' '}
                   <span onClick={handleTryAgain} className="font-semibold cursor-pointer">try a different email</span>
                 </AlertDescription>
               </Alert>
 
-              <form onSubmit={handleEmailConfirmation} className="space-y-4">
+              <form onSubmit={handleEmailConfirmation} className="space-y-4 flex flex-col items-center">
                 <div className="space-y-2">
-                  <Label htmlFor="confirmation-code">Confirmation Code</Label>
-                  <Input
-                    id="confirmation-code"
-                    type="text"
-                    value={confirmationCode}
-                    onChange={(e) => {
-                      setConfirmationCode(e.target.value.replace(/\D/g, '').slice(0, 6));
-                      if (error) setError(null);
-                    }}
-                    placeholder="Enter 6-digit code"
-                    required
-                    disabled={loading}
-                    maxLength={6}
-                    className="text-center text-lg tracking-widest"
-                  />
+                  <Label className='text-center w-full block'>Confirmation Code</Label>
+                  <div className="flex gap-2 justify-center max-w-full">
+                    {confirmationCode.map((digit, index) => (
+                      <Input
+                        key={index}
+                        id={`digit-${index}`}
+                        type="text"
+                        value={digit}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/\D/g, '');
+                          if (value.length <= 1) {
+                            const newCode = [...confirmationCode];
+                            newCode[index] = value;
+                            setConfirmationCode(newCode);
+                            
+                            // Auto-focus next input if digit entered
+                            if (value && index < 5) {
+                              const nextInput = document.getElementById(`digit-${index + 1}`);
+                              nextInput?.focus();
+                            }
+                          } else if (value.length === 6 && index === 0) {
+                            // Handle paste of full 6-digit code
+                            const digits = value.split('').slice(0, 6);
+                            const newCode = [...digits, '', '', '', '', ''].slice(0, 6);
+                            setConfirmationCode(newCode);
+                            
+                            // Focus the last filled digit
+                            const lastFilledIndex = digits.length - 1;
+                            if (lastFilledIndex < 5) {
+                              setTimeout(() => {
+                                const nextInput = document.getElementById(`digit-${lastFilledIndex + 1}`);
+                                nextInput?.focus();
+                              }, 0);
+                            }
+                          }
+                          if (error) setError(null);
+                        }}
+                        onKeyDown={(e) => {
+                          // Handle backspace navigation
+                          if (e.key === 'Backspace' && !confirmationCode[index] && index > 0) {
+                            const prevInput = document.getElementById(`digit-${index - 1}`);
+                            prevInput?.focus();
+                          }
+                        }}
+                        onPaste={(e) => {
+                          e.preventDefault();
+                          const pastedData = e.clipboardData.getData('text').replace(/\D/g, '');
+                          if (pastedData.length <= 6) {
+                            const digits = pastedData.split('');
+                            const newCode = [...digits, '', '', '', '', ''].slice(0, 6);
+                            setConfirmationCode(newCode);
+                            
+                            // Focus appropriate input after paste
+                            const focusIndex = Math.min(digits.length, 5);
+                            setTimeout(() => {
+                              const targetInput = document.getElementById(`digit-${focusIndex}`);
+                              targetInput?.focus();
+                            }, 0);
+                          }
+                        }}
+                        placeholder=""
+                        required
+                        disabled={loading}
+                        maxLength={1}
+                        className="w-10 h-10 text-center text-md font-mono"
+                        autoFocus={index === 0 && step === 'confirm-email'}
+                      />
+                    ))}
+                  </div>
                 </div>
                 
                 <Button 
                   type="submit" 
-                  className="w-full"
-                  disabled={loading || confirmationCode.length !== 6}
+                  className="w-[70%] !mb-4 !mt-8"
+                  disabled={loading || confirmationCode.some(digit => !digit)}
                 >
-                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {loading && <Loader2 className="mr-2 h-4 w-4  animate-spin" />}
                   Verify Code
                 </Button>
               </form>
@@ -445,8 +514,24 @@ export const ConnectAccountPage = () => {
                     }}
                     placeholder="Enter your email address"
                     required
-                    disabled={loading}
+                    disabled={loading || emailFromUrl !== null}
+                    className={emailFromUrl ? "bg-gray-50 dark:bg-gray-800" : ""}
                   />
+                  {emailFromUrl && (
+                    <p className="text-sm text-muted-foreground">
+                      Email provided from URL. To use a different email, 
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          setEmailFromUrl(null);
+                          setEmail('');
+                        }}
+                        className="ml-1 font-semibold text-highlight-foreground hover:underline"
+                      >
+                        click here
+                      </button>
+                    </p>
+                  )}
                 </div>
                 
                 <Button 
@@ -485,34 +570,6 @@ export const ConnectAccountPage = () => {
               )}
 
               <form onSubmit={handleRegistration} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="firstName">First Name</Label>
-                    <Input
-                      id="firstName"
-                      name="firstName"
-                      value={formData.firstName || ''}
-                      onChange={handleFormChange}
-                      placeholder="First Name"
-                      required
-                      disabled={loading}
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="lastName">Last Name</Label>
-                    <Input
-                      id="lastName"
-                      name="lastName"
-                      value={formData.lastName || ''}
-                      onChange={handleFormChange}
-                      placeholder="Last Name"
-                      required
-                      disabled={loading}
-                    />
-                  </div>
-                </div>
-
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
                   <Input
@@ -522,44 +579,6 @@ export const ConnectAccountPage = () => {
                     value={formData.email}
                     disabled={true}
                     className="bg-gray-50 dark:bg-gray-800"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="businessName">Business Name</Label>
-                  <Input
-                    id="businessName"
-                    name="businessName"
-                    value={formData.businessName || ''}
-                    onChange={handleFormChange}
-                    placeholder="Your Business Name"
-                    disabled={loading}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <Input
-                    id="phone"
-                    name="phone"
-                    type="tel"
-                    value={formData.phone || ''}
-                    onChange={handleFormChange}
-                    placeholder="(555) 123-4567"
-                    disabled={loading}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="website">Website</Label>
-                  <Input
-                    id="website"
-                    name="website"
-                    type="url"
-                    value={formData.website || ''}
-                    onChange={handleFormChange}
-                    placeholder="https://yourbusiness.com"
-                    disabled={loading}
                   />
                 </div>
 
@@ -615,7 +634,7 @@ export const ConnectAccountPage = () => {
             </>
           )}
 
-          <div className="space-y-2 text-center text-sm">
+          <div className="space-y-4 !mt-0 !mb-4 text-center text-sm">
             {step !== 'not-found' && (
               <>
                 <div>
@@ -627,10 +646,10 @@ export const ConnectAccountPage = () => {
                   </Link>
                 </div>
                 <div>
-                  <Button asChild variant="ghost" className="h-auto text-sm font-semibold">
+                  <Button asChild variant="outline" className="h-auto text-sm font-semibold">
                     <Link 
                   to="/register"
-                  className="font-medium text-highlight-foreground hover:underline"
+                  className="font-medium text-highlight-foreground"
                 >
                       Create new account
                     </Link>
