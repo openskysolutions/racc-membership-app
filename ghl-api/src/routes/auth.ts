@@ -665,11 +665,11 @@ router.post('/register', async (req, res) => {
       membershipTier = 'standard'
     } = req.body;
 
-    // Validate required fields
-    if (!firstName || !lastName || !email || !password) {
+    // Validate required fields - only email and password are required
+    if (!email || !password) {
       return res.status(400).json({
         error: 'Missing required fields',
-        details: 'firstName, lastName, email, and password are required'
+        details: 'email and password are required'
       });
     }
 
@@ -705,13 +705,14 @@ router.post('/register', async (req, res) => {
       });
     }
 
-    // Create GoHighLevel contact first
-    let ghlContactId;
+    // Create GoHighLevel contact first - TEMPORARILY COMMENTED OUT
+    let ghlContactId = null;
+    /*
     try {
       console.log('🔍 Starting GHL contact creation process...');
       ghlContactId = await ghlService.createContact({
-        firstName,
-        lastName,
+        firstName: firstName || 'New',
+        lastName: lastName || 'Member',
         email,
         phone,
         website,
@@ -735,13 +736,14 @@ router.post('/register', async (req, res) => {
         debug: process.env.NODE_ENV === 'development' ? ghlError.message : undefined
       });
     }
+    */
 
     // Create user in database
     let user;
     try {
       user = await databaseService.createUser({
-        firstName,
-        lastName,
+        firstName: firstName || 'New',
+        lastName: lastName || 'Member',
         email,
         passwordHash: password, // This will be hashed in the service
         businessName,
@@ -757,13 +759,15 @@ router.post('/register', async (req, res) => {
     } catch (dbError) {
       console.error('Failed to create user in database:', dbError);
       
-      // Try to clean up GHL contact if database creation failed
+      // Try to clean up GHL contact if database creation failed - COMMENTED OUT
+      /*
       try {
         // Note: GoHighLevel doesn't have a direct delete API, so we'll tag as failed
         await ghlService.updateContactTags(ghlContactId, ['registration-failed'], 'add');
       } catch (cleanupError) {
         console.error('Failed to cleanup GHL contact:', cleanupError);
       }
+      */
       
       return res.status(500).json({
         error: 'Failed to create user account',
@@ -773,8 +777,10 @@ router.post('/register', async (req, res) => {
 
     // Create payment link
     const tierConfig = MEMBERSHIP_TIERS[membershipTier];
-    let paymentLink;
+    let paymentLink = null;
     
+    // TODO: Commented out payment link creation since GHL contact creation is disabled
+    /*
     try {
       paymentLink = await ghlService.createPaymentLink({
         contactId: ghlContactId,
@@ -790,6 +796,7 @@ router.post('/register', async (req, res) => {
       // Continue without payment link for now
       paymentLink = null;
     }
+    */
 
     // Return registration success response
     res.status(201).json({

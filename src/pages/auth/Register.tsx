@@ -10,26 +10,16 @@ import LogoLight from '@/assets/racc-logo.png';
 import LogoDark from '@/assets/racc-logo-dark.png';
 
 interface RegistrationData {
-  firstName: string;
-  lastName: string;
   email: string;
   password: string;
   confirmPassword: string;
-  businessName: string;
-  phone: string;
-  website: string;
 }
 
 export const RegisterPage = () => {
   const [formData, setFormData] = useState<RegistrationData>({
-    firstName: '',
-    lastName: '',
     email: '',
     password: '',
     confirmPassword: '',
-    businessName: '',
-    phone: '',
-    website: ''
   });
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -47,8 +37,6 @@ export const RegisterPage = () => {
   };
 
   const validateForm = (): string | null => {
-    if (!formData.firstName.trim()) return 'First name is required';
-    if (!formData.lastName.trim()) return 'Last name is required';
     if (!formData.email.trim()) return 'Email is required';
     if (!formData.password) return 'Password is required';
     if (formData.password.length < 6) return 'Password must be at least 6 characters';
@@ -82,13 +70,8 @@ export const RegisterPage = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          firstName: formData.firstName.trim(),
-          lastName: formData.lastName.trim(),
           email: formData.email.trim().toLowerCase(),
           password: formData.password,
-          businessName: formData.businessName.trim(),
-          phone: formData.phone.trim(),
-          website: formData.website.trim()
         }),
       });
 
@@ -102,14 +85,9 @@ export const RegisterPage = () => {
       
       // Clear form
       setFormData({
-        firstName: '',
-        lastName: '',
         email: '',
         password: '',
-        confirmPassword: '',
-        businessName: '',
-        phone: '',
-        website: ''
+        confirmPassword: ''
       });
 
       // Redirect to login after 2 seconds
@@ -163,35 +141,6 @@ export const RegisterPage = () => {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="firstName">First Name *</Label>
-                <Input
-                  id="firstName"
-                  name="firstName"
-                  type="text"
-                  value={formData.firstName}
-                  onChange={handleChange}
-                  placeholder="John"
-                  required
-                  disabled={loading}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="lastName">Last Name *</Label>
-                <Input
-                  id="lastName"
-                  name="lastName"
-                  type="text"
-                  value={formData.lastName}
-                  onChange={handleChange}
-                  placeholder="Doe"
-                  required
-                  disabled={loading}
-                />
-              </div>
-            </div>
-
             <div className="space-y-2">
               <Label htmlFor="email">Email Address *</Label>
               <Input
@@ -202,47 +151,6 @@ export const RegisterPage = () => {
                 onChange={handleChange}
                 placeholder="john@example.com"
                 required
-                disabled={loading}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="businessName">Business Name</Label>
-              <Input
-                id="businessName"
-                name="businessName"
-                type="text"
-                value={formData.businessName}
-                onChange={handleChange}
-                placeholder="Your Business Name"
-                required
-                disabled={loading}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
-              <Input
-                id="phone"
-                name="phone"
-                type="tel"
-                value={formData.phone}
-                onChange={handleChange}
-                placeholder="(555) 123-4567"
-                required
-                disabled={loading}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="website">Website</Label>
-              <Input
-                id="website"
-                name="website"
-                type="url"
-                value={formData.website}
-                onChange={handleChange}
-                placeholder="https://yourbusiness.com"
                 disabled={loading}
               />
             </div>
