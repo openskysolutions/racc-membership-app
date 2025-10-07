@@ -350,9 +350,9 @@ export const ConnectAccountPage = () => {
                   disabled={loading || emailFromUrl !== null}
                   className={emailFromUrl ? "bg-gray-50 dark:bg-gray-800" : ""}
                 />
-                {emailFromUrl && (
+                {/* {emailFromUrl && (
                   <p className="text-sm text-muted-foreground">
-                    Email provided from URL. To use a different email, 
+                    To use a different email, 
                     <button 
                       type="button"
                       onClick={() => {
@@ -364,12 +364,12 @@ export const ConnectAccountPage = () => {
                       click here
                     </button>
                   </p>
-                )}
+                )} */}
               </div>
               
               <Button 
                 type="submit" 
-                className="w-full"
+                className="w-full !mb-6"
                 disabled={loading || !email.trim()}
               >
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -630,7 +630,7 @@ export const ConnectAccountPage = () => {
             </>
           )}
 
-          <div className="space-y-4 !mt-0 !mb-4 text-center text-sm">
+          <div className="space-y-4 !mb-4 text-center text-sm">
             {step !== 'not-found' && (
               <>
                 <div>
