@@ -198,6 +198,11 @@ h1 {
   width: 2.5rem;
   padding: 0;
 }
+
+a {
+  color: rgb(var(--highlight)) !important;
+}
+
 .text-muted-foreground { color: rgb(var(--muted-foreground)); }
 
 /* Focus and ring utilities */
@@ -589,6 +594,8 @@ body.mobile-menu-open {
 .opacity-0 { opacity: 0; }
 .opacity-60 { opacity: 0.6; }
 .opacity-100 { opacity: 1; }
+
+.hover\:opacity-100:hover { opacity: 1; }
 
 /* Pointer events */
 .pointer-events-none { pointer-events: none; }
