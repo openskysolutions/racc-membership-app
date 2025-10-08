@@ -28,6 +28,12 @@ jobs:
           TEST_CONTACT_ID: ${{ vars.TEST_CONTACT_ID }}
           GHL_API_BASE_URL: ${{ vars.GHL_API_BASE_URL }}
           FRONTEND_URL: ${{ vars.FRONTEND_URL }}
+          # Email provider variables
+          EMAIL_PROVIDER: ${{ vars.EMAIL_PROVIDER }}
+          EMAIL_USER: ${{ secrets.EMAIL_USER }}
+          EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
+          EMAIL_FROM: ${{ vars.EMAIL_FROM }}
+          EMAIL_FROM_NAME: ${{ vars.EMAIL_FROM_NAME }}
           # Frontend environment variables
           VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
           TEMP_GHL_TOKEN: ${{ secrets.TEMP_GHL_TOKEN }}
@@ -48,6 +54,11 @@ jobs:
           export TEST_CONTACT_ID="$TEST_CONTACT_ID"
           export GHL_API_BASE_URL="$GHL_API_BASE_URL"
           export FRONTEND_URL="$FRONTEND_URL"
+          export EMAIL_PROVIDER="$EMAIL_PROVIDER"
+          export EMAIL_USER="$EMAIL_USER"
+          export EMAIL_PASS="$EMAIL_PASS"
+          export EMAIL_FROM="$EMAIL_FROM"
+          export EMAIL_FROM_NAME="$EMAIL_FROM_NAME"
           export VITE_API_BASE_URL="$VITE_API_BASE_URL"
           export TEMP_GHL_TOKEN="$TEMP_GHL_TOKEN"
           
@@ -62,6 +73,11 @@ jobs:
           TEST_CONTACT_ID=\$TEST_CONTACT_ID
           GHL_API_BASE_URL=\$GHL_API_BASE_URL
           FRONTEND_URL=\$FRONTEND_URL
+          EMAIL_PROVIDER=\$EMAIL_PROVIDER
+          EMAIL_USER=\$EMAIL_USER
+          EMAIL_PASS=\$EMAIL_PASS
+          EMAIL_FROM=\$EMAIL_FROM
+          EMAIL_FROM_NAME=\$EMAIL_FROM_NAME
           EOF
           
           # Install all dependencies (including devDependencies for build tools)
