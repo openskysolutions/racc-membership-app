@@ -1,5 +1,16 @@
 /**
- * Email Service for sending confirmation codes and other transactional emails
+ * Email Service for sending confirmat        case 'gmail':
+          this.transporter = nodemailer.createTransporter({
+            service: 'gmail',
+            auth: {
+              user: process.env.EMAIL_USER,
+              pass: process.env.EMAIL_PASS, // Use App Password for Gmail
+            },
+            // Add timeout settings for Gmail
+            connectionTimeout: 60000, // 60 seconds
+            greetingTimeout: 30000,   // 30 seconds
+            socketTimeout: 60000,     // 60 seconds
+          });s and other transactional emails
  * Supports multiple email providers (Gmail, SendGrid, Mailgun, etc.)
  */
 

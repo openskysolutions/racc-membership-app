@@ -1114,9 +1114,15 @@ router.post('/send-confirmation', async (req, res) => {
     global.confirmationCodes = global.confirmationCodes || new Map();
     global.confirmationCodes.set(email, confirmationData);
 
-    // Send confirmation email
+    // Send confirmation email with timeout
     try {
-      const emailSent = await emailService.sendConfirmationCode(email, confirmationCode);
+      // Add a timeout wrapper to prevent hanging
+      const emailPromise = emailService.sendConfirmationCode(email, confirmationCode);
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Email timeout')), 30000)
+      );
+      
+      const emailSent = await Promise.race([emailPromise, timeoutPromise]);
       
       if (!emailSent) {
         // Email sending failed, but we'll still return success to prevent information leakage
