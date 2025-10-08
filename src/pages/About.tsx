@@ -66,7 +66,7 @@ const AboutPage: React.FC = () => (
               <li>• Sponsorship opportunities</li>
             </ul>
             <a 
-              href="/membership/basic" 
+              href="/basic-membership" 
               className="bg-primary dark:bg-highlight-foreground text-primary-foreground px-6 py-3 rounded-md font-semibold hover:bg-primary/90 transition-colors inline-block w-full"
             >
               Choose Basic
@@ -92,7 +92,7 @@ const AboutPage: React.FC = () => (
               <li>• Free luncheon sponsorship once a year</li>
             </ul>
             <a 
-              href="/membership/enhanced" 
+              href="/enhanced-membership" 
               className="bg-blue-500 text-white px-6 py-3 rounded-md font-semibold hover:bg-blue-600 transition-colors inline-block w-full"
             >
               Choose Enhanced
@@ -115,7 +115,7 @@ const AboutPage: React.FC = () => (
               <li>• Strategic planning input</li>
             </ul>
             <a 
-              href="/membership/elite" 
+              href="/elite-membership" 
               className="bg-primary dark:bg-highlight-foreground text-primary-foreground px-6 py-3 rounded-md font-semibold hover:bg-primary/90 transition-colors inline-block w-full"
             >
               Choose Elite

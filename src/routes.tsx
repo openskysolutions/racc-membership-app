@@ -51,9 +51,9 @@ export default function AppRoutes() {
         <Route path="connect-account" element={<ConnectAccountPage />} />
         <Route path="join" element={<JoinPage />} />
         <Route path="nominations" element={<NominationsPage />} />
-        <Route path="membership/basic" element={<BasicMembershipPage />} />
-        <Route path="membership/enhanced" element={<EnhancedMembershipPage />} />
-        <Route path="membership/elite" element={<EliteMembershipPage />} />
+        <Route path="basic-membership" element={<BasicMembershipPage />} />
+        <Route path="enhanced-membership" element={<EnhancedMembershipPage />} />
+        <Route path="elite-membership" element={<EliteMembershipPage />} />
         <Route path="news-events" element={<NewsEventsPage />} />
         <Route path="members" element={<MembersPage />} />
         <Route path="members/:id" element={<MemberDetailsPage />} />
