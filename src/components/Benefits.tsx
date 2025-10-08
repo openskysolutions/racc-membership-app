@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -8,6 +9,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { FaCheck } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
+import cn from "classnames";
 
 /**
  * Richfield Area Chamber of Commerce — Membership Benefits
@@ -128,6 +131,8 @@ function CheckCell({ active }: { active: boolean }) {
 }
 
 export default function ChamberMembershipBenefits() {
+  const navigate = useNavigate();
+
   return (
     <div className="mx-auto max-w-6xl space-y-4 mb-16">
 
@@ -159,6 +164,45 @@ export default function ChamberMembershipBenefits() {
                   ))}
                 </TableRow>
               ))}
+              {/* Buttons row */}
+              <TableRow className="border-t-2">
+                <TableCell className="pl-2 pr-0 py-4 font-semibold">
+                  Choose Your Membership
+                </TableCell>
+                <TableCell className="px-3 text-center py-4">
+                  <Button
+                    size="sm"
+                    onClick={() => navigate('/basic-membership')}
+                    className={cn(
+                      "bg-highlight-foreground hover:bg-highlight-foreground/90 text-card w-full"
+                    )}
+                  >
+                    Choose Basic
+                  </Button>
+                </TableCell>
+                <TableCell className="px-3 text-center py-4">
+                  <Button
+                    size="sm"
+                    onClick={() => navigate('/enhanced-membership')}
+                    className={cn(
+                      "bg-blue-500 hover:bg-blue-600 text-white w-full"
+                    )}
+                  >
+                    Choose Enhanced
+                  </Button>
+                </TableCell>
+                <TableCell className="px-3 text-center py-4">
+                  <Button
+                    size="sm"
+                    onClick={() => navigate('/elite-membership')}
+                    className={cn(
+                      "bg-highlight-foreground hover:bg-highlight-foreground/90 text-card w-full"
+                    )}
+                  >
+                    Choose Elite
+                  </Button>
+                </TableCell>
+              </TableRow>
             </TableBody>
           </Table>
         </CardContent>
