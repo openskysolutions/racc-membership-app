@@ -1,8 +1,13 @@
 import React, { useEffect } from 'react';
 import { MapPin, Phone, Mail } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useTheme } from "@/providers/theme-provider";
+import LogoLight from "@/assets/racc-logo.png";
+import LogoDark from "@/assets/racc-logo-dark.png";
 
 const ContactPage: React.FC = () => {
+  const { theme } = useTheme();
+
   useEffect(() => {
     // Load the form embed script
     const script = document.createElement('script');
@@ -112,7 +117,7 @@ const ContactPage: React.FC = () => {
                   <div className="flex items-start gap-3">
                     <div className="mt-1">
                       <img 
-                        src="/src/assets/racc-logo-dark.png" 
+                        src={theme === "dark" ? LogoDark : LogoLight} 
                         alt="RACC Logo" 
                         className="h-12 w-auto"
                       />

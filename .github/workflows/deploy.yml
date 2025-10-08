@@ -204,7 +204,7 @@ jobs:
           cat > /etc/nginx/sites-available/racc-membership-app << 'NGINXEOF'
           server {
               listen 80;
-              server_name racc-dev.openskydev.com;
+              server_name members.richfieldareachamber.com;
           
               # API routes - proxy to backend service
               location /api {

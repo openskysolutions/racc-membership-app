@@ -52,16 +52,18 @@ const AboutPage: React.FC = () => (
       <div className="grid md:grid-cols-3 gap-8">
         <Card className="border-2">
           <CardHeader className="text-center">
-            <CardTitle className="text-xl">Basic Membership</CardTitle>
-            <CardDescription>Perfect for small businesses</CardDescription>
+            <CardTitle className="text-xl">Basic Membership Package</CardTitle>
+            {/* <CardDescription>Perfect for small businesses</CardDescription> */}
           </CardHeader>
           <CardContent className="text-center">
-            <div className="text-3xl font-bold mb-4">$150<span className="text-sm font-normal">/year</span></div>
+            <div className="text-3xl font-bold mb-4">$300<span className="text-sm font-normal">/year</span></div>
             <ul className="text-left space-y-2 text-sm">
-              <li>• Directory listing</li>
-              <li>• Monthly newsletter</li>
-              <li>• Event invitations</li>
-              <li>• Basic networking access</li>
+              <li>• Business listed in Chamber directory on Chamber website</li>
+              <li>• Subscription to the Chamber newsletter</li>
+              <li>• Free booth at Spring Expo and Fall Festival</li>
+              <li>• Discounted quarterly education courses</li>
+              <li>• Networking opportunities at lunches</li>
+              <li>• Sponsorship opportunities</li>
             </ul>
           </CardContent>
         </Card>
@@ -71,25 +73,25 @@ const AboutPage: React.FC = () => (
             <Badge className="bg-blue-500">Most Popular</Badge>
           </div>
           <CardHeader className="text-center">
-            <CardTitle className="text-xl">Professional Membership</CardTitle>
-            <CardDescription>Great for growing businesses</CardDescription>
+            <CardTitle className="text-xl">Enhanced Membership Package</CardTitle>
+            {/* <CardDescription>Great for growing businesses</CardDescription> */}
           </CardHeader>
           <CardContent className="text-center">
             <div className="text-3xl font-bold mb-4">$300<span className="text-sm font-normal">/year</span></div>
             <ul className="text-left space-y-2 text-sm">
-              <li>• All Basic benefits</li>
-              <li>• Featured business spotlight</li>
-              <li>• Committee participation</li>
-              <li>• Priority event registration</li>
-              <li>• Ribbon cutting ceremonies</li>
+              <li>• All Basic and Enhanced benefits</li>
+              <li>• Business featured once a year on radio</li>
+              <li>• Small ad on luncheon placemats</li>
+              <li>• Upgraded directory listing to include links to your website and your social media pages</li>
+              <li>• Free luncheon sponsorship once a year</li>
             </ul>
           </CardContent>
         </Card>
 
         <Card className="border-2">
           <CardHeader className="text-center">
-            <CardTitle className="text-xl">Executive Membership</CardTitle>
-            <CardDescription>For established enterprises</CardDescription>
+            <CardTitle className="text-xl">Elite Membership Package</CardTitle>
+            {/* <CardDescription>For established enterprises</CardDescription> */}
           </CardHeader>
           <CardContent className="text-center">
             <div className="text-3xl font-bold mb-4">$500<span className="text-sm font-normal">/year</span></div>
