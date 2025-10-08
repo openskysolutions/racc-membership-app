@@ -9,7 +9,7 @@
         <section class="py-8 md:pt-0 grid grid-rows-2 grid-cols-3 sm:grid-cols-3 md:grid-cols-5 gap-8 lg:gap-4 px-6">
             <!-- Logo Section -->
             <div class="row-span-1 md:row-span-2 col-span-3 sm:col-span-3 md:col-span-2 justify-center items-center flex">
-                <a href="<?php echo esc_url(home_url('/')); ?>" class="flex w-48 h-auto justify-center items-center">
+                <a href="https://richfieldareachamber.com" class="flex w-48 h-auto justify-center items-center">
                     <img src="<?php echo get_stylesheet_directory_uri(); ?>/images/racc-logo-dark.png" alt="<?php echo esc_attr(get_bloginfo('name')); ?> Logo" class="h-full w-full" />
                 </a>
             </div>

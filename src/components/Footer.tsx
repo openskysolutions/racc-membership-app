@@ -11,7 +11,7 @@ export const Footer = () => {
         <div className="rows-span-1 md:row-span-2 col-span-3 sm:col-span-3 md:col-span-2 justify-center items-center flex">
             <a
               rel="noreferrer noopener"
-              href="/"
+              href="https://richfieldareachamber.com"
               className="flex w-48 h-auto justify-center items-center"
             >
               <img

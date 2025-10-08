@@ -35,7 +35,7 @@ export const AuthPage = () => {
 
       <a
         rel="noreferrer noopener"
-        href="/"
+        href="https://richfieldareachamber.com"
         className="w-full max-w-md p-8 pb-12"
       >
         <img

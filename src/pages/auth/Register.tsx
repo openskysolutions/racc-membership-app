@@ -109,8 +109,9 @@ export const RegisterPage = () => {
 
   return (
     <div className="flex min-h-screen items-center justify-center flex-col p-4">
-      <Link
-        to="/"
+      <a
+        rel="noreferrer noopener"
+        href="https://richfieldareachamber.com"
         className="w-full max-w-md p-8 pb-12"
       >
         <img
@@ -118,7 +119,7 @@ export const RegisterPage = () => {
           alt="Richfield Area Chamber of Commerce Logo"
           className="w-full"
         />
-      </Link>
+      </a>
       
       <Card className="w-full max-w-md bg-popover dark:bg-neutral-750 border-stone-500">
         <CardHeader className="space-y-1">

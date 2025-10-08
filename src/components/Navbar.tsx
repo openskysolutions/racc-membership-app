@@ -42,6 +42,10 @@ const routeList: RouteProps[] = [
   //   label: "News & Events",
   // },
   {
+    href: "/dashboard",
+    label: "Dashboard",
+  },
+  {
     href: "/calendar",
     label: "Calendar",
   },
@@ -83,7 +87,7 @@ export const Navbar = () => {
         <NavigationMenuList className="container h-20 px-4 w-screen flex justify-between ">
           <a
             rel="noreferrer noopener"
-            href="/"
+            href="https://richfieldareachamber.com"
             className={cn(
               "flex flex-row flex-grow flex-shrink-0 h-20 py-1 justify-center md:justify-start ml-10 md:ml-0",
             )}
@@ -219,11 +223,17 @@ export const Navbar = () => {
               <SheetContent side={"left"} className="flex flex-col border-r-1 border-r-stone-400">
                 <SheetHeader>
                   <SheetTitle className="font-medium text-md items-center flex flex-col border-b-1 border-b-stone-300 dark:border-b-stone-400 pb-2">
-                    <img
-                      src={theme === "dark" ? LogoDark : LogoLight}
-                      alt="Richfield Area Chamber of Commerce Logo"
-                      className="h-16 w-auto p-1" 
-                    />
+                    <a
+                      rel="noreferrer noopener"
+                      href="https://richfieldareachamber.com"
+                      className="flex items-center justify-center"
+                    >
+                      <img
+                        src={theme === "dark" ? LogoDark : LogoLight}
+                        alt="Richfield Area Chamber of Commerce Logo"
+                        className="h-16 w-auto p-1" 
+                      />
+                    </a>
                   </SheetTitle>
                 </SheetHeader>
                 <nav className="flex flex-col justify-start items-start -mt-4">

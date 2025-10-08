@@ -46,6 +46,7 @@ export default function AppRoutes() {
       {/* routes with layout wrapper */}
       <Route path="/" element={<PagesLayout />}>  
         <Route index element={<HomePage />} />
+        <Route path="dashboard" element={<HomePage />} />
         <Route path="login" element={<AuthPage />} />
         <Route path="register" element={<RegisterPage />} />
         <Route path="connect-account" element={<ConnectAccountPage />} />

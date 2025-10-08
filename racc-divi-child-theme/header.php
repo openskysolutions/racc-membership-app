@@ -15,7 +15,7 @@
     <nav class="mx-auto">
         <div class="container h-20 px-4 w-screen flex justify-between">
             <!-- Logo Section -->
-            <a href="<?php echo esc_url(home_url('/')); ?>" class="flex flex-row flex-grow flex-shrink-0 h-20 py-1 justify-center md:justify-start ml-10 md:ml-0">
+            <a href="https://richfieldareachamber.com" class="flex flex-row flex-grow flex-shrink-0 h-20 py-1 justify-center md:justify-start ml-10 md:ml-0">
                 <?php 
                 $logo_url = get_theme_mod('racc_logo_setting');
                 if ($logo_url) {
@@ -105,7 +105,7 @@
     <!-- Sheet Header -->
     <div class="p-4 ">
         <div class="font-medium text-md items-center flex flex-col border-b-1 border-b-stone-300 dark:border-b-stone-400 pb-2 relative">
-            <a href="<?php echo esc_url(home_url('/')); ?>" class="flex flex-row flex-grow flex-shrink-0 h-20 py-1 justify-center md:justify-start ml-10 md:ml-0">
+            <a href="https://richfieldareachamber.com" class="flex flex-row flex-grow flex-shrink-0 h-20 py-1 justify-center md:justify-start ml-10 md:ml-0">
                 <?php 
                 $logo_url = get_theme_mod('racc_logo_setting');
                 if ($logo_url) {
