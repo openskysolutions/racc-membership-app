@@ -57,7 +57,7 @@ const AboutPage: React.FC = () => (
           </CardHeader>
           <CardContent className="text-center">
             <div className="text-3xl font-bold mb-4">$300<span className="text-sm font-normal">/year</span></div>
-            <ul className="text-left space-y-2 text-sm">
+            <ul className="text-left space-y-2 text-sm mb-6">
               <li>• Business listed in Chamber directory on Chamber website</li>
               <li>• Subscription to the Chamber newsletter</li>
               <li>• Free booth at Spring Expo and Fall Festival</li>
@@ -65,6 +65,12 @@ const AboutPage: React.FC = () => (
               <li>• Networking opportunities at lunches</li>
               <li>• Sponsorship opportunities</li>
             </ul>
+            <a 
+              href="/membership/basic" 
+              className="bg-primary dark:bg-highlight-foreground text-primary-foreground px-6 py-3 rounded-md font-semibold hover:bg-primary/90 transition-colors inline-block w-full"
+            >
+              Choose Basic
+            </a>
           </CardContent>
         </Card>
 
@@ -77,14 +83,20 @@ const AboutPage: React.FC = () => (
             {/* <CardDescription>Great for growing businesses</CardDescription> */}
           </CardHeader>
           <CardContent className="text-center">
-            <div className="text-3xl font-bold mb-4">$300<span className="text-sm font-normal">/year</span></div>
-            <ul className="text-left space-y-2 text-sm">
-              <li>• All Basic and Enhanced benefits</li>
+            <div className="text-3xl font-bold mb-4">$400<span className="text-sm font-normal">/year</span></div>
+            <ul className="text-left space-y-2 text-sm mb-6">
+              <li>• All Basic benefits</li>
               <li>• Business featured once a year on radio</li>
               <li>• Small ad on luncheon placemats</li>
               <li>• Upgraded directory listing to include links to your website and your social media pages</li>
               <li>• Free luncheon sponsorship once a year</li>
             </ul>
+            <a 
+              href="/membership/enhanced" 
+              className="bg-blue-500 text-white px-6 py-3 rounded-md font-semibold hover:bg-blue-600 transition-colors inline-block w-full"
+            >
+              Choose Enhanced
+            </a>
           </CardContent>
         </Card>
 
@@ -95,13 +107,19 @@ const AboutPage: React.FC = () => (
           </CardHeader>
           <CardContent className="text-center">
             <div className="text-3xl font-bold mb-4">$500<span className="text-sm font-normal">/year</span></div>
-            <ul className="text-left space-y-2 text-sm">
-              <li>• All Professional benefits</li>
+            <ul className="text-left space-y-2 text-sm mb-6">
+              <li>• All Enhanced benefits</li>
               <li>• Board nomination eligibility</li>
               <li>• Executive roundtable access</li>
               <li>• Premium marketing placement</li>
               <li>• Strategic planning input</li>
             </ul>
+            <a 
+              href="/membership/elite" 
+              className="bg-primary dark:bg-highlight-foreground text-primary-foreground px-6 py-3 rounded-md font-semibold hover:bg-primary/90 transition-colors inline-block w-full"
+            >
+              Choose Elite
+            </a>
           </CardContent>
         </Card>
       </div>

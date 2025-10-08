@@ -21,6 +21,9 @@ import ConnectAccountPage from "@/pages/auth/ConnectAccount";
 import AuthTestPage from '@/pages/AuthTest';
 import JoinPage from '@/pages/Join';
 import NominationsPage from '@/pages/Nominations';
+import BasicMembershipPage from '@/pages/BasicMembership';
+import EnhancedMembershipPage from '@/pages/EnhancedMembership';
+import EliteMembershipPage from '@/pages/EliteMembership';
 import Privacy from '@/pages/docs/Privacy';
 import Terms from '@/pages/docs/Terms';
 import { ReactNode } from 'react';
@@ -48,6 +51,9 @@ export default function AppRoutes() {
         <Route path="connect-account" element={<ConnectAccountPage />} />
         <Route path="join" element={<JoinPage />} />
         <Route path="nominations" element={<NominationsPage />} />
+        <Route path="membership/basic" element={<BasicMembershipPage />} />
+        <Route path="membership/enhanced" element={<EnhancedMembershipPage />} />
+        <Route path="membership/elite" element={<EliteMembershipPage />} />
         <Route path="news-events" element={<NewsEventsPage />} />
         <Route path="members" element={<MembersPage />} />
         <Route path="members/:id" element={<MemberDetailsPage />} />

@@ -10,7 +10,7 @@ const app = express();
 // Configure CORS to allow frontend access
 app.use(cors({
   origin: [
-    'https://racc-dev.openskydev.com',
+    'https://members.richfieldareachamber.com',
     'http://localhost:5173',
     'http://localhost:5174',
     'http://localhost:5175',

@@ -38,7 +38,7 @@ jobs:
           VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
           TEMP_GHL_TOKEN: ${{ secrets.TEMP_GHL_TOKEN }}
         run: |
-          ssh -o StrictHostKeyChecking=no root@racc-dev.openskydev.com << ENDSSH
+          ssh -o StrictHostKeyChecking=no root@members.richfieldareachamber.com << ENDSSH
           cd /root/racc-membership-app || git clone https://github.com/openskysolutions/racc-membership-app.git && cd racc-membership-app
           
           # Handle potential conflicts by resetting any local changes
@@ -162,7 +162,7 @@ jobs:
           # Verify the build used the correct API URL
           echo "=== Checking built files for API URL ==="
           grep -r "localhost:3000" dist/ || echo "No localhost:3000 found in build"
-          grep -r "racc-dev.openskydev.com" dist/ | head -3 || echo "No production URL found in build"
+          grep -r "members.richfieldareachamber.com" dist/ | head -3 || echo "No production URL found in build"
           
           # Start or restart frontend service using serve.js from the build directory
           pm2 describe racc-frontend > /dev/null
