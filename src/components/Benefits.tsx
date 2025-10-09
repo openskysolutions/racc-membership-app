@@ -104,16 +104,6 @@ const newMemberBenefits: string[] = [
   "Business announced as new member in Chamber newsletter and in newspaper",
 ];
 
-const addOns: { item: string; price: number }[] = [
-  { item: "Prepay luncheons for year", price: 150 },
-  { item: "Luncheon Sponsorship (not exclusive)", price: 100 },
-  { item: "Annual Dinner per ticket", price: 25 },
-  { item: "Annual Dinner Table for 6", price: 125 },
-  { item: "Small ad on Placemat", price: 200 },
-  { item: "Upgrade small ad to medium ad", price: 100 },
-  { item: "Upgrade medium ad to large ad", price: 100 },
-];
-
 function CheckCell({ active }: { active: boolean }) {
   return (
     <div

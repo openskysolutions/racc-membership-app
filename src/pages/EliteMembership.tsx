@@ -97,7 +97,7 @@ const EliteMembershipPage: React.FC = () => {
           <div className="w-full md:w-2/3">
             <Card>
               <CardHeader>
-                <CardTitle className="text-2xl">Start Your Basic Membership Today</CardTitle>
+                <CardTitle className="text-2xl">Start Your Elite Membership Today</CardTitle>
                 <p className="text-muted-foreground">
                   Complete the form below to start your Elite Membership with the Richfield Area Chamber of Commerce.
                 </p>
