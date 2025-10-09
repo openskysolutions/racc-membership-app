@@ -1,129 +1,50 @@
-import React, { useState } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import React from 'react';
 import { Button } from '@/components/ui/button';
-import { useNavigate, Link } from 'react-router-dom';
+import Benefits from '@/components/Benefits';
+import MembershipLevels from '@/components/MembershipLevels';
+import { useNavigate } from 'react-router-dom';
+import cn from 'classnames';
 
 const JoinPage: React.FC = () => {
-  const [membershipType, setMembershipType] = useState<'basic' | 'enhanced' | 'elite'>('basic');
-  const navitgate = useNavigate();
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // TODO: submit membership application
-    setMembershipType(membershipType);
-    navitgate('/register', { state: { membershipType } });
-    console.log('Joining with data:', membershipType);
-  };
+  const navigate = useNavigate();
 
   return (
-    <div className="py-10 px-4 mx-auto max-w-4xl">
-      <Card className="w-full max-w-2xl gap-4 flex flex-col">
-        <CardHeader className='gap-4 text-sm leading-6'>
-          <CardTitle className='text-foreground'>Membership Application</CardTitle>
-          <h3 className="text-lg font-medium py-2 text-highlight-foreground">Instructions</h3>
-          <p className="pb-2 leading-inherit">
-            Please note that our Membership Packages have changed. All memberships expire annually on October 31. 
-          </p>
-          <p className="pb-2 leading-inherit">
-            We are now offering more advertising opportunities, especially with the higher level packages and you also have additional advertising opportunities and benefits you can add on to an existing package on the next page.
-          </p>
-          <p className="pb-2 leading-inherit">
-            New to the Chamber, or been away for a few years? In addition to the benefits of your selected Membership Package, all organizations that have not been a Chamber member for 3 or more years will receive:
-          </p>
-          <ul className="list-disc list-inside leading-inherit">
-            <li>$500 worth of advertising on Mid-Utah Radio</li>
-            <li>Time to share about your business at your first Chamber luncheon</li>
-            <li>Business announced as new member at your first Chamber luncheon</li>
-            <li>Ribbon cutting, open house or groundbreaking support for new business</li>
-            <li>Business announced as new member in Chamber newsletter and in newspaper</li>
-          </ul>
-        </CardHeader>
-        <CardContent className="pt-0 text-md leading-6">
-          <form onSubmit={handleSubmit} className="space-y-8">
-            {/* Package selection */}
-            <div className="space-y-4 gap-4 flex flex-col">
-              <div className="text-lg font-medium text-highlight-foreground">Select a Membership Package</div>
-              <label className="flex items-start space-x-3">
-                <Input
-                  type="radio"
-                  name="membershipType"
-                  value="basic"
-                  checked={membershipType === 'basic'}
-                  onChange={() => setMembershipType('basic')}
-                  className="mt-1 h-4 w-4"
-                />
-                <div>
-                  <div className="font-semibold">Basic Membership Package - $300 Annually</div>
-                  <ul className="list-disc list-inside">
-                    <li>Business listed in Chamber directory on Chamber website</li>
-                    <li>Subscription to the Chamber newsletter</li>
-                    <li>Free booth at Spring Expo and Fall Festival</li>
-                    <li>Discounted quarterly education courses</li>
-                    <li>Networking opportunities at lunches</li>
-                    <li>Sponsorship opportunities</li>
-                  </ul>
-                </div>
-              </label>
-              <label className="flex items-start space-x-3">
-                <Input
-                  type="radio"
-                  name="membershipType"
-                  value="enhanced"
-                  checked={membershipType === 'enhanced'}
-                  onChange={() => setMembershipType('enhanced')}
-                  className="mt-1 h-4 w-4"
-                />
-                <div>
-                  <div className="font-semibold">Enhanced Membership Package - $550 Annually</div>
-                  <p className="">Includes all Basic benefits plus:</p>
-                  <ul className="list-disc list-inside">
-                    <li>Upgraded directory listing with website link</li>
-                    <li>Business announced as new member on social media</li>
-                    <li>One free ticket to monthly luncheons</li>
-                    <li>Business featured once a year in newspaper</li>
-                  </ul>
-                </div>
-              </label>
-              <label className="flex items-start space-x-3">
-                <Input
-                  type="radio"
-                  name="membershipType"
-                  value="elite"
-                  checked={membershipType === 'elite'}
-                  onChange={() => setMembershipType('elite')}
-                  className="mt-1 h-4 w-4"
-                />
-                <div>
-                  <div className="font-semibold">Elite Membership Package - $900 Annually</div>
-                  <p className="">Includes all Enhanced benefits plus:</p>
-                  <ul className="list-disc list-inside">
-                    <li>Business featured once a year on radio</li>
-                    <li>Small ad on luncheon placemats (by Jan 1)</li>
-                    <li>Free luncheon sponsorship once a year</li>
-                  </ul>
-                </div>
-              </label>
-            </div>
-            <Button type="submit" className="w-full bg-highlight-foreground">NEXT</Button>
-            
-            <div className="text-center text-sm space-y-2 pt-4">
-              <div>
-                Already a member in our system?{' '}
-                <Link 
-                  to="/register-existing" 
-                  className="font-medium text-highlight-foreground hover:underline"
-                >
-                  Register with existing contact
-                </Link>
-              </div>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+  <section className="container py-8 max-w-6xl mx-auto px-3 md:px-6">
+    {/* Hero Section */}
+    <div className="text-center mb-8 px-6">
+      <h1 className="text-2xl md:text-4xl font-bold mb-4">Start Your Richfield Area Chamber of Commerce Membership Today</h1>
+      <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+        Join a thriving community of local businesses and unlock opportunities for growth, networking, and community impact. Your membership helps strengthen our local economy while providing valuable benefits for your business.
+      </p>
     </div>
+
+    {/* Member Benefits */}
+    <Benefits />
+
+    {/* Membership Levels */}
+    <MembershipLevels />
+
+    {/* Contact Information */}
+    <div className="text-center bg-muted/50 rounded-lg p-8 pb-0">
+      <h2 className="text-2xl font-bold mb-4">Ready to Join?</h2>
+      <p className="text-muted-foreground mb-6">
+        If you'd like to talk to us about these membership benefits:
+      </p>
+      <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => navigate('/contact')}
+          className={cn(
+            "border-input hover:bg-accent hover:text-accent-foreground"
+          )}
+        >
+          Contact Us
+        </Button>
+      </div>
+    </div>
+  </section>
   );
 };
 
 export default JoinPage;
-

@@ -137,7 +137,7 @@ export default function ChamberMembershipBenefits() {
     <div className="mx-auto max-w-6xl space-y-4 mb-16">
 
       {/* Benefits table */}
-      <Card className="shadow-sm mb-16">
+      <Card className="shadow-sm mb-8">
         <CardHeader>
           <CardTitle>Benefits by Membership Level</CardTitle>
         </CardHeader>
@@ -208,9 +208,8 @@ export default function ChamberMembershipBenefits() {
         </CardContent>
       </Card>
 
-      {/* Bottom section: New Member Benefits + Add-ons */}
       <div className="grid md:grid-cols-5 gap-8 mb-16">
-        <Card className="md:col-span-3 shadow-sm">
+        <Card className="md:col-span-5 shadow-sm">
           <CardHeader>
             <CardTitle>New Member Benefits</CardTitle>
           </CardHeader>
@@ -222,26 +221,6 @@ export default function ChamberMembershipBenefits() {
                 </li>
               ))}
             </ul>
-          </CardContent>
-        </Card>
-
-        <Card className="md:col-span-2 shadow-sm">
-          <CardHeader>
-            <CardTitle>Add-ons</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableBody>
-                {addOns.map((row, i) => (
-                  <TableRow key={i}>
-                    <TableCell className="text-sm">{row.item}</TableCell>
-                    <TableCell className="w-24 text-right text-sm font-semibold">
-                      ${row.price}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
           </CardContent>
         </Card>
       </div>
