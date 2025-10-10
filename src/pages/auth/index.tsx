@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import LogoLight from '@/assets/racc-logo.png'; // Adjust the path to your logo file
@@ -69,9 +70,8 @@ export const AuthPage = () => {
               <label htmlFor="password" className="block text-sm font-medium">
                 Password
               </label>
-              <Input
+              <PasswordInput
                 id="password"
-                type="password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 placeholder="••••••••"

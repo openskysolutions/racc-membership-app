@@ -6,7 +6,60 @@ on:
     branches: [dev]
 
 jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      # Build and test backend
+      - name: Install backend dependencies
+        working-directory: ./ghl-api
+        run: npm ci
+
+      - name: Build backend
+        working-directory: ./ghl-api
+        run: npm run build
+
+      - name: Test backend build output
+        working-directory: ./ghl-api
+        run: |
+          if [ ! -f "dist/server.js" ]; then
+            echo "ERROR: Backend build failed - dist/server.js not found"
+            exit 1
+          fi
+          echo "Backend build successful"
+
+      # Build and test frontend
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build frontend
+        env:
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
+          TEMP_GHL_TOKEN: ${{ secrets.TEMP_GHL_TOKEN }}
+        run: npm run build
+
+      - name: Test frontend build output
+        run: |
+          if [ ! -d "dist" ]; then
+            echo "ERROR: Frontend build failed - dist directory not found"
+            exit 1
+          fi
+          if [ ! -f "dist/index.html" ]; then
+            echo "ERROR: Frontend build failed - dist/index.html not found"
+            exit 1
+          fi
+          echo "Frontend build successful"
+
   deploy:
+    needs: build-and-test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code

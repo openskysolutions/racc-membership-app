@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import EventFormDialog from '@/components/EventFormDialog';
+import { useAuthStore } from '@/stores/authStore';
 
 // GoHighLevel Calendar ID - RACC Events
 const GHL_CALENDAR_ID = '9XpDcFHv3SmCUuHeuOOg';
@@ -21,8 +22,11 @@ const CalendarPage: React.FC = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [createEventDialogOpen, setCreateEventDialogOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [dayEventsDialogOpen, setDayEventsDialogOpen] = useState(false);
+  const [selectedDayEvents, setSelectedDayEvents] = useState<CalendarEvent[]>([]);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuthStore();
 
   // Check for URL parameters to trigger create event dialog
   useEffect(() => {
@@ -162,8 +166,20 @@ const CalendarPage: React.FC = () => {
   };
 
   const handleDayClick = (date: Date) => {
-    setSelectedDate(date);
-    setCreateEventDialogOpen(true);
+    // Check if we're on mobile (screen width < 640px)
+    const isMobile = window.innerWidth < 640;
+    
+    if (isMobile) {
+      // On mobile, show day events dialog for everyone
+      const dayEvents = getEventsForDay(date);
+      setSelectedDayEvents(dayEvents);
+      setSelectedDate(date);
+      setDayEventsDialogOpen(true);
+    } else if (isAuthenticated) {
+      // On desktop, show create event dialog only for authenticated users
+      setSelectedDate(date);
+      setCreateEventDialogOpen(true);
+    }
   };
 
   const formatEventTime = (dateString: string) => {
@@ -196,7 +212,7 @@ const CalendarPage: React.FC = () => {
   return (
     <div className="container py-8 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-3">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold mb-2">Event Calendar</h1>
@@ -204,40 +220,45 @@ const CalendarPage: React.FC = () => {
               View and manage upcoming RACC events and activities.
             </p>
           </div>
-          <Button onClick={() => handleCreateEvent()} className="w-fit">
-            <Plus className="h-4 w-4 mr-2" />
-            Create Event
-          </Button>
+          {isAuthenticated && (
+            <div className='flex flex-row justify-end'>
+              <Button size='sm' onClick={() => handleCreateEvent()} className="w-fit">
+                <Plus className="h-4 w-4 mr-2" />
+                Create Event
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Calendar Controls */}
-      <Card className="mb-6">
-        <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button variant="outline" size="sm" onClick={goToPreviousMonth}>
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <h2 className="text-xl font-semibold min-w-[200px] text-center">
-                {monthNames[currentMonth]} {currentYear}
-              </h2>
-              <Button variant="outline" size="sm" onClick={goToNextMonth}>
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-            <Button variant="outline" size="sm" onClick={goToToday}>
+      <Card className="mb-6 -mx-5 sm:mx-0">
+        <CardHeader className="pb-4 px-2">
+          <div className="flex items-center justify-between gap-2 sm:gap-4">
+            <Button variant="outline" size="xs" className='h-7 px-1.5' onClick={goToPreviousMonth}>
+              <ChevronLeft className="h-4 w-4" />
+              <span className="sr-only">Previous month</span>
+            </Button>
+            <h2 className="text-lg sm:text-xl font-semibold flex-grow text-center">
+              {monthNames[currentMonth]} {currentYear}
+            </h2>
+            <Button variant="outline" size="xs" className='h-7 px-1.5' onClick={goToNextMonth}>
+              <ChevronRight className="h-4 w-4" />
+              <span className="sr-only">Next month</span>
+            </Button>
+            <Button variant="outline" size="sm" onClick={goToToday} className="self-center sm:self-auto px-1.5 h-7">
               Today
             </Button>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-0 px-1 pb-1">
           {/* Calendar Grid */}
-          <div className="grid grid-cols-7 gap-1 bg-muted/30 rounded-lg overflow-hidden p-1">
+          <div className="grid grid-cols-7 gap-0.5 sm:gap-1 bg-muted/30 rounded-lg overflow-hidden p-0.5 sm:p-1">
             {/* Day Headers */}
             {daysOfWeek.map((day) => (
-              <div key={day} className="bg-background p-3 text-center font-medium text-sm text-muted-foreground rounded">
-                {day}
+              <div key={day} className="bg-background p-1.5 sm:p-3 text-center font-medium text-xs sm:text-sm text-muted-foreground rounded">
+                <span className="hidden sm:inline">{day}</span>
+                <span className="sm:hidden">{day.slice(0, 1)}</span>
               </div>
             ))}
             
@@ -249,7 +270,7 @@ const CalendarPage: React.FC = () => {
                 <div
                   key={index}
                   onClick={() => day.isCurrentMonth && handleDayClick(day.fullDate)}
-                  className={`bg-background min-h-[120px] p-2 rounded transition-colors duration-200 relative group ${
+                  className={`bg-background min-h-[60px] sm:min-h-[100px] md:min-h-[120px] p-1 sm:p-2 rounded transition-colors duration-200 relative group flex flex-col ${
                     !day.isCurrentMonth 
                       ? 'opacity-50 cursor-not-allowed' 
                       : 'cursor-pointer hover:bg-muted/30'
@@ -259,42 +280,52 @@ const CalendarPage: React.FC = () => {
                   }`}
                 >
                   {/* Day Number */}
-                  <div className={`text-sm font-medium mb-2 transition-all duration-200 ${
+                  <div className={`text-xs sm:text-sm font-medium mb-1 sm:mb-2 transition-all duration-200 flex-shrink-0 ${
                     day.isToday 
-                      ? 'bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center text-xs' 
+                      ? 'bg-primary text-primary-foreground rounded-full w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 flex items-center justify-center text-xs' 
                       : 'group-hover:text-primary group-hover:font-semibold'
                   }`}>
                     {day.date}
                   </div>
                   
-                  {/* Events */}
-                  <div className="space-y-1">
-                    {dayEvents.slice(0, 3).map((event) => (
+                  {/* Event indicator for mobile - fill remaining space */}
+                  {dayEvents.length > 0 && (
+                    <div className="sm:hidden flex-1 flex items-center justify-center">
+                      <div className="w-full h-full text-xs bg-primary/10 border border-primary/20 text-primary rounded flex flex-col items-center justify-center gap-1">
+                        <div className="font-semibold text-sm">{dayEvents.length}</div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Events for desktop/tablet */}
+                  <div className="hidden sm:block space-y-0.5 sm:space-y-1 flex-1">
+                    {dayEvents.slice(0, 2).map((event) => (
                       <div
                         key={event.id}
                         onClick={(e) => {
                           e.stopPropagation();
                           handleEventClick(event);
                         }}
-                        className="text-xs p-1.5 bg-highlight-foreground text-primary-foreground hover:bg-highlight rounded cursor-pointer transition-colors duration-200 truncate shadow-sm"
+                        className="text-xs p-1 sm:p-1.5 bg-highlight-foreground text-primary-foreground hover:bg-highlight rounded cursor-pointer transition-colors duration-200 truncate shadow-sm"
                         title={event.title}
                       >
-                        {event.title}
+                        <span className="sm:hidden">{event.title.slice(0, 10)}...</span>
+                        <span className="hidden sm:inline">{event.title}</span>
                       </div>
                     ))}
-                    {dayEvents.length > 3 && (
+                    {dayEvents.length > 2 && (
                       <div className="text-xs text-muted-foreground font-medium group-hover:text-primary transition-colors duration-200">
-                        +{dayEvents.length - 3} more
+                        +{dayEvents.length - 2} more
                       </div>
                     )}
                   </div>
                   
                   {/* Add Event Hint (only show on hover for current month days) */}
-                  {day.isCurrentMonth && dayEvents.length === 0 && (
+                  {day.isCurrentMonth && dayEvents.length === 0 && isAuthenticated && (
                     <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 group-hover:bg-primary/5 group-hover:border-2 group-hover:border-primary/30 transition-all duration-200 rounded">
                       <div className="flex flex-col items-center gap-1 text-primary">
                         <Plus className="h-5 w-5" />
-                        <span className="text-xs font-medium">Add Event</span>
+                        <span className="text-xs font-medium hidden sm:inline">Add Event</span>
                       </div>
                     </div>
                   )}
@@ -389,6 +420,93 @@ const CalendarPage: React.FC = () => {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Day Events Dialog (Mobile) */}
+      <Dialog open={dayEventsDialogOpen} onOpenChange={setDayEventsDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CalendarIcon className="h-5 w-5" />
+              {selectedDate && selectedDate.toLocaleDateString('en-US', {
+                weekday: 'long',
+                month: 'long',
+                day: 'numeric'
+              })}
+            </DialogTitle>
+            <DialogDescription>
+              {selectedDayEvents.length === 0 
+                ? 'No events scheduled for this day'
+                : `${selectedDayEvents.length} event${selectedDayEvents.length > 1 ? 's' : ''} scheduled`
+              }
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {/* Events List */}
+            {selectedDayEvents.length > 0 ? (
+              <div className="space-y-3">
+                {selectedDayEvents.map((event) => (
+                  <div
+                    key={event.id}
+                    onClick={() => {
+                      setDayEventsDialogOpen(false);
+                      handleEventClick(event);
+                    }}
+                    className="p-3 bg-muted/30 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors border"
+                  >
+                    <div className="font-medium text-sm mb-1">{event.title}</div>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Clock className="h-3 w-3" />
+                      <span>{formatEventTime(event.startTime)}</span>
+                      {event.endTime && (
+                        <>
+                          <span>-</span>
+                          <span>{formatEventTime(event.endTime)}</span>
+                        </>
+                      )}
+                    </div>
+                    {event.location && (
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                        <MapPin className="h-3 w-3" />
+                        <span>{event.location}</span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <CalendarIcon className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                <p>No events scheduled for this day</p>
+              </div>
+            )}
+            
+            {/* Action Buttons */}
+            <div className="flex gap-2 pt-4 border-t">
+              {isAuthenticated && (
+                <Button 
+                  onClick={() => {
+                    setDayEventsDialogOpen(false);
+                    setCreateEventDialogOpen(true);
+                  }}
+                  className="flex-1"
+                  size="sm"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Event
+                </Button>
+              )}
+              <Button 
+                variant="outline" 
+                onClick={() => setDayEventsDialogOpen(false)}
+                size="sm"
+              >
+                Close
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 
