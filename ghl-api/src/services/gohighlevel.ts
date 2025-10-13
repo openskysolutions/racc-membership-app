@@ -165,7 +165,7 @@ class GoHighLevelService {
           email: email,
           firstName: 'Dev',
           lastName: 'User',
-          tags: ['active']
+          tags: ['active', 'admin'] // In dev mode, give admin rights for testing
         }
       };
     }
@@ -200,6 +200,40 @@ class GoHighLevelService {
     } catch (error: any) {
       console.error('❌ Failed to check user active status:', error);
       return { isActive: false };
+    }
+  }
+
+  /**
+   * Determine user role based on HighLevel tags
+   */
+  async getUserRole(email: string): Promise<string> {
+    console.log(`🔍 Determining role for user: ${email}`);
+    
+    try {
+      const { contact } = await this.isUserActive(email);
+      
+      if (!contact || !contact.tags) {
+        console.log(`⚠️ No contact or tags found for ${email}, defaulting to 'member' role`);
+        return 'member';
+      }
+
+      // Check tags in order of priority
+      if (contact.tags.includes('admin')) {
+        console.log(`🔑 User ${email} has 'admin' tag - role: admin`);
+        return 'admin';
+      }
+      
+      if (contact.tags.includes('moderator')) {
+        console.log(`🔑 User ${email} has 'moderator' tag - role: moderator`);
+        return 'moderator';
+      }
+      
+      console.log(`👤 User ${email} has no special role tags - role: member`);
+      return 'member';
+      
+    } catch (error: any) {
+      console.error(`❌ Failed to determine role for ${email}:`, error);
+      return 'member'; // Default to member on error
     }
   }
 

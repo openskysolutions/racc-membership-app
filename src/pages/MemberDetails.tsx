@@ -480,7 +480,7 @@ const MemberDetailsPage: React.FC = () => {
                     <div>
                       <p className="text-sm font-medium">Member Since</p>
                       <p className="text-sm text-muted-foreground">
-                        {member.createdAt ? new Date(member.createdAt).toLocaleDateString() : 'Unknown'}
+                        {member.memberSince ? new Date(member.memberSince).toLocaleDateString() : 'Unknown'}
                       </p>
                     </div>
                   </div>

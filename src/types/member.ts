@@ -34,4 +34,5 @@ export interface Member {
   joinedAt: string;
   gamificationMeta: GamificationMeta;
   lastActivityAt: string;
+  memberSince?: string;
 }

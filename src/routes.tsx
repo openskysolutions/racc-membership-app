@@ -15,6 +15,7 @@ import LeaderboardPage from '@/pages/Leaderboard';
 import DiscussionsPage from '@/pages/Discussions';
 import CoursesPage from '@/pages/Courses';
 import ProfilePage from '@/pages/Profile';
+import AdminPage from '@/pages/Admin';
 import AuthPage from "@/pages/auth";
 import RegisterPage from "@/pages/auth/Register";
 import ConnectAccountPage from "@/pages/auth/ConnectAccount";
@@ -29,11 +30,21 @@ import Terms from '@/pages/docs/Terms';
 import { ReactNode } from 'react';
 
 export default function AppRoutes() {
-  const { isAuthenticated, isLoading } = useAuthStore();
+  const { isAuthenticated, isLoading, user } = useAuthStore();
   // Force rebuild - updated routing Oct 4, 2025
 
   const protectedRoute = (component: ReactNode, pathname: string) => {
     return isAuthenticated ? component : <Navigate to="/login" state={{ from: { pathname: pathname } }} replace />
+  }
+
+  const adminRoute = (component: ReactNode, pathname: string) => {
+    if (!isAuthenticated) {
+      return <Navigate to="/login" state={{ from: { pathname: pathname } }} replace />;
+    }
+    if (user?.role !== 'admin') {
+      return <Navigate to="/" replace />;
+    }
+    return component;
   }
 
   if (isLoading) {
@@ -69,6 +80,7 @@ export default function AppRoutes() {
         <Route path="discussions" element={protectedRoute(<DiscussionsPage />, '/discussions')} />
         <Route path="courses" element={protectedRoute(<CoursesPage />, '/courses')} />
         <Route path="profile" element={protectedRoute(<ProfilePage />, '/profile')} />
+        <Route path="admin" element={adminRoute(<AdminPage />, '/admin')} />
       </Route>
 
       {/* fallback */}

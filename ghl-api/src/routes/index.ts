@@ -9,6 +9,7 @@ import eventsRoutes from '@/routes/events';
 import jobsRoutes from '@/routes/jobs';
 import newsRoutes from '@/routes/news';
 import calendarsRoutes from '@/routes/calendars';
+import adminRoutes from '@/routes/admin';
 
 // CommonJS imports
 const moderationRoutes = require('@/routes/moderation');
@@ -28,6 +29,7 @@ router.use('/jobs', jobsRoutes);
 router.use('/news', newsRoutes);
 router.use('/calendars', calendarsRoutes);
 router.use('/medias', mediasRoutes);
+router.use('/admin', adminRoutes); // Admin-only user management routes
 router.use('/test', testRoutes);
 
 export default router;

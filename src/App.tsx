@@ -4,6 +4,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { useLocationStore } from '@/stores/locationStore';
 import { getLocationInfo } from '@/services/location';
 import { SafeArea } from 'capacitor-plugin-safe-area';
+import { Toaster } from '@/components/ui/sonner';
 
 import "@/App.css";
 
@@ -54,7 +55,10 @@ function App() {
 }, []);
 
   return (
-    <AppRoutes />
+    <>
+      <AppRoutes />
+      <Toaster />
+    </>
   );
 }
 

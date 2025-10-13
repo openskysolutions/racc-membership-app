@@ -5,10 +5,11 @@ import { getCurrentYearEvents, CalendarEvent } from '@/services/calendar';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogOverlay, DialogPortal } from '@/components/ui/dialog';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import EventFormDialog from '@/components/EventFormDialog';
 import { useAuthStore } from '@/stores/authStore';
+import cn from 'classnames';
 
 // GoHighLevel Calendar ID - RACC Events
 const GHL_CALENDAR_ID = '9XpDcFHv3SmCUuHeuOOg';
@@ -338,16 +339,22 @@ const CalendarPage: React.FC = () => {
 
       {/* Event Details Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <CalendarIcon className="h-5 w-5" />
-              {selectedEvent?.title}
-            </DialogTitle>
-            <DialogDescription>
-              Event Details
-            </DialogDescription>
-          </DialogHeader>
+        <DialogPortal>
+          <DialogOverlay className={cn(
+            "fixed inset-0 z-50",
+            "bg-muted-foreground/80 dark:bg-neutral-800/80 backdrop-blur-sm",
+            "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" 
+          )}/>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <CalendarIcon className="h-5 w-5" />
+                {selectedEvent?.title}
+              </DialogTitle>
+              <DialogDescription>
+                Event Details
+              </DialogDescription>
+            </DialogHeader>
           
           {selectedEvent && (
             <div className="space-y-6">
@@ -420,94 +427,102 @@ const CalendarPage: React.FC = () => {
               </div>
             </div>
           )}
-        </DialogContent>
+          </DialogContent>
+        </DialogPortal>
       </Dialog>
 
       {/* Day Events Dialog (Mobile) */}
       <Dialog open={dayEventsDialogOpen} onOpenChange={setDayEventsDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <CalendarIcon className="h-5 w-5" />
-              {selectedDate && selectedDate.toLocaleDateString('en-US', {
-                weekday: 'long',
-                month: 'long',
-                day: 'numeric'
-              })}
-            </DialogTitle>
-            <DialogDescription>
-              {selectedDayEvents.length === 0 
-                ? 'No events scheduled for this day'
-                : `${selectedDayEvents.length} event${selectedDayEvents.length > 1 ? 's' : ''} scheduled`
-              }
-            </DialogDescription>
-          </DialogHeader>
+        <DialogPortal>
+          <DialogOverlay className={cn(
+            "fixed inset-0 z-50",
+            "bg-muted-foreground/10 dark:bg-neutral-800/10 backdrop-blur-sm",
+            "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" 
+          )}/>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <CalendarIcon className="h-5 w-5" />
+                {selectedDate && selectedDate.toLocaleDateString('en-US', {
+                  weekday: 'long',
+                  month: 'long',
+                  day: 'numeric'
+                })}
+              </DialogTitle>
+              <DialogDescription>
+                {selectedDayEvents.length === 0 
+                  ? 'No events scheduled for this day'
+                  : `${selectedDayEvents.length} event${selectedDayEvents.length > 1 ? 's' : ''} scheduled`
+                }
+              </DialogDescription>
+            </DialogHeader>
           
-          <div className="space-y-4">
-            {/* Events List */}
-            {selectedDayEvents.length > 0 ? (
-              <div className="space-y-3">
-                {selectedDayEvents.map((event) => (
-                  <div
-                    key={event.id}
-                    onClick={() => {
-                      setDayEventsDialogOpen(false);
-                      handleEventClick(event);
-                    }}
-                    className="p-3 bg-muted/30 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors border"
-                  >
-                    <div className="font-medium text-sm mb-1">{event.title}</div>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <Clock className="h-3 w-3" />
-                      <span>{formatEventTime(event.startTime)}</span>
-                      {event.endTime && (
-                        <>
-                          <span>-</span>
-                          <span>{formatEventTime(event.endTime)}</span>
-                        </>
+            <div className="space-y-4">
+              {/* Events List */}
+              {selectedDayEvents.length > 0 ? (
+                <div className="space-y-3">
+                  {selectedDayEvents.map((event) => (
+                    <div
+                      key={event.id}
+                      onClick={() => {
+                        setDayEventsDialogOpen(false);
+                        handleEventClick(event);
+                      }}
+                      className="p-3 bg-muted/30 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors border"
+                    >
+                      <div className="font-medium text-sm mb-1">{event.title}</div>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Clock className="h-3 w-3" />
+                        <span>{formatEventTime(event.startTime)}</span>
+                        {event.endTime && (
+                          <>
+                            <span>-</span>
+                            <span>{formatEventTime(event.endTime)}</span>
+                          </>
+                        )}
+                      </div>
+                      {event.location && (
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                          <MapPin className="h-3 w-3" />
+                          <span>{event.location}</span>
+                        </div>
                       )}
                     </div>
-                    {event.location && (
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                        <MapPin className="h-3 w-3" />
-                        <span>{event.location}</span>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <CalendarIcon className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                <p>No events scheduled for this day</p>
-              </div>
-            )}
-            
-            {/* Action Buttons */}
-            <div className="flex gap-2 pt-4 border-t">
-              {isAuthenticated && (
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <CalendarIcon className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                  <p>No events scheduled for this day2</p>
+                </div>
+              )}
+              
+              {/* Action Buttons */}
+              <div className="flex gap-2 pt-4 border-t">
+                {isAuthenticated && (
+                  <Button 
+                    onClick={() => {
+                      setDayEventsDialogOpen(false);
+                      setCreateEventDialogOpen(true);
+                    }}
+                    className="flex-1"
+                    size="sm"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Event
+                  </Button>
+                )}
                 <Button 
-                  onClick={() => {
-                    setDayEventsDialogOpen(false);
-                    setCreateEventDialogOpen(true);
-                  }}
-                  className="flex-1"
+                  variant="outline" 
+                  onClick={() => setDayEventsDialogOpen(false)}
                   size="sm"
                 >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Event
+                  Close
                 </Button>
-              )}
-              <Button 
-                variant="outline" 
-                onClick={() => setDayEventsDialogOpen(false)}
-                size="sm"
-              >
-                Close
-              </Button>
+              </div>
             </div>
-          </div>
-        </DialogContent>
+          </DialogContent>
+        </DialogPortal>
       </Dialog>
 
       {/* Event Form Dialog */}

@@ -170,6 +170,13 @@ export const Navbar = () => {
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => navigate('/profile')}>Profile</DropdownMenuItem>
+                    {user?.role === 'admin' && (
+                      <DropdownMenuItem onClick={() => navigate('/admin')}>
+                        <span className="flex items-center gap-2">
+                          Admin Dashboard
+                        </span>
+                      </DropdownMenuItem>
+                    )}
                   </>
                 }
                 {isAuthenticated

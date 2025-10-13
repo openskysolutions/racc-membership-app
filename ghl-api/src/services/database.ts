@@ -319,6 +319,61 @@ class DatabaseService {
   }
 
   /**
+   * Update user information (admin only)
+   */
+  async updateUser(userId: number, updates: Partial<User>): Promise<void> {
+    if (!this.db) throw new Error('Database not initialized');
+
+    const allowedFields = [
+      'firstName', 'lastName', 'email', 'businessName', 'phone', 'website',
+      'role', 'status', 'membershipTier', 'paymentStatus', 'emailVerified'
+    ];
+
+    const updateFields: string[] = [];
+    const updateValues: any[] = [];
+
+    // Build dynamic update query
+    for (const [key, value] of Object.entries(updates)) {
+      if (allowedFields.includes(key) && value !== undefined) {
+        updateFields.push(`${key} = ?`);
+        updateValues.push(value);
+      }
+    }
+
+    if (updateFields.length === 0) {
+      throw new Error('No valid fields to update');
+    }
+
+    updateFields.push('updatedAt = CURRENT_TIMESTAMP');
+    updateValues.push(userId);
+
+    const query = `
+      UPDATE users 
+      SET ${updateFields.join(', ')}
+      WHERE id = ?
+    `;
+
+    await this.db.run(query, updateValues);
+  }
+
+  /**
+   * Delete user account (admin only)
+   */
+  async deleteUser(userId: number): Promise<void> {
+    if (!this.db) throw new Error('Database not initialized');
+
+    // Delete user sessions first (cascade should handle this, but let's be explicit)
+    await this.db.run('DELETE FROM sessions WHERE userId = ?', [userId]);
+    
+    // Delete the user
+    const result = await this.db.run('DELETE FROM users WHERE id = ?', [userId]);
+    
+    if (result.changes === 0) {
+      throw new Error('User not found or already deleted');
+    }
+  }
+
+  /**
    * Get all users (for admin purposes)
    */
   async getAllUsers(limit = 100, offset = 0): Promise<User[]> {

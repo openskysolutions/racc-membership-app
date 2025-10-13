@@ -82,6 +82,21 @@ router.post('/authorize', async (req, res) => {
 
     console.log(`✅ User ${email} verified as active in GoHighLevel`);
 
+    // Check for admin role based on HighLevel tags
+    const userRole = await ghlService.getUserRole(email);
+    
+    // Update local database role if it differs from HighLevel tags
+    if (user.role !== userRole) {
+      try {
+        await databaseService.updateUser(user.id!, { role: userRole });
+        console.log(`📝 Updated local database role from '${user.role}' to '${userRole}' for user ${email}`);
+        user.role = userRole; // Update the user object for the response
+      } catch (updateError) {
+        console.error('Failed to update user role in database:', updateError);
+        // Continue with auth even if database update fails
+      }
+    }
+
     // Update local database status to match GoHighLevel if needed
     if (user.status !== 'active') {
       try {
@@ -541,6 +556,25 @@ router.get('/profile', async (req, res) => {
       });
     }
 
+    // Check HighLevel tags to sync role (but don't fail auth if this fails)
+    let currentRole = user.role;
+    try {
+      console.log(`🔍 Syncing role from HighLevel tags for user: ${user.email}`);
+      const newRole = await ghlService.getUserRole(user.email);
+      
+      // Update role if it changed
+      if (user.role !== newRole) {
+        await databaseService.updateUser(user.id!, { role: newRole });
+        currentRole = newRole;
+        console.log(`🔄 Updated user role from '${user.role}' to '${newRole}' based on HighLevel tags`);
+      }
+      
+      console.log(`✅ Role sync complete - user ${user.email} role: ${currentRole}`);
+    } catch (roleUpdateError) {
+      console.error('Failed to sync role from HighLevel, using database role:', roleUpdateError);
+      // Continue with existing role from database
+    }
+
     res.json({
       id: user.id.toString(),
       name: `${user.firstName} ${user.lastName}`,
@@ -550,7 +584,7 @@ router.get('/profile', async (req, res) => {
       businessName: user.businessName,
       phone: user.phone,
       website: user.website,
-      role: user.role,
+      role: currentRole, // Use the synced role
       status: user.status,
       membershipTier: user.membershipTier,
       emailVerified: user.emailVerified,
