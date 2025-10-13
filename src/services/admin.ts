@@ -2,7 +2,7 @@
  * Admin Service - API calls for user management
  */
 
-const API_BASE_URL = 'http://localhost:3000/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
 
 export interface User {
   id: number;
