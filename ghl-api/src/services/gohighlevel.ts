@@ -12,9 +12,19 @@ interface ContactData {
   phone?: string;
   website?: string;
   businessName?: string;
+  companyName?: string;
   source?: string;
   tags?: string[];
   customFields?: Record<string, any>;
+  // Direct contact fields from GoHighLevel API
+  address1?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+  country?: string;
+  timezone?: string;
+  // Bio will be handled as a custom field
+  bio?: string;
 }
 
 interface PaymentLinkData {
@@ -581,15 +591,62 @@ class GoHighLevelService {
     }
 
     try {
-      const payload = {
-        ...updateData,
-        customFields: updateData.customFields ? Object.entries(updateData.customFields).map(([key, value]) => ({
-          key,
-          field_value: value
-        })) : []
+      // Prepare payload according to GoHighLevel API documentation
+      const payload: any = {
+        // Direct contact fields
+        firstName: updateData.firstName,
+        lastName: updateData.lastName,
+        email: updateData.email,
+        phone: updateData.phone,
+        website: updateData.website,
+        companyName: updateData.companyName,
+        address1: updateData.address1,
+        city: updateData.city,
+        state: updateData.state,
+        postalCode: updateData.postalCode,
+        country: updateData.country || 'US', // Default to US
+        source: updateData.source || 'portal'
       };
 
-      console.log(`🔧 Sending PUT request to /contacts/${contactId} with payload:`, payload);
+      // Remove undefined fields to keep payload clean
+      Object.keys(payload).forEach(key => {
+        if (payload[key] === undefined) {
+          delete payload[key];
+        }
+      });
+
+      // Handle tags if provided
+      if (updateData.tags) {
+        payload.tags = updateData.tags;
+      }
+
+      // Handle custom fields if provided (convert to API format)
+      const customFields: any[] = [];
+      
+      // Add bio as a custom field if provided
+      if (updateData.bio !== undefined) {
+        customFields.push({
+          key: 'bio',
+          field_value: updateData.bio
+        });
+      }
+      
+      // Add other custom fields if provided
+      if (updateData.customFields) {
+        Object.entries(updateData.customFields).forEach(([key, value]) => {
+          customFields.push({
+            key,
+            field_value: value
+          });
+        });
+      }
+      
+      // Only add customFields to payload if we have any
+      if (customFields.length > 0) {
+        payload.customFields = customFields;
+      }
+
+      console.log(`🔧 Sending PUT request to /contacts/${contactId} with payload:`, JSON.stringify(payload, null, 2));
       
       await this.client.put(`/contacts/${contactId}`, payload, {
         headers: {
@@ -599,6 +656,10 @@ class GoHighLevelService {
       console.log(`✅ Successfully updated contact ${contactId}`);
     } catch (error: any) {
       console.error('❌ Failed to update contact:', error);
+      if (error.response) {
+        console.error('Response data:', error.response.data);
+        console.error('Response status:', error.response.status);
+      }
       throw new Error(`Failed to update contact: ${error.message}`);
     }
   }

@@ -14,3 +14,8 @@ export const phoneNumberAutoFormat = (phoneNumber: string): string => {
   if (number.length === 11) return number.replace(/(\d{1})(\d{3})(\d{3})(\d{4})/, "+$1 ($2) $3-$4");
   return number.replace(/(\d{3})(\d{4})(\d{4})/, "$1-$2-$3");
 };
+
+export const capitalizeFirst = (str: string): string => {
+  if (!str) return str;
+  return str.charAt(0).toUpperCase() + str.slice(1);
+};

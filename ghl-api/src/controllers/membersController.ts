@@ -6,26 +6,51 @@
 import { Request, Response } from 'express';
 import { ghlService } from '@/services/gohighlevel';
 
+interface CustomField {
+  id: string;
+  value: string;
+}
+
+interface Address {
+  street: string;
+  city: string;
+  state: string;
+  zipCode: string;
+}
+
 interface Member {
+  // Core Member Fields
   id: string;
   email: string;
   firstName?: string;
   lastName?: string;
   businessName?: string;
+  companyName?: string;
   phone?: string;
   website?: string;
+  bio?: string;
   avatar?: string;
+  
+  // GoHighLevel Specific Fields
+  tags: string[];
+  dateAdded?: string;
+  locationId?: string;
+  
+  // Custom Fields Data
+  customFields?: CustomField[];
+  memberSince?: string;
+  specialties?: string[];
+  membershipTier?: string;
+  
+  // Address Information
+  address?: Address;
+  
+  // System Fields
   role: string;
   status: string;
-  memberSince: string;
-  specialties?: string[];
-  bio?: string;
-  address?: {
-    street: string;
-    city: string;
-    state: string;
-    zipCode: string;
-  };
+  
+  // Computed Fields
+  name?: string;
 }
 
 class MembersController {
@@ -177,10 +202,26 @@ class MembersController {
    * Transform GoHighLevel contact to Member format
    */
   private transformContactToMember(contact: any): Member {
+    // Debug: Log custom fields structure
+    console.log(`🔍 Contact custom fields:`, JSON.stringify(contact.customFields, null, 2));
+    
+    // GoHighLevel custom field ID mappings
+    const CUSTOM_FIELD_IDS = {
+      bio: 'b3Yfp0NjO23zFXzwjswu',
+      avatar_url: '331dKIcjgTa8z8a6mu37',
+      memberSince: 'Dxt6gzc4osQhaCBPhslY',
+      membershipType: 'inm2jc52WNhxX8H2FHHm',
+      organizationType: 'kPoBTUVldHyg3WbywLJ9'
+    };
+    
     // Extract custom field values
-    const getCustomField = (fieldId: string) => {
-      const field = contact.customFields?.find(f => f.id === fieldId);
-      return field?.value || '';
+    const getCustomField = (fieldName: string) => {
+      const fieldId = CUSTOM_FIELD_IDS[fieldName] || fieldName;
+      // Try to find by mapped ID first, then by key, then by original fieldName as id
+      const field = contact.customFields?.find(f => f.id === fieldId || f.key === fieldName || f.id === fieldName);
+      const value = field?.value || field?.field_value || '';
+      console.log(`🔍 getCustomField('${fieldName}') [mapped to ${fieldId}]:`, { field, value });
+      return value;
     };
 
     // Determine role from tags
@@ -197,26 +238,47 @@ class MembersController {
     // Use the actual custom field ID for avatar_url: 331dKIcjgTa8z8a6mu37
     const avatarUrl = getCustomField('331dKIcjgTa8z8a6mu37') || getCustomField('avatar_url') || getCustomField('profile_photo') || '/profile-placeholder.png';
 
+    // Get membership tier from tags or custom fields
+    const membershipTier = this.getMembershipTier(contact);
+
     return {
+      // Core Member Fields
       id: contact.id,
       email: contact.email || '',
       firstName: contact.firstName || '',
       lastName: contact.lastName || '',
       businessName: contact.businessName || contact.companyName || '',
+      companyName: contact.companyName || '',
       phone: contact.phone || '',
       website: contact.website || '',
       avatar: avatarUrl,
-      role,
-      status: 'active', // All fetched contacts have 'active' tag
+      bio: getCustomField('bio') || '', // Bio is stored as a custom field
+      
+      // GoHighLevel Specific Fields
+      tags: tags,
+      dateAdded: contact.dateAdded || contact.createdAt,
+      locationId: contact.locationId,
+      
+      // Custom Fields Data (include raw custom fields for frontend access)
+      customFields: contact.customFields || [],
       memberSince: getCustomField('memberSince') || contact.dateAdded?.substring(0, 10) || new Date().toISOString().substring(0, 10),
       specialties,
-      bio: getCustomField('bio') || '',
+      membershipTier,
+      
+      // Address Information
       address: {
         street: contact.address1 || '',
         city: contact.city || '',
         state: contact.state || '',
         zipCode: contact.postalCode || ''
-      }
+      },
+      
+      // System Fields
+      role,
+      status: 'active', // All fetched contacts have 'active' tag
+      
+      // Computed Fields
+      name: `${contact.firstName || ''} ${contact.lastName || ''}`.trim()
     };
   }
 
@@ -302,9 +364,14 @@ class MembersController {
         phone: updateData.phone,
         website: updateData.website,
         companyName: updateData.businessName, // Map businessName to GoHighLevel's companyName field
-        customFields: {
-          bio: updateData.bio || ''
-        }
+        // Map bio to the correct field
+        bio: updateData.bio || '',
+        // Map address fields to correct GoHighLevel fields
+        address1: updateData.address?.street || '',
+        city: updateData.address?.city || '',
+        state: updateData.address?.state || '',
+        postalCode: updateData.address?.zipCode || '',
+        email: updateData.email
       };
       
       // Update contact in GoHighLevel
@@ -524,16 +591,23 @@ class MembersController {
     });
   }
 
-  /**
-   * Determine membership tier based on member data
+    /**
+   * Determine membership tier from member/contact data using GoHighLevel tags
    */
-  private getMembershipTier(member: Member): string {
-    // Simple logic to determine tier - can be made more sophisticated
-    if (member.role === 'admin') return 'Premium';
-    if (member.memberSince && new Date(member.memberSince) < new Date('2020-01-01')) {
-      return 'Gold';
-    }
-    return 'Standard';
+  private getMembershipTier(memberOrContact: any): string {
+    const tags = memberOrContact.tags || [];
+    
+    // Check for GoHighLevel membership package tags
+    if (tags.includes('elite membership package')) return 'elite';
+    if (tags.includes('enhanced membership package')) return 'enhanced';
+    if (tags.includes('basic membership package')) return 'basic';
+    
+    // Fallback for admin role
+    const role = memberOrContact.role || (tags.includes('admin') ? 'admin' : 'member');
+    if (role === 'admin') return 'elite';
+    
+    // Default fallback
+    return 'basic';
   }
 
   /**

@@ -3,36 +3,67 @@ export interface GamificationMeta {
   level: number;
 }
 
+export interface CustomField {
+  id: string;
+  value: string;
+}
+
+export interface Address {
+  street: string;
+  city: string;
+  state: string;
+  zipCode: string;
+}
+
 export interface Member {
-  profilePhoto: string | undefined;
-  tags: string[];
-  phone: string;
+  // Core Member Fields
   id: string;
   email: string;
-  contactId: string;
+  contactId?: string;
   firstName?: string;
   lastName?: string;
   fullName?: string;
-  avatar: string;
-  slug: string;
-  lastLogin: string;
-  bio: string;
   businessName?: string;
   companyName?: string;
-  website: string;
-  locationId: string;
-  groupId: string;
+  phone?: string;
+  website?: string;
+  avatar?: string;
+  profilePhoto?: string;
+  bio?: string;
+  
+  // GoHighLevel Specific Fields
+  tags: string[];
+  dateAdded?: string;
+  locationId?: string;
+  
+  // Custom Fields Data
+  customFields?: CustomField[];
+  memberSince?: string;
+  specialties?: string[];
+  membershipTier?: 'elite' | 'enhanced' | 'basic' | 'standard';
+  
+  // Address Information
+  address?: Address;
+  
+  // System Fields
   role: string;
   status: string;
-  offerSubscriptionMapping: Record<string, any>;
-  operationType: string;
-  source: string;
-  createdAt: string;
-  updatedAt: string;
-  __v: number;
-  lastVisitedAt: string;
-  joinedAt: string;
-  gamificationMeta: GamificationMeta;
-  lastActivityAt: string;
-  memberSince?: string;
+  slug?: string;
+  lastLogin?: string;
+  groupId?: string;
+  offerSubscriptionMapping?: Record<string, any>;
+  operationType?: string;
+  source?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  __v?: number;
+  lastVisitedAt?: string;
+  joinedAt?: string;
+  lastActivityAt?: string;
+  
+  // Gamification
+  gamificationMeta?: GamificationMeta;
+  
+  // Computed Fields
+  name?: string;
 }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { Search, MapPin, Phone, Mail, Globe, Users, RefreshCw } from 'lucide-react';
+import { Search, Users, RefreshCw, X, ArrowUpDown } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -8,11 +8,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { api } from '@/services/apiClient';
 import type { Member as BaseMember } from '@/types/member';
 import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '@/stores/authStore';
 
 // Extended member type for the directory page
 interface Member extends BaseMember {
   memberSince?: string;
   specialties?: string[];
+  membershipTier?: 'elite' | 'enhanced' | 'basic';
   address?: {
     street: string;
     city: string;
@@ -41,6 +43,7 @@ function useDebounce<T>(value: T, delay: number): T {
 const MembersPage: React.FC = () => {
   const navigate = useNavigate();
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const { user } = useAuthStore();
   
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,6 +57,9 @@ const MembersPage: React.FC = () => {
   const [roleFilter, setRoleFilter] = useState('all');
   const [specialtyFilter, setSpecialtyFilter] = useState('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  
+  // Sort states
+  const [sortBy, setSortBy] = useState<'businessName' | 'memberSince' | 'membershipTier'>('businessName');
   
   // Debounce search term to avoid triggering API calls on every keystroke
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
@@ -129,16 +135,42 @@ const MembersPage: React.FC = () => {
     loadMembers(currentOffset, true);
   }, [hasMore, loadingMore, currentOffset, loadMembers]);
 
-  // Filter members on client side for search/role filters
+  // Filter and sort members on client side
   const filteredMembers = useMemo(() => {
-    return members.filter(member => {
+    let filtered = members.filter(member => {
       // Specialty filter (client-side only since API doesn't support this yet)
       const matchesSpecialty = specialtyFilter === 'all' || 
         member.specialties?.includes(specialtyFilter);
 
       return matchesSpecialty;
     });
-  }, [members, specialtyFilter]);
+
+    // Sort the filtered results
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case 'businessName':
+          const nameA = (a.businessName || formatMemberName(a)).toLowerCase();
+          const nameB = (b.businessName || formatMemberName(b)).toLowerCase();
+          return nameA.localeCompare(nameB);
+        
+        case 'memberSince':
+          const dateA = new Date(a.memberSince || a.createdAt || '').getTime();
+          const dateB = new Date(b.memberSince || b.createdAt || '').getTime();
+          return dateA - dateB; // Earliest first
+        
+        case 'membershipTier':
+          const tierOrder = { 'elite': 0, 'enhanced': 1, 'basic': 2 };
+          const tierA = tierOrder[a.membershipTier as keyof typeof tierOrder] ?? 3;
+          const tierB = tierOrder[b.membershipTier as keyof typeof tierOrder] ?? 3;
+          return tierA - tierB;
+        
+        default:
+          return 0;
+      }
+    });
+
+    return filtered;
+  }, [members, specialtyFilter, sortBy]);
 
   // Intersection observer target for scroll pagination
   const observerTarget = useRef<HTMLDivElement>(null);
@@ -284,8 +316,18 @@ const MembersPage: React.FC = () => {
                   placeholder="Search members by name, business, or specialty..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 w-full"
+                  className="pl-10 pr-10 w-full"
                 />
+                {searchTerm && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSearchTerm('')}
+                    className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0 hover:bg-muted"
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                )}
               </div>
               <Button
                 variant="outline"
@@ -299,19 +341,21 @@ const MembersPage: React.FC = () => {
               </Button>
             </div>
 
-            {/* Role Filter */}
+            {/* Role Filter - Only show for admin users */}
             <div className="flex flex-row flex-grow gap-4">
-              <Select value={roleFilter} onValueChange={setRoleFilter}>
-                <SelectTrigger className="w-full lg:w-40 min-w-30">
-                  <SelectValue placeholder="Role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Roles</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="moderator">Moderator</SelectItem>
-                  <SelectItem value="member">Member</SelectItem>
-                </SelectContent>
-              </Select>
+              {user?.role === 'admin' && (
+                <Select value={roleFilter} onValueChange={setRoleFilter}>
+                  <SelectTrigger className="w-full lg:w-40 min-w-30">
+                    <SelectValue placeholder="Role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Roles</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="moderator">Moderator</SelectItem>
+                    <SelectItem value="member">Member</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
 
               {/* Specialty Filter */}
               <Select value={specialtyFilter} onValueChange={setSpecialtyFilter}>
@@ -325,6 +369,19 @@ const MembersPage: React.FC = () => {
                       {specialty}
                     </SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+
+              {/* Sort Filter */}
+              <Select value={sortBy} onValueChange={(value: 'businessName' | 'memberSince' | 'membershipTier') => setSortBy(value)}>
+                <SelectTrigger className="w-10 h-10 p-0 flex items-center justify-center relative [&>span]:hidden [&>svg:last-child]:hidden">
+                  <ArrowUpDown className="h-4 w-4 absolute" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="businessName">Member Name (A-Z)</SelectItem>
+                  <SelectItem value="memberSince">Member Since</SelectItem>
+                  <SelectItem value="membershipTier">Membership Tier</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -352,9 +409,9 @@ const MembersPage: React.FC = () => {
 
           {/* Results count */}
           <div className="mt-4 mb-4 flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">
-              Showing {filteredMembers.length} of {members.length} members
-            </p>
+            {/* <p className="text-sm text-muted-foreground">
+              Showing {filteredMembers.length} of {totalMembers} members
+            </p> */}
             {(debouncedSearchTerm || roleFilter !== 'all' || specialtyFilter !== 'all') && (
               <Button
                 variant="outline"
@@ -390,13 +447,25 @@ const MembersPage: React.FC = () => {
           <div className={
             viewMode === 'grid' 
               ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-              : "space-y-2 gap-2"
+              : "space-y-0"
           }>
-            {filteredMembers.map((member) => (
+            {filteredMembers.map((member, index) => (
             <Card 
               key={member.id} 
               className={`cursor-pointer hover:shadow-lg transition-shadow ${
-                viewMode === 'list' ? 'p-2 flex flex-col sm:flex-row mt-2' : 'p-4'
+                viewMode === 'list' 
+                  ? `p-2 flex flex-col sm:flex-row mt-0 ${
+                      index === 0 
+                        ? 'rounded-b-none' 
+                        : index === filteredMembers.length - 1 
+                          ? 'rounded-t-none' 
+                          : 'rounded-none'
+                    } ${
+                      index === filteredMembers.length - 1 
+                        ? '' 
+                        : 'border-b-0'
+                    }` 
+                  : 'p-4'
               }`}
               onClick={() => handleMemberClick(member.id)}
             >
@@ -416,11 +485,11 @@ const MembersPage: React.FC = () => {
                     <CardTitle className="text-md text-highlight-foreground hover:text-foreground">
                       {member.businessName || formatMemberName(member)}
                     </CardTitle>
-                    {member.businessName && (
+                    {/* {member.businessName && (
                       <p className="text-sm text-muted-foreground mt-1 capitalize">
                         {formatMemberName(member)}
                       </p>
-                    )}
+                    )} */}
                     {/* <div className="flex gap-1 mt-2 flex-wrap justify-center">
                       <Badge variant="secondary" className={getRoleColor(member.role)}>
                         {member.role}
@@ -436,7 +505,7 @@ const MembersPage: React.FC = () => {
               </CardHeader>
 
               <CardContent className="space-y-1 p-0 flex-1 ml-16">
-                {member.email && (
+                {/* {member.email && (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Mail className="email h-4 w-4" />
                     <span className="truncate">{member.email}</span>
@@ -462,7 +531,7 @@ const MembersPage: React.FC = () => {
                     <MapPin className="h-4 w-4" />
                     <span>{member.address.city}, {member.address.state}</span>
                   </div>
-                )}
+                )} */}
               </CardContent>
             </Card>
           ))}

@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { capitalizeFirst } from '@/lib/utils';
 import { Mail, Phone, Globe, Calendar, Shield, User, Edit, Save, X } from 'lucide-react';
 import { api } from '@/services/apiClient';
 import type { Member } from '@/types/member';
@@ -15,6 +16,14 @@ import AvatarUpload from '@/components/AvatarUpload';
 
 interface ExtendedUpdateProfileRequest extends UpdateProfileRequest {
   bio?: string;
+  companyName?: string;
+  email?: string;
+  address?: {
+    street: string;
+    city: string;
+    state: string;
+    zipCode: string;
+  };
 }
 
 const ProfilePage: React.FC = () => {
@@ -25,9 +34,17 @@ const ProfilePage: React.FC = () => {
     firstName: '',
     lastName: '',
     businessName: '',
+    companyName: '',
     phone: '',
     website: '',
-    bio: ''
+    bio: '',
+    email: '',
+    address: {
+      street: '',
+      city: '',
+      state: '',
+      zipCode: ''
+    }
   });
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
@@ -54,9 +71,17 @@ const ProfilePage: React.FC = () => {
           firstName: profileData.firstName || '',
           lastName: profileData.lastName || '',
           businessName: profileData.businessName || '',
+          companyName: profileData.companyName || '',
           phone: profileData.phone || '',
           website: profileData.website || '',
-          bio: profileData.bio || ''
+          bio: profileData.bio || '',
+          email: profileData.email || '',
+          address: {
+            street: profileData.address?.street || '',
+            city: profileData.address?.city || '',
+            state: profileData.address?.state || '',
+            zipCode: profileData.address?.zipCode || ''
+          }
         });
       } catch (error) {
         console.error('Failed to load profile:', error);
@@ -70,10 +95,24 @@ const ProfilePage: React.FC = () => {
   }, [user]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData(prev => ({ 
-      ...prev, 
-      [e.target.name]: e.target.value 
-    }));
+    const { name, value } = e.target;
+    
+    // Handle nested address fields
+    if (name.startsWith('address.')) {
+      const addressField = name.split('.')[1];
+      setFormData(prev => ({
+        ...prev,
+        address: {
+          ...prev.address!,
+          [addressField]: value
+        }
+      }));
+    } else {
+      setFormData(prev => ({ 
+        ...prev, 
+        [name]: value 
+      }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -108,9 +147,17 @@ const ProfilePage: React.FC = () => {
         firstName: profile.firstName || '',
         lastName: profile.lastName || '',
         businessName: profile.businessName || '',
+        companyName: profile.companyName || '',
         phone: profile.phone || '',
         website: profile.website || '',
-        bio: (profile as any).bio || ''
+        bio: (profile as any).bio || '',
+        email: profile.email || '',
+        address: {
+          street: profile.address?.street || '',
+          city: profile.address?.city || '',
+          state: profile.address?.state || '',
+          zipCode: profile.address?.zipCode || ''
+        }
       });
     }
     setIsEditing(false);
@@ -181,9 +228,8 @@ const ProfilePage: React.FC = () => {
         <h1 className="text-3xl font-bold">Your Profile</h1>
         
         {!isEditing && (
-          <Button onClick={() => setIsEditing(true)}>
-            <Edit className="h-4 w-4 mr-2" />
-            Edit Profile
+          <Button onClick={() => setIsEditing(true)} className='px-3'>
+            <Edit className="h-4 w-4" />
           </Button>
         )}
         
@@ -353,6 +399,90 @@ const ProfilePage: React.FC = () => {
                   rows={4}
                 />
               </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="companyName" className="block text-sm font-medium mb-1">
+                    Company Name
+                  </label>
+                  <Input
+                    id="companyName"
+                    name="companyName"
+                    value={formData.companyName || ''}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium mb-1">
+                    Email Address *
+                  </label>
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    value={formData.email || ''}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <h3 className="font-semibold mb-3">Address Information</h3>
+                <div className="space-y-4">
+                  <div>
+                    <label htmlFor="address.street" className="block text-sm font-medium mb-1">
+                      Street Address
+                    </label>
+                    <Input
+                      id="address.street"
+                      name="address.street"
+                      value={formData.address?.street || ''}
+                      onChange={handleChange}
+                      placeholder="123 Main Street"
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label htmlFor="address.city" className="block text-sm font-medium mb-1">
+                        City
+                      </label>
+                      <Input
+                        id="address.city"
+                        name="address.city"
+                        value={formData.address?.city || ''}
+                        onChange={handleChange}
+                        placeholder="City"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="address.state" className="block text-sm font-medium mb-1">
+                        State
+                      </label>
+                      <Input
+                        id="address.state"
+                        name="address.state"
+                        value={formData.address?.state || ''}
+                        onChange={handleChange}
+                        placeholder="UT"
+                        maxLength={2}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="address.zipCode" className="block text-sm font-medium mb-1">
+                        ZIP Code
+                      </label>
+                      <Input
+                        id="address.zipCode"
+                        name="address.zipCode"
+                        value={formData.address?.zipCode || ''}
+                        onChange={handleChange}
+                        placeholder="12345"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
             </form>
           ) : (
             <div className="space-y-6">
@@ -370,7 +500,6 @@ const ProfilePage: React.FC = () => {
               {/* Contact Information */}
               <div>
                 <h3 className="font-semibold mb-3 flex items-center gap-2">
-                  <Mail className="h-4 w-4" />
                   Contact Information
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -415,7 +544,6 @@ const ProfilePage: React.FC = () => {
               {/* Membership Information */}
               <div>
                 <h3 className="font-semibold mb-3 flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
                   Membership
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -424,7 +552,7 @@ const ProfilePage: React.FC = () => {
                     <div>
                       <p className="text-sm font-medium">Member Since</p>
                       <p className="text-sm text-muted-foreground">
-                        {profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString() : 'Unknown'}
+                        {profile?.memberSince ? new Date(profile.memberSince).toLocaleDateString() : 'Unknown'}
                       </p>
                     </div>
                   </div>
@@ -434,7 +562,7 @@ const ProfilePage: React.FC = () => {
                     <div>
                       <p className="text-sm font-medium">Membership Tier</p>
                       <p className="text-sm text-muted-foreground">
-                        {(profile as any)?.membershipTier || 'Standard'}
+                        {capitalizeFirst((profile as any)?.membershipTier || 'Standard')}
                       </p>
                     </div>
                   </div>

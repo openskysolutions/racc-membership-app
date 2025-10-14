@@ -81,10 +81,10 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-muted-foreground;
   }
-  h1 {
-    @apply inline-block;
+  h1, h2 {
+    @apply inline-block text-foreground mt-0;
   }
   .rdp-day_today {
     @apply bg-blue-500 text-white font-bold rounded-full;

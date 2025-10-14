@@ -15,7 +15,7 @@ const MembershipLevels: React.FC = () => {
       <div className="grid md:grid-cols-3 gap-8">
         <Card className="border-2 flex flex-col h-full">
           <CardHeader className="text-center">
-            <CardTitle className="text-xl">Basic Membership Package</CardTitle>
+            <CardTitle className="text-xl">Basic Membership</CardTitle>
             {/* <CardDescription>Perfect for small businesses</CardDescription> */}
           </CardHeader>
           <CardContent className="text-center flex flex-col flex-grow">
@@ -45,11 +45,11 @@ const MembershipLevels: React.FC = () => {
             <Badge className="bg-blue-500">Most Popular</Badge>
           </div>
           <CardHeader className="text-center">
-            <CardTitle className="text-xl">Enhanced Membership Package</CardTitle>
+            <CardTitle className="text-xl">Enhanced Membership</CardTitle>
             {/* <CardDescription>Great for growing businesses</CardDescription> */}
           </CardHeader>
           <CardContent className="text-center flex flex-col flex-grow">
-            <div className="text-3xl font-bold mb-4">$400<span className="text-sm font-normal">/year</span></div>
+            <div className="text-3xl font-bold mb-4">$550<span className="text-sm font-normal">/year</span></div>
             <ul className="text-left space-y-2 text-sm mb-6 flex-grow">
               <li>• All Basic benefits</li>
               <li>• Business featured once a year on radio</li>
@@ -71,11 +71,11 @@ const MembershipLevels: React.FC = () => {
 
         <Card className="border-2 flex flex-col h-full">
           <CardHeader className="text-center">
-            <CardTitle className="text-xl">Elite Membership Package</CardTitle>
+            <CardTitle className="text-xl">Elite Membership</CardTitle>
             {/* <CardDescription>For established enterprises</CardDescription> */}
           </CardHeader>
           <CardContent className="text-center flex flex-col flex-grow">
-            <div className="text-3xl font-bold mb-4">$500<span className="text-sm font-normal">/year</span></div>
+            <div className="text-3xl font-bold mb-4">$900<span className="text-sm font-normal">/year</span></div>
             <ul className="text-left space-y-2 text-sm mb-6 flex-grow">
               <li>• All Enhanced benefits</li>
               <li>• Board nomination eligibility</li>

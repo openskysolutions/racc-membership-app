@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Mail, Phone, Globe, Calendar, Shield, User, Edit, Save, X } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, Globe, Calendar, Shield, User, Edit, Save, X, MapPin, ExternalLink } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { capitalizeFirst } from '@/lib/utils';
 import { api } from '@/services/apiClient';
 import { useAuthStore } from '@/stores/authStore';
 import type { Member } from '@/types/member';
@@ -17,9 +18,17 @@ interface MemberFormData {
   firstName: string;
   lastName: string;
   businessName: string;
+  companyName: string;
   phone: string;
   website: string;
   bio: string;
+  email: string;
+  address: {
+    street: string;
+    city: string;
+    state: string;
+    zipCode: string;
+  };
 }
 
 const MemberDetailsPage: React.FC = () => {
@@ -36,9 +45,17 @@ const MemberDetailsPage: React.FC = () => {
     firstName: '',
     lastName: '',
     businessName: '',
+    companyName: '',
     phone: '',
     website: '',
-    bio: ''
+    bio: '',
+    email: '',
+    address: {
+      street: '',
+      city: '',
+      state: '',
+      zipCode: ''
+    }
   });
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -86,9 +103,17 @@ const MemberDetailsPage: React.FC = () => {
           firstName: memberData.firstName || '',
           lastName: memberData.lastName || '',
           businessName: memberData.businessName || '',
+          companyName: memberData.companyName || '',
           phone: memberData.phone || '',
           website: memberData.website || '',
-          bio: memberData.bio || ''
+          bio: memberData.bio || '',
+          email: memberData.email || '',
+          address: {
+            street: memberData.address?.street || '',
+            city: memberData.address?.city || '',
+            state: memberData.address?.state || '',
+            zipCode: memberData.address?.zipCode || ''
+          }
         });
       } catch (err) {
         console.error('Error fetching member:', err);
@@ -147,10 +172,24 @@ const MemberDetailsPage: React.FC = () => {
   });
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData(prev => ({
-      ...prev,
-      [e.target.name]: e.target.value
-    }));
+    const { name, value } = e.target;
+    
+    // Handle nested address fields
+    if (name.startsWith('address.')) {
+      const addressField = name.split('.')[1];
+      setFormData(prev => ({
+        ...prev,
+        address: {
+          ...prev.address,
+          [addressField]: value
+        }
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
   };
 
   const handleSave = async () => {
@@ -187,9 +226,17 @@ const MemberDetailsPage: React.FC = () => {
         firstName: member.firstName || '',
         lastName: member.lastName || '',
         businessName: member.businessName || '',
+        companyName: member.companyName || '',
         phone: member.phone || '',
         website: member.website || '',
-        bio: member.bio || ''
+        bio: member.bio || '',
+        email: member.email || '',
+        address: {
+          street: member.address?.street || '',
+          city: member.address?.city || '',
+          state: member.address?.state || '',
+          zipCode: member.address?.zipCode || ''
+        }
       });
     }
     setIsEditing(false);
@@ -273,10 +320,90 @@ const MemberDetailsPage: React.FC = () => {
         </Alert>
       )}
 
-      {/* Single Card with All Information */}
-      <Card className="max-w-4xl mx-auto">
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+      {/* Responsive Layout Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
+        {/* Left Column - Map & Address (1/3 on large screens, stacks on smaller) */}
+        <div className="lg:order-1 order-2 space-y-6">
+          {/* Address Card */}
+          {(member.address?.street || member.address?.city || member.address?.state || member.address?.zipCode) && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MapPin className="h-5 w-5" />
+                  Address
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {member.address?.street && (
+                  <p className="text-sm text-muted-foreground">{member.address.street}</p>
+                )}
+                <p className="text-sm text-muted-foreground">
+                  {[member.address?.city, member.address?.state, member.address?.zipCode]
+                    .filter(Boolean)
+                    .join(', ')}
+                </p>
+                {(member.address?.street || member.address?.city) && (
+                  <div className="pt-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => {
+                        const address = [
+                          member.address?.street,
+                          member.address?.city,
+                          member.address?.state,
+                          member.address?.zipCode
+                        ].filter(Boolean).join(', ');
+                        window.open(`https://maps.google.com/?q=${encodeURIComponent(address)}`, '_blank');
+                      }}
+                    >
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      View on Maps
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Embedded Map */}
+          {(member.address?.street || member.address?.city) && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MapPin className="h-5 w-5" />
+                  Location
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="w-full h-64 bg-muted rounded-b-lg overflow-hidden">
+                  <iframe
+                    src={`https://maps.google.com/maps?q=${encodeURIComponent([
+                      member.address?.street,
+                      member.address?.city,
+                      member.address?.state,
+                      member.address?.zipCode
+                    ].filter(Boolean).join(', '))}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
+                    width="100%"
+                    height="100%"
+                    style={{ border: 0 }}
+                    allowFullScreen
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    title="Member Location"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        {/* Right Column - Main Member Information (2/3 on large screens, stacks on smaller) */}
+        <div className="lg:col-span-2 lg:order-2 order-1">
+          <Card>
+            <CardHeader>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
             {canEdit && isEditing 
               ? <AvatarUpload
                   contactId={member?.id || ''}
@@ -382,16 +509,16 @@ const MemberDetailsPage: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label htmlFor="website" className="block text-sm font-medium mb-1">
-                    Website
+                  <label htmlFor="email" className="block text-sm font-medium mb-1">
+                    Email
                   </label>
                   <Input
-                    id="website"
-                    name="website"
-                    type="url"
-                    value={formData.website}
+                    id="email"
+                    name="email"
+                    type="email"
+                    value={formData.email}
                     onChange={handleFormChange}
-                    placeholder="https://example.com"
+                    disabled
                   />
                 </div>
               </div>
@@ -408,6 +535,90 @@ const MemberDetailsPage: React.FC = () => {
                   placeholder="Tell us about yourself or your business..."
                   rows={4}
                 />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="companyName" className="block text-sm font-medium mb-1">
+                    Company Name
+                  </label>
+                  <Input
+                    id="companyName"
+                    name="companyName"
+                    value={formData.companyName}
+                    onChange={handleFormChange}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="website" className="block text-sm font-medium mb-1">
+                    Website
+                  </label>
+                  <Input
+                    id="website"
+                    name="website"
+                    type="url"
+                    value={formData.website}
+                    onChange={handleFormChange}
+                    placeholder="https://example.com"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <h3 className="font-semibold mb-3">Address Information</h3>
+                <div className="space-y-4">
+                  <div>
+                    <label htmlFor="address.street" className="block text-sm font-medium mb-1">
+                      Street Address
+                    </label>
+                    <Input
+                      id="address.street"
+                      name="address.street"
+                      value={formData.address.street}
+                      onChange={handleFormChange}
+                      placeholder="123 Main Street"
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label htmlFor="address.city" className="block text-sm font-medium mb-1">
+                        City
+                      </label>
+                      <Input
+                        id="address.city"
+                        name="address.city"
+                        value={formData.address.city}
+                        onChange={handleFormChange}
+                        placeholder="City"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="address.state" className="block text-sm font-medium mb-1">
+                        State
+                      </label>
+                      <Input
+                        id="address.state"
+                        name="address.state"
+                        value={formData.address.state}
+                        onChange={handleFormChange}
+                        placeholder="UT"
+                        maxLength={2}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="address.zipCode" className="block text-sm font-medium mb-1">
+                        ZIP Code
+                      </label>
+                      <Input
+                        id="address.zipCode"
+                        name="address.zipCode"
+                        value={formData.address.zipCode}
+                        onChange={handleFormChange}
+                        placeholder="12345"
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           ) : (
@@ -426,7 +637,6 @@ const MemberDetailsPage: React.FC = () => {
               {/* Contact Information */}
               <div>
                 <h3 className="font-semibold mb-3 flex items-center gap-2">
-                  <Mail className="h-4 w-4" />
                   Contact Information
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -471,7 +681,6 @@ const MemberDetailsPage: React.FC = () => {
               {/* Membership Information */}
               <div>
                 <h3 className="font-semibold mb-3 flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
                   Membership
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -490,7 +699,7 @@ const MemberDetailsPage: React.FC = () => {
                     <div>
                       <p className="text-sm font-medium">Membership Tier</p>
                       <p className="text-sm text-muted-foreground">
-                        {(member as any).membershipTier || 'Standard'}
+                        {capitalizeFirst((member as any).membershipTier || 'Standard')}
                       </p>
                     </div>
                   </div>
@@ -499,7 +708,9 @@ const MemberDetailsPage: React.FC = () => {
             </div>
           )}
         </CardContent>
-      </Card>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 };
