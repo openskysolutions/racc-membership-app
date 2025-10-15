@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 
 import PagesLayout from '@/components/layouts/pagesLayout';
 import { useAuthStore } from '@/stores/authStore';
@@ -16,7 +16,7 @@ import DiscussionsPage from '@/pages/Discussions';
 import CoursesPage from '@/pages/Courses';
 import ProfilePage from '@/pages/Profile';
 import AdminPage from '@/pages/Admin';
-import AuthPage from "@/pages/auth";
+import AuthPage from "@/pages/auth/Login";
 import RegisterPage from "@/pages/auth/Register";
 import ConnectAccountPage from "@/pages/auth/ConnectAccount";
 import AuthTestPage from '@/pages/AuthTest';
@@ -29,23 +29,37 @@ import Privacy from '@/pages/docs/Privacy';
 import Terms from '@/pages/docs/Terms';
 import { ReactNode } from 'react';
 
+// Protected Route Component
+const ProtectedRoute = ({ children }: { children: ReactNode }) => {
+  const { isAuthenticated } = useAuthStore();
+  const location = useLocation();
+  
+  return isAuthenticated ? (
+    <>{children}</>
+  ) : (
+    <Navigate to="/login" state={{ from: location }} replace />
+  );
+};
+
+// Admin Route Component  
+const AdminRoute = ({ children }: { children: ReactNode }) => {
+  const { isAuthenticated, user } = useAuthStore();
+  const location = useLocation();
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+  
+  if (user?.role !== 'admin') {
+    return <Navigate to="/" replace />;
+  }
+  
+  return <>{children}</>;
+};
+
 export default function AppRoutes() {
   const { isAuthenticated, isLoading, user } = useAuthStore();
   // Force rebuild - updated routing Oct 4, 2025
-
-  const protectedRoute = (component: ReactNode, pathname: string) => {
-    return isAuthenticated ? component : <Navigate to="/login" state={{ from: { pathname: pathname } }} replace />
-  }
-
-  const adminRoute = (component: ReactNode, pathname: string) => {
-    if (!isAuthenticated) {
-      return <Navigate to="/login" state={{ from: { pathname: pathname } }} replace />;
-    }
-    if (user?.role !== 'admin') {
-      return <Navigate to="/" replace />;
-    }
-    return component;
-  }
 
   if (isLoading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
@@ -73,14 +87,15 @@ export default function AppRoutes() {
         <Route path="contact" element={<ContactPage />} />
         <Route path="calendar" element={<CalendarPage />} />
         <Route path="about" element={<AboutPage />} />
+        <Route path="about-copy" element={<AboutPage />} />
         <Route path="privacy" element={<Privacy />} />
         <Route path="terms" element={<Terms />} />
         <Route path="auth-test" element={<AuthTestPage />} />
-        <Route path="leaderboard" element={protectedRoute(<LeaderboardPage />, '/leaderboard')} />
-        <Route path="discussions" element={protectedRoute(<DiscussionsPage />, '/discussions')} />
-        <Route path="courses" element={protectedRoute(<CoursesPage />, '/courses')} />
-        <Route path="profile" element={protectedRoute(<ProfilePage />, '/profile')} />
-        <Route path="admin" element={adminRoute(<AdminPage />, '/admin')} />
+        <Route path="leaderboard" element={<ProtectedRoute><LeaderboardPage /></ProtectedRoute>} />
+        <Route path="discussions" element={<ProtectedRoute><DiscussionsPage /></ProtectedRoute>} />
+        <Route path="courses" element={<ProtectedRoute><CoursesPage /></ProtectedRoute>} />
+        <Route path="profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+        <Route path="admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
       </Route>
 
       {/* fallback */}

@@ -49,7 +49,7 @@ async function createMediaFolder(req, res, next) {
 async function uploadAvatar(req, res, next) {
   try {
     console.log('Avatar upload request received');
-    console.log('Body:', req.body);
+    console.log('Body keys:', Object.keys(req.body));
     console.log('Environment check:');
     console.log('PRIVATE_INTEGRATION_TOKEN:', process.env.PRIVATE_INTEGRATION_TOKEN ? 'SET' : 'NOT SET');
     console.log('LOCATION_ID:', process.env.LOCATION_ID);
@@ -64,86 +64,64 @@ async function uploadAvatar(req, res, next) {
       return res.status(400).json({ error: 'File data is required' });
     }
     
-    // Convert base64 to buffer if needed
+    // Convert base64 to buffer
     let fileBuffer;
     if (fileData.startsWith('data:')) {
-      // Handle data URL
       const base64Data = fileData.split(',')[1];
       fileBuffer = Buffer.from(base64Data, 'base64');
     } else {
-      // Assume it's already base64 encoded
       fileBuffer = Buffer.from(fileData, 'base64');
     }
     
     console.log(`Processing avatar upload for contact ${contactId}, file size: ${fileBuffer.length} bytes`);
     
-    // Upload to GoHighLevel - try using the SDK method first
-    console.log('Attempting GoHighLevel SDK upload...');
+    // Try GoHighLevel media upload with correct multipart/form-data format
+    const axios = require('axios');
+    const FormData = require('form-data');
     
-    try {
-      // Try the SDK method first
-      const result = await svc.uploadMediaContent({
-        locationId: locationId,
-        file: fileBuffer,
-        fileName: fileName || `avatar-${contactId}-${Date.now()}.jpg`,
-        fileType: mimeType || 'image/jpeg',
-        altAttribute: `Profile photo for contact ${contactId}`,
-        hosted: true
-      });
-      
-      console.log('GoHighLevel SDK upload successful:', result);
-      
-      const response = {
-        success: true,
-        mediaId: result.id,
-        mediaUrl: result.url || result.src,
-        message: 'Avatar uploaded successfully to GoHighLevel via SDK'
-      };
-      
-      return res.status(201).json(response);
-      
-    } catch (sdkError) {
-      console.warn('GoHighLevel SDK failed, trying direct API call:', sdkError.message);
-      
-      // Fallback to direct API call with corrected format
-      const axios = require('axios');
-      const FormData = require('form-data');
-      
-      const formData = new FormData();
-      
-      // According to GoHighLevel API docs, the required fields are:
-      formData.append('locationId', locationId);
-      formData.append('file', fileBuffer, {
-        filename: fileName || `avatar-${contactId}-${Date.now()}.jpg`,
-        contentType: mimeType || 'image/jpeg'
-      });
-      
-      // Optional fields
-      formData.append('altAttribute', `Profile photo for contact ${contactId}`);
-      
-      console.log('Uploading to GoHighLevel media storage via direct API...');
-      console.log('LocationId:', locationId);
-      
-      const ghlResponse = await axios.post('https://services.leadconnectorhq.com/medias/upload-file', formData, {
-        headers: {
-          ...formData.getHeaders(),
-          'Authorization': `Bearer ${process.env.PRIVATE_INTEGRATION_TOKEN}`,
-          'Version': '2021-07-28'
-        },
-        timeout: 30000
-      });
-      
-      console.log('GoHighLevel direct API upload successful:', ghlResponse.data);
-      
-      const response = {
-        success: true,
-        mediaId: ghlResponse.data.id,
-        mediaUrl: ghlResponse.data.url || ghlResponse.data.src,
-        message: 'Avatar uploaded successfully to GoHighLevel via direct API'
-      };
-      
-      return res.status(201).json(response);
+    const formData = new FormData();
+    
+    // Use the correct field names for GoHighLevel API
+    formData.append('locationId', locationId);
+    formData.append('file', fileBuffer, {
+      filename: fileName || `avatar-${contactId}-${Date.now()}.jpg`,
+      contentType: mimeType || 'image/jpeg'
+    });
+    formData.append('hosted', 'true'); // Ensure it's hosted on GHL
+    
+    console.log('Uploading to GoHighLevel with FormData...');
+    
+    const ghlResponse = await axios.post('https://services.leadconnectorhq.com/medias/upload-file', formData, {
+      headers: {
+        ...formData.getHeaders(),
+        'Authorization': `Bearer ${process.env.PRIVATE_INTEGRATION_TOKEN}`,
+        'Version': '2021-07-28'
+      },
+      timeout: 30000,
+      maxContentLength: Infinity,
+      maxBodyLength: Infinity
+    });
+    
+    console.log('GoHighLevel upload successful:', ghlResponse.data);
+    
+    // Extract the media URL from the response
+    const mediaData = ghlResponse.data;
+    const mediaUrl = mediaData.url || mediaData.src || mediaData.mediaUrl;
+    const mediaId = mediaData.id || mediaData.mediaId;
+    
+    if (!mediaUrl) {
+      console.error('No media URL in response:', mediaData);
+      throw new Error('Upload succeeded but no media URL returned');
     }
+    
+    const response = {
+      success: true,
+      mediaId: mediaId,
+      mediaUrl: mediaUrl,
+      message: 'Avatar uploaded successfully to GoHighLevel'
+    };
+    
+    return res.status(201).json(response);
     
   } catch (err) { 
     console.error('Avatar upload error details:', err);
@@ -154,12 +132,19 @@ async function uploadAvatar(req, res, next) {
     let statusCode = 500;
     
     if (err.response) {
-      // GoHighLevel API responded with an error
       statusCode = err.response.status;
-      errorMessage = `GoHighLevel API error (${statusCode}): ${err.response.data?.message || err.message}`;
       console.error('GoHighLevel API response:', err.response.data);
+      
+      if (err.response.data?.message) {
+        if (Array.isArray(err.response.data.message)) {
+          errorMessage = `GoHighLevel API error: ${err.response.data.message.join(', ')}`;
+        } else {
+          errorMessage = `GoHighLevel API error: ${err.response.data.message}`;
+        }
+      } else {
+        errorMessage = `GoHighLevel API error (${statusCode}): ${err.message}`;
+      }
     } else if (err.request) {
-      // Network error
       errorMessage = 'Network error connecting to GoHighLevel API';
     }
     

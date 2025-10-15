@@ -30,6 +30,7 @@ export interface Member {
   avatar?: string;
   profilePhoto?: string;
   bio?: string;
+  coverImage?: string;
   
   // GoHighLevel Specific Fields
   tags: string[];

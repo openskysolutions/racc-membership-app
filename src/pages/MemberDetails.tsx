@@ -13,6 +13,7 @@ import { api } from '@/services/apiClient';
 import { useAuthStore } from '@/stores/authStore';
 import type { Member } from '@/types/member';
 import AvatarUpload from '@/components/AvatarUpload';
+import CoverImageUpload from '@/components/CoverImageUpload';
 
 interface MemberFormData {
   firstName: string;
@@ -22,6 +23,7 @@ interface MemberFormData {
   phone: string;
   website: string;
   bio: string;
+  coverImage: string;
   email: string;
   address: {
     street: string;
@@ -35,7 +37,7 @@ const MemberDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  
+
   const [member, setMember] = useState<Member | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -49,6 +51,7 @@ const MemberDetailsPage: React.FC = () => {
     phone: '',
     website: '',
     bio: '',
+    coverImage: '',
     email: '',
     address: {
       street: '',
@@ -79,7 +82,7 @@ const MemberDetailsPage: React.FC = () => {
       try {
         setLoading(true);
         const response = await api.get(`/members/${id}`);
-        
+
         if (!response.ok) {
           if (response.status === 404) {
             setError('Member not found');
@@ -88,7 +91,7 @@ const MemberDetailsPage: React.FC = () => {
           }
           return;
         }
-        
+
         const memberData: Member = await response.json();
         console.log('🔍 Fetched member data:', {
           id: memberData.id,
@@ -97,7 +100,7 @@ const MemberDetailsPage: React.FC = () => {
           fullName: memberData.fullName
         });
         setMember(memberData);
-        
+
         // Initialize form data
         setFormData({
           firstName: memberData.firstName || '',
@@ -107,6 +110,7 @@ const MemberDetailsPage: React.FC = () => {
           phone: memberData.phone || '',
           website: memberData.website || '',
           bio: memberData.bio || '',
+          coverImage: memberData.coverImage || '',
           email: memberData.email || '',
           address: {
             street: memberData.address?.street || '',
@@ -173,7 +177,7 @@ const MemberDetailsPage: React.FC = () => {
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    
+
     // Handle nested address fields
     if (name.startsWith('address.')) {
       const addressField = name.split('.')[1];
@@ -200,20 +204,20 @@ const MemberDetailsPage: React.FC = () => {
 
     try {
       const response = await api.put(`/members/${member.id}`, formData);
-      
+
       if (!response.ok) {
         throw new Error(`Failed to update member: ${response.statusText}`);
       }
-      
+
       const updatedMember: Member = await response.json();
       setMember(updatedMember);
       setIsEditing(false);
       setMessage({ type: 'success', text: 'Profile updated successfully!' });
     } catch (err) {
       console.error('Error updating member:', err);
-      setMessage({ 
-        type: 'error', 
-        text: err instanceof Error ? err.message : 'Failed to update profile' 
+      setMessage({
+        type: 'error',
+        text: err instanceof Error ? err.message : 'Failed to update profile'
       });
     } finally {
       setUpdating(false);
@@ -230,6 +234,7 @@ const MemberDetailsPage: React.FC = () => {
         phone: member.phone || '',
         website: member.website || '',
         bio: member.bio || '',
+        coverImage: member.coverImage || '',
         email: member.email || '',
         address: {
           street: member.address?.street || '',
@@ -282,26 +287,26 @@ const MemberDetailsPage: React.FC = () => {
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Members
         </Button>
-        
+
         {canEdit && !isEditing && (
           <Button onClick={() => setIsEditing(true)}>
             <Edit className="h-4 w-4 mr-2" />
             Edit Profile
           </Button>
         )}
-        
+
         {isEditing && (
           <div className="flex gap-2">
-            <Button 
-              onClick={handleSave} 
+            <Button
+              onClick={handleSave}
               disabled={updating}
               className="bg-green-600 hover:bg-green-700"
             >
               <Save className="h-4 w-4 mr-2" />
               {updating ? 'Saving...' : 'Save'}
             </Button>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={handleCancel}
               disabled={updating}
             >
@@ -322,78 +327,66 @@ const MemberDetailsPage: React.FC = () => {
 
       {/* Responsive Layout Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
-        {/* Left Column - Map & Address (1/3 on large screens, stacks on smaller) */}
+        {/* Left Column - Address & Location (1/3 on large screens, stacks on smaller) */}
         <div className="lg:order-1 order-2 space-y-6">
-          {/* Address Card */}
+          {/* Combined Address & Location Card */}
           {(member.address?.street || member.address?.city || member.address?.state || member.address?.zipCode) && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <MapPin className="h-5 w-5" />
-                  Address
+                  Address & Location
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2">
-                {member.address?.street && (
-                  <p className="text-sm text-muted-foreground">{member.address.street}</p>
-                )}
-                <p className="text-sm text-muted-foreground">
-                  {[member.address?.city, member.address?.state, member.address?.zipCode]
-                    .filter(Boolean)
-                    .join(', ')}
-                </p>
+              <CardContent className="space-y-4">
+                {/* Address Information */}
+                <div className="space-y-2">
+                  {member.address?.street && (
+                    <p className="text-sm text-muted-foreground">{member.address.street}</p>
+                  )}
+                  <p className="text-sm text-muted-foreground">
+                    {[member.address?.city, member.address?.state, member.address?.zipCode]
+                      .filter(Boolean)
+                      .join(', ')}
+                  </p>
+                </div>
+
+                {/* Embedded Map */}
                 {(member.address?.street || member.address?.city) && (
-                  <div className="pt-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full"
-                      onClick={() => {
-                        const address = [
-                          member.address?.street,
-                          member.address?.city,
-                          member.address?.state,
-                          member.address?.zipCode
-                        ].filter(Boolean).join(', ');
-                        window.open(`https://maps.google.com/?q=${encodeURIComponent(address)}`, '_blank');
-                      }}
-                    >
-                      <ExternalLink className="h-4 w-4 mr-2" />
-                      View on Maps
-                    </Button>
+                  <div className="w-full h-64 bg-muted rounded-lg overflow-hidden border">
+                    <iframe
+                      src={`https://maps.google.com/maps?q=${encodeURIComponent([
+                        member.address?.street,
+                        member.address?.city,
+                        member.address?.state,
+                        member.address?.zipCode
+                      ].filter(Boolean).join(', '))}&t=&z=12&ie=UTF8&iwloc=&output=embed`}
+                      width="100%"
+                      height="100%"
+                      style={{ border: 0 }}
+                      allowFullScreen
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                      title="Member Location"
+                    />
                   </div>
                 )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Embedded Map */}
-          {(member.address?.street || member.address?.city) && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MapPin className="h-5 w-5" />
-                  Location
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="w-full h-64 bg-muted rounded-b-lg overflow-hidden">
-                  <iframe
-                    src={`https://maps.google.com/maps?q=${encodeURIComponent([
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => {
+                    const address = [
                       member.address?.street,
                       member.address?.city,
                       member.address?.state,
                       member.address?.zipCode
-                    ].filter(Boolean).join(', '))}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
-                    width="100%"
-                    height="100%"
-                    style={{ border: 0 }}
-                    allowFullScreen
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                    title="Member Location"
-                  />
-                </div>
+                    ].filter(Boolean).join(', ');
+                    window.open(`https://maps.google.com/?q=${encodeURIComponent(address)}`, '_blank');
+                  }}
+                >
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  View on Maps
+                </Button>
               </CardContent>
             </Card>
           )}
@@ -404,182 +397,184 @@ const MemberDetailsPage: React.FC = () => {
           <Card>
             <CardHeader>
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            {canEdit && isEditing 
-              ? <AvatarUpload
-                  contactId={member?.id || ''}
-                  currentAvatar={member?.avatar}
-                  fallbackText={getInitials(member || {} as Member)}
-                  onAvatarUpdated={(newAvatarUrl: string) => {
-                    if (member) {
-                      setMember({ ...member, avatar: newAvatarUrl });
-                    }
-                  }}
-                />
-              : <Avatar className="h-20 w-20">
-                  {member.avatar ? (
-                    <AvatarImage src={member.avatar} alt={formatMemberName(member)} />
-                  ) : (
-                    <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xl">
-                      {getInitials(member)}
-                    </AvatarFallback>
+                {canEdit && isEditing
+                  ? <AvatarUpload
+                    contactId={member?.id || ''}
+                    currentAvatar={member?.avatar}
+                    fallbackText={getInitials(member || {} as Member)}
+                    onAvatarUpdated={(newAvatarUrl: string) => {
+                      if (member) {
+                        setMember({ ...member, avatar: newAvatarUrl });
+                      }
+                    }}
+                  />
+                  : <Avatar className="h-20 w-20">
+                    {member.avatar ? (
+                      <AvatarImage src={member.avatar} alt={formatMemberName(member)} />
+                    ) : (
+                      <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xl">
+                        {getInitials(member)}
+                      </AvatarFallback>
+                    )}
+                  </Avatar>
+                }
+                <div className="flex-1">
+                  <CardTitle className="text-2xl mb-2">
+                    {member.businessName || formatMemberName(member)}
+                  </CardTitle>
+
+                  {member.businessName && (
+                    <p className="text-lg text-muted-foreground mb-2">
+                      {formatMemberName(member)}
+                    </p>
                   )}
-                </Avatar>
-            }
-            <div className="flex-1">
-              <CardTitle className="text-2xl mb-2">
-                {member.businessName || formatMemberName(member)}
-              </CardTitle>
-              
-              {member.businessName && (
-                <p className="text-lg text-muted-foreground mb-2">
-                  {formatMemberName(member)}
-                </p>
-              )}
-              
-              <div className="flex flex-wrap gap-2">
-                <Badge className={`${getRoleColor(member.role)} flex items-center gap-1`}>
-                  {getRoleIcon(member.role)}
-                  {member.role.charAt(0).toUpperCase() + member.role.slice(1)}
-                </Badge>
+
+                  <div className="flex flex-wrap gap-2">
+                    <Badge className={`${getRoleColor(member.role)} flex items-center gap-1`}>
+                      {getRoleIcon(member.role)}
+                      {member.role.charAt(0).toUpperCase() + member.role.slice(1)}
+                    </Badge>
+
+                    <Badge variant="outline" className="text-green-700 border-green-300">
+                      {member.status.charAt(0).toUpperCase() + member.status.slice(1)}
+                    </Badge>
+
+                    {user?.id === member.id && (
+                      <Badge variant="secondary">Your Profile</Badge>
+                    )}
+                  </div>
+                </div>
                 
-                <Badge variant="outline" className="text-green-700 border-green-300">
-                  {member.status.charAt(0).toUpperCase() + member.status.slice(1)}
-                </Badge>
-                
-                {user?.id === member.id && (
-                  <Badge variant="secondary">Your Profile</Badge>
-                )}
-              </div>
-            </div>
-          </div>
-        </CardHeader>
-        
-        <CardContent className="space-y-6">
-          {isEditing ? (
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="firstName" className="block text-sm font-medium mb-1">
-                    First Name *
-                  </label>
-                  <Input
-                    id="firstName"
-                    name="firstName"
-                    value={formData.firstName}
-                    onChange={handleFormChange}
-                    required
-                  />
-                </div>
-                <div>
-                  <label htmlFor="lastName" className="block text-sm font-medium mb-1">
-                    Last Name *
-                  </label>
-                  <Input
-                    id="lastName"
-                    name="lastName"
-                    value={formData.lastName}
-                    onChange={handleFormChange}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="businessName" className="block text-sm font-medium mb-1">
-                  Business Name
-                </label>
-                <Input
-                  id="businessName"
-                  name="businessName"
-                  value={formData.businessName}
-                  onChange={handleFormChange}
-                />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="phone" className="block text-sm font-medium mb-1">
-                    Phone Number
-                  </label>
-                  <Input
-                    id="phone"
-                    name="phone"
-                    type="tel"
-                    value={formData.phone}
-                    onChange={handleFormChange}
-                  />
-                </div>
-                <div>
-                  <label htmlFor="email" className="block text-sm font-medium mb-1">
-                    Email
-                  </label>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={handleFormChange}
-                    disabled
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="bio" className="block text-sm font-medium mb-1">
-                  Bio / About
-                </label>
-                <Textarea
-                  id="bio"
-                  name="bio"
-                  value={formData.bio}
-                  onChange={handleFormChange}
-                  placeholder="Tell us about yourself or your business..."
-                  rows={4}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="companyName" className="block text-sm font-medium mb-1">
-                    Company Name
-                  </label>
-                  <Input
-                    id="companyName"
-                    name="companyName"
-                    value={formData.companyName}
-                    onChange={handleFormChange}
-                  />
-                </div>
-                <div>
-                  <label htmlFor="website" className="block text-sm font-medium mb-1">
-                    Website
-                  </label>
-                  <Input
-                    id="website"
-                    name="website"
-                    type="url"
-                    value={formData.website}
-                    onChange={handleFormChange}
-                    placeholder="https://example.com"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <h3 className="font-semibold mb-3">Address Information</h3>
-                <div className="space-y-4">
-                  <div>
-                    <label htmlFor="address.street" className="block text-sm font-medium mb-1">
-                      Street Address
-                    </label>
-                    <Input
-                      id="address.street"
-                      name="address.street"
-                      value={formData.address.street}
-                      onChange={handleFormChange}
-                      placeholder="123 Main Street"
+                {/* Cover Image Upload - Only show when editing */}
+                {canEdit && isEditing && (
+                  <div className="flex-shrink-0">
+                    <CoverImageUpload
+                      contactId={member?.id || ''}
+                      fallbackText={''}
+                      currentCoverImage={member?.coverImage}
+                      onCoverImageUpdated={(newCoverImageUrl: string) => {
+                        if (member) {
+                          setMember({ ...member, coverImage: newCoverImageUrl });
+                        }
+                      }}                     
                     />
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                )}
+              </div>
+            </CardHeader>
+
+            <CardContent className="space-y-6">
+              {isEditing ? (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="firstName" className="block text-sm font-medium mb-1">
+                        First Name *
+                      </label>
+                      <Input
+                        id="firstName"
+                        name="firstName"
+                        value={formData.firstName}
+                        onChange={handleFormChange}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="lastName" className="block text-sm font-medium mb-1">
+                        Last Name *
+                      </label>
+                      <Input
+                        id="lastName"
+                        name="lastName"
+                        value={formData.lastName}
+                        onChange={handleFormChange}
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="phone" className="block text-sm font-medium mb-1">
+                        Phone Number
+                      </label>
+                      <Input
+                        id="phone"
+                        name="phone"
+                        type="tel"
+                        value={formData.phone}
+                        onChange={handleFormChange}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="email" className="block text-sm font-medium mb-1">
+                        Email
+                      </label>
+                      <Input
+                        id="email"
+                        name="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={handleFormChange}
+                        disabled
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label htmlFor="bio" className="block text-sm font-medium mb-1">
+                      Bio / About
+                    </label>
+                    <Textarea
+                      id="bio"
+                      name="bio"
+                      value={formData.bio}
+                      onChange={handleFormChange}
+                      placeholder="Tell us about yourself or your business..."
+                      rows={4}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="businessName" className="block text-sm font-medium mb-1">
+                        Business Name
+                      </label>
+                      <Input
+                        id="businessName"
+                        name="businessName"
+                        value={formData.businessName}
+                        onChange={handleFormChange}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="website" className="block text-sm font-medium mb-1">
+                        Website
+                      </label>
+                      <Input
+                        id="website"
+                        name="website"
+                        type="url"
+                        value={formData.website}
+                        onChange={handleFormChange}
+                        placeholder="https://example.com"
+                      />
+                    </div>
+                  </div>
+
+                  <h3 className="font-semibold mb-3">Address Information</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="address.street" className="block text-sm font-medium mb-1">
+                        Street Address
+                      </label>
+                      <Input
+                        id="address.street"
+                        name="address.street"
+                        value={formData.address.street}
+                        onChange={handleFormChange}
+                        placeholder="123 Main Street"
+                      />
+                    </div>
                     <div>
                       <label htmlFor="address.city" className="block text-sm font-medium mb-1">
                         City
@@ -592,6 +587,8 @@ const MemberDetailsPage: React.FC = () => {
                         placeholder="City"
                       />
                     </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label htmlFor="address.state" className="block text-sm font-medium mb-1">
                         State
@@ -619,95 +616,91 @@ const MemberDetailsPage: React.FC = () => {
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-6 sm:ml-24">
-              {/* Bio */}
-              {member.bio && (
-                <div>
-                  <h3 className="font-semibold mb-2 flex items-center gap-2">
-                    <User className="h-4 w-4" />
-                    About
+              ) : (
+                <div className="space-y-6 sm:ml-24">
+                  {/* Bio */}
+                  {member.bio && (
+                    <div>
+                      <h3 className="font-semibold mb-2 flex items-center gap-2">
+                        <User className="h-4 w-4" />
+                        About
+                      </h3>
+                      <p className="text-muted-foreground leading-relaxed">{member.bio}</p>
+                    </div>
+                  )}
+
+                  {/* Contact Information */}
+                  <div>
+                    <h3 className="font-semibold mb-3 flex items-center gap-2">
+                      Contact Information
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="flex items-center gap-3">
+                        <Mail className="h-4 w-4 text-muted-foreground" />
+                        <a
+                          href={`mailto:${member.email}`}
+                          className="text-primary hover:underline flex-1 truncate"
+                        >
+                          {member.email}
+                        </a>
+                      </div>
+
+                      {member.phone && (
+                        <div className="flex items-center gap-3">
+                          <Phone className="h-4 w-4 text-muted-foreground" />
+                          <a
+                            href={`tel:${member.phone}`}
+                            className="text-primary hover:underline"
+                          >
+                            {member.phone}
+                          </a>
+                        </div>
+                      )}
+
+                      {member.website && (
+                        <div className="flex items-center gap-3">
+                          <Globe className="h-4 w-4 text-muted-foreground" />
+                          <a
+                            href={member.website}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary hover:underline flex-1 truncate"
+                          >
+                            {member.website.replace(/^https?:\/\//, '')}
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Membership Information */}
+                  <h3 className="font-semibold mb-3 flex items-center gap-2">
+                    Membership
                   </h3>
-                  <p className="text-muted-foreground leading-relaxed">{member.bio}</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex items-center gap-3">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <p className="text-sm font-medium">Member Since</p>
+                        <p className="text-sm text-muted-foreground">
+                          {member.memberSince ? new Date(member.memberSince).toLocaleDateString() : 'Unknown'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <Shield className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <p className="text-sm font-medium">Membership Tier</p>
+                        <p className="text-sm text-muted-foreground">
+                          {capitalizeFirst((member as any).membershipTier || 'Standard')}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
-
-              {/* Contact Information */}
-              <div>
-                <h3 className="font-semibold mb-3 flex items-center gap-2">
-                  Contact Information
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="flex items-center gap-3">
-                    <Mail className="h-4 w-4 text-muted-foreground" />
-                    <a 
-                      href={`mailto:${member.email}`}
-                      className="text-primary hover:underline flex-1 truncate"
-                    >
-                      {member.email}
-                    </a>
-                  </div>
-                  
-                  {member.phone && (
-                    <div className="flex items-center gap-3">
-                      <Phone className="h-4 w-4 text-muted-foreground" />
-                      <a 
-                        href={`tel:${member.phone}`}
-                        className="text-primary hover:underline"
-                      >
-                        {member.phone}
-                      </a>
-                    </div>
-                  )}
-                  
-                  {member.website && (
-                    <div className="flex items-center gap-3">
-                      <Globe className="h-4 w-4 text-muted-foreground" />
-                      <a 
-                        href={member.website}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary hover:underline flex-1 truncate"
-                      >
-                        {member.website.replace(/^https?:\/\//, '')}
-                      </a>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Membership Information */}
-              <div>
-                <h3 className="font-semibold mb-3 flex items-center gap-2">
-                  Membership
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="flex items-center gap-3">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm font-medium">Member Since</p>
-                      <p className="text-sm text-muted-foreground">
-                        {member.memberSince ? new Date(member.memberSince).toLocaleDateString() : 'Unknown'}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-3">
-                    <Shield className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm font-medium">Membership Tier</p>
-                      <p className="text-sm text-muted-foreground">
-                        {capitalizeFirst((member as any).membershipTier || 'Standard')}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </CardContent>
+            </CardContent>
           </Card>
         </div>
       </div>

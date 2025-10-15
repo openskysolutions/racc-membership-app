@@ -15,6 +15,7 @@ export interface Member {
     phone?: string;
     website?: string;
     bio?: string;
+    coverImage?: string;
   };
   createdAt: string; // ISO 8601
   updatedAt: string; // ISO 8601

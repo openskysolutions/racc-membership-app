@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { PasswordInput } from '@/components/ui/password-input';
@@ -26,6 +26,7 @@ export const RegisterPage = () => {
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const { theme } = useTheme();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -93,10 +94,13 @@ export const RegisterPage = () => {
 
       // Redirect to login after 2 seconds
       setTimeout(() => {
+        // Preserve the intended destination when redirecting to login
+        const from = location.state?.from?.pathname || '/';
         navigate('/auth', { 
           state: { 
             message: 'Registration successful! Please sign in.',
-            email: formData.email 
+            email: formData.email,
+            from: { pathname: from }
           }
         });
       }, 2000);

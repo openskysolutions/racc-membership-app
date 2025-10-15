@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Input } from '@/components/ui/input';
 import { PasswordInput } from '@/components/ui/password-input';
 import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import LogoLight from '@/assets/racc-logo.png'; // Adjust the path to your logo file
 import LogoDark from '@/assets/racc-logo-dark.png';  
 import { login } from '@/services/auth';
@@ -16,8 +16,12 @@ export const AuthPage = () => {
   const [remember, setRemember] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const location = useLocation();
   const setUser = useAuthStore(state => state.setUser);
   const { theme } = useTheme();
+
+  // Get the intended destination from location state, default to home
+  const from = location.state?.from?.pathname || '/';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,7 +29,8 @@ export const AuthPage = () => {
     try {
       const response = await login({ email, password });
       setUser(response.user);
-      navigate('/');
+      // Redirect to the page they were trying to access, or home if no specific page
+      navigate(from, { replace: true });
     } catch (e: any) {
       setError(e.message || 'Login failed');
     }

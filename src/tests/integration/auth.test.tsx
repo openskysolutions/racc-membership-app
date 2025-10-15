@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
-import { AuthPage } from '@/pages/auth';
+import { AuthPage } from '@/pages/auth/Login';
 import { ThemeProvider } from '@/providers/theme-provider';
 import '@testing-library/jest-dom';
 import * as authService from '@/services/auth';

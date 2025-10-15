@@ -23,8 +23,9 @@ interface ContactData {
   postalCode?: string;
   country?: string;
   timezone?: string;
-  // Bio will be handled as a custom field
+  // Bio and cover image will be handled as custom fields
   bio?: string;
+  coverImage?: string;
 }
 
 interface PaymentLinkData {
@@ -628,6 +629,14 @@ class GoHighLevelService {
         customFields.push({
           key: 'bio',
           field_value: updateData.bio
+        });
+      }
+      
+      // Add cover image as a custom field if provided
+      if (updateData.coverImage !== undefined) {
+        customFields.push({
+          key: 'cover_image',
+          field_value: updateData.coverImage
         });
       }
       

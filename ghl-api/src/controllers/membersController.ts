@@ -30,6 +30,7 @@ interface Member {
   website?: string;
   bio?: string;
   avatar?: string;
+  coverImage?: string;
   
   // GoHighLevel Specific Fields
   tags: string[];
@@ -209,6 +210,7 @@ class MembersController {
     const CUSTOM_FIELD_IDS = {
       bio: 'b3Yfp0NjO23zFXzwjswu',
       avatar_url: '331dKIcjgTa8z8a6mu37',
+      cover_image: '3tSDY90RIMPP4W7uQxF9',
       memberSince: 'Dxt6gzc4osQhaCBPhslY',
       membershipType: 'inm2jc52WNhxX8H2FHHm',
       organizationType: 'kPoBTUVldHyg3WbywLJ9'
@@ -253,6 +255,7 @@ class MembersController {
       website: contact.website || '',
       avatar: avatarUrl,
       bio: getCustomField('bio') || '', // Bio is stored as a custom field
+      coverImage: getCustomField('cover_image') || '', // Cover image is stored as a custom field
       
       // GoHighLevel Specific Fields
       tags: tags,
@@ -364,8 +367,9 @@ class MembersController {
         phone: updateData.phone,
         website: updateData.website,
         companyName: updateData.businessName, // Map businessName to GoHighLevel's companyName field
-        // Map bio to the correct field
+        // Map bio and cover image to custom fields
         bio: updateData.bio || '',
+        coverImage: updateData.coverImage || '',
         // Map address fields to correct GoHighLevel fields
         address1: updateData.address?.street || '',
         city: updateData.address?.city || '',

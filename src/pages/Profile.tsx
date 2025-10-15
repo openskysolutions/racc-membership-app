@@ -346,18 +346,6 @@ const ProfilePage: React.FC = () => {
                   />
                 </div>
               </div>
-
-              <div>
-                <label htmlFor="businessName" className="block text-sm font-medium mb-1">
-                  Business Name
-                </label>
-                <Input
-                  id="businessName"
-                  name="businessName"
-                  value={formData.businessName}
-                  onChange={handleChange}
-                />
-              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="phone" className="block text-sm font-medium mb-1">
@@ -372,16 +360,16 @@ const ProfilePage: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label htmlFor="website" className="block text-sm font-medium mb-1">
-                    Website
+                  <label htmlFor="email" className="block text-sm font-medium mb-1">
+                    Email Address *
                   </label>
                   <Input
-                    id="website"
-                    name="website"
-                    type="url"
-                    value={formData.website}
+                    id="email"
+                    name="email"
+                    type="email"
+                    value={formData.email || ''}
                     onChange={handleChange}
-                    placeholder="https://example.com"
+                    required
                   />
                 </div>
               </div>
@@ -402,85 +390,83 @@ const ProfilePage: React.FC = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="companyName" className="block text-sm font-medium mb-1">
-                    Company Name
+                  <label htmlFor="businessName" className="block text-sm font-medium mb-1">
+                    Business Name
                   </label>
                   <Input
-                    id="companyName"
-                    name="companyName"
-                    value={formData.companyName || ''}
+                    id="businessName"
+                    name="businessName"
+                    value={formData.businessName}
                     onChange={handleChange}
                   />
                 </div>
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium mb-1">
-                    Email Address *
+                  <label htmlFor="website" className="block text-sm font-medium mb-1">
+                    Website
                   </label>
                   <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    value={formData.email || ''}
+                    id="website"
+                    name="website"
+                    type="url"
+                    value={formData.website}
                     onChange={handleChange}
-                    required
+                    placeholder="https://example.com"
                   />
                 </div>
               </div>
 
-              <div>
-                <h3 className="font-semibold mb-3">Address Information</h3>
-                <div className="space-y-4">
-                  <div>
-                    <label htmlFor="address.street" className="block text-sm font-medium mb-1">
-                      Street Address
-                    </label>
-                    <Input
-                      id="address.street"
-                      name="address.street"
-                      value={formData.address?.street || ''}
-                      onChange={handleChange}
-                      placeholder="123 Main Street"
-                    />
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <label htmlFor="address.city" className="block text-sm font-medium mb-1">
-                        City
-                      </label>
-                      <Input
-                        id="address.city"
-                        name="address.city"
-                        value={formData.address?.city || ''}
-                        onChange={handleChange}
-                        placeholder="City"
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="address.state" className="block text-sm font-medium mb-1">
-                        State
-                      </label>
-                      <Input
-                        id="address.state"
-                        name="address.state"
-                        value={formData.address?.state || ''}
-                        onChange={handleChange}
-                        placeholder="UT"
-                        maxLength={2}
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="address.zipCode" className="block text-sm font-medium mb-1">
-                        ZIP Code
-                      </label>
-                      <Input
-                        id="address.zipCode"
-                        name="address.zipCode"
-                        value={formData.address?.zipCode || ''}
-                        onChange={handleChange}
-                        placeholder="12345"
-                      />
-                    </div>
-                  </div>
+              <h3 className="font-semibold mb-3">Address Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="address.street" className="block text-sm font-medium mb-1">
+                    Street Address
+                  </label>
+                  <Input
+                    id="address.street"
+                    name="address.street"
+                    value={formData.address?.street || ''}
+                    onChange={handleChange}
+                    placeholder="123 Main Street"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="address.city" className="block text-sm font-medium mb-1">
+                    City
+                  </label>
+                  <Input
+                    id="address.city"
+                    name="address.city"
+                    value={formData.address?.city || ''}
+                    onChange={handleChange}
+                    placeholder="City"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="address.state" className="block text-sm font-medium mb-1">
+                    State
+                  </label>
+                  <Input
+                    id="address.state"
+                    name="address.state"
+                    value={formData.address?.state || ''}
+                    onChange={handleChange}
+                    placeholder="UT"
+                    maxLength={2}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="address.zipCode" className="block text-sm font-medium mb-1">
+                    ZIP Code
+                  </label>
+                  <Input
+                    id="address.zipCode"
+                    name="address.zipCode"
+                    value={formData.address?.zipCode || ''}
+                    onChange={handleChange}
+                    placeholder="12345"
+                  />
                 </div>
               </div>
             </form>
