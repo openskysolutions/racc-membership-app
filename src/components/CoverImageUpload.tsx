@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import { useState, useRef, FC, ChangeEvent } from 'react';
 import { Camera, X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -19,7 +19,7 @@ interface CoverImageUploadProps {
   disabled?: boolean;
 }
 
-const CoverImageUpload: React.FC<CoverImageUploadProps> = ({
+const CoverImageUpload: FC<CoverImageUploadProps> = ({
   currentCoverImage,
   contactId,
   fallbackText,
@@ -44,7 +44,7 @@ const CoverImageUpload: React.FC<CoverImageUploadProps> = ({
     lg: 'h-10 w-10'
   };
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 

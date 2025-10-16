@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, ChangeEvent, FormEvent } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -58,7 +58,7 @@ export const ConnectAccountPage = () => {
     }
   }, [location.search]);
 
-  const handleEmailVerification = async (e: React.FormEvent) => {
+  const handleEmailVerification = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
@@ -138,7 +138,7 @@ export const ConnectAccountPage = () => {
     }
   };
 
-  const handleEmailConfirmation = async (e: React.FormEvent) => {
+  const handleEmailConfirmation = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
@@ -195,7 +195,7 @@ export const ConnectAccountPage = () => {
     }
   };
 
-  const handleRegistration = async (e: React.FormEvent) => {
+  const handleRegistration = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
@@ -246,7 +246,7 @@ export const ConnectAccountPage = () => {
     }
   };
 
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFormChange = (e: ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({
       ...prev,
       [e.target.name]: e.target.value

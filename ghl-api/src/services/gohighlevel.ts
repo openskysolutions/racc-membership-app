@@ -197,14 +197,23 @@ class GoHighLevelService {
         tags: contact.tags
       });
 
-      // Check if contact has "active" tag
+      // Check if contact has "active" tag or "admin" tag
       const hasActiveTag = contact.tags && contact.tags.includes('active');
+      const hasAdminTag = contact.tags && contact.tags.includes('admin');
       
       console.log(`🏷️ Contact tags:`, contact.tags);
       console.log(`✓ Has 'active' tag:`, hasActiveTag);
+      console.log(`✓ Has 'admin' tag:`, hasAdminTag);
+
+      // User is considered active if they have either 'active' tag or 'admin' tag
+      const isActive = hasActiveTag || hasAdminTag;
+      
+      if (hasAdminTag && !hasActiveTag) {
+        console.log(`🔑 User ${email} has 'admin' tag - automatically considered active`);
+      }
 
       return {
-        isActive: hasActiveTag,
+        isActive: isActive,
         contact: contact
       };
 
@@ -854,6 +863,7 @@ class GoHighLevelService {
 
   /**
    * Get contacts with 'active' tag and at least one membership package tag
+   * OR contacts with 'admin' tag (admin users don't need membership package tags)
    * Using GoHighLevel's search API for server-side filtering
    */
   async getContactsWithMembershipTags(limit: number = 10000): Promise<any[]> {
@@ -864,7 +874,7 @@ class GoHighLevelService {
     ];
 
     if (this.developmentMode) {
-      console.log(`🚧 DEV MODE: Mock fetching contacts with active + membership package tags`);
+      console.log(`🚧 DEV MODE: Mock fetching contacts with active + membership package tags OR admin tag`);
       // Return mock members with membership package tags for development
       return [
         {
@@ -923,7 +933,7 @@ class GoHighLevelService {
     }
 
     // Use GoHighLevel's search API with tag filters for server-side filtering
-    console.log(`🎯 Using GHL search API to filter contacts with active + membership package tags...`);
+    console.log(`🎯 Using GHL search API to filter contacts with (active + membership package tags) OR admin tag...`);
     
     try {
       let allContacts: any[] = [];
@@ -935,28 +945,39 @@ class GoHighLevelService {
         console.log(`Searching contacts page ${page} with server-side tag filtering...`);
         
         // Build search filters for GoHighLevel API
+        // Two conditions: (active AND membership package) OR admin
         const searchBody = {
           locationId: this.locationId,
           page: page,
           pageLimit: pageLimit,
           filters: [
             {
-              group: "AND",
+              group: "OR",
               filters: [
-                // Must have 'active' tag
+                // Condition 1: Must have 'active' tag AND at least one membership package tag
+                {
+                  group: "AND",
+                  filters: [
+                    {
+                      field: "tags",
+                      operator: "contains",
+                      value: "active"
+                    },
+                    {
+                      group: "OR",
+                      filters: membershipPackageTags.map(tag => ({
+                        field: "tags",
+                        operator: "contains", 
+                        value: tag
+                      }))
+                    }
+                  ]
+                },
+                // Condition 2: Must have 'admin' tag (no membership package required)
                 {
                   field: "tags",
                   operator: "contains",
-                  value: "active"
-                },
-                // Must have at least one membership package tag (OR condition)
-                {
-                  group: "OR",
-                  filters: membershipPackageTags.map(tag => ({
-                    field: "tags",
-                    operator: "contains", 
-                    value: tag
-                  }))
+                  value: "admin"
                 }
               ]
             }
@@ -995,7 +1016,7 @@ class GoHighLevelService {
         }
       }
 
-      console.log(`🎉 Server-side filtered: Found ${allContacts.length} contacts with 'active' + membership package tags`);
+      console.log(`🎉 Server-side filtered: Found ${allContacts.length} contacts with (active + membership package tags) OR admin tag`);
       return allContacts.slice(0, limit);
       
     } catch (error: any) {
@@ -1008,10 +1029,17 @@ class GoHighLevelService {
       
       const filteredContacts = activeContacts.filter((contact: any) => {
         if (!contact.tags || !Array.isArray(contact.tags)) return false;
+        
+        // Allow if user has admin tag (no membership package required)
+        if (contact.tags.includes('admin')) {
+          return true;
+        }
+        
+        // Otherwise, must have at least one membership package tag
         return membershipPackageTags.some(tag => contact.tags.includes(tag));
       });
 
-      console.log(`⚠️ Fallback: Filtered ${activeContacts.length} active contacts to ${filteredContacts.length} with membership packages`);
+      console.log(`⚠️ Fallback: Filtered ${activeContacts.length} active contacts to ${filteredContacts.length} with membership packages OR admin tag`);
       return filteredContacts.slice(0, limit);
     }
   }

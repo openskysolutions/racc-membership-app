@@ -6,6 +6,7 @@ import { ThemeProvider } from '@/providers/theme-provider';
 import '@testing-library/jest-dom';
 import * as authService from '@/services/auth';
 import * as authStore from '@/stores/authStore';
+import { ReactNode } from 'react';
 
 // Mock the auth service
 vi.mock('@/services/auth');
@@ -26,7 +27,7 @@ vi.mock('react-router-dom', async () => {
 });
 
 // Wrapper component to provide necessary context
-const TestWrapper = ({ children }: { children: React.ReactNode }) => (
+const TestWrapper = ({ children }: { children: ReactNode }) => (
   <BrowserRouter>
     <ThemeProvider defaultTheme="light" storageKey="test-theme">
       {children}

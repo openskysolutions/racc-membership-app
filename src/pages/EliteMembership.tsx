@@ -1,9 +1,9 @@
-import React, { useEffect } from 'react';
+import { FC, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Check } from 'lucide-react';
 import cn from 'classnames';
 
-const EliteMembershipPage: React.FC = () => {
+const EliteMembershipPage: FC = () => {
   useEffect(() => {
     // Load the form embed script
     const script = document.createElement('script');

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import { useState, useRef, FC, ChangeEvent } from 'react';
 import { Camera, X, Loader2 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -20,7 +20,7 @@ interface AvatarUploadProps {
   disabled?: boolean;
 }
 
-const AvatarUpload: React.FC<AvatarUploadProps> = ({
+const AvatarUpload: FC<AvatarUploadProps> = ({
   currentAvatar,
   contactId,
   fallbackText,
@@ -45,7 +45,7 @@ const AvatarUpload: React.FC<AvatarUploadProps> = ({
     lg: 'h-10 w-10'
   };
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 

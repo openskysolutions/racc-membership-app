@@ -6,6 +6,8 @@ import { useAuthStore } from '@/stores/authStore';
 import HomePage from '@/pages/Home';
 import NewsEventsPage from '@/pages/NewsEvents';
 import AboutPage from '@/pages/About';
+import AboutPageCopy from '@/pages/About-copy';
+import AboutUsCopyPage from '@/pages/AboutUsCopy';
 import MembersPage from '@/pages/Members';
 import MemberDetailsPage from '@/pages/MemberDetails';
 import JobPostingsPage from '@/pages/JobPostings';
@@ -87,7 +89,8 @@ export default function AppRoutes() {
         <Route path="contact" element={<ContactPage />} />
         <Route path="calendar" element={<CalendarPage />} />
         <Route path="about" element={<AboutPage />} />
-        <Route path="about-copy" element={<AboutPage />} />
+        <Route path="about-copy" element={<AboutPageCopy />} />
+        <Route path="about-us-copy" element={<AboutUsCopyPage />} />
         <Route path="privacy" element={<Privacy />} />
         <Route path="terms" element={<Terms />} />
         <Route path="auth-test" element={<AuthTestPage />} />

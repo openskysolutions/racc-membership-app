@@ -65,6 +65,10 @@ const routeList: RouteProps[] = [
     href: "/about",
     label: "About",
   },
+  {
+    href: "/about-us-copy",
+    label: "About Us (Editable)",
+  },
 ];
 
 export const Navbar = () => {
@@ -89,7 +93,7 @@ export const Navbar = () => {
             rel="noreferrer noopener"
             href="https://richfieldareachamber.com"
             className={cn(
-              "flex flex-row flex-grow flex-shrink-0 h-20 py-1 justify-center md:justify-start ml-10 md:ml-0",
+              "flex flex-row flex-shrink-0 h-20 py-1 justify-center md:justify-start",
             )}
           >
             <img
@@ -243,7 +247,7 @@ export const Navbar = () => {
                     </a>
                   </SheetTitle>
                 </SheetHeader>
-                <nav className="flex flex-col justify-start items-start -mt-4">
+                <nav className="flex flex-col justify-start items-start -mt-4 text-foreground">
                   {isAuthenticated &&
                     <button
                       onClick={() => {
@@ -268,7 +272,7 @@ export const Navbar = () => {
                       }}
                       className={cn(
                         // buttonVariants({ variant: "ghost" }),  
-                        "border-b-1 border-b-stone-300 dark:border-b-stone-400 text-sm rounded-none w-full py-2 !justify-start text-left"
+                        "text-foreground border-b-1 border-b-stone-300 dark:border-b-stone-400 text-sm rounded-none w-full py-2 !justify-start text-left"
                       )}
                     >
                       {label}
@@ -341,7 +345,7 @@ export const Navbar = () => {
         </NavigationMenuList>
       </NavigationMenu>
       <NavigationMenu className="hidden md:flex max-w-full w-full bg-background border-t dark:bg-neutral-800 border-t-border dark:border-t-popover"> 
-        <NavigationMenuList className="container h-10 px-0 w-screen flex justify-around items-center">
+        <NavigationMenuList className="container h-10 px-0 w-screen flex justify-around items-center text-foreground">
             {routeList.map(({ href, label }) => (
               <a
                 key={label}

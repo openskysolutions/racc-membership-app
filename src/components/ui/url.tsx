@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, FC, ReactNode } from 'react';
 import cn from 'classnames';
 
 interface UrlProps {
   url: string;
-  children?: React.ReactNode;
+  children?: ReactNode;
   className?: string;
   target?: string;
   rel?: string;
@@ -29,7 +29,7 @@ export const formatUrl = (url: string, preferHttps: boolean = true): string => {
   return preferHttps ? `https://${trimmedUrl}` : `http://${trimmedUrl}`;
 };
 
-export const Url: React.FC<UrlProps> = ({ 
+export const Url: FC<UrlProps> = ({ 
   url, 
   children, 
   className = "text-blue-600 hover:text-blue-800 underline",

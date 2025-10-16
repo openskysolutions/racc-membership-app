@@ -5,6 +5,7 @@ import DiscussionsPage from '@/pages/Discussions';
 import { ThemeProvider } from '@/providers/theme-provider';
 import '@testing-library/jest-dom';
 import * as moderationService from '@/services/moderation';
+import { ReactNode } from 'react';
 
 // Mock the moderation service
 vi.mock('@/services/moderation');
@@ -21,7 +22,7 @@ vi.mock('react-router-dom', async () => {
 });
 
 // Wrapper component to provide necessary context
-const TestWrapper = ({ children }: { children: React.ReactNode }) => (
+const TestWrapper = ({ children }: { children: ReactNode }) => (
   <BrowserRouter>
     <ThemeProvider defaultTheme="light" storageKey="test-theme">
       {children}

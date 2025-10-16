@@ -1,4 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { 
+  useState, 
+  useEffect, 
+  FC, 
+  FormEvent,
+} from 'react';
 import { Calendar, Clock, MapPin, User, Save, X, AlertCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogOverlay, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -34,7 +39,7 @@ interface FormData {
   toNotify: boolean;
 }
 
-const EventFormDialog: React.FC<EventFormDialogProps> = ({
+const EventFormDialog: FC<EventFormDialogProps> = ({
   open,
   onOpenChange,
   calendarId,
@@ -142,7 +147,7 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
     return null;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     
     const validationError = validateForm();
@@ -252,7 +257,7 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
             <Input
               id="title"
               value={formData.title}
-              onChange={(e) => handleInputChange('title', e.target.value)}
+              onChange={(e: { target: { value: string | boolean; }; }) => handleInputChange('title', e.target.value)}
               placeholder="Enter event title..."
               required
             />
@@ -264,7 +269,7 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
             <Textarea
               id="description"
               value={formData.description}
-              onChange={(e) => handleInputChange('description', e.target.value)}
+              onChange={(e: { target: { value: string | boolean; }; }) => handleInputChange('description', e.target.value)}
               placeholder="Add event description..."
               rows={3}
             />
@@ -281,7 +286,7 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
                 id="startDate"
                 type="date"
                 value={formData.startDate}
-                onChange={(e) => handleInputChange('startDate', e.target.value)}
+                onChange={(e: { target: { value: string | boolean; }; }) => handleInputChange('startDate', e.target.value)}
                 required
               />
             </div>
@@ -295,7 +300,7 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
                 id="startTime"
                 type="time"
                 value={formData.startTime}
-                onChange={(e) => handleInputChange('startTime', e.target.value)}
+                onChange={(e: { target: { value: string | boolean; }; }) => handleInputChange('startTime', e.target.value)}
                 required
               />
             </div>
@@ -308,7 +313,7 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
                 id="endDate"
                 type="date"
                 value={formData.endDate}
-                onChange={(e) => handleInputChange('endDate', e.target.value)}
+                onChange={(e: { target: { value: string | boolean; }; }) => handleInputChange('endDate', e.target.value)}
                 required
               />
             </div>
@@ -319,7 +324,7 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
                 id="endTime"
                 type="time"
                 value={formData.endTime}
-                onChange={(e) => handleInputChange('endTime', e.target.value)}
+                onChange={(e: { target: { value: string | boolean; }; }) => handleInputChange('endTime', e.target.value)}
                 required
               />
             </div>
@@ -334,7 +339,7 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
             <Input
               id="location"
               value={formData.location}
-              onChange={(e) => handleInputChange('location', e.target.value)}
+              onChange={(e: { target: { value: string | boolean; }; }) => handleInputChange('location', e.target.value)}
               placeholder="Enter event location..."
             />
           </div>

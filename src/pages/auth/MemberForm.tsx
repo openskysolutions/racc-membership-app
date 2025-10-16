@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import { ChangeEvent, FC, FormEvent, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
-const MembershipFormPage: React.FC = () => {
+const MembershipFormPage: FC = () => {
   const [formData, setFormData] = useState({
     businessName: '',
     primaryEmail: '',
@@ -22,18 +22,18 @@ const MembershipFormPage: React.FC = () => {
     paymentDate: ''
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleMultiSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleMultiSelect = (e: ChangeEvent<HTMLSelectElement>) => {
     const { name, options } = e.target;
     const selected = Array.from(options).filter(o => o.selected).map(o => o.value);
     setFormData(prev => ({ ...prev, [name]: selected }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     // TODO: submit membership details
     console.log('Details submitted:', formData);

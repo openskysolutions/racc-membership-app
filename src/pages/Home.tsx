@@ -1,8 +1,9 @@
 //Add Home page component
-import React from 'react';
-import { Hero } from '@/components/Hero';
 
-const HomePage: React.FC = () => {
+import { Hero } from '@/components/Hero';
+import { FC } from 'react';
+
+const HomePage: FC = () => {
   return (
     <div>
       <Hero />

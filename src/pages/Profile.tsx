@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, FC, ChangeEvent, FormEvent } from 'react';
 import { useAuthStore } from '@/stores/authStore';
 import type { UpdateProfileRequest } from '@/services/profile';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -26,7 +26,7 @@ interface ExtendedUpdateProfileRequest extends UpdateProfileRequest {
   };
 }
 
-const ProfilePage: React.FC = () => {
+const ProfilePage: FC = () => {
   const { user, isAuthenticated, isLoading } = useAuthStore();
   const [profile, setProfile] = useState<Member | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -94,7 +94,7 @@ const ProfilePage: React.FC = () => {
     loadProfile();
   }, [user]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     
     // Handle nested address fields
@@ -115,7 +115,7 @@ const ProfilePage: React.FC = () => {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!user?.ghlContactId) return;
 

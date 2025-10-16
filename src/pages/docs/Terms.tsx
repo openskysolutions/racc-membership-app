@@ -1,6 +1,6 @@
-import React from 'react';
+import { FC } from 'react';
 
-const Terms: React.FC = () => (
+const Terms: FC = () => (
   <div className="container py-20 max-w-4xl mx-auto text-sm">
     <h1 className="text-4xl font-bold mb-8">Terms and Conditions</h1>
     

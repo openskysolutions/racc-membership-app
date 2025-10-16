@@ -86,12 +86,44 @@ class DatabaseService {
         )
       `);
 
+      // Create pages table for dynamic page content management
+      await this.db.exec(`
+        CREATE TABLE IF NOT EXISTS pages (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          slug TEXT UNIQUE NOT NULL,
+          title TEXT NOT NULL,
+          content TEXT NOT NULL,
+          lastModified DATETIME DEFAULT CURRENT_TIMESTAMP,
+          lastModifiedBy TEXT,
+          version INTEGER DEFAULT 1,
+          isActive BOOLEAN DEFAULT TRUE,
+          createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+
+      // Create page history table
+      await this.db.exec(`
+        CREATE TABLE IF NOT EXISTS page_history (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          pageId INTEGER NOT NULL,
+          slug TEXT NOT NULL,
+          title TEXT NOT NULL,
+          content TEXT NOT NULL,
+          lastModified DATETIME DEFAULT CURRENT_TIMESTAMP,
+          lastModifiedBy TEXT,
+          version INTEGER NOT NULL,
+          FOREIGN KEY (pageId) REFERENCES pages (id) ON DELETE CASCADE
+        )
+      `);
+
       // Create indexes for better performance
       await this.db.exec(`
         CREATE INDEX IF NOT EXISTS idx_users_email ON users (email);
         CREATE INDEX IF NOT EXISTS idx_users_ghlContactId ON users (ghlContactId);
         CREATE INDEX IF NOT EXISTS idx_sessions_sessionId ON sessions (sessionId);
         CREATE INDEX IF NOT EXISTS idx_sessions_userId ON sessions (userId);
+        CREATE INDEX IF NOT EXISTS idx_pages_slug ON pages (slug);
+        CREATE INDEX IF NOT EXISTS idx_page_history_pageId ON page_history (pageId);
       `);
 
       console.log('Database initialized successfully');
@@ -386,6 +418,109 @@ class DatabaseService {
     `, [limit, offset]);
 
     return users;
+  }
+
+  /**
+   * Get page content by slug
+   */
+  async getPageBySlug(slug: string): Promise<any> {
+    if (!this.db) throw new Error('Database not initialized');
+
+    const page = await this.db.get(`
+      SELECT * FROM pages 
+      WHERE slug = ? AND isActive = TRUE
+      ORDER BY version DESC
+      LIMIT 1
+    `, [slug]);
+
+    return page;
+  }
+
+  /**
+   * Update page content
+   */
+  async updatePage(slug: string, pageData: {
+    title: string;
+    content: string;
+    lastModifiedBy: string;
+  }): Promise<any> {
+    if (!this.db) throw new Error('Database not initialized');
+
+    const { title, content, lastModifiedBy } = pageData;
+
+    // Get current page to archive it
+    const currentPage = await this.getPageBySlug(slug);
+    
+    if (currentPage) {
+      // Archive current page to history
+      await this.db.run(`
+        INSERT INTO page_history (pageId, slug, title, content, lastModified, lastModifiedBy, version)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `, [
+        currentPage.id,
+        currentPage.slug,
+        currentPage.title,
+        currentPage.content,
+        currentPage.lastModified,
+        currentPage.lastModifiedBy,
+        currentPage.version
+      ]);
+
+      // Update existing page
+      await this.db.run(`
+        UPDATE pages 
+        SET title = ?, content = ?, lastModified = CURRENT_TIMESTAMP, 
+            lastModifiedBy = ?, version = version + 1
+        WHERE id = ?
+      `, [title, content, lastModifiedBy, currentPage.id]);
+
+      // Return updated page
+      return await this.db.get(`
+        SELECT * FROM pages WHERE id = ?
+      `, [currentPage.id]);
+    } else {
+      // Create new page
+      const result = await this.db.run(`
+        INSERT INTO pages (slug, title, content, lastModifiedBy)
+        VALUES (?, ?, ?, ?)
+      `, [slug, title, content, lastModifiedBy]);
+
+      // Return new page
+      return await this.db.get(`
+        SELECT * FROM pages WHERE id = ?
+      `, [result.lastID]);
+    }
+  }
+
+  /**
+   * Get page history by slug
+   */
+  async getPageHistory(slug: string): Promise<any[]> {
+    if (!this.db) throw new Error('Database not initialized');
+
+    const history = await this.db.all(`
+      SELECT * FROM page_history 
+      WHERE slug = ?
+      ORDER BY version DESC
+    `, [slug]);
+
+    return history;
+  }
+
+  /**
+   * Get all pages
+   */
+  async getAllPages(): Promise<any[]> {
+    if (!this.db) throw new Error('Database not initialized');
+
+    const pages = await this.db.all(`
+      SELECT id, slug, title, lastModified, lastModifiedBy, version, isActive
+      FROM pages 
+      WHERE isActive = TRUE
+      ORDER BY lastModified DESC
+    `);
+
+    return pages;
   }
 
   /**

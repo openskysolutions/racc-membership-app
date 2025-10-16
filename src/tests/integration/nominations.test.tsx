@@ -3,6 +3,7 @@ import { render, act } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import Nominations from '@/pages/Nominations';
 import '@testing-library/jest-dom';
+import { ReactNode } from 'react';
 
 // Mock the API client
 vi.mock('@/services/apiClient', () => ({
@@ -35,7 +36,7 @@ vi.mock('@/services/members', () => ({
   getMembersList: vi.fn()
 }));
 
-const TestWrapper = ({ children }: { children: React.ReactNode }) => (
+const TestWrapper = ({ children }: { children: ReactNode }) => (
   <BrowserRouter>
     {children}
   </BrowserRouter>

@@ -1,11 +1,11 @@
-import React from 'react';
+import { FC } from 'react';
 import { useAuthStore } from '@/stores/authStore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
 
-const AuthTestPage: React.FC = () => {
+const AuthTestPage: FC = () => {
   const { user, isAuthenticated, isLoading, handleLogout } = useAuthStore();
   const navigate = useNavigate();
 
@@ -26,15 +26,17 @@ const AuthTestPage: React.FC = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <strong>Authenticated:</strong>
-                  <Badge className={isAuthenticated ? 'bg-green-100 text-green-800 ml-2' : 'bg-red-100 text-red-800 ml-2'}>
-                    {isAuthenticated ? 'Yes' : 'No'}
-                  </Badge>
+                  <Badge
+                    className={isAuthenticated ? 'bg-green-100 text-green-800 ml-2' : 'bg-red-100 text-red-800 ml-2'}
+                    {...({ children: isAuthenticated ? 'Yes' : 'No' } as any)}
+                  />
                 </div>
                 <div>
                   <strong>Loading:</strong>
-                  <Badge className={isLoading ? 'bg-yellow-100 text-yellow-800 ml-2' : 'bg-gray-100 text-gray-800 ml-2'}>
-                    {isLoading ? 'Yes' : 'No'}
-                  </Badge>
+                  <Badge
+                    className={isLoading ? 'bg-yellow-100 text-yellow-800 ml-2' : 'bg-gray-100 text-gray-800 ml-2'}
+                    {...({ children: isLoading ? 'Yes' : 'No' } as any)}
+                  />
                 </div>
               </div>
               
@@ -73,7 +75,7 @@ const AuthTestPage: React.FC = () => {
           </Card>
           <div className="flex gap-4">
             {!isAuthenticated ? (
-              <Button onClick={() => navigate('/auth')}>
+              <Button onClick={() => navigate('/login')}>
                 Go to Login
               </Button>
             ) : (

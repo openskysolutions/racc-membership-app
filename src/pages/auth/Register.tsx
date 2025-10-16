@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { ChangeEvent, FormEvent, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -29,7 +29,7 @@ export const RegisterPage = () => {
   const location = useLocation();
   const { theme } = useTheme();
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({
       ...prev,
       [e.target.name]: e.target.value
@@ -50,7 +50,7 @@ export const RegisterPage = () => {
     return null;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
     setSuccess(null);
@@ -96,7 +96,7 @@ export const RegisterPage = () => {
       setTimeout(() => {
         // Preserve the intended destination when redirecting to login
         const from = location.state?.from?.pathname || '/';
-        navigate('/auth', { 
+        navigate('/login', { 
           state: { 
             message: 'Registration successful! Please sign in.',
             email: formData.email,

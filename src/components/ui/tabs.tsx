@@ -1,9 +1,10 @@
-import * as React from "react"
-import { cn } from "@/lib/utils"
 
-const Tabs = React.forwardRef<
+import { cn } from "@/lib/utils"
+import { forwardRef, HTMLAttributes, ButtonHTMLAttributes } from "react"
+
+const Tabs = forwardRef<
   HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement> & {
+  HTMLAttributes<HTMLDivElement> & {
     value?: string
     onValueChange?: (value: string) => void
     orientation?: "horizontal" | "vertical"
@@ -20,9 +21,9 @@ const Tabs = React.forwardRef<
 ))
 Tabs.displayName = "Tabs"
 
-const TabsList = React.forwardRef<
+const TabsList = forwardRef<
   HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
+  HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
@@ -35,9 +36,9 @@ const TabsList = React.forwardRef<
 ))
 TabsList.displayName = "TabsList"
 
-const TabsTrigger = React.forwardRef<
+const TabsTrigger = forwardRef<
   HTMLButtonElement,
-  React.ButtonHTMLAttributes<HTMLButtonElement> & {
+  ButtonHTMLAttributes<HTMLButtonElement> & {
     value: string
   }
 >(({ className, children, onClick, ...props }, ref) => (
@@ -57,9 +58,9 @@ const TabsTrigger = React.forwardRef<
 ))
 TabsTrigger.displayName = "TabsTrigger"
 
-const TabsContent = React.forwardRef<
+const TabsContent = forwardRef<
   HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement> & {
+  HTMLAttributes<HTMLDivElement> & {
     value: string
   }
 >(({ className, ...props }, ref) => (

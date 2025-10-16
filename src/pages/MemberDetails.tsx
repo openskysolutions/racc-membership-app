@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, FC, ChangeEvent } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Mail, Phone, Globe, Calendar, Shield, User, Edit, Save, X, ExternalLink } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -33,7 +32,7 @@ interface MemberFormData {
   };
 }
 
-const MemberDetailsPage: React.FC = () => {
+const MemberDetailsPage: FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuthStore();
@@ -175,7 +174,7 @@ const MemberDetailsPage: React.FC = () => {
     canEdit
   });
 
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleFormChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
 
     // Handle nested address fields
@@ -430,17 +429,19 @@ const MemberDetailsPage: React.FC = () => {
                   )}
 
                   <div className="flex flex-wrap gap-2">
-                    <Badge className={`${getRoleColor(member.role)} flex items-center gap-1`}>
+                    <span className={`${getRoleColor(member.role)} inline-flex items-center gap-1 px-2 py-1 rounded text-sm`}>
                       {getRoleIcon(member.role)}
                       {member.role.charAt(0).toUpperCase() + member.role.slice(1)}
-                    </Badge>
+                    </span>
 
-                    <Badge variant="outline" className="text-green-700 border-green-300">
+                    <span className="inline-flex items-center gap-1 text-green-700 border border-green-300 px-2 py-1 rounded text-sm">
                       {member.status.charAt(0).toUpperCase() + member.status.slice(1)}
-                    </Badge>
+                    </span>
 
                     {user?.id === member.id && (
-                      <Badge variant="secondary">Your Profile</Badge>
+                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-sm bg-secondary text-secondary-foreground">
+                        Your Profile
+                      </span>
                     )}
                   </div>
                 </div>

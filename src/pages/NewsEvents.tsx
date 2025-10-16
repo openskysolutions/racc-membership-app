@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, FC } from 'react';
 import { Calendar as CalendarIcon, MapPin, Clock, Plus, } from 'lucide-react';
 import { getEventsList, Event } from '@/services/events';
 import { getUpcomingEvents, CalendarEvent } from '@/services/calendar';
@@ -11,7 +11,7 @@ import { useNavigate } from 'react-router-dom';
 // GoHighLevel Calendar ID - RACC Events
 const GHL_CALENDAR_ID = '9XpDcFHv3SmCUuHeuOOg';
 
-const NewsEventsPages: React.FC = () => {
+const NewsEventsPages: FC = () => {
   const navigate = useNavigate();
   const [events, setEvents] = useState<Event[]>([]);
   const [ghlEvents, setGhlEvents] = useState<CalendarEvent[]>([]);
@@ -97,7 +97,7 @@ const NewsEventsPages: React.FC = () => {
   //   setRsvpDialogOpen(true);
   // };
 
-  // const handleRSVPSubmit = async (e: React.FormEvent) => {
+  // const handleRSVPSubmit = async (e: FormEvent) => {
   //   e.preventDefault();
   //   if (!selectedEvent) return;
     

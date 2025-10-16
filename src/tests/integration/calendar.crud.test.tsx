@@ -3,6 +3,7 @@ import { render, screen, waitFor, act } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import Calendar from '@/pages/Calendar';
 import '@testing-library/jest-dom';
+import { ReactNode } from 'react';
 
 // Mock the API client
 vi.mock('@/services/apiClient', () => ({
@@ -34,7 +35,7 @@ vi.mock('@/services/events', () => ({
   getMyRSVP: vi.fn()
 }));
 
-const TestWrapper = ({ children }: { children: React.ReactNode }) => (
+const TestWrapper = ({ children }: { children: ReactNode }) => (
   <BrowserRouter>
     {children}
   </BrowserRouter>

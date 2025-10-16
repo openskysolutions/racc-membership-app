@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, FC } from 'react';
 import { Calendar, Clock, MapPin, Users, Plus } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,7 +20,7 @@ interface Event {
   isRegistered: boolean;
 }
 
-const EventsCalendar: React.FC = () => {
+const EventsCalendar: FC = () => {
   const { isAuthenticated, user } = useAuthStore();
   const navigate = useNavigate();
   const [events, setEvents] = useState<Event[]>([]);

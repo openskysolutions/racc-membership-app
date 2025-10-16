@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, FC } from 'react';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, MapPin, Users, Plus } from 'lucide-react';
 import { getCurrentYearEvents, CalendarEvent } from '@/services/calendar';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -15,7 +15,7 @@ import cn from 'classnames';
 const GHL_CALENDAR_ID = '9XpDcFHv3SmCUuHeuOOg';
 const GHL_LOCATION_ID = '5FAB1z0AhuVlEdqOzjVX';
 
-const CalendarPage: React.FC = () => {
+const CalendarPage: FC = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);

@@ -1,11 +1,11 @@
-import React, { useEffect } from 'react';
+import { FC, useEffect } from 'react';
 import { MapPin, Phone, Mail } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTheme } from "@/providers/theme-provider";
 import LogoLight from "@/assets/racc-logo.png";
 import LogoDark from "@/assets/racc-logo-dark.png";
 
-const ContactPage: React.FC = () => {
+const ContactPage: FC = () => {
   const { theme } = useTheme();
 
   useEffect(() => {

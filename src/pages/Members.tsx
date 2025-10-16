@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback, FC, SetStateAction } from 'react';
 import { Search, Users, RefreshCw, X, ArrowUpDown } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -40,7 +40,7 @@ function useDebounce<T>(value: T, delay: number): T {
   return debouncedValue;
 }
 
-const MembersPage: React.FC = () => {
+const MembersPage: FC = () => {
   const navigate = useNavigate();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuthStore();
@@ -315,7 +315,7 @@ const MembersPage: React.FC = () => {
                   ref={searchInputRef}
                   placeholder="Search members by name, business, or specialty..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e: { target: { value: SetStateAction<string>; }; }) => setSearchTerm(e.target.value)}
                   className="pl-10 pr-10 w-full"
                 />
                 {searchTerm && (

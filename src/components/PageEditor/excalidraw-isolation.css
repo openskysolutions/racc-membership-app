@@ -1,0 +1,53 @@
+/**
+ * CSS to isolate Excalidraw styles and prevent them from affecting the header
+ */
+
+/* Reset any global positioning that might affect the header */
+.page-editor-container {
+  /* Contain all positioning within this container */
+  position: relative;
+  z-index: 1;
+  isolation: isolate; /* Create a new stacking context */
+}
+
+/* Override any global CSS variables that might affect the header */
+.page-editor-container {
+  --ui-pointerEvents: auto;
+  --zIndex-canvas: 1;
+  --zIndex-interactiveCanvas: 2;
+  --zIndex-svgLayer: 3;
+  --zIndex-wysiwyg: 3;
+  --zIndex-canvasButtons: 3;
+  --zIndex-layerUI: 4;
+  --zIndex-eyeDropperBackdrop: 5;
+  --zIndex-eyeDropperPreview: 6;
+  --zIndex-hyperlinkContainer: 7;
+  --zIndex-modal: 100;
+  --zIndex-popup: 101;
+  --zIndex-toast: 999;
+}
+
+/* Ensure navbar specifically stays on top */
+.navbar-container,
+.navigation-menu {
+  z-index: 9999 !important;
+  position: relative !important;
+}
+
+/* Isolate Excalidraw modals to prevent interference */
+.excalidraw-modal-container,
+.excalidraw .Modal {
+  z-index: 1000 !important;
+}
+
+.page-editor-container .excalidraw {
+  /* Contain excalidraw positioning */
+  position: relative !important;
+  z-index: auto !important;
+}
+
+.page-editor-container .drag-handle {
+  cursor: grab !important;
+  top: 0 !important;
+  position: absolute !important;
+}

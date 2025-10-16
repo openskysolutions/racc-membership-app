@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { ChangeEvent, FC, FormEvent, useEffect, useState } from 'react';
 import { Award, Users, Building, Heart, Crown, Plus, CheckCircle, Clock, XCircle, ArrowLeft, BarChart3, Check, X } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,7 +27,7 @@ import {
 import { getMembersList } from '@/services/members';
 import type { Member } from '@/types/member';
 
-const NominationsPage: React.FC = () => {
+const NominationsPage: FC = () => {
   const [allNominations, setAllNominations] = useState<Nomination[]>([]);
   const [myNominations, setMyNominations] = useState<Nomination[]>([]);
   const [hasModerationAccess, setHasModerationAccess] = useState(false);
@@ -186,7 +186,7 @@ const NominationsPage: React.FC = () => {
     }
   };
 
-  const handleFormSubmit = async (e: React.FormEvent) => {
+  const handleFormSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!selectedCategory) return;
 
@@ -639,7 +639,7 @@ const NominationsPage: React.FC = () => {
                       id="nomination-description"
                       placeholder="Describe the nominee's contributions, achievements, and why they deserve this recognition..."
                       value={formData.description}
-                      onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleInputChange('description', e.target.value)}
+                      onChange={(e: ChangeEvent<HTMLTextAreaElement>) => handleInputChange('description', e.target.value)}
                       rows={6}
                       required
                     />

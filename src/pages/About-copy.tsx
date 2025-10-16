@@ -1,4 +1,4 @@
-import React from 'react';
+import { FC } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Benefits from '@/components/Benefits';
@@ -6,7 +6,7 @@ import MembershipLevels from '@/components/MembershipLevels';
 import { useNavigate } from 'react-router-dom';
 import cn from 'classnames';
 
-const AboutPage: React.FC = () => {
+const AboutPageCopy: FC = () => {
   const navigate = useNavigate();
 
   return (
@@ -75,4 +75,4 @@ const AboutPage: React.FC = () => {
   );
 };
 
-export default AboutPage;
+export default AboutPageCopy;

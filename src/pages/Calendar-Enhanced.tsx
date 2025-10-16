@@ -1,7 +1,8 @@
-import React from 'react';
+
+import { FC } from 'react';
 import EventsCalendar from '@/components/EventsCalendar';
 
-const CalendarPage: React.FC = () => {
+const CalendarPage: FC = () => {
   return <EventsCalendar />;
 };
 

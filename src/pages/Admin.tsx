@@ -3,7 +3,7 @@
  * Only accessible to users with admin role
  */
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, FormEvent } from 'react';
 import { useAuthStore } from '@/stores/authStore';
 import { adminService, User, AdminStats } from '@/services/admin';
 import { Button } from '@/components/ui/button';
@@ -597,7 +597,7 @@ function EditUserForm({
     paymentStatus: user.paymentStatus || 'pending'
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     onSave(formData);
   };

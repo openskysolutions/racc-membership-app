@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import MembersPage from '@/pages/Members';
 import { ThemeProvider } from '@/providers/theme-provider';
 import '@testing-library/jest-dom';
+import { ReactNode } from 'react';
 
 // Mock the API client directly since Members page uses it
 vi.mock('@/services/apiClient', () => ({
@@ -35,7 +36,7 @@ vi.mock('react-router-dom', async () => {
 });
 
 // Wrapper component to provide necessary context
-const TestWrapper = ({ children }: { children: React.ReactNode }) => (
+const TestWrapper = ({ children }: { children: ReactNode }) => (
   <BrowserRouter>
     <ThemeProvider defaultTheme="light" storageKey="test-theme">
       {children}

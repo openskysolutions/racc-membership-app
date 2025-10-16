@@ -1,7 +1,7 @@
-import React from 'react';
+import { FC } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-const Privacy: React.FC = () => (
+const Privacy: FC = () => (
   <div className="container py-20 max-w-4xl mx-auto text-sm">
     <h1 className="text-4xl font-bold mb-8">Privacy Policy</h1>
     

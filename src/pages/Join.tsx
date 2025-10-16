@@ -1,11 +1,12 @@
-import React from 'react';
+
+import { FC } from 'react';
 import { Button } from '@/components/ui/button';
 import Benefits from '@/components/Benefits';
 import MembershipLevels from '@/components/MembershipLevels';
 import { useNavigate } from 'react-router-dom';
 import cn from 'classnames';
 
-const JoinPage: React.FC = () => {
+const JoinPage: FC = () => {
   const navigate = useNavigate();
 
   return (
