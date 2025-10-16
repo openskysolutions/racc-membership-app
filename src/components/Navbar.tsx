@@ -79,8 +79,6 @@ export const Navbar = () => {
     navigate('/');
   };
 
-  console.log('Navbar user:', user);
-
   return (
     <header className="sticky border-b-[1px] top-0 z-40 w-full bg-white dark:border-b-popover dark:bg-accent-foreground shadow-md">
       <NavigationMenu className="mx-auto">
@@ -129,28 +127,32 @@ export const Navbar = () => {
             </Button>
             {!isAuthenticated &&
               <>
-                {/* <Button
-                  size="sm"
-                  onClick={() => navigate('/join')}
-                  className={cn(
-                    "bg-highlight-foreground hover:bg-highlight-foreground/90 text-card hidden md:inline-flex",
-                    // "p-2 h-7 text-xs"
-                  )}
-                >
-                  Join Now
-                </Button>
-                <Button
-                  size="sm"
-                  color="red"
-                  variant={"outline"}
-                  onClick={() => navigate('/login')}
-                  className={cn(
-                    "hidden md:inline-flex",
-                    // "p-2 h-7 text-xs"
-                  )}
-                >
-                  Sign in
-                </Button> */}
+                {import.meta.env.DEV && (
+                  <>
+                    <Button
+                      size="sm"
+                      onClick={() => navigate('/join')}
+                      className={cn(
+                        "bg-highlight-foreground hover:bg-highlight-foreground/90 text-card hidden md:inline-flex",
+                        // "p-2 h-7 text-xs"
+                      )}
+                    >
+                      Join Now
+                    </Button>
+                    <Button
+                      size="sm"
+                      color="red"
+                      variant={"outline"}
+                      onClick={() => navigate('/login')}
+                      className={cn(
+                        "hidden md:inline-flex",
+                        // "p-2 h-7 text-xs"
+                      )}
+                    >
+                      Sign in
+                    </Button>
+                  </>
+                )}
               </>
             }
             <DropdownMenu>
@@ -299,27 +301,31 @@ export const Navbar = () => {
                       Sign out
                     </Button>
                   : <>
-                      {/* <Button
-                        size="sm"
-                        onClick={() => {
-                          setIsOpen(false);
-                          navigate('/join');
-                        }}
-                        className="bg-highlight-foreground hover:bg-highlight-foreground/90 text-white"
-                      >
-                        Join Now
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant={"outline"}
-                        onClick={() => {
-                          setIsOpen(false);
-                          navigate('/login');
-                        }}
-                        className=""
-                      >
-                        Member Login
-                      </Button> */}
+                      {import.meta.env.DEV && (
+                        <>
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              setIsOpen(false);
+                              navigate('/join');
+                            }}
+                            className="bg-highlight-foreground hover:bg-highlight-foreground/90 text-white"
+                          >
+                            Join Now
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant={"outline"}
+                            onClick={() => {
+                              setIsOpen(false);
+                              navigate('/login');
+                            }}
+                            className=""
+                          >
+                            Member Login
+                          </Button>
+                        </>
+                      )}
                     </>
                 }
 

@@ -50,6 +50,14 @@ router.put('/:id/avatar', requireAuth, async (req, res) => {
 });
 
 /**
+ * PUT /members/:id/coverImage
+ * Update member cover image (authenticated - own profile or admin only)
+ */
+router.put('/:id/coverImage', requireAuth, async (req, res) => {
+  return membersController.updateContactCoverImage(req, res);
+});
+
+/**
  * GET /members/stats
  * Get member statistics (admin only)
  */

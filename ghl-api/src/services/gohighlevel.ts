@@ -23,8 +23,10 @@ interface ContactData {
   postalCode?: string;
   country?: string;
   timezone?: string;
-  // Bio and cover image will be handled as custom fields
+  // Bio, tagline, coupon codes and cover image will be handled as custom fields
   bio?: string;
+  tagline?: string;
+  couponCodes?: string;
   coverImage?: string;
 }
 
@@ -627,15 +629,31 @@ class GoHighLevelService {
       // Add bio as a custom field if provided
       if (updateData.bio !== undefined) {
         customFields.push({
-          key: 'bio',
+          id: 'b3Yfp0NjO23zFXzwjswu',
           field_value: updateData.bio
+        });
+      }
+      
+      // Add tagline as a custom field if provided
+      if (updateData.tagline !== undefined) {
+        customFields.push({
+          id: '3PZ7J4UcjLwnzWudAZHi',
+          field_value: updateData.tagline
+        });
+      }
+      
+      // Add coupon codes as a custom field if provided
+      if (updateData.couponCodes !== undefined) {
+        customFields.push({
+          id: '9rtkCBAUmFZdHs9ALwQl',
+          field_value: updateData.couponCodes
         });
       }
       
       // Add cover image as a custom field if provided
       if (updateData.coverImage !== undefined) {
         customFields.push({
-          key: 'cover_image',
+          id: '3tSDY90RIMPP4W7uQxF9',
           field_value: updateData.coverImage
         });
       }

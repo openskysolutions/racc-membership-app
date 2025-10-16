@@ -5,9 +5,6 @@
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
 
-console.log('API_BASE_URL configured as:', API_BASE_URL);
-console.log('Environment VITE_API_BASE_URL:', import.meta.env.VITE_API_BASE_URL);
-
 /**
  * Get authentication token from localStorage (OAuth 2.0 PKCE)
  */
@@ -44,8 +41,6 @@ export async function apiFetch(endpoint: string, init?: RequestInit, retries: nu
   
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      console.log(`API request attempt ${attempt + 1}/${retries + 1} to:`, url);
-      
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
       
@@ -58,8 +53,6 @@ export async function apiFetch(endpoint: string, init?: RequestInit, retries: nu
       
       clearTimeout(timeoutId);
       
-      console.log('API response received:', response.status, response.statusText);
-      
       // Handle authentication errors
       if (response.status === 401) {
         // Clear invalid session
@@ -70,9 +63,6 @@ export async function apiFetch(endpoint: string, init?: RequestInit, retries: nu
       
       return response;
     } catch (error) {
-      console.error(`API request attempt ${attempt + 1} failed:`, error);
-      console.error('Request URL:', url);
-      console.error('Request config:', { ...init, headers: Object.fromEntries(mergedHeaders.entries()) });
       
       // If this is the last attempt, throw the error
       if (attempt === retries) {

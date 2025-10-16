@@ -14,6 +14,7 @@ import adminRoutes from '@/routes/admin';
 // CommonJS imports
 const moderationRoutes = require('@/routes/moderation');
 const mediasRoutes = require('@/routes/medias');
+const locationsRoutes = require('@/routes/locations');
 const testRoutes = require('@/routes/test');
 
 const router = express.Router();
@@ -29,6 +30,7 @@ router.use('/jobs', jobsRoutes);
 router.use('/news', newsRoutes);
 router.use('/calendars', calendarsRoutes);
 router.use('/medias', mediasRoutes);
+router.use('/locations', locationsRoutes);
 router.use('/admin', adminRoutes); // Admin-only user management routes
 router.use('/test', testRoutes);
 

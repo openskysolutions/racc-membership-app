@@ -31,6 +31,8 @@ interface Member {
   bio?: string;
   avatar?: string;
   coverImage?: string;
+  tagline?: string;
+  couponCodes?: string[];
   
   // GoHighLevel Specific Fields
   tags: string[];
@@ -76,8 +78,6 @@ class MembersController {
       const { search = '', role = '', limit = 20, offset = 0 } = req.query;
       const pageLimit = Math.min(parseInt(limit as string) || 20, 100); // Cap at 100
       const pageOffset = parseInt(offset as string) || 0;
-      
-      console.log(`📄 Fetching members with server-side pagination: offset=${pageOffset}, limit=${pageLimit}`);
       
       // Calculate how many contacts we need to fetch to account for filtering
       // We'll fetch more than needed and then apply client-side filters
@@ -218,12 +218,14 @@ class MembersController {
       cover_image: '3tSDY90RIMPP4W7uQxF9',
       memberSince: 'Dxt6gzc4osQhaCBPhslY',
       membershipType: 'inm2jc52WNhxX8H2FHHm',
-      organizationType: 'kPoBTUVldHyg3WbywLJ9'
+      organizationType: 'kPoBTUVldHyg3WbywLJ9',
+      tagline: '3PZ7J4UcjLwnzWudAZHi',
+      couponCodes: '9rtkCBAUmFZdHs9ALwQl'
     };
     
     // Extract custom field values
     const getCustomField = (fieldName: string) => {
-      const fieldId = CUSTOM_FIELD_IDS[fieldName] || fieldName;
+      const fieldId = CUSTOM_FIELD_IDS[fieldName as keyof typeof CUSTOM_FIELD_IDS] || fieldName;
       // Try to find by mapped ID first, then by key, then by original fieldName as id
       const field = contact.customFields?.find(f => f.id === fieldId || f.key === fieldName || f.id === fieldName);
       const value = field?.value || field?.field_value || '';
@@ -240,6 +242,24 @@ class MembersController {
     // Parse specialties from custom field
     const specialtiesStr = getCustomField('specialties');
     const specialties = specialtiesStr ? specialtiesStr.split(',').map(s => s.trim()).filter(s => s) : [];
+
+    // Parse coupon codes from custom field (direct lookup by ID)
+    const couponCodesField = contact.customFields?.find(f => f.id === '9rtkCBAUmFZdHs9ALwQl');
+    const couponCodesStr = couponCodesField?.value || '';
+    let couponCodes: string[] = [];
+    
+    if (couponCodesStr) {
+      try {
+        // First try to parse as JSON array
+        const parsed = JSON.parse(couponCodesStr);
+        if (Array.isArray(parsed)) {
+          couponCodes = parsed;
+        }
+      } catch (error) {
+        // If JSON parsing fails, treat as comma-separated string
+        couponCodes = couponCodesStr.split(',').map(s => s.trim()).filter(s => s);
+      }
+    }
 
     // Get avatar URL from custom fields, fall back to placeholder
     // Use the actual custom field ID for avatar_url: 331dKIcjgTa8z8a6mu37
@@ -261,6 +281,8 @@ class MembersController {
       avatar: avatarUrl,
       bio: getCustomField('bio') || '', // Bio is stored as a custom field
       coverImage: getCustomField('cover_image') || '', // Cover image is stored as a custom field
+      tagline: getCustomField('tagline') || '', // Tagline is stored as a custom field
+      couponCodes: couponCodes, // Coupon codes are stored as a JSON array in custom field
       
       // GoHighLevel Specific Fields
       tags: tags,
@@ -372,8 +394,10 @@ class MembersController {
         phone: updateData.phone,
         website: updateData.website,
         companyName: updateData.businessName, // Map businessName to GoHighLevel's companyName field
-        // Map bio and cover image to custom fields
+        // Map bio, tagline, coupon codes and cover image to custom fields
         bio: updateData.bio || '',
+        tagline: updateData.tagline || '',
+        couponCodes: updateData.coupon_codes || updateData.couponCodes || '[]', // Handle both naming conventions
         coverImage: updateData.coverImage || '',
         // Map address fields to correct GoHighLevel fields
         address1: updateData.address?.street || '',
@@ -474,6 +498,53 @@ class MembersController {
     } catch (error) {
       console.error('Error updating contact avatar:', error);
       res.status(500).json({ error: 'Failed to update avatar', details: error.message });
+    }
+  }
+
+  /**
+   * Update contact cover image URL in custom field
+   */
+  async updateContactCoverImage(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const { coverImageUrl } = req.body;
+      
+      console.log(`Updating cover image for contact ${id} with URL: ${coverImageUrl}`);
+      
+      // Validate that the user can update this contact's cover image
+      const userGhlContactId = (req as any).user?.ghlContactId;
+      const userRole = (req as any).user?.role;
+      
+      if (userGhlContactId !== id && userRole !== 'admin') {
+        return res.status(403).json({ error: 'You can only update your own cover image or admin access required' });
+      }
+      
+      if (!coverImageUrl) {
+        return res.status(400).json({ error: 'Cover image URL is required' });
+      }
+      
+      // Get current contact to verify it exists
+      const contact = await ghlService.getContact(id);
+      if (!contact) {
+        return res.status(404).json({ error: 'Contact not found' });
+      }
+      
+      // Update contact with cover image URL in custom fields
+      await ghlService.updateContact(id, {
+        coverImage: coverImageUrl
+      });
+      
+      // Clear cache for this member
+      this.memberDetailsCache.delete(id);
+      
+      res.json({ 
+        success: true, 
+        message: 'Cover image URL updated successfully',
+        coverImageUrl: coverImageUrl
+      });
+    } catch (error) {
+      console.error('Error updating contact cover image:', error);
+      res.status(500).json({ error: 'Failed to update cover image', details: error.message });
     }
   }
 

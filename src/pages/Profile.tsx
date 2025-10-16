@@ -13,11 +13,13 @@ import { Mail, Phone, Globe, Calendar, Shield, User, Edit, Save, X } from 'lucid
 import { api } from '@/services/apiClient';
 import type { Member } from '@/types/member';
 import AvatarUpload from '@/components/AvatarUpload';
+import CoverImageUpload from '@/components/CoverImageUpload';
 
 interface ExtendedUpdateProfileRequest extends UpdateProfileRequest {
   bio?: string;
   companyName?: string;
   email?: string;
+  coverImage?: string;
   address?: {
     street: string;
     city: string;
@@ -39,6 +41,7 @@ const ProfilePage: React.FC = () => {
     website: '',
     bio: '',
     email: '',
+    coverImage: '',
     address: {
       street: '',
       city: '',
@@ -76,6 +79,7 @@ const ProfilePage: React.FC = () => {
           website: profileData.website || '',
           bio: profileData.bio || '',
           email: profileData.email || '',
+          coverImage: profileData.coverImage || '',
           address: {
             street: profileData.address?.street || '',
             city: profileData.address?.city || '',
@@ -123,6 +127,7 @@ const ProfilePage: React.FC = () => {
     setMessage(null);
 
     try {
+      console.log('Submitting profile update with data:', formData);
       const response = await api.put(`/members/${user.ghlContactId}`, formData);
       
       if (!response.ok) {
@@ -152,6 +157,7 @@ const ProfilePage: React.FC = () => {
         website: profile.website || '',
         bio: (profile as any).bio || '',
         email: profile.email || '',
+        coverImage: (profile as any).coverImage || '',
         address: {
           street: profile.address?.street || '',
           city: profile.address?.city || '',
@@ -162,6 +168,13 @@ const ProfilePage: React.FC = () => {
     }
     setIsEditing(false);
     setMessage(null);
+  };
+
+  const handleCoverImageUpdated = (newCoverImageUrl: string) => {
+    if (profile) {
+      setProfile({ ...profile, coverImage: newCoverImageUrl } as Member);
+      setFormData(prev => ({ ...prev, coverImage: newCoverImageUrl }));
+    }
   };
 
   const formatMemberName = (profile: Member) => {
@@ -320,6 +333,22 @@ const ProfilePage: React.FC = () => {
         <CardContent className="space-y-6">
           {isEditing ? (
             <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Cover Image Upload Section */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium mb-2">
+                  Cover Image
+                </label>
+                <div className="flex justify-center">
+                  <CoverImageUpload
+                    contactId={profile?.id || ''}
+                    currentCoverImage={(profile as any)?.coverImage}
+                    fallbackText="Upload Cover Image"
+                    onCoverImageUpdated={handleCoverImageUpdated}
+                    size="lg"
+                  />
+                </div>
+              </div>
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="firstName" className="block text-sm font-medium mb-1">

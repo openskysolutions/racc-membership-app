@@ -469,7 +469,7 @@ const MembersPage: React.FC = () => {
               }`}
               onClick={() => handleMemberClick(member.id)}
             >
-              <CardHeader className={`${viewMode === 'list' ? 'flex-1 p-0' : 'p-0 pb-4'}`}>
+              <CardHeader className={`${viewMode === 'list' ? 'flex-1 p-0' : 'p-0'}`}>
                 <div className={`flex flex-row items-center space-x-4`}>
                   <Avatar className={'h-12 w-12'}>
                     {member.avatar ? (

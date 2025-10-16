@@ -42,6 +42,8 @@ export interface Member {
   memberSince?: string;
   specialties?: string[];
   membershipTier?: 'elite' | 'enhanced' | 'basic' | 'standard';
+  coupon_codes?: string[];
+  tagline?: string;
   
   // Address Information
   address?: Address;

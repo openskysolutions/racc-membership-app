@@ -37,19 +37,7 @@ export const AuthPage = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center flex-col p-4">
-
-      <a
-        rel="noreferrer noopener"
-        href="https://richfieldareachamber.com"
-        className="w-full max-w-md p-8 pb-12"
-      >
-        <img
-          src={theme === "dark" ? LogoDark : LogoLight}
-          alt="Richfield Area Chamber of Commerce Logo"
-          className="w-full"
-        />
-      </a>
+    <div className="flex min-h-full items-center justify-center flex-col p-4 py-20">
       <Card className="w-full max-w-md bg-popover dark:bg-neutral-750 border-stone-500">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl">Sign in</CardTitle>

@@ -1,5 +1,13 @@
 const express = require('express');
-const { listMedias, getMediaById, createMedia, updateMedia, deleteMedia, uploadAvatar } = require('@/controllers/mediasController');
+const { 
+  listMedias, 
+  getMediaById, 
+  createMedia, 
+  updateMedia, 
+  deleteMedia, 
+  uploadAvatar,
+  uploadCoverImage,
+} = require('@/controllers/mediasController');
 const { requireAuth } = require('@/middleware/auth');
 const router = express.Router();
 
@@ -164,5 +172,6 @@ router.delete('/:id', deleteMedia);
  *         description: Upload failed
  */
 router.post('/upload-avatar', uploadAvatar);
+router.post('/upload-coverImage', uploadCoverImage);
 
 module.exports = router;

@@ -5,10 +5,22 @@ export const Footer = () => {
   const { theme } = useTheme();
 
   return (
-    <footer id="footer" className="bg-card-foreground dark:bg-accent-foreground text-stone-100 text-sm">
-      <hr className="w-full mx-auto border-t-border dark:border-b-ring" />
-      <section className="container py-8 md:pt-0 grid grid-rows-2 grid-cols-3 sm:grid-cols-3 md:grid-cols-5 gap-8 lg:gap-4 px-6">
-        <div className="rows-span-1 md:row-span-2 col-span-3 sm:col-span-3 md:col-span-2 justify-center items-center flex">
+    <footer id="footer" className="bg-card-foreground dark:bg-accent-foreground text-stone-100 text-sm border-t-border dark:border-b-ring">
+      <div className="rows-span-1 md:row-span-2 col-span-3 sm:col-span-3 md:col-span-2 justify-center items-center sm:hidden flex pt-12">
+          <a
+            rel="noreferrer noopener"
+            href="https://richfieldareachamber.com"
+            className="flex w-48 h-auto justify-center items-center"
+          >
+            <img
+              src={theme === "dark" ? LogoDark : LogoDark}
+              alt="Richfield Area Chamber of Commerce Logo"
+              className="h-full w-full" 
+            />
+          </a>
+      </div>
+      <section className="container pt-4 pb-8 md:pt-0 grid grid-rows-2 grid-cols-3 sm:grid-cols-3 md:grid-cols-5 gap-8 lg:gap-4 px-6">
+        <div className="rows-span-1 md:row-span-2 col-span-3 sm:col-span-3 md:col-span-2 justify-center items-center hidden sm:flex">
             <a
               rel="noreferrer noopener"
               href="https://richfieldareachamber.com"

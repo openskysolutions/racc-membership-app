@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Mail, Phone, Globe, Calendar, Shield, User, Edit, Save, X, ExternalLink } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -7,7 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { CouponCodesInput } from '@/components/ui/coupon-codes-input';
+import { toast } from 'sonner';
 import { capitalizeFirst } from '@/lib/utils';
 import { api } from '@/services/apiClient';
 import { useAuthStore } from '@/stores/authStore';
@@ -23,6 +24,8 @@ interface MemberFormData {
   phone: string;
   website: string;
   bio: string;
+  tagline: string;
+  coupon_codes: string;
   coverImage: string;
   email: string;
   address: {
@@ -37,6 +40,7 @@ const MemberDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuthStore();
+  const fetchingRef = useRef(false);
 
   const [member, setMember] = useState<Member | null>(null);
   const [loading, setLoading] = useState(true);
@@ -51,6 +55,8 @@ const MemberDetailsPage: React.FC = () => {
     phone: '',
     website: '',
     bio: '',
+    tagline: '',
+    coupon_codes: '',
     coverImage: '',
     email: '',
     address: {
@@ -60,16 +66,6 @@ const MemberDetailsPage: React.FC = () => {
       zipCode: ''
     }
   });
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-
-  // Debug user data
-  console.log('🔍 User data in MemberDetails:', {
-    userExists: !!user,
-    userId: user?.id,
-    userGhlContactId: user?.ghlContactId,
-    userRole: user?.role,
-    userEmail: user?.email
-  });
 
   useEffect(() => {
     if (!id) {
@@ -78,8 +74,14 @@ const MemberDetailsPage: React.FC = () => {
       return;
     }
 
+    // Prevent double fetching in StrictMode
+    if (fetchingRef.current) {
+      return;
+    }
+
     const fetchMember = async () => {
       try {
+        fetchingRef.current = true;
         setLoading(true);
         const response = await api.get(`/members/${id}`);
 
@@ -93,12 +95,7 @@ const MemberDetailsPage: React.FC = () => {
         }
 
         const memberData: Member = await response.json();
-        console.log('🔍 Fetched member data:', {
-          id: memberData.id,
-          contactId: memberData.contactId,
-          email: memberData.email,
-          fullName: memberData.fullName
-        });
+
         setMember(memberData);
 
         // Initialize form data
@@ -110,6 +107,8 @@ const MemberDetailsPage: React.FC = () => {
           phone: memberData.phone || '',
           website: memberData.website || '',
           bio: memberData.bio || '',
+          tagline: (memberData as any).tagline || '',
+          coupon_codes: JSON.stringify((memberData as any).couponCodes || []),
           coverImage: memberData.coverImage || '',
           email: memberData.email || '',
           address: {
@@ -128,6 +127,11 @@ const MemberDetailsPage: React.FC = () => {
     };
 
     fetchMember();
+
+    // Cleanup function to reset the ref when component unmounts or id changes
+    return () => {
+      fetchingRef.current = false;
+    };
   }, [id]);
 
   const formatMemberName = (member: Member) => {
@@ -163,18 +167,6 @@ const MemberDetailsPage: React.FC = () => {
 
   const canEdit = user && member && (user.ghlContactId === member.id || user.role === 'admin');
 
-  // Debug logging for authorization
-  console.log('🔍 MemberDetails Authorization Debug:', {
-    userExists: !!user,
-    memberExists: !!member,
-    userGhlContactId: user?.ghlContactId,
-    memberContactId: member?.contactId,
-    userRole: user?.role,
-    idsMatch: user?.ghlContactId === member?.contactId,
-    isAdmin: user?.role === 'admin',
-    canEdit
-  });
-
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
 
@@ -196,13 +188,28 @@ const MemberDetailsPage: React.FC = () => {
     }
   };
 
+  const handleCouponCodesChange = (tags: string[]) => {
+    setFormData(prev => ({
+      ...prev,
+      coupon_codes: JSON.stringify(tags)
+    }));
+  };
+
+  const getCouponCodesArray = (): string[] => {
+    try {
+      return formData.coupon_codes ? JSON.parse(formData.coupon_codes) : [];
+    } catch {
+      return [];
+    }
+  };
+
   const handleSave = async () => {
     if (!member) return;
 
     setUpdating(true);
-    setMessage(null);
 
     try {
+      console.log('🔍 Form data being submitted:', formData);
       const response = await api.put(`/members/${member.id}`, formData);
 
       if (!response.ok) {
@@ -212,13 +219,10 @@ const MemberDetailsPage: React.FC = () => {
       const updatedMember: Member = await response.json();
       setMember(updatedMember);
       setIsEditing(false);
-      setMessage({ type: 'success', text: 'Profile updated successfully!' });
+      toast.success('Profile updated successfully!');
     } catch (err) {
       console.error('Error updating member:', err);
-      setMessage({
-        type: 'error',
-        text: err instanceof Error ? err.message : 'Failed to update profile'
-      });
+      toast.error(err instanceof Error ? err.message : 'Failed to update profile');
     } finally {
       setUpdating(false);
     }
@@ -234,6 +238,8 @@ const MemberDetailsPage: React.FC = () => {
         phone: member.phone || '',
         website: member.website || '',
         bio: member.bio || '',
+        tagline: (member as any).tagline || '',
+        coupon_codes: JSON.stringify((member as any).couponCodes || []),
         coverImage: member.coverImage || '',
         email: member.email || '',
         address: {
@@ -245,7 +251,6 @@ const MemberDetailsPage: React.FC = () => {
       });
     }
     setIsEditing(false);
-    setMessage(null);
   };
 
   if (loading) {
@@ -276,22 +281,25 @@ const MemberDetailsPage: React.FC = () => {
   }
 
   return (
-    <div className="container py-8 px-3 md:px-6">
+    <div className="container pt-0 pb-8 px-3 md:px-6 relative">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex h-10 items-center justify-between mb-6 z-35 shadow-md fixed left-0 right-0 w-full bg-card/70 px-4">
         <Button
           variant="ghost"
           onClick={() => navigate('/members')}
-          className="mb-0"
+          className="mb-0 h-8 w-auto"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Members
         </Button>
 
         {canEdit && !isEditing && (
-          <Button onClick={() => setIsEditing(true)}>
-            <Edit className="h-4 w-4 mr-2" />
-            Edit Profile
+          <Button 
+            variant="ghost"
+            onClick={() => setIsEditing(true)}
+            className="px-3 h-8 w-8 text-highlight-foreground hover:text-highlight-foreground hover:bg-highlight-foreground/10"
+          >
+            <Edit className="h-4 w-4" />
           </Button>
         )}
 
@@ -300,33 +308,45 @@ const MemberDetailsPage: React.FC = () => {
             <Button
               onClick={handleSave}
               disabled={updating}
-              className="bg-green-600 hover:bg-green-700"
+              variant='ghost'
+              className="text-green-600 hover:text-green-600 hover:bg-green-700/10 px-3"
             >
-              <Save className="h-4 w-4 mr-2" />
-              {updating ? 'Saving...' : 'Save'}
+              {updating ? '...' : <Save className="h-4 w-4" />}
             </Button>
             <Button
-              variant="outline"
+              variant="ghost"
               onClick={handleCancel}
               disabled={updating}
+              className='text-muted-foreground hover:text-muted-foreground hover:bg-muted-foreground/10 px-3'
             >
-              <X className="h-4 w-4 mr-2" />
-              Cancel
+              <X className="h-7 w-7 " />
             </Button>
           </div>
         )}
       </div>
 
-      {message && (
-        <Alert className={`mb-6 ${message.type === 'error' ? 'border-red-500' : 'border-green-500'}`}>
-          <AlertDescription className={message.type === 'error' ? 'text-red-700' : 'text-green-700'}>
-            {message.text}
-          </AlertDescription>
-        </Alert>
-      )}
+      {/* Hero Section */}
+      <div 
+        className="absolute h-80 md:h-[400px] bg-cover bg-center bg-no-repeat pt-10 pb-8 px-8 -mx-8 left-0 right-0 top-0 z-20"
+        style={{
+          backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url('${member.coverImage}')`,
+        }}
+      >
+        <div className="relative z-10 container mx-auto px-4 h-full flex flex-col items-center justify-center">
+          <div className="text-center text-white">
+            <div className="flex justify-center mb-4">
+              <Badge className="bg-blue-500 text-white text-sm capitalize">{member.tags[1]}</Badge>
+            </div>
+            <h1 className="text-3xl md:text-5xl font-bold mb-4 text-card">{member.businessName}</h1>
+            <p className="text-lg md:text-xl mb-6 max-w-2xl">
+              {(member as any).tagline || "Professional member of the Richfield Area Chamber of Commerce"}
+            </p>
+          </div>
+        </div>
+      </div>
 
       {/* Responsive Layout Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
+      <div className="relative grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-7xl mx-auto z-30 mt-84">
         {/* Left Column - Address & Location (1/3 on large screens, stacks on smaller) */}
         <div className="lg:order-1 order-2 space-y-6">
           {/* Combined Address & Location Card */}
@@ -455,6 +475,7 @@ const MemberDetailsPage: React.FC = () => {
                       onCoverImageUpdated={(newCoverImageUrl: string) => {
                         if (member) {
                           setMember({ ...member, coverImage: newCoverImageUrl });
+                          setFormData(prev => ({ ...prev, coverImage: newCoverImageUrl }));
                         }
                       }}                     
                     />
@@ -532,6 +553,36 @@ const MemberDetailsPage: React.FC = () => {
                       placeholder="Tell us about yourself or your business..."
                       rows={4}
                     />
+                  </div>
+
+                  <div>
+                    <label htmlFor="tagline" className="block text-sm font-medium mb-1">
+                      Tagline
+                    </label>
+                    <Input
+                      id="tagline"
+                      name="tagline"
+                      value={formData.tagline}
+                      onChange={handleFormChange}
+                      placeholder="A short description that appears on your profile..."
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="couponCodes" className="block text-sm font-medium mb-1">
+                      Coupon Codes
+                    </label>
+                    <CouponCodesInput
+                      id="couponCodes"
+                      name="couponCodes"
+                      value={getCouponCodesArray()}
+                      onChange={handleCouponCodesChange}
+                      placeholder="Add a coupon code..."
+                      className="w-full"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Press Enter or comma to add a coupon code. Click X to remove.
+                    </p>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -628,6 +679,29 @@ const MemberDetailsPage: React.FC = () => {
                       <p className="text-muted-foreground leading-relaxed">{member.bio}</p>
                     </div>
                   )}
+
+                  {/* Coupon Codes */}
+                  {(member as any).coupon_codes && (() => {
+                    try {
+                      const codes = JSON.parse((member as any).coupon_codes);
+                      return codes.length > 0 ? (
+                        <div>
+                          <h3 className="font-semibold mb-2 flex items-center gap-2">
+                            Special Offers
+                          </h3>
+                          <div className="flex flex-wrap gap-2">
+                            {codes.map((code: string, index: number) => (
+                              <Badge key={index} variant="outline" className="text-sm">
+                                {code}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      ) : null;
+                    } catch {
+                      return null;
+                    }
+                  })()}
 
                   {/* Contact Information */}
                   <div>
