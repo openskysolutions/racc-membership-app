@@ -65,10 +65,6 @@ const routeList: RouteProps[] = [
     href: "/about",
     label: "About",
   },
-  {
-    href: "/about-us-copy",
-    label: "About Us (Editable)",
-  },
 ];
 
 export const Navbar = () => {
