@@ -58,7 +58,7 @@ const AdminRoute = ({ children }: { children: ReactNode }) => {
 };
 
 export default function AppRoutes() {
-  const { isAuthenticated, isLoading, user } = useAuthStore();
+  const { isLoading } = useAuthStore();
   // Force rebuild - updated routing Oct 4, 2025
 
   if (isLoading) {
