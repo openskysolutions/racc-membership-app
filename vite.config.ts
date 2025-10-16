@@ -6,7 +6,7 @@ import svgr from "vite-plugin-svgr";
 import { fileURLToPath } from 'url';
 
 export default defineConfig({
-  base: './',
+  base: '/',
   // Explicitly define the main entry point to prevent scanning symlinks
   root: '.',
   // Reduce memory usage by limiting concurrent operations
