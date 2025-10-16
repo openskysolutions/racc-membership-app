@@ -4,11 +4,8 @@ import { Input } from '@/components/ui/input';
 import { PasswordInput } from '@/components/ui/password-input';
 import { Button } from '@/components/ui/button';
 import { useNavigate, useLocation } from 'react-router-dom';
-import LogoLight from '@/assets/racc-logo.png'; // Adjust the path to your logo file
-import LogoDark from '@/assets/racc-logo-dark.png';  
 import { login } from '@/services/auth';
 import { useAuthStore } from '@/stores/authStore';
-import { useTheme } from '@/providers/theme-provider';
 
 export const AuthPage = () => {
   const [email, setEmail] = useState('');
@@ -18,7 +15,6 @@ export const AuthPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const setUser = useAuthStore(state => state.setUser);
-  const { theme } = useTheme();
 
   // Get the intended destination from location state, default to home
   const from = location.state?.from?.pathname || '/';
