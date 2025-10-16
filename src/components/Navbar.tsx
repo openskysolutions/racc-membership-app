@@ -129,7 +129,7 @@ export const Navbar = () => {
             </Button>
             {!isAuthenticated &&
               <>
-                <Button
+                {/* <Button
                   size="sm"
                   onClick={() => navigate('/join')}
                   className={cn(
@@ -150,7 +150,7 @@ export const Navbar = () => {
                   )}
                 >
                   Sign in
-                </Button>
+                </Button> */}
               </>
             }
             <DropdownMenu>
@@ -299,7 +299,7 @@ export const Navbar = () => {
                       Sign out
                     </Button>
                   : <>
-                      <Button
+                      {/* <Button
                         size="sm"
                         onClick={() => {
                           setIsOpen(false);
@@ -319,7 +319,7 @@ export const Navbar = () => {
                         className=""
                       >
                         Member Login
-                      </Button>
+                      </Button> */}
                     </>
                 }
 

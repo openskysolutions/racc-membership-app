@@ -172,10 +172,15 @@ class MembersController {
       const totalMembers = transformedMembers.length;
       const paginatedMembers = transformedMembers.slice(pageOffset, pageOffset + pageLimit);
       
-      console.log(`📄 Returning page: offset=${pageOffset}, limit=${pageLimit}, total=${totalMembers}, returned=${paginatedMembers.length}`);
+      // Return only business name and ID for each member
+      const simplifiedMembers = paginatedMembers.map(member => ({
+        id: member.id,
+        businessName: member.businessName || member.companyName || `${member.firstName} ${member.lastName}`.trim() || 'Unknown Business',
+        avatar: member.avatar || '/profile-placeholder.png',
+      }));
       
       res.json({
-        members: paginatedMembers,
+        members: simplifiedMembers,
         total: totalMembers,
         limit: pageLimit,
         offset: pageOffset,
