@@ -644,6 +644,11 @@ class GoHighLevelService {
       
       // Add coupon codes as a custom field if provided
       if (updateData.couponCodes !== undefined) {
+        console.log('🔧 GoHighLevel service - coupon codes:', {
+          value: updateData.couponCodes,
+          type: typeof updateData.couponCodes,
+          isArray: Array.isArray(updateData.couponCodes)
+        });
         customFields.push({
           id: '9rtkCBAUmFZdHs9ALwQl',
           field_value: updateData.couponCodes

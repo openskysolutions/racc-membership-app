@@ -7,19 +7,21 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { capitalizeFirst } from '@/lib/utils';
 import { Mail, Phone, Globe, Calendar, Shield, User, Edit, Save, X } from 'lucide-react';
 import { api } from '@/services/apiClient';
 import type { Member } from '@/types/member';
 import AvatarUpload from '@/components/AvatarUpload';
-import CoverImageUpload from '@/components/CoverImageUpload';
+import { CouponCodesInput } from '@/components/ui/coupon-codes-input';
+import { toast } from 'sonner';
 
 interface ExtendedUpdateProfileRequest extends UpdateProfileRequest {
   bio?: string;
+  tagline?: string;
   companyName?: string;
   email?: string;
   coverImage?: string;
+  couponCodes?: string[];
   address?: {
     street: string;
     city: string;
@@ -40,8 +42,10 @@ const ProfilePage: React.FC = () => {
     phone: '',
     website: '',
     bio: '',
+    tagline: '',
     email: '',
     coverImage: '',
+    couponCodes: [],
     address: {
       street: '',
       city: '',
@@ -51,7 +55,6 @@ const ProfilePage: React.FC = () => {
   });
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -78,8 +81,10 @@ const ProfilePage: React.FC = () => {
           phone: profileData.phone || '',
           website: profileData.website || '',
           bio: profileData.bio || '',
+          tagline: profileData.tagline || '',
           email: profileData.email || '',
           coverImage: profileData.coverImage || '',
+          couponCodes: profileData.couponCodes || [],
           address: {
             street: profileData.address?.street || '',
             city: profileData.address?.city || '',
@@ -89,7 +94,7 @@ const ProfilePage: React.FC = () => {
         });
       } catch (error) {
         console.error('Failed to load profile:', error);
-        setMessage({ type: 'error', text: 'Failed to load profile' });
+        toast.error('Failed to load profile');
       } finally {
         setLoading(false);
       }
@@ -119,12 +124,18 @@ const ProfilePage: React.FC = () => {
     }
   };
 
+  const handleCouponCodesChange = (codes: string[]) => {
+    setFormData(prev => ({
+      ...prev,
+      couponCodes: codes
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user?.ghlContactId) return;
 
     setUpdating(true);
-    setMessage(null);
 
     try {
       console.log('Submitting profile update with data:', formData);
@@ -137,10 +148,10 @@ const ProfilePage: React.FC = () => {
       const updatedProfile = await response.json();
       setProfile(updatedProfile);
       setIsEditing(false);
-      setMessage({ type: 'success', text: 'Profile updated successfully!' });
+      toast.success('Profile updated successfully!');
     } catch (error: any) {
       console.error('Failed to update profile:', error);
-      setMessage({ type: 'error', text: error.message || 'Failed to update profile' });
+      toast.error(error.message || 'Failed to update profile');
     } finally {
       setUpdating(false);
     }
@@ -156,8 +167,10 @@ const ProfilePage: React.FC = () => {
         phone: profile.phone || '',
         website: profile.website || '',
         bio: (profile as any).bio || '',
+        tagline: (profile as any).tagline || '',
         email: profile.email || '',
         coverImage: (profile as any).coverImage || '',
+        couponCodes: (profile as any).couponCodes || [],
         address: {
           street: profile.address?.street || '',
           city: profile.address?.city || '',
@@ -167,14 +180,6 @@ const ProfilePage: React.FC = () => {
       });
     }
     setIsEditing(false);
-    setMessage(null);
-  };
-
-  const handleCoverImageUpdated = (newCoverImageUrl: string) => {
-    if (profile) {
-      setProfile({ ...profile, coverImage: newCoverImageUrl } as Member);
-      setFormData(prev => ({ ...prev, coverImage: newCoverImageUrl }));
-    }
   };
 
   const formatMemberName = (profile: Member) => {
@@ -193,7 +198,7 @@ const ProfilePage: React.FC = () => {
 
   const getRoleColor = (role: string) => {
     switch (role) {
-      case 'admin': return 'bg-red-100 text-red-800 border-red-200';
+      case 'admin': return 'bg-neutral-200 text-neutral-800 border-neutral-400';
       case 'moderator': return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'member': return 'bg-green-100 text-green-800 border-green-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
@@ -237,50 +242,15 @@ const ProfilePage: React.FC = () => {
   return (
     <div className="container py-8 px-3 md:px-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col items-start mb-6 max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold">Your Profile</h1>
         
-        {!isEditing && (
-          <Button onClick={() => setIsEditing(true)} className='px-3'>
-            <Edit className="h-4 w-4" />
-          </Button>
-        )}
-        
-        {isEditing && (
-          <div className="flex gap-2">
-            <Button 
-              onClick={handleSubmit} 
-              disabled={updating}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              <Save className="h-4 w-4 mr-2" />
-              {updating ? 'Saving...' : 'Save'}
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={handleCancel}
-              disabled={updating}
-            >
-              <X className="h-4 w-4 mr-2" />
-              Cancel
-            </Button>
-          </div>
-        )}
       </div>
-
-      {message && (
-        <Alert className={`mb-6 ${message.type === 'error' ? 'border-red-500' : 'border-green-500'}`}>
-          <AlertDescription className={message.type === 'error' ? 'text-red-700' : 'text-green-700'}>
-            {message.text}
-          </AlertDescription>
-        </Alert>
-      )}
 
       {/* Single Card with All Information */}
       <Card className="max-w-4xl mx-auto">
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-
+        <CardHeader className='flex items-start flex-wrap flex-row justify-between md:items-start gap-4'>
+          <div className="flex flex-row sm:flex-row items-start sm:items-center gap-6 pl-2">
             {isEditing 
               ? <AvatarUpload
                   contactId={profile?.id || ''}
@@ -304,7 +274,7 @@ const ProfilePage: React.FC = () => {
             }
             
             <div className="flex-1">
-              <CardTitle className="text-2xl mb-2">
+              <CardTitle className="text-2xl mb-0 sm:text-nowrap">
                 {profile?.businessName || (profile ? formatMemberName(profile) : 'Your Profile')}
               </CardTitle>
               
@@ -315,40 +285,52 @@ const ProfilePage: React.FC = () => {
               )}
               
               <div className="flex flex-wrap gap-2">
+                <Badge variant="outline" className="text-green-700 border-green-300">
+                  {(profile?.status || 'active').charAt(0).toUpperCase() + (profile?.status || 'active').slice(1)}
+                </Badge>
                 <Badge className={`${getRoleColor(profile?.role || 'member')} flex items-center gap-1`}>
                   {getRoleIcon(profile?.role || 'member')}
                   {(profile?.role || 'member').charAt(0).toUpperCase() + (profile?.role || 'member').slice(1)}
                 </Badge>
-                
-                <Badge variant="outline" className="text-green-700 border-green-300">
-                  {(profile?.status || 'active').charAt(0).toUpperCase() + (profile?.status || 'active').slice(1)}
-                </Badge>
-                
-                <Badge variant="secondary">Your Profile</Badge>
               </div>
             </div>
+          </div>
+          <div className="flex flex-row justify-end gap-1 !mt-0 ml-auto">
+            {isEditing && (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={handleCancel}
+                  disabled={updating}
+                  className='text-muted-foreground hover:text-muted-foreground hover:bg-muted-foreground/10 h-8 p-2 border-muted-foreground/30'
+                >
+                  <X className="h-7 w-7" />
+                </Button>
+                <Button
+                  onClick={handleSubmit}
+                  disabled={updating}
+                  variant='outline'
+                  className="text-green-600 hover:text-green-600 hover:bg-green-700/10 h-8 p-2 border-muted-foreground/30"
+                >
+                  {updating ? '...' : <Save className="h-4 w-4" />}
+                </Button>
+              </>
+            )}
+            {!isEditing && (
+              <Button 
+              variant='outline'
+              className="text-highlight-foreground hover:text-highlight hover:bg-highlight-foreground/10 h-8 p-2 border-highlight-foreground/30"
+              onClick={() => setIsEditing(true)} 
+              >
+                <Edit className="h-5 w-5" />
+              </Button>
+            )}
           </div>
         </CardHeader>
         
         <CardContent className="space-y-6">
           {isEditing ? (
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Cover Image Upload Section */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium mb-2">
-                  Cover Image
-                </label>
-                <div className="flex justify-center">
-                  <CoverImageUpload
-                    contactId={profile?.id || ''}
-                    currentCoverImage={(profile as any)?.coverImage}
-                    fallbackText="Upload Cover Image"
-                    onCoverImageUpdated={handleCoverImageUpdated}
-                    size="lg"
-                  />
-                </div>
-              </div>
-              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="firstName" className="block text-sm font-medium mb-1">
@@ -414,6 +396,32 @@ const ProfilePage: React.FC = () => {
                   onChange={handleChange}
                   placeholder="Tell us about yourself or your business..."
                   rows={4}
+                />
+              </div>
+
+              <div>
+                <label htmlFor="tagline" className="block text-sm font-medium mb-1">
+                  Tagline
+                </label>
+                <Input
+                  id="tagline"
+                  name="tagline"
+                  value={formData.tagline || ''}
+                  onChange={handleChange}
+                  placeholder="A short catchphrase or slogan..."
+                />
+              </div>
+
+              <div>
+                <label htmlFor="coupon_codes" className="block text-sm font-medium mb-1">
+                  Coupon Codes
+                </label>
+                <CouponCodesInput
+                  id="coupon_codes"
+                  name="coupon_codes"
+                  value={formData.couponCodes || []}
+                  onChange={handleCouponCodesChange}
+                  placeholder="Add coupon codes..."
                 />
               </div>
 
@@ -509,6 +517,28 @@ const ProfilePage: React.FC = () => {
                     About
                   </h3>
                   <p className="text-muted-foreground leading-relaxed">{(profile as any).bio}</p>
+                </div>
+              )}
+
+              {/* Tagline */}
+              {(profile as any)?.tagline && (
+                <div>
+                  <h3 className="font-semibold mb-2">Tagline</h3>
+                  <p className="text-muted-foreground italic">"{(profile as any).tagline}"</p>
+                </div>
+              )}
+
+              {/* Coupon Codes */}
+              {(profile as any)?.couponCodes && (profile as any).couponCodes.length > 0 && (
+                <div>
+                  <h3 className="font-semibold mb-2">Coupon Codes</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {(profile as any).couponCodes.map((code: string, index: number) => (
+                      <Badge key={index} variant="secondary">
+                        {code}
+                      </Badge>
+                    ))}
+                  </div>
                 </div>
               )}
 

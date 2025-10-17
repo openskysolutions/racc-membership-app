@@ -397,7 +397,18 @@ class MembersController {
         // Map bio, tagline, coupon codes and cover image to custom fields
         bio: updateData.bio || '',
         tagline: updateData.tagline || '',
-        couponCodes: updateData.coupon_codes || updateData.couponCodes || '[]', // Handle both naming conventions
+        couponCodes: (() => {
+          // Handle coupon codes - convert array to JSON string
+          const codes = updateData.couponCodes || updateData.coupon_codes || [];
+          const result = Array.isArray(codes) ? JSON.stringify(codes) : codes;
+          console.log('🔧 Coupon codes conversion:', { 
+            input: codes, 
+            isArray: Array.isArray(codes), 
+            result: result, 
+            type: typeof result 
+          });
+          return result;
+        })(),
         coverImage: updateData.coverImage || '',
         // Map address fields to correct GoHighLevel fields
         address1: updateData.address?.street || '',
