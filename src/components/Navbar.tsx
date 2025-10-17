@@ -87,7 +87,7 @@ export const Navbar = () => {
             rel="noreferrer noopener"
             href="https://richfieldareachamber.com"
             className={cn(
-              "flex flex-row flex-grow flex-shrink-0 h-20 py-1 justify-center md:justify-start ml-10 md:ml-0",
+              "flex flex-row flex-grow-0 flex-shrink-0 h-20 py-1 justify-center md:justify-start ml-10 md:ml-0",
             )}
           >
             <img

@@ -20,9 +20,9 @@ interface CoverImageUploadProps {
 }
 
 const CoverImageUpload: React.FC<CoverImageUploadProps> = ({
-  currentCoverImage,
+  // currentCoverImage,
   contactId,
-  fallbackText,
+  // fallbackText,
   onCoverImageUpdated,
   size = 'lg',
   disabled = false
@@ -32,11 +32,11 @@ const CoverImageUpload: React.FC<CoverImageUploadProps> = ({
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const sizeClasses = {
-    sm: 'h-12 w-12',
-    md: 'h-16 w-16',
-    lg: 'h-20 w-20'
-  };
+  // const sizeClasses = {
+  //   sm: 'h-12 w-12',
+  //   md: 'h-16 w-16',
+  //   lg: 'h-20 w-20'
+  // };
 
   const buttonSizeClasses = {
     sm: 'h-6 w-6',
@@ -117,28 +117,29 @@ const CoverImageUpload: React.FC<CoverImageUploadProps> = ({
     }
   };
 
-  const displayCoverImage = previewUrl || currentCoverImage;
+  // const displayCoverImage = previewUrl || currentCoverImage;
 
   return (
     <div className="flex flex-col items-center space-y-4">
       {/* CoverImage with Upload Button */}
-      <div className="relative">
-        <img src={displayCoverImage} alt={fallbackText} className={`rounded ${sizeClasses[size]} object-cover`} />
+      <div className="relative -top-22 -right-5">
+        {/* <img src={displayCoverImage} alt={fallbackText} className={`rounded ${sizeClasses[size]} object-cover`} /> */}
         
         {/* Upload Button Overlay */}
         <Button
           type="button"
           variant="secondary"
           size="sm"
-          className={`absolute -bottom-1 -right-1 rounded-full ${buttonSizeClasses[size]} p-0 shadow-lg border-2 border-background`}
+          className={`absolute -bottom-1 -right-1 rounded-full ${buttonSizeClasses[size]} p-0 shadow-lg border-2 border-background/60 bg-secondary/40`}
           onClick={handleButtonClick}
           disabled={disabled || uploading}
         >
           {uploading ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
-            <Camera className="h-4 w-4" />
+            <Camera className="!h-5 !w-5 text-muted-foreground" />
           )}
+          <span className="absolute right-12 text-sm text-card/90">Profile Image</span>
         </Button>
 
         {/* Remove Preview Button */}

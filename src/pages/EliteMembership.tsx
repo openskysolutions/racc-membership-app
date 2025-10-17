@@ -28,7 +28,7 @@ const EliteMembershipPage: React.FC = () => {
         )}>
         <div className="relative z-10 container mx-auto px-4 h-full flex items-center justify-center">
           <div className="text-center text-white">
-            <h1 className="text-3xl md:text-5xl font-semibold mb-4">Elite Membership Package</h1>
+            <h1 className="text-3xl md:text-5xl font-semibold mb-4 text-card">Elite Membership Package</h1>
             <p className="text-lg md:text-xl mb-6 max-w-2xl">
               For established enterprises seeking leadership opportunities and premium benefits
             </p>

@@ -28,7 +28,7 @@ const BasicMembershipPage: React.FC = () => {
       )}>
         <div className="relative z-10 container mx-auto px-4 h-full flex items-center justify-center">
           <div className="text-center text-white">
-            <h1 className="text-3xl md:text-5xl font-semibold mb-4">Basic Membership Package</h1>
+            <h1 className="text-3xl md:text-5xl font-semibold mb-4 text-card">Basic Membership Package</h1>
             <p className="text-lg md:text-xl mb-6 max-w-2xl">
               Perfect for small businesses looking to connect with the local community
             </p>
