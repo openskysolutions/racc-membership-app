@@ -9,6 +9,7 @@ import { api } from '@/services/apiClient';
 import type { Member as BaseMember } from '@/types/member';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
+import cn from 'classnames';
 
 // Extended member type for the directory page
 interface Member extends BaseMember {
@@ -70,8 +71,6 @@ const MembersPage: React.FC = () => {
 
   // Load members with pagination
   const loadMembers = useCallback(async (offset = 0, append = false, forceRefresh = false) => {
-    console.log(`� Loading members - offset: ${offset}, append: ${append}`);
-    
     if (append) {
       setLoadingMore(true);
     } else {
@@ -124,7 +123,6 @@ const MembersPage: React.FC = () => {
 
   // Refresh function to force reload
   const refreshMembers = useCallback(() => {
-    console.log('🔄 Force refreshing members...');
     setCurrentOffset(0);
     loadMembers(0, false, true);
   }, [loadMembers]);
@@ -199,14 +197,12 @@ const MembersPage: React.FC = () => {
 
   // Initial fetch on mount
   useEffect(() => {
-    console.log('🚀 Initial mount useEffect - loading first page');
     loadMembers(0, false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run on mount to avoid infinite loops
 
   // Reset and reload when search/role filters change (using debounced search)
   useEffect(() => {
-    console.log('🔄 Filter change - reloading from start');
     setCurrentOffset(0);
     loadMembers(0, false);
   }, [debouncedSearchTerm, roleFilter, loadMembers]);
@@ -316,7 +312,7 @@ const MembersPage: React.FC = () => {
                   placeholder="Search members by name, business, or specialty..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-10 w-full"
+                  className="pl-10 pr-10 w-full h-9"
                 />
                 {searchTerm && (
                   <Button
@@ -335,7 +331,9 @@ const MembersPage: React.FC = () => {
                 onClick={refreshMembers}
                 disabled={loading}
                 title="Refresh member list"
-                className={loading ? "animate-spin" : ""}
+                className={cn(loading ? "animate-spin" : "",
+                  "h-9 w-9 flex items-center justify-center"
+                )}
               >
                 <RefreshCw className="h-4 w-4" />
               </Button>
@@ -345,7 +343,7 @@ const MembersPage: React.FC = () => {
             <div className="flex flex-row flex-grow gap-4">
               {user?.role === 'admin' && (
                 <Select value={roleFilter} onValueChange={setRoleFilter}>
-                  <SelectTrigger className="w-full lg:w-40 min-w-30">
+                  <SelectTrigger className="w-full h-9 lg:w-40 min-w-30">
                     <SelectValue placeholder="Role" />
                   </SelectTrigger>
                   <SelectContent>
@@ -359,7 +357,7 @@ const MembersPage: React.FC = () => {
 
               {/* Specialty Filter */}
               <Select value={specialtyFilter} onValueChange={setSpecialtyFilter}>
-                <SelectTrigger className="w-full lg:w-48 min-w-36">
+                <SelectTrigger className="w-full h-9 lg:w-48 min-w-36">
                   <SelectValue placeholder="Specialty" />
                 </SelectTrigger>
                 <SelectContent>
@@ -374,7 +372,7 @@ const MembersPage: React.FC = () => {
 
               {/* Sort Filter */}
               <Select value={sortBy} onValueChange={(value: 'businessName' | 'memberSince' | 'membershipTier') => setSortBy(value)}>
-                <SelectTrigger className="w-10 h-10 p-0 flex items-center justify-center relative [&>span]:hidden [&>svg:last-child]:hidden">
+                <SelectTrigger className="w-10 h-9 px-4 flex items-center justify-center relative [&>span]:hidden [&>svg:last-child]:hidden">
                   <ArrowUpDown className="h-4 w-4 absolute" />
                   <SelectValue />
                 </SelectTrigger>

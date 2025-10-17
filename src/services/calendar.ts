@@ -86,7 +86,6 @@ export async function getCalendarEvents(
     const queryString = params.toString();
     const url = `/calendars/${calendarId}/events${queryString ? `?${queryString}` : ''}`;
     
-    console.log('Fetching calendar events from:', url);
     const response = await api.get(url);
     
     if (!response.ok) {
@@ -97,8 +96,6 @@ export async function getCalendarEvents(
     
     // Handle different response structures from GoHighLevel
     const events = data?.events || data || [];
-    
-    console.log(`Retrieved ${events.length} calendar events`);
     
     // Transform GoHighLevel event format to our format if needed
     return events.map((event: any) => ({

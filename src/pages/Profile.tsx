@@ -22,12 +22,11 @@ interface ExtendedUpdateProfileRequest extends UpdateProfileRequest {
   email?: string;
   coverImage?: string;
   couponCodes?: string[];
-  address?: {
-    street: string;
-    city: string;
-    state: string;
-    zipCode: string;
-  };
+  // Flat address fields to match backend
+  address1?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
 }
 
 const ProfilePage: React.FC = () => {
@@ -46,12 +45,11 @@ const ProfilePage: React.FC = () => {
     email: '',
     coverImage: '',
     couponCodes: [],
-    address: {
-      street: '',
-      city: '',
-      state: '',
-      zipCode: ''
-    }
+    // Flat address fields
+    address1: '',
+    city: '',
+    state: '',
+    postalCode: ''
   });
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
@@ -85,12 +83,11 @@ const ProfilePage: React.FC = () => {
           email: profileData.email || '',
           coverImage: profileData.coverImage || '',
           couponCodes: profileData.couponCodes || [],
-          address: {
-            street: profileData.address?.street || '',
-            city: profileData.address?.city || '',
-            state: profileData.address?.state || '',
-            zipCode: profileData.address?.zipCode || ''
-          }
+          // Flat address fields
+          address1: profileData.address1 || '',
+          city: profileData.city || '',
+          state: profileData.state || '',
+          postalCode: profileData.postalCode || ''
         });
       } catch (error) {
         console.error('Failed to load profile:', error);
@@ -105,23 +102,10 @@ const ProfilePage: React.FC = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    
-    // Handle nested address fields
-    if (name.startsWith('address.')) {
-      const addressField = name.split('.')[1];
-      setFormData(prev => ({
-        ...prev,
-        address: {
-          ...prev.address!,
-          [addressField]: value
-        }
-      }));
-    } else {
-      setFormData(prev => ({ 
-        ...prev, 
-        [name]: value 
-      }));
-    }
+    setFormData(prev => ({ 
+      ...prev, 
+      [name]: value 
+    }));
   };
 
   const handleCouponCodesChange = (codes: string[]) => {
@@ -138,7 +122,6 @@ const ProfilePage: React.FC = () => {
     setUpdating(true);
 
     try {
-      console.log('Submitting profile update with data:', formData);
       const response = await api.put(`/members/${user.ghlContactId}`, formData);
       
       if (!response.ok) {
@@ -171,12 +154,11 @@ const ProfilePage: React.FC = () => {
         email: profile.email || '',
         coverImage: (profile as any).coverImage || '',
         couponCodes: (profile as any).couponCodes || [],
-        address: {
-          street: profile.address?.street || '',
-          city: profile.address?.city || '',
-          state: profile.address?.state || '',
-          zipCode: profile.address?.zipCode || ''
-        }
+        // Flat address fields
+        address1: profile.address1 || '',
+        city: profile.city || '',
+        state: profile.state || '',
+        postalCode: profile.postalCode || ''
       });
     }
     setIsEditing(false);
@@ -455,25 +437,25 @@ const ProfilePage: React.FC = () => {
               <h3 className="font-semibold mb-3">Address Information</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="address.street" className="block text-sm font-medium mb-1">
+                  <label htmlFor="address1" className="block text-sm font-medium mb-1">
                     Street Address
                   </label>
                   <Input
-                    id="address.street"
-                    name="address.street"
-                    value={formData.address?.street || ''}
+                    id="address1"
+                    name="address1"
+                    value={formData.address1 || ''}
                     onChange={handleChange}
                     placeholder="123 Main Street"
                   />
                 </div>
                 <div>
-                  <label htmlFor="address.city" className="block text-sm font-medium mb-1">
+                  <label htmlFor="city" className="block text-sm font-medium mb-1">
                     City
                   </label>
                   <Input
-                    id="address.city"
-                    name="address.city"
-                    value={formData.address?.city || ''}
+                    id="city"
+                    name="city"
+                    value={formData.city || ''}
                     onChange={handleChange}
                     placeholder="City"
                   />
@@ -481,26 +463,26 @@ const ProfilePage: React.FC = () => {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="address.state" className="block text-sm font-medium mb-1">
+                  <label htmlFor="state" className="block text-sm font-medium mb-1">
                     State
                   </label>
                   <Input
-                    id="address.state"
-                    name="address.state"
-                    value={formData.address?.state || ''}
+                    id="state"
+                    name="state"
+                    value={formData.state || ''}
                     onChange={handleChange}
                     placeholder="UT"
                     maxLength={2}
                   />
                 </div>
                 <div>
-                  <label htmlFor="address.zipCode" className="block text-sm font-medium mb-1">
+                  <label htmlFor="postalCode" className="block text-sm font-medium mb-1">
                     ZIP Code
                   </label>
                   <Input
-                    id="address.zipCode"
-                    name="address.zipCode"
-                    value={formData.address?.zipCode || ''}
+                    id="postalCode"
+                    name="postalCode"
+                    value={formData.postalCode || ''}
                     onChange={handleChange}
                     placeholder="12345"
                   />

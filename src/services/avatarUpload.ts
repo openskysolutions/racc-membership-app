@@ -18,8 +18,6 @@ export interface UploadAvatarResponse {
  */
 export async function uploadAvatar(file: File, contactId: string): Promise<UploadAvatarResponse> {
   try {
-    console.log('Uploading avatar for contact:', contactId);
-    
     // Convert file to base64
     const fileData = await fileToBase64(file);
     
@@ -41,7 +39,6 @@ export async function uploadAvatar(file: File, contactId: string): Promise<Uploa
     }
     
     const data = await response.json();
-    console.log('Avatar upload successful:', data);
     
     return {
       success: true,
@@ -75,8 +72,6 @@ function fileToBase64(file: File): Promise<string> {
  */
 export async function updateContactAvatar(contactId: string, avatarUrl: string): Promise<void> {
   try {
-    console.log('Updating contact avatar URL:', contactId, avatarUrl);
-    
     const response = await api.put(`/members/${contactId}/avatar`, {
       avatarUrl: avatarUrl
     });
@@ -85,8 +80,6 @@ export async function updateContactAvatar(contactId: string, avatarUrl: string):
       const errorData = await response.json().catch(() => ({}));
       throw new Error(`Failed to update contact avatar: ${response.statusText} - ${errorData.message || ''}`);
     }
-    
-    console.log('Contact avatar URL updated successfully');
   } catch (error: any) {
     console.error('Error updating contact avatar:', error);
     throw new Error(`Failed to update contact avatar: ${error.message}`);

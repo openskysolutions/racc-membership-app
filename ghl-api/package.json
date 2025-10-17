@@ -11,7 +11,15 @@
     "dev:watch": "tsc --watch",
     "test": "vitest",
     "test:run": "vitest run",
-    "test:watch": "vitest --watch"
+    "test:watch": "vitest --watch",
+    "pm2:start": "pm2 start ecosystem.config.js",
+    "pm2:stop": "pm2 stop racc-api",
+    "pm2:restart": "pm2 restart racc-api",
+    "pm2:reload": "pm2 reload racc-api",
+    "pm2:delete": "pm2 delete racc-api",
+    "pm2:logs": "pm2 logs racc-api",
+    "pm2:status": "pm2 status",
+    "pm2:monit": "pm2 monit"
   },
   "keywords": [
     "highlevel",
@@ -51,6 +59,7 @@
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.8",
     "nodemon": "^2.0.22",
+    "pm2": "^6.0.13",
     "supertest": "^7.0.0",
     "ts-node": "^10.9.2",
     "vitest": "^2.0.0"

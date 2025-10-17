@@ -28,12 +28,11 @@ interface MemberFormData {
   coupon_codes: string;
   coverImage: string;
   email: string;
-  address: {
-    street: string;
-    city: string;
-    state: string;
-    zipCode: string;
-  };
+  // Flat address fields to match backend
+  address1: string;
+  city: string;
+  state: string;
+  postalCode: string;
 }
 
 const MemberDetailsPage: React.FC = () => {
@@ -59,12 +58,11 @@ const MemberDetailsPage: React.FC = () => {
     coupon_codes: '',
     coverImage: '',
     email: '',
-    address: {
-      street: '',
-      city: '',
-      state: '',
-      zipCode: ''
-    }
+    // Flat address fields
+    address1: '',
+    city: '',
+    state: '',
+    postalCode: ''
   });
 
   useEffect(() => {
@@ -111,12 +109,11 @@ const MemberDetailsPage: React.FC = () => {
           coupon_codes: JSON.stringify((memberData as any).couponCodes || []),
           coverImage: memberData.coverImage || '',
           email: memberData.email || '',
-          address: {
-            street: memberData.address?.street || '',
-            city: memberData.address?.city || '',
-            state: memberData.address?.state || '',
-            zipCode: memberData.address?.zipCode || ''
-          }
+          // Flat address fields
+          address1: memberData.address1 || '',
+          city: memberData.city || '',
+          state: memberData.state || '',
+          postalCode: memberData.postalCode || ''
         });
       } catch (err) {
         console.error('Error fetching member:', err);
@@ -169,23 +166,10 @@ const MemberDetailsPage: React.FC = () => {
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-
-    // Handle nested address fields
-    if (name.startsWith('address.')) {
-      const addressField = name.split('.')[1];
-      setFormData(prev => ({
-        ...prev,
-        address: {
-          ...prev.address,
-          [addressField]: value
-        }
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        [name]: value
-      }));
-    }
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
   const handleCouponCodesChange = (tags: string[]) => {
@@ -209,7 +193,7 @@ const MemberDetailsPage: React.FC = () => {
     setUpdating(true);
 
     try {
-      console.log('🔍 Form data being submitted:', formData);
+      // Send form data with flat address fields
       const response = await api.put(`/members/${member.id}`, formData);
 
       if (!response.ok) {
@@ -242,12 +226,11 @@ const MemberDetailsPage: React.FC = () => {
         coupon_codes: JSON.stringify((member as any).couponCodes || []),
         coverImage: member.coverImage || '',
         email: member.email || '',
-        address: {
-          street: member.address?.street || '',
-          city: member.address?.city || '',
-          state: member.address?.state || '',
-          zipCode: member.address?.zipCode || ''
-        }
+        // Flat address fields
+        address1: member.address1 || '',
+        city: member.city || '',
+        state: member.state || '',
+        postalCode: member.postalCode || ''
       });
     }
     setIsEditing(false);
@@ -329,7 +312,9 @@ const MemberDetailsPage: React.FC = () => {
       <div
         className="absolute h-80 w-screen md:h-[400px] bg-cover bg-center bg-no-repeat pt-10 pb-8 px-8 top-20 md:top-30 z-20"
         style={{
-          backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url('${member.coverImage}')`,
+          backgroundImage: (member.tags?.includes('elite') || member.tags?.includes('admin')) && member.coverImage 
+            ? `linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url('${member.coverImage}')`
+            : 'linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5))',
         }}
       >
         <div className="relative z-10 container mx-auto px-4 h-full flex flex-col items-center justify-center">
@@ -348,35 +333,78 @@ const MemberDetailsPage: React.FC = () => {
           {/* Left Column - Address & Location (1/3 on large screens, stacks on smaller) */}
           <div className="lg:order-1 order-2 space-y-6">
             {/* Combined Address & Location Card */}
-            {(member.address?.street || member.address?.city || member.address?.state || member.address?.zipCode) && (
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    Address & Location
+                    Contact Information
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                  {/* Contact Information */}
+                  <div>
+                    <div className="grid grid-cols-1 md:grid-cols-1 gap-1">
+                      {user && (
+                        <div className="flex items-center gap-3">
+                          <Mail className="h-4 w-4 text-muted-foreground" />
+                          <a
+                            href={`mailto:${member.email}`}
+                            className="text-primary hover:underline flex-1 truncate"
+                          >
+                            {member.email}
+                          </a>
+                        </div>
+                      )}
+
+                      {member.phone && (
+                        <div className="flex items-center gap-3">
+                          <Phone className="h-4 w-4 text-muted-foreground" />
+                          <a
+                            href={`tel:${member.phone}`}
+                            className="text-primary hover:underline"
+                          >
+                            {member.phone}
+                          </a>
+                        </div>
+                      )}
+
+                      {member.website && (
+                        <div className="flex items-center gap-3">
+                          <Globe className="h-4 w-4 text-muted-foreground" />
+                          <a
+                            href={member.website}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary hover:underline flex-1 truncate"
+                          >
+                            {member.website.replace(/^https?:\/\//, '')}
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                   {/* Address Information */}
+                    <h3 className="font-semibold mb-3 flex items-center gap-2">
+                      Address & Location
+                    </h3>
                   <div className="space-y-2">
-                    {member.address?.street && (
-                      <p className="text-sm text-muted-foreground">{member.address.street}</p>
+                    {member.address1 && (
+                      <p className="text-sm text-muted-foreground">{member.address1}</p>
                     )}
                     <p className="text-sm text-muted-foreground">
-                      {[member.address?.city, member.address?.state, member.address?.zipCode]
+                      {[member.city, member.state, member.postalCode]
                         .filter(Boolean)
                         .join(', ')}
                     </p>
                   </div>
 
                   {/* Embedded Map */}
-                  {(member.address?.street || member.address?.city) && (
                     <div className="w-full h-64 bg-muted rounded-lg overflow-hidden border">
                       <iframe
                         src={`https://maps.google.com/maps?q=${encodeURIComponent([
-                          member.address?.street,
-                          member.address?.city,
-                          member.address?.state,
-                          member.address?.zipCode
+                          member.address1,
+                          member.city,
+                          member.state,
+                          member.postalCode
                         ].filter(Boolean).join(', '))}&t=&z=12&ie=UTF8&iwloc=&output=embed`}
                         width="100%"
                         height="100%"
@@ -387,17 +415,16 @@ const MemberDetailsPage: React.FC = () => {
                         title="Member Location"
                       />
                     </div>
-                  )}
                   <Button
                     variant="outline"
                     size="sm"
                     className="w-full"
                     onClick={() => {
                       const address = [
-                        member.address?.street,
-                        member.address?.city,
-                        member.address?.state,
-                        member.address?.zipCode
+                        member.address1,
+                        member.city,
+                        member.state,
+                        member.postalCode
                       ].filter(Boolean).join(', ');
                       window.open(`https://maps.google.com/?q=${encodeURIComponent(address)}`, '_blank');
                     }}
@@ -407,7 +434,6 @@ const MemberDetailsPage: React.FC = () => {
                   </Button>
                 </CardContent>
               </Card>
-            )}
           </div>
 
           {/* Right Column - Main Member Information (2/3 on large screens, stacks on smaller) */}
@@ -613,25 +639,25 @@ const MemberDetailsPage: React.FC = () => {
                     <h3 className="font-semibold mb-3">Address Information</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label htmlFor="address.street" className="block text-sm font-medium mb-1">
+                        <label htmlFor="address1" className="block text-sm font-medium mb-1">
                           Street Address
                         </label>
                         <Input
-                          id="address.street"
-                          name="address.street"
-                          value={formData.address.street}
+                          id="address1"
+                          name="address1"
+                          value={formData.address1}
                           onChange={handleFormChange}
                           placeholder="123 Main Street"
                         />
                       </div>
                       <div>
-                        <label htmlFor="address.city" className="block text-sm font-medium mb-1">
+                        <label htmlFor="city" className="block text-sm font-medium mb-1">
                           City
                         </label>
                         <Input
-                          id="address.city"
-                          name="address.city"
-                          value={formData.address.city}
+                          id="city"
+                          name="city"
+                          value={formData.city}
                           onChange={handleFormChange}
                           placeholder="City"
                         />
@@ -639,26 +665,26 @@ const MemberDetailsPage: React.FC = () => {
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label htmlFor="address.state" className="block text-sm font-medium mb-1">
+                        <label htmlFor="state" className="block text-sm font-medium mb-1">
                           State
                         </label>
                         <Input
-                          id="address.state"
-                          name="address.state"
-                          value={formData.address.state}
+                          id="state"
+                          name="state"
+                          value={formData.state}
                           onChange={handleFormChange}
                           placeholder="UT"
                           maxLength={2}
                         />
                       </div>
                       <div>
-                        <label htmlFor="address.zipCode" className="block text-sm font-medium mb-1">
+                        <label htmlFor="postalCode" className="block text-sm font-medium mb-1">
                           ZIP Code
                         </label>
                         <Input
-                          id="address.zipCode"
-                          name="address.zipCode"
-                          value={formData.address.zipCode}
+                          id="postalCode"
+                          name="postalCode"
+                          value={formData.postalCode}
                           onChange={handleFormChange}
                           placeholder="12345"
                         />
@@ -701,55 +727,11 @@ const MemberDetailsPage: React.FC = () => {
                       }
                     })()}
 
-                    {/* Contact Information */}
-                    <div>
-                      <h3 className="font-semibold mb-3 flex items-center gap-2">
-                        Contact Information
-                      </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="flex items-center gap-3">
-                          <Mail className="h-4 w-4 text-muted-foreground" />
-                          <a
-                            href={`mailto:${member.email}`}
-                            className="text-primary hover:underline flex-1 truncate"
-                          >
-                            {member.email}
-                          </a>
-                        </div>
-
-                        {member.phone && (
-                          <div className="flex items-center gap-3">
-                            <Phone className="h-4 w-4 text-muted-foreground" />
-                            <a
-                              href={`tel:${member.phone}`}
-                              className="text-primary hover:underline"
-                            >
-                              {member.phone}
-                            </a>
-                          </div>
-                        )}
-
-                        {member.website && (
-                          <div className="flex items-center gap-3">
-                            <Globe className="h-4 w-4 text-muted-foreground" />
-                            <a
-                              href={member.website}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-primary hover:underline flex-1 truncate"
-                            >
-                              {member.website.replace(/^https?:\/\//, '')}
-                            </a>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
                     {/* Membership Information */}
-                    <h3 className="font-semibold mb-3 flex items-center gap-2">
+                    <h3 className="font-semibold mb-0 flex items-center gap-2">
                       Membership
                     </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-1 gap-4 !mt-2">
                       <div className="flex items-center gap-3">
                         <Calendar className="h-4 w-4 text-muted-foreground" />
                         <div>

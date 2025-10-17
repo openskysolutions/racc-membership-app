@@ -11,13 +11,6 @@ interface CustomField {
   value: string;
 }
 
-interface Address {
-  street: string;
-  city: string;
-  state: string;
-  zipCode: string;
-}
-
 interface Member {
   // Core Member Fields
   id: string;
@@ -45,8 +38,11 @@ interface Member {
   specialties?: string[];
   membershipTier?: string;
   
-  // Address Information
-  address?: Address;
+  // Address Information (flat to match GoHighLevel format)
+  address1?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
   
   // System Fields
   role: string;
@@ -92,18 +88,12 @@ class MembersController {
       
       let allContacts;
       if (isCacheValid) {
-        console.log('📋 Using cached member data');
         allContacts = this.membersCache;
       } else {
-        if (forceRefresh) {
-          console.log('🔄 Force refresh requested - fetching fresh data...');
-        }
         // Check if there's already a fetch in progress
         if (this.fetchPromise) {
-          console.log('⏳ Waiting for existing fetch to complete...');
           allContacts = await this.fetchPromise;
         } else {
-          console.log('🔄 Fetching fresh member data from GoHighLevel...');
           // Create the fetch promise for deduplication
           this.fetchPromise = this.fetchContactsWithTimeout();
           
@@ -112,12 +102,10 @@ class MembersController {
             // Update cache
             this.membersCache = allContacts;
             this.cacheTimestamp = now;
-            console.log(`✅ Cached ${allContacts.length} contacts`);
           } catch (error) {
             console.error('❌ Failed to fetch contacts:', error);
             // Return cached data if available, even if stale
             if (this.membersCache) {
-              console.log('⚠️ Using stale cached data due to fetch error');
               allContacts = this.membersCache;
             } else {
               throw error;
@@ -132,22 +120,9 @@ class MembersController {
       // Transform GoHighLevel contacts to our Member format
       let transformedMembers = allContacts.map(contact => this.transformContactToMember(contact));
       
-      // Cache individual member details while we have them
-      const cacheTimestamp = Date.now();
-      transformedMembers.forEach(member => {
-        const memberWithComputedFields = {
-          ...member,
-          name: `${member.firstName} ${member.lastName}`.trim(),
-          membershipTier: this.getMembershipTier(member)
-        };
-        
-        this.memberDetailsCache.set(member.id, {
-          member: memberWithComputedFields,
-          timestamp: cacheTimestamp
-        });
-      });
-      
-      console.log(`💾 Cached ${transformedMembers.length} individual member details`);
+      // DON'T cache individual member details from the list endpoint
+      // because list endpoint might have incomplete data (especially address fields)
+      // Individual member details should only be cached from getMemberById endpoint
       
       // Apply search filter to the full dataset
       if (search && typeof search === 'string') {
@@ -208,9 +183,6 @@ class MembersController {
    * Transform GoHighLevel contact to Member format
    */
   private transformContactToMember(contact: any): Member {
-    // Debug: Log custom fields structure
-    console.log(`🔍 Contact custom fields:`, JSON.stringify(contact.customFields, null, 2));
-    
     // GoHighLevel custom field ID mappings
     const CUSTOM_FIELD_IDS = {
       bio: 'b3Yfp0NjO23zFXzwjswu',
@@ -229,7 +201,6 @@ class MembersController {
       // Try to find by mapped ID first, then by key, then by original fieldName as id
       const field = contact.customFields?.find(f => f.id === fieldId || f.key === fieldName || f.id === fieldName);
       const value = field?.value || field?.field_value || '';
-      console.log(`🔍 getCustomField('${fieldName}') [mapped to ${fieldId}]:`, { field, value });
       return value;
     };
 
@@ -295,13 +266,11 @@ class MembersController {
       specialties,
       membershipTier,
       
-      // Address Information
-      address: {
-        street: contact.address1 || '',
-        city: contact.city || '',
-        state: contact.state || '',
-        zipCode: contact.postalCode || ''
-      },
+      // Address Information (flat to match GoHighLevel format)
+      address1: contact.address1 || '',
+      city: contact.city || '',
+      state: contact.state || '',
+      postalCode: contact.postalCode || '',
       
       // System Fields
       role,
@@ -319,13 +288,17 @@ class MembersController {
     try {
       const { id } = req.params;
       
-      // Check cache first
-      const cachedMember = this.memberDetailsCache.get(id);
+      // Check for bypass cache parameter for debugging
+      const bypassCache = req.query.refresh === 'true';
       const now = Date.now();
       
-      if (cachedMember && (now - cachedMember.timestamp) < this.MEMBER_CACHE_DURATION) {
-        console.log(`💾 Serving member ${id} from cache`);
-        return res.json(cachedMember.member);
+      // Check cache first (unless bypassed)
+      if (!bypassCache) {
+        const cachedMember = this.memberDetailsCache.get(id);
+        
+        if (cachedMember && (now - cachedMember.timestamp) < this.MEMBER_CACHE_DURATION) {
+          return res.json(cachedMember.member);
+        }
       }
       
       // Try to get the contact directly by ID
@@ -401,25 +374,19 @@ class MembersController {
           // Handle coupon codes - convert array to JSON string
           const codes = updateData.couponCodes || updateData.coupon_codes || [];
           const result = Array.isArray(codes) ? JSON.stringify(codes) : codes;
-          console.log('🔧 Coupon codes conversion:', { 
-            input: codes, 
-            isArray: Array.isArray(codes), 
-            result: result, 
-            type: typeof result 
-          });
           return result;
         })(),
         coverImage: updateData.coverImage || '',
-        // Map address fields to correct GoHighLevel fields
-        address1: updateData.address?.street || '',
-        city: updateData.address?.city || '',
-        state: updateData.address?.state || '',
-        postalCode: updateData.address?.zipCode || '',
+        // Map address fields directly (no nesting needed)
+        address1: updateData.address1 || '',
+        city: updateData.city || '',
+        state: updateData.state || '',
+        postalCode: updateData.postalCode || '',
         email: updateData.email
       };
       
       // Update contact in GoHighLevel
-      await ghlService.updateContact(id, ghlUpdateData);
+      const ghlResponse = await ghlService.updateContact(id, ghlUpdateData);
       
       // Clear cache for this member
       this.memberDetailsCache.delete(id);
@@ -428,12 +395,9 @@ class MembersController {
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       // Fetch updated member data
-      console.log(`🔄 Fetching updated contact data for ${id}`);
       const updatedContact = await ghlService.getContact(id);
-      console.log(`🔄 Updated contact data:`, JSON.stringify(updatedContact, null, 2));
       
       const updatedMember = this.transformContactToMember(updatedContact);
-      console.log(`🔄 Transformed member data:`, updatedMember);
       
       const memberWithComputedFields = {
         ...updatedMember,

@@ -207,8 +207,8 @@ a {
 
 /* Focus and ring utilities */
 .ring-offset-background { --tw-ring-offset-color: rgb(var(--background)); }
-.focus-visible\:ring-ring:focus-visible { --tw-ring-color: rgb(var(--ring)); }
-.focus-visible\:ring-offset-2:focus-visible { --tw-ring-offset-width: 2px; }
+.focus-visible\:ring-ring:focus-visible { --tw-ring-color: rgba(var(--ring),0.5); }
+.focus-visible\:ring-offset-2:focus-visible { --tw-ring-offset-width: 0; }
 
 /* Dark theme utilities */
 .dark .bg-neutral-800 { background-color: #262626; }

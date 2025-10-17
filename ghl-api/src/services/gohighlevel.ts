@@ -116,12 +116,9 @@ class GoHighLevelService {
         ...(contactData.website && { website: contactData.website }),
       };
 
-      console.log('📤 Creating GHL contact with payload:', JSON.stringify(payload, null, 2));
-
       const response = await this.client.post('/contacts/', payload);
       
       if (response.data && response.data.contact && response.data.contact.id) {
-        console.log('✅ Successfully created GHL contact:', response.data.contact.id);
         
         // Add tags if provided
         if (contactData.tags && contactData.tags.length > 0) {
@@ -190,20 +187,8 @@ class GoHighLevelService {
         console.log(`❌ No contact found for email: ${email}`);
         return { isActive: false };
       }
-
-      console.log(`✅ Found contact:`, {
-        id: contact.id,
-        email: contact.email,
-        firstName: contact.firstName,
-        lastName: contact.lastName,
-        tags: contact.tags
-      });
-
       // Check if contact has "active" tag
       const hasActiveTag = contact.tags && contact.tags.includes('active');
-      
-      console.log(`🏷️ Contact tags:`, contact.tags);
-      console.log(`✓ Has 'active' tag:`, hasActiveTag);
 
       return {
         isActive: hasActiveTag,
@@ -220,28 +205,22 @@ class GoHighLevelService {
    * Determine user role based on HighLevel tags
    */
   async getUserRole(email: string): Promise<string> {
-    console.log(`🔍 Determining role for user: ${email}`);
-    
     try {
       const { contact } = await this.isUserActive(email);
       
       if (!contact || !contact.tags) {
-        console.log(`⚠️ No contact or tags found for ${email}, defaulting to 'member' role`);
         return 'member';
       }
 
       // Check tags in order of priority
       if (contact.tags.includes('admin')) {
-        console.log(`🔑 User ${email} has 'admin' tag - role: admin`);
         return 'admin';
       }
       
       if (contact.tags.includes('moderator')) {
-        console.log(`🔑 User ${email} has 'moderator' tag - role: moderator`);
         return 'moderator';
       }
       
-      console.log(`👤 User ${email} has no special role tags - role: member`);
       return 'member';
       
     } catch (error: any) {
@@ -574,7 +553,16 @@ class GoHighLevelService {
           'Version': '2021-07-28'
         }
       });
-      return result.data.contact || result.data;
+      
+      console.log('🔍 getContact - Raw response from GoHighLevel:', JSON.stringify(result.data, null, 2));
+      console.log('🔍 getContact - result.data.contact exists:', !!result.data.contact);
+      console.log('🔍 getContact - result.data exists:', !!result.data);
+      
+      const contactData = result.data.contact || result.data;
+      console.log('🔍 getContact - Final contact data address1:', contactData?.address1);
+      console.log('🔍 getContact - Final contact data city:', contactData?.city);
+      
+      return contactData;
     } catch (error: any) {
       console.error('Failed to get contact:', error);
       throw new Error(`Failed to get contact: ${error.message}`);
@@ -679,13 +667,21 @@ class GoHighLevelService {
       }
 
       console.log(`🔧 Sending PUT request to /contacts/${contactId} with payload:`, JSON.stringify(payload, null, 2));
+      console.log(`🏠 Address fields specifically being sent:`, {
+        address1: payload.address1,
+        city: payload.city,
+        state: payload.state,
+        postalCode: payload.postalCode,
+        country: payload.country
+      });
       
-      await this.client.put(`/contacts/${contactId}`, payload, {
+      const response = await this.client.put(`/contacts/${contactId}`, payload, {
         headers: {
           'Version': '2021-07-28'
         }
       });
       console.log(`✅ Successfully updated contact ${contactId}`);
+      console.log(`✅ GoHighLevel response:`, JSON.stringify(response.data, null, 2));
     } catch (error: any) {
       console.error('❌ Failed to update contact:', error);
       if (error.response) {

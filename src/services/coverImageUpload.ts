@@ -18,8 +18,6 @@ export interface UploadCoverImageResponse {
  */
 export async function uploadCoverImage(file: File, contactId: string): Promise<UploadCoverImageResponse> {
   try {
-    console.log('Uploading coverImage for contact:', contactId);
-    
     // Convert file to base64
     const fileData = await fileToBase64(file);
     
@@ -41,7 +39,6 @@ export async function uploadCoverImage(file: File, contactId: string): Promise<U
     }
     
     const data = await response.json();
-    console.log('CoverImage upload successful:', data);
     
     return {
       success: true,

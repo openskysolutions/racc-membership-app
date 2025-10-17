@@ -77,7 +77,6 @@ export async function exchangeTokenWithCode(code: string): Promise<any> {
   const data = await response.json();
   if (!response.ok) throw new Error(data.error_description || 'Token exchange failed');
   
-  console.log('Token exchange successful:', data);
   localStorage.setItem('token', data.access_token);
   sessionStorage.removeItem('pkce_code_verifier');
   
@@ -89,16 +88,12 @@ export async function exchangeTokenWithCode(code: string): Promise<any> {
  */
 export async function login(credentials: LoginCredentials): Promise<AuthResponse> {
   try {
-    console.log('Starting OAuth 2.0 PKCE login flow...');
-    
     // Generate PKCE parameters
     const codeVerifier = generateCodeVerifier();
     const codeChallenge = await generateCodeChallenge(codeVerifier);
     
     // Store code verifier for later use
     sessionStorage.setItem('pkce_code_verifier', codeVerifier);
-    
-    console.log('Attempting OAuth authorization at:', `${API_BASE_URL}/auth/authorize`);
     
     // Step 1: Authorization request to your OAuth server
     const authResponse = await fetch(`${API_BASE_URL}/auth/authorize`, {
@@ -119,7 +114,6 @@ export async function login(credentials: LoginCredentials): Promise<AuthResponse
     }
 
     const authData = await authResponse.json();
-    console.log('Authorization successful, received code');
     
     // Step 2: Exchange authorization code for token
     const tokenData = await exchangeTokenWithCode(authData.code);

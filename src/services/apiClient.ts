@@ -71,7 +71,6 @@ export async function apiFetch(endpoint: string, init?: RequestInit, retries: nu
       
       // Wait before retrying (exponential backoff)
       const delay = Math.pow(2, attempt) * 1000; // 1s, 2s, 4s...
-      console.log(`Retrying in ${delay}ms...`);
       await new Promise(resolve => setTimeout(resolve, delay));
     }
   }

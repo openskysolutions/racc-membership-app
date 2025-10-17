@@ -8,13 +8,6 @@ export interface CustomField {
   value: string;
 }
 
-export interface Address {
-  street: string;
-  city: string;
-  state: string;
-  zipCode: string;
-}
-
 export interface Member {
   // Core Member Fields
   id: string;
@@ -45,8 +38,11 @@ export interface Member {
   coupon_codes?: string[];
   tagline?: string;
   
-  // Address Information
-  address?: Address;
+  // Address Information (flat to match GoHighLevel format)
+  address1?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
   
   // System Fields
   role: string;
