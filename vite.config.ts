@@ -6,7 +6,7 @@ import svgr from "vite-plugin-svgr";
 import { fileURLToPath } from 'url';
 
 export default defineConfig({
-  base: './',
+  base: '/',  // Changed from './' to '/'
   plugins: [
     react(),
     svgr(),
