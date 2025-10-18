@@ -90,3 +90,8 @@
     @apply bg-blue-500 text-white font-bold rounded-full;
   }
 }
+
+.hl-app .hl_form-builder--main {
+    margin-top: 0 !important;
+    padding: 0 !important;
+}

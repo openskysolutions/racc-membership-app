@@ -70,6 +70,14 @@ module.exports = {
         '10': '2.5rem', // 40px
         '14': '3.5rem', // 56px
         '18': '4.5rem', // 72px
+        '22': '5.5rem', // 88px
+        '26': '6.5rem', // 104px
+        '30': '7.5rem', // 120px
+        '34': '8.5rem', // 136px
+        '38': '9.5rem', // 152px
+        '42': '10.5rem', // 168px
+        '46': '11.5rem', // 184px
+        '50': '12.5rem', // 200px
       },
       colors: {
         border: 'rgb(from var(--border) r g b / <alpha-value>)',

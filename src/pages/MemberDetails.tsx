@@ -696,10 +696,6 @@ const MemberDetailsPage: React.FC = () => {
                     {/* Bio */}
                     {member.bio && (
                       <div>
-                        <h3 className="font-semibold mb-2 flex items-center gap-2">
-                          <User className="h-4 w-4" />
-                          About
-                        </h3>
                         <p className="text-muted-foreground leading-relaxed">{member.bio}</p>
                       </div>
                     )}
