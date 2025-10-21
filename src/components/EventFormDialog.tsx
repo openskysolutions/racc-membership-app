@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, MapPin, User, Save, X, AlertCircle } from 'lucide-react';
+import { Calendar, Clock, MapPin, User, Save, X, AlertCircle, Link, Image, Download } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogOverlay, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuthStore } from '@/stores/authStore';
 import { createCalendarEvent, updateCalendarEvent, CalendarEvent, CreateEventPayload, UpdateEventPayload } from '@/services/calendar';
+import { uploadAvatar, validateAvatarFile, createImagePreview, revokeImagePreview } from '@/services/avatarUpload';
 import cn from 'classnames';
 
 interface EventFormDialogProps {
@@ -22,6 +23,12 @@ interface EventFormDialogProps {
   onEventUpdated?: (event: CalendarEvent) => void;
 }
 
+interface CustomFields {
+  pageUrl?: string;
+  coverImageUrl?: string;
+  downloadFileUrl?: string;
+}
+
 interface FormData {
   title: string;
   description: string;
@@ -32,6 +39,11 @@ interface FormData {
   location: string;
   appointmentStatus: 'new' | 'scheduled' | 'confirmed' | 'cancelled';
   toNotify: boolean;
+  internalNote: string;
+  // Custom fields
+  pageUrl: string;
+  coverImageUrl: string;
+  downloadFileUrl: string;
 }
 
 const EventFormDialog: React.FC<EventFormDialogProps> = ({
@@ -47,6 +59,11 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
+  // File upload states
+  const [coverUploading, setCoverUploading] = useState(false);
+  const [downloadUploading, setDownloadUploading] = useState(false);
+  const [coverPreview, setCoverPreview] = useState<string | null>(null);
+  
   const isEditing = !!event;
   
   const [formData, setFormData] = useState<FormData>({
@@ -58,7 +75,11 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
     endTime: '',
     location: '',
     appointmentStatus: 'new',
-    toNotify: false
+    toNotify: false,
+    internalNote: '',
+    pageUrl: '',
+    coverImageUrl: '',
+    downloadFileUrl: ''
   });
 
   // Initialize form data when dialog opens
@@ -69,6 +90,7 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
         const startDate = new Date(event.startTime);
         const endDate = new Date(event.endTime);
         
+        // Set basic form data immediately
         setFormData({
           title: event.title,
           description: event.description || '',
@@ -78,7 +100,27 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
           endTime: endDate.toTimeString().slice(0, 5),
           location: event.location || '',
           appointmentStatus: event.status as any || 'new',
-          toNotify: false
+          toNotify: false,
+          internalNote: '',
+          pageUrl: '',
+          coverImageUrl: '',
+          downloadFileUrl: ''
+        });
+        
+        // Lazy-load custom fields in the background
+        import('../services/calendar').then(({ getEventCustomFields }) => {
+          getEventCustomFields(event.id).then(customFields => {
+            console.log('Loaded custom fields for event:', customFields);
+            setFormData(prev => ({
+              ...prev,
+              internalNote: customFields.internalNote || '',
+              pageUrl: customFields.pageUrl || '',
+              coverImageUrl: customFields.coverImageUrl || '',
+              downloadFileUrl: customFields.downloadFileUrl || ''
+            }));
+          }).catch(error => {
+            console.error('Failed to load custom fields:', error);
+          });
         });
       } else {
         // Creating new event
@@ -101,7 +143,11 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
           endTime: endTime.toTimeString().slice(0, 5),
           location: '',
           appointmentStatus: 'new',
-          toNotify: false
+          toNotify: false,
+          internalNote: '',
+          pageUrl: '',
+          coverImageUrl: '',
+          downloadFileUrl: ''
         });
       }
       setError(null);
@@ -113,6 +159,66 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
       ...prev,
       [field]: value
     }));
+  };
+
+  // File upload handlers
+  const handleCoverImageUpload = async (file: File) => {
+    setCoverUploading(true);
+    setError(null);
+
+    try {
+      // Validate file
+      const validation = validateAvatarFile(file);
+      if (!validation.valid) {
+        setError(validation.error || 'Invalid file');
+        return;
+      }
+
+      // Create preview
+      const preview = createImagePreview(file);
+      setCoverPreview(preview);
+
+      // Upload to GoHighLevel media storage
+      const uploadResult = await uploadAvatar(file, user?.ghlContactId || '');
+      
+      // Update form data
+      handleInputChange('coverImageUrl', uploadResult.mediaUrl);
+      
+      // Clean up preview
+      if (preview) {
+        revokeImagePreview(preview);
+        setCoverPreview(null);
+      }
+    } catch (err: any) {
+      console.error('Cover image upload failed:', err);
+      setError(err.message || 'Failed to upload cover image');
+      
+      // Clean up preview on error
+      if (coverPreview) {
+        revokeImagePreview(coverPreview);
+        setCoverPreview(null);
+      }
+    } finally {
+      setCoverUploading(false);
+    }
+  };
+
+  const handleDownloadFileUpload = async (file: File) => {
+    setDownloadUploading(true);
+    setError(null);
+
+    try {
+      // Upload to GoHighLevel media storage
+      const uploadResult = await uploadAvatar(file, user?.ghlContactId || '');
+      
+      // Update form data
+      handleInputChange('downloadFileUrl', uploadResult.mediaUrl);
+    } catch (err: any) {
+      console.error('Download file upload failed:', err);
+      setError(err.message || 'Failed to upload download file');
+    } finally {
+      setDownloadUploading(false);
+    }
   };
 
   const validateForm = (): string | null => {
@@ -159,9 +265,20 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
       const startDateTime = new Date(`${formData.startDate}T${formData.startTime}`);
       const endDateTime = new Date(`${formData.endDate}T${formData.endTime}`);
       
+      // Prepare custom fields
+      const customFields: CustomFields = {
+        pageUrl: formData.pageUrl || undefined,
+        coverImageUrl: formData.coverImageUrl || undefined,
+        downloadFileUrl: formData.downloadFileUrl || undefined
+      };
+      
       if (isEditing && event) {
         // Update existing event
+        console.log('DEBUG: Editing event with ID:', event.id);
+        console.log('DEBUG: Full event object:', event);
+        
         const updatePayload: UpdateEventPayload = {
+          calendarId,
           title: formData.title,
           description: formData.description,
           startTime: startDateTime.toISOString(),
@@ -170,6 +287,11 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
           appointmentStatus: formData.appointmentStatus,
           address: formData.location,
           calendarNotes: formData.description,
+          internalNote: formData.internalNote,
+          // Send custom fields directly
+          pageUrl: customFields.pageUrl,
+          coverImageUrl: customFields.coverImageUrl,
+          downloadFileUrl: customFields.downloadFileUrl,
         };
         
         const updatedEvent = await updateCalendarEvent(event.id, updatePayload);
@@ -191,7 +313,13 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
           selectedTimezone: 'America/Denver',
           address: formData.location,
           calendarNotes: formData.description,
-          internalNote: `Created by ${user?.firstName} ${user?.lastName} via web app`,
+          internalNote: formData.internalNote ? 
+            `${formData.internalNote}\n\nCreated by ${user?.firstName} ${user?.lastName} via web app` :
+            `Created by ${user?.firstName} ${user?.lastName} via web app`,
+          // Send custom fields directly
+          pageUrl: customFields.pageUrl,
+          coverImageUrl: customFields.coverImageUrl,
+          downloadFileUrl: customFields.downloadFileUrl,
           source: 'calendar_page',
           channel: 'web_app',
           meetingLocationType: 'custom'
@@ -268,6 +396,132 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
               placeholder="Add event description..."
               rows={3}
             />
+          </div>
+
+          {/* Internal Note */}
+          <div className="space-y-2">
+            <Label htmlFor="internalNote">Internal Note (Staff Only)</Label>
+            <Textarea
+              id="internalNote"
+              value={formData.internalNote}
+              onChange={(e) => handleInputChange('internalNote', e.target.value)}
+              placeholder="Add internal notes visible only to staff..."
+              rows={2}
+              disabled
+            />
+          </div>
+
+          {/* Custom Fields Section */}
+          <div className="space-y-4 p-4 border rounded-lg bg-gray-50">
+            <h3 className="text-sm font-medium text-gray-700">Event Resources</h3>
+            
+            {/* Page URL */}
+            <div className="space-y-2">
+              <Label htmlFor="pageUrl" className="flex items-center gap-2">
+                <Link className="h-4 w-4" />
+                Event Page URL
+              </Label>
+              <Input
+                id="pageUrl"
+                value={formData.pageUrl}
+                onChange={(e) => handleInputChange('pageUrl', e.target.value)}
+                placeholder="https://example.com/event-details"
+                type="url"
+              />
+            </div>
+
+            {/* Cover Image */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Image className="h-4 w-4" />
+                Cover Image
+              </Label>
+              <div className="flex flex-col gap-2">
+                <Input
+                  value={formData.coverImageUrl}
+                  onChange={(e) => handleInputChange('coverImageUrl', e.target.value)}
+                  placeholder="Or paste image URL..."
+                  type="url"
+                />
+                <div className="flex items-center gap-2">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleCoverImageUpload(file);
+                    }}
+                    className="hidden"
+                    id="cover-upload"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => document.getElementById('cover-upload')?.click()}
+                    disabled={coverUploading}
+                  >
+                    {coverUploading ? 'Uploading...' : 'Upload Image'}
+                  </Button>
+                  {formData.coverImageUrl && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open(formData.coverImageUrl, '_blank')}
+                    >
+                      Preview
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Download File */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Download className="h-4 w-4" />
+                Download File (PDF, Images, etc.)
+              </Label>
+              <div className="flex flex-col gap-2">
+                <Input
+                  value={formData.downloadFileUrl}
+                  onChange={(e) => handleInputChange('downloadFileUrl', e.target.value)}
+                  placeholder="Or paste file URL..."
+                  type="url"
+                />
+                <div className="flex items-center gap-2">
+                  <input
+                    type="file"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleDownloadFileUpload(file);
+                    }}
+                    className="hidden"
+                    id="download-upload"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => document.getElementById('download-upload')?.click()}
+                    disabled={downloadUploading}
+                  >
+                    {downloadUploading ? 'Uploading...' : 'Upload File'}
+                  </Button>
+                  {formData.downloadFileUrl && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open(formData.downloadFileUrl, '_blank')}
+                    >
+                      Preview
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Date and Time */}

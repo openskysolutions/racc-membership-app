@@ -20,6 +20,15 @@ export interface CalendarEvent {
   }>;
   isAllDay?: boolean;
   timezone?: string;
+  // Additional HighLevel fields
+  internalNote?: string;
+  calendarNotes?: string;
+  appointmentStatus?: string;
+  contactId?: string;
+  // Custom fields
+  pageUrl?: string;
+  coverImageUrl?: string;
+  downloadFileUrl?: string;
 }
 
 export interface CreateEventPayload {
@@ -41,9 +50,15 @@ export interface CreateEventPayload {
   internalNote?: string;
   source?: string;
   channel?: string;
+  // Custom fields
+  pageUrl?: string;
+  coverImageUrl?: string;
+  downloadFileUrl?: string;
+  customFieldsRecordId?: string;
 }
 
 export interface UpdateEventPayload {
+  calendarId?: string;
   title?: string;
   description?: string;
   startTime?: string;
@@ -53,6 +68,11 @@ export interface UpdateEventPayload {
   address?: string;
   calendarNotes?: string;
   internalNote?: string;
+  // Custom fields
+  pageUrl?: string;
+  coverImageUrl?: string;
+  downloadFileUrl?: string;
+  customFieldsRecordId?: string;
 }
 
 export interface Calendar {
@@ -109,7 +129,12 @@ export async function getCalendarEvents(
       status: event.status || 'confirmed',
       attendees: event.attendees || [],
       isAllDay: event.isAllDay || event.all_day || false,
-      timezone: event.timezone || 'America/Denver'
+      timezone: event.timezone || 'America/Denver',
+      // Additional HighLevel fields
+      internalNote: event.internalNote,
+      calendarNotes: event.calendarNotes,
+      appointmentStatus: event.appointmentStatus,
+      contactId: event.contactId
     }));
   } catch (error: any) {
     console.error('Error fetching calendar events:', error);
@@ -254,7 +279,12 @@ export async function createCalendarEvent(eventData: CreateEventPayload): Promis
       status: appointment.appointmentStatus || 'confirmed',
       attendees: [],
       isAllDay: false,
-      timezone: appointment.selectedTimezone || 'America/Denver'
+      timezone: appointment.selectedTimezone || 'America/Denver',
+      // Additional HighLevel fields
+      internalNote: appointment.internalNote,
+      calendarNotes: appointment.calendarNotes,
+      appointmentStatus: appointment.appointmentStatus,
+      contactId: appointment.contactId
     };
   } catch (error: any) {
     console.error('Error creating calendar event:', error);
@@ -269,9 +299,9 @@ export async function createCalendarEvent(eventData: CreateEventPayload): Promis
  */
 export async function updateCalendarEvent(eventId: string, eventData: UpdateEventPayload): Promise<CalendarEvent> {
   try {
-    console.log('Updating calendar event:', eventId, 'with data:', eventData);
+    const url = `/calendars/appointments/${eventId}`;
     
-    const response = await api.put(`/calendars/appointments/${eventId}`, eventData);
+    const response = await api.put(url, eventData);
     
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
@@ -295,7 +325,12 @@ export async function updateCalendarEvent(eventId: string, eventData: UpdateEven
       status: appointment.appointmentStatus || 'confirmed',
       attendees: [],
       isAllDay: false,
-      timezone: appointment.selectedTimezone || 'America/Denver'
+      timezone: appointment.selectedTimezone || 'America/Denver',
+      // Additional HighLevel fields
+      internalNote: appointment.internalNote,
+      calendarNotes: appointment.calendarNotes,
+      appointmentStatus: appointment.appointmentStatus,
+      contactId: appointment.contactId
     };
   } catch (error: any) {
     console.error('Error updating calendar event:', error);
@@ -322,5 +357,42 @@ export async function deleteCalendarEvent(eventId: string): Promise<void> {
   } catch (error: any) {
     console.error('Error deleting calendar event:', error);
     throw new Error(`Failed to delete calendar event: ${error.message}`);
+  }
+}
+
+/**
+ * Get custom fields for a calendar event (lazy load)
+ * @param eventId - The event/appointment ID
+ */
+export async function getEventCustomFields(eventId: string): Promise<{
+  pageUrl: string;
+  coverImageUrl: string;
+  downloadFileUrl: string;
+  internalNote: string;
+  recordId?: string;
+}> {
+  try {
+    console.log('Fetching custom fields for event:', eventId);
+    
+    const response = await api.get(`/calendars/appointments/${eventId}/custom-fields`);
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(`Failed to fetch custom fields: ${response.statusText} - ${errorData.message || ''}`);
+    }
+    
+    const customFields = await response.json();
+    console.log('Fetched custom fields:', customFields);
+    
+    return customFields;
+  } catch (error: any) {
+    console.error('Error fetching custom fields:', error);
+    // Return empty custom fields on error
+    return {
+      pageUrl: '',
+      coverImageUrl: '',
+      downloadFileUrl: '',
+      internalNote: ''
+    };
   }
 }

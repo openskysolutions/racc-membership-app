@@ -267,6 +267,77 @@ const NewsEventsPages: React.FC = () => {
                           </Badge>
                         </div>
                       </div>
+                      
+                      {/* Custom Fields Display */}
+                      {event.internalNote && (() => {
+                        try {
+                          const customDataMatch = event.internalNote.match(/Custom Data: ({.*?})/);
+                          if (customDataMatch) {
+                            const customFields = JSON.parse(customDataMatch[1]);
+                            return (
+                              <div className="mt-4 space-y-2">
+                                {customFields.pageUrl && (
+                                  <div className="flex items-center gap-2">
+                                    <a 
+                                      href={customFields.pageUrl} 
+                                      target="_blank" 
+                                      rel="noopener noreferrer"
+                                      className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm"
+                                    >
+                                      🔗 Event Details Page
+                                    </a>
+                                  </div>
+                                )}
+                                
+                                {customFields.coverImageUrl && (
+                                  <div className="mt-3">
+                                    <img 
+                                      src={customFields.coverImageUrl} 
+                                      alt="Event cover" 
+                                      className="max-w-full h-48 object-cover rounded-lg"
+                                      onError={(e) => {
+                                        e.currentTarget.style.display = 'none';
+                                      }}
+                                    />
+                                  </div>
+                                )}
+                                
+                                {customFields.downloadFileUrl && (
+                                  <div className="flex items-center gap-2">
+                                    <a 
+                                      href={customFields.downloadFileUrl} 
+                                      target="_blank" 
+                                      rel="noopener noreferrer"
+                                      className="inline-flex items-center gap-1 text-green-600 hover:text-green-800 text-sm"
+                                    >
+                                      📥 Download Resource
+                                    </a>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          }
+                        } catch (error) {
+                          console.warn('Failed to parse custom fields:', error);
+                        }
+                        return null;
+                      })()}
+                      
+                      {/* Debug: Internal Notes */}
+                      {event.internalNote && (
+                        <div className="mt-4 p-3 bg-gray-50 rounded-lg border-l-4 border-gray-400">
+                          <div className="text-xs font-medium text-gray-600 mb-1">Internal Note:</div>
+                          <div className="text-sm text-gray-800">{event.internalNote}</div>
+                        </div>
+                      )}
+                      
+                      {/* Debug: Calendar Notes */}
+                      {event.calendarNotes && event.calendarNotes !== event.description && (
+                        <div className="mt-2 p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400">
+                          <div className="text-xs font-medium text-blue-600 mb-1">Calendar Notes:</div>
+                          <div className="text-sm text-blue-800">{event.calendarNotes}</div>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 ))}

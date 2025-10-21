@@ -86,12 +86,27 @@ class DatabaseService {
         )
       `);
 
+      // Create appointment_custom_fields table
+      await this.db.exec(`
+        CREATE TABLE IF NOT EXISTS appointment_custom_fields (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          appointmentId TEXT UNIQUE NOT NULL,
+          pageUrl TEXT,
+          coverImageUrl TEXT,
+          downloadFileUrl TEXT,
+          internalNote TEXT,
+          createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+
       // Create indexes for better performance
       await this.db.exec(`
         CREATE INDEX IF NOT EXISTS idx_users_email ON users (email);
         CREATE INDEX IF NOT EXISTS idx_users_ghlContactId ON users (ghlContactId);
         CREATE INDEX IF NOT EXISTS idx_sessions_sessionId ON sessions (sessionId);
         CREATE INDEX IF NOT EXISTS idx_sessions_userId ON sessions (userId);
+        CREATE INDEX IF NOT EXISTS idx_appointment_custom_fields_appointmentId ON appointment_custom_fields (appointmentId);
       `);
 
       console.log('Database initialized successfully');
@@ -386,6 +401,103 @@ class DatabaseService {
     `, [limit, offset]);
 
     return users;
+  }
+
+  /**
+   * Save or update custom fields for an appointment
+   */
+  async upsertAppointmentCustomFields(
+    appointmentId: string,
+    customFields: {
+      pageUrl?: string;
+      coverImageUrl?: string;
+      downloadFileUrl?: string;
+      internalNote?: string;
+    }
+  ): Promise<void> {
+    if (!this.db) throw new Error('Database not initialized');
+
+    const { pageUrl, coverImageUrl, downloadFileUrl, internalNote } = customFields;
+
+    await this.db.run(`
+      INSERT INTO appointment_custom_fields (
+        appointmentId, pageUrl, coverImageUrl, downloadFileUrl, internalNote, updatedAt
+      ) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+      ON CONFLICT(appointmentId) DO UPDATE SET
+        pageUrl = excluded.pageUrl,
+        coverImageUrl = excluded.coverImageUrl,
+        downloadFileUrl = excluded.downloadFileUrl,
+        internalNote = excluded.internalNote,
+        updatedAt = CURRENT_TIMESTAMP
+    `, [appointmentId, pageUrl || null, coverImageUrl || null, downloadFileUrl || null, internalNote || null]);
+  }
+
+  /**
+   * Get custom fields for an appointment
+   */
+  async getAppointmentCustomFields(appointmentId: string): Promise<{
+    pageUrl: string;
+    coverImageUrl: string;
+    downloadFileUrl: string;
+    internalNote: string;
+  } | null> {
+    if (!this.db) throw new Error('Database not initialized');
+
+    const result = await this.db.get(
+      'SELECT pageUrl, coverImageUrl, downloadFileUrl, internalNote FROM appointment_custom_fields WHERE appointmentId = ?',
+      [appointmentId]
+    );
+
+    if (!result) return null;
+
+    return {
+      pageUrl: result.pageUrl || '',
+      coverImageUrl: result.coverImageUrl || '',
+      downloadFileUrl: result.downloadFileUrl || '',
+      internalNote: result.internalNote || ''
+    };
+  }
+
+  /**
+   * Get custom fields for multiple appointments (batch operation)
+   */
+  async getAppointmentCustomFieldsBatch(appointmentIds: string[]): Promise<Map<string, {
+    pageUrl: string;
+    coverImageUrl: string;
+    downloadFileUrl: string;
+    internalNote: string;
+  }>> {
+    if (!this.db) throw new Error('Database not initialized');
+    if (appointmentIds.length === 0) return new Map();
+
+    const placeholders = appointmentIds.map(() => '?').join(',');
+    const results = await this.db.all(
+      `SELECT appointmentId, pageUrl, coverImageUrl, downloadFileUrl, internalNote 
+       FROM appointment_custom_fields 
+       WHERE appointmentId IN (${placeholders})`,
+      appointmentIds
+    );
+
+    const customFieldsMap = new Map();
+    for (const result of results) {
+      customFieldsMap.set(result.appointmentId, {
+        pageUrl: result.pageUrl || '',
+        coverImageUrl: result.coverImageUrl || '',
+        downloadFileUrl: result.downloadFileUrl || '',
+        internalNote: result.internalNote || ''
+      });
+    }
+
+    return customFieldsMap;
+  }
+
+  /**
+   * Delete custom fields for an appointment
+   */
+  async deleteAppointmentCustomFields(appointmentId: string): Promise<void> {
+    if (!this.db) throw new Error('Database not initialized');
+
+    await this.db.run('DELETE FROM appointment_custom_fields WHERE appointmentId = ?', [appointmentId]);
   }
 
   /**

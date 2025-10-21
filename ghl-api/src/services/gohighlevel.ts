@@ -4,6 +4,7 @@
  */
 
 import axios, { AxiosInstance } from 'axios';
+import { randomBytes } from 'crypto';
 
 interface ContactData {
   firstName: string;
@@ -44,6 +45,14 @@ class GoHighLevelService {
   private client: AxiosInstance | null;
   private locationId: string;
   private developmentMode: boolean;
+  
+  // Custom Object ID for appointment custom fields
+  // Created in GoHighLevel UI, ID: 68f7fab7f044392c0343afd3
+  private readonly APPOINTMENT_CUSTOM_OBJECT_ID = '68f7fab7f044392c0343afd3';
+  
+  // Association key linking custom object to appointments
+  // Created by setup-custom-objects.js script
+  private readonly APPOINTMENT_ASSOCIATION_KEY = 'appointment_custom_fields_to_appointment';
 
   constructor() {
     // Debug: Log environment variables
@@ -1087,8 +1096,13 @@ class GoHighLevelService {
         console.log(`Sample event data:`, JSON.stringify(events[0], null, 2));
       }
       
-      // Return events in the format expected by the frontend
-      return events.map((event: any) => ({
+      // Log a sample event to see what fields GoHighLevel actually returns
+      if (events.length > 0) {
+        console.log(`Sample event fields:`, Object.keys(events[0]));
+      }
+      
+      // Return events without custom fields - they will be loaded on demand
+      const formattedEvents = events.map((event: any) => ({
         id: event.id,
         title: event.title || 'Untitled Event',
         startTime: event.startTime,
@@ -1101,14 +1115,352 @@ class GoHighLevelService {
         locationId: event.locationId,
         isRecurring: event.isRecurring,
         rrule: event.rrule,
+        calendarNotes: event.calendarNotes || event.notes || '',
         ...event
       }));
+      
+      return formattedEvents;
       
     } catch (error: any) {
       console.error('Failed to fetch calendar events:', error);
       console.error('Error response:', error.response?.data);
       console.error('Error status:', error.response?.status);
       throw new Error(`Failed to fetch calendar events: ${error.message}`);
+    }
+  }
+
+  /**
+   * Update/edit an appointment using direct HTTP call
+   * @param appointmentId - The appointment ID to update
+   * @param payload - The appointment data to update
+   */
+  async updateAppointment(appointmentId: string, payload: any): Promise<any> {
+    if (!this.client) {
+      throw new Error('GoHighLevel client not initialized');
+    }
+
+    try {
+      // Extract custom fields and internal note from payload
+      const { internalNote, pageUrl, coverImageUrl, downloadFileUrl, customFieldsRecordId, ...appointmentPayload } = payload;
+      
+      // Update the appointment via GoHighLevel API
+      const response = await this.client.put(`/calendars/events/appointments/${appointmentId}`, appointmentPayload);
+      
+      // Save custom fields to custom object (if any custom fields provided)
+      if (internalNote || pageUrl || coverImageUrl || downloadFileUrl) {
+        await this.upsertAppointmentCustomObject(
+          appointmentId,
+          { pageUrl, coverImageUrl, downloadFileUrl, internalNote },
+          customFieldsRecordId // Pass existing record ID if available
+        );
+      }
+      
+      // GoHighLevel's update response is minimal, so combine it with our request data
+      // to create a complete appointment object for the frontend
+      const completeAppointment = {
+        ...response.data,
+        // Include the fields we sent in the request that aren't in the response
+        title: payload.title || response.data.title,
+        description: payload.description || payload.calendarNotes || '',
+        startTime: payload.startTime,
+        endTime: payload.endTime,
+        location: payload.address || payload.location || '',
+        address: payload.address || payload.location || '',
+        calendarNotes: payload.calendarNotes || '',
+        internalNote: internalNote || '',
+        appointmentStatus: payload.appointmentStatus || response.data.appoinmentStatus || 'confirmed',
+        // Include custom fields in response
+        pageUrl: pageUrl || '',
+        coverImageUrl: coverImageUrl || '',
+        downloadFileUrl: downloadFileUrl || ''
+      };
+      
+      return completeAppointment;
+      
+    } catch (error: any) {
+      console.error('Failed to update appointment:', error);
+      console.error('Error response:', error.response?.data);
+      throw new Error(`Failed to update appointment: ${error.message}`);
+    }
+  }
+
+  /**
+   * Search for notes related to an appointment
+   * @param appointmentId - The appointment ID to search notes for
+   */
+  async searchAppointmentNotes(appointmentId: string): Promise<any[]> {
+    if (!this.client) {
+      throw new Error('GoHighLevel client not initialized');
+    }
+
+    try {
+      console.log(`🔍 Searching notes for appointment: ${appointmentId}`);
+      const response = await this.client.post('/notes/search', {
+        limit: 100,
+        skip: 0,
+        locationId: this.locationId,
+        relations: [
+          {
+            objectKey: 'appointment',
+            recordId: appointmentId
+          }
+        ],
+        includeRelationRecords: false,
+        sortBy: 'dateAdded',
+        sortOrder: 'desc'
+      });
+
+      const notes = response.data?.notes || [];
+      console.log(`📝 Found ${notes.length} notes for appointment ${appointmentId}`);
+      return notes;
+    } catch (error: any) {
+      console.error(`❌ Failed to search appointment notes for ${appointmentId}:`, error.message);
+      console.error('Error response:', error.response?.data);
+      return []; // Return empty array on error rather than throwing
+    }
+  }
+
+  /**
+   * Create a note for an appointment
+   * @param appointmentId - The appointment ID to attach the note to
+   * @param noteBody - The note content
+   */
+  async createAppointmentNote(appointmentId: string, noteBody: string): Promise<any> {
+    if (!this.client) {
+      throw new Error('GoHighLevel client not initialized');
+    }
+
+    try {
+      const response = await this.client.post('/notes', {
+        body: noteBody,
+        locationId: this.locationId,
+        relations: [
+          {
+            objectKey: 'appointment',
+            recordId: appointmentId
+          }
+        ]
+      });
+
+      return response.data;
+    } catch (error: any) {
+      console.error('Failed to create appointment note:', error);
+      console.error('Error response:', error.response?.data);
+      throw new Error(`Failed to create appointment note: ${error.message}`);
+    }
+  }
+
+  /**
+   * Update or create appointment note (internal notes)
+   * @param appointmentId - The appointment ID
+   * @param noteBody - The note content
+   */
+  async upsertAppointmentNote(appointmentId: string, noteBody: string): Promise<void> {
+    try {
+      // Search for existing notes
+      const existingNotes = await this.searchAppointmentNotes(appointmentId);
+      
+      if (existingNotes.length > 0) {
+        // Update the first note (most recent)
+        const noteId = existingNotes[0].id;
+        await this.client!.put(`/notes/${noteId}`, {
+          body: noteBody
+        });
+      } else {
+        // Create new note
+        await this.createAppointmentNote(appointmentId, noteBody);
+      }
+    } catch (error: any) {
+      console.error('Failed to upsert appointment note:', error);
+      throw new Error(`Failed to save appointment note: ${error.message}`);
+    }
+  }
+
+  /**
+   * Create or update a custom object record for appointment custom fields
+   * NOTE: Requires custom object schema "appointment_custom_fields" to exist
+   * Run setup-custom-objects.js once before using this
+   * @param appointmentId - The appointment ID to link to
+   * @param customFields - The custom field data
+   * @param existingRecordId - Optional existing record ID for updates
+   */
+  async upsertAppointmentCustomObject(
+    appointmentId: string,
+    customFields: {
+      pageUrl?: string;
+      coverImageUrl?: string;
+      downloadFileUrl?: string;
+      internalNote?: string;
+    },
+    existingRecordId?: string
+  ): Promise<{ recordId: string; associationId?: string }> {
+    if (!this.client) {
+      throw new Error('GoHighLevel client not initialized');
+    }
+
+    try {
+      // Generate a unique ID for the custom object record if creating new
+      const uniqueId = existingRecordId ? undefined : `${Date.now()}-${randomBytes(8).toString('hex')}`;
+      
+      // Prepare the record data - only send properties object (GoHighLevel requirement)
+      const recordData = {
+        properties: {
+          appointmentid: appointmentId,  // lowercase
+          pageurl: customFields.pageUrl || '',  // lowercase
+          coverimageurl: customFields.coverImageUrl || '',  // lowercase
+          downloadfileurl: customFields.downloadFileUrl || '',  // lowercase
+          internalnote: customFields.internalNote || '',  // lowercase
+          ...(uniqueId && { id: uniqueId })  // Only include id when creating new record
+        }
+      };
+
+      console.log(`📝 Custom object record data:`, JSON.stringify(recordData, null, 2));
+
+      let recordId: string;
+
+      if (existingRecordId) {
+        // Update existing record
+        console.log(`📝 Updating custom object record ${existingRecordId} for appointment ${appointmentId}`);
+        try {
+          const response = await this.client.put(
+            `/objects/${this.APPOINTMENT_CUSTOM_OBJECT_ID}/records/${existingRecordId}`,
+            recordData
+          );
+          recordId = existingRecordId;
+          console.log(`✅ Successfully updated custom object record`);
+        } catch (updateError: any) {
+          console.error('Failed to update custom object record:', updateError.response?.data);
+          throw updateError;
+        }
+      } else {
+        // Create new record
+        console.log(`📝 Creating custom object record for appointment ${appointmentId}`);
+        try {
+          const response = await this.client.post(
+            `/objects/${this.APPOINTMENT_CUSTOM_OBJECT_ID}/records`,
+            {
+              locationId: this.locationId,
+              ...recordData
+            }
+          );
+          recordId = response.data.id || response.data.recordId;
+          console.log(`✅ Successfully created custom object record: ${recordId}`);
+        } catch (createError: any) {
+          console.error('❌ Failed to create custom object record');
+          console.error('Error status:', createError.response?.status);
+          console.error('Error data:', JSON.stringify(createError.response?.data, null, 2));
+          
+          // Check if it's a field validation error
+          if (createError.response?.status === 422) {
+            console.error('⚠️  422 Error: This usually means the custom object fields have not been added in GoHighLevel UI');
+            console.error('⚠️  Please add the following fields via Settings → Custom Objects → Appointment Custom Fields:');
+            console.error('   - appointmentId (TEXT, required)');
+            console.error('   - pageUrl (TEXT)');
+            console.error('   - coverImageUrl (TEXT)');
+            console.error('   - downloadFileUrl (TEXT)');
+            console.error('   - internalNote (LARGE_TEXT)');
+          }
+          
+          throw createError;
+        }
+        
+        // Create association between appointment and custom object record
+        // Uses the association schema key created in setup-custom-objects.js
+        console.log(`🔗 Creating record association between appointment ${appointmentId} and custom object record ${recordId}`);
+        try {
+          const associationResponse = await this.client.post(
+            `/associations/${this.APPOINTMENT_ASSOCIATION_KEY}/records`,
+            {
+              locationId: this.locationId,
+              firstRecordId: recordId, // custom object record
+              secondRecordId: appointmentId // appointment
+            }
+          );
+          
+          console.log(`✅ Successfully created association`);
+          
+          return {
+            recordId,
+            associationId: associationResponse.data.id || associationResponse.data.associationId
+          };
+        } catch (assocError: any) {
+          console.warn('⚠️  Failed to create association, but record was created:', assocError.message);
+          console.warn('Association error details:', assocError.response?.data);
+          // Return the record ID even if association fails
+          return { recordId };
+        }
+      }
+
+      return { recordId };
+    } catch (error: any) {
+      console.error('Failed to upsert appointment custom object:', error.message);
+      
+      // Provide more helpful error message
+      if (error.response?.status === 422) {
+        throw new Error(`Custom object fields not configured. Please add the required fields in GoHighLevel UI first.`);
+      }
+      
+      throw new Error(`Failed to save appointment custom fields: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get custom fields for an appointment by fetching associated custom object
+   * @param appointmentId - The appointment ID
+   */
+  async getAppointmentCustomFields(appointmentId: string): Promise<{
+    pageUrl: string;
+    coverImageUrl: string;
+    downloadFileUrl: string;
+    internalNote: string;
+    recordId?: string;
+  } | null> {
+    if (!this.client) {
+      throw new Error('GoHighLevel client not initialized');
+    }
+
+    try {
+      console.log(`🔍 Fetching custom fields for appointment ${appointmentId}`);
+      
+      // Search for custom object records by appointmentid field
+      // POST /objects/:schemaKey/records/search requires page and pageLimit
+      const response = await this.client.post(
+        `/objects/${this.APPOINTMENT_CUSTOM_OBJECT_ID}/records/search`,
+        {
+          locationId: this.locationId,
+          page: 1,
+          pageLimit: 10
+        }
+      );
+
+      const records = response.data?.records || response.data?.data || [];
+      
+      // Filter client-side by appointmentid since server-side filter doesn't work as expected
+      const record = records.find((r: any) => {
+        const props = r.properties || {};
+        return props.appointmentid === appointmentId;
+      });
+      
+      if (!record) {
+        console.log(`📝 No custom fields found for appointment ${appointmentId}`);
+        return null;
+      }
+      
+      console.log(`✅ Found custom fields for appointment ${appointmentId}`);
+      
+      // GoHighLevel stores custom fields in the "properties" object with lowercase keys
+      const props = record.properties || {};
+      return {
+        pageUrl: props.pageurl || props.pageUrl || '',
+        coverImageUrl: props.coverimageurl || props.coverImageUrl || '',
+        downloadFileUrl: props.downloadfileurl || props.downloadFileUrl || '',
+        internalNote: props.internalnote || props.internalNote || '',
+        recordId: record.id || record._id
+      };
+    } catch (error: any) {
+      console.error(`Failed to fetch custom fields for appointment ${appointmentId}:`, error.message);
+      console.error('Error response:', error.response?.data);
+      return null; // Return null instead of throwing to handle gracefully
     }
   }
 }

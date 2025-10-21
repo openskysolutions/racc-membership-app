@@ -4,7 +4,7 @@ import { requireAuth, requireAdmin } from '@/middleware/auth';
 const { 
   listCalendars, getCalendarById, createCalendar, updateCalendar, deleteCalendar,
   getGroups, createCalendarGroup, editGroup, deleteGroup, disableGroup, validateGroupsSlug,
-  createAppointment, getAppointment, editAppointment,
+  createAppointment, getAppointment, editAppointment, getAppointmentCustomFields,
   getCalendarEvents, deleteEvent, getAllLocationEvents,
   getBlockedSlots, createBlockSlot, editBlockSlot,
   getSlots,
@@ -31,6 +31,7 @@ router.delete('/events/:eventId', deleteEvent);
 router.post('/appointments', requireAuth, createAppointment);
 router.get('/appointments/:id', getAppointment);
 router.put('/appointments/:id', requireAuth, editAppointment);
+router.get('/appointments/:id/custom-fields', getAppointmentCustomFields); // Lazy load custom fields
 
 // Other routes can be added as needed...
 

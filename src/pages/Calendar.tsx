@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, MapPin, Users, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, MapPin, Users, Plus, Edit } from 'lucide-react';
 import { getCurrentYearEvents, CalendarEvent } from '@/services/calendar';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -61,10 +61,10 @@ const CalendarPage: React.FC = () => {
     setCreateEventDialogOpen(true);
   };
 
-  // const handleEditEvent = (event: CalendarEvent) => {
-  //   setSelectedEvent(event);
-  //   setCreateEventDialogOpen(true);
-  // };
+  const handleEditEvent = (event: CalendarEvent) => {
+    setSelectedEvent(event);
+    setCreateEventDialogOpen(true);
+  };
 
   const handleEventCreated = (newEvent: CalendarEvent) => {
     setEvents(prev => [...prev, newEvent]);
@@ -418,6 +418,18 @@ const CalendarPage: React.FC = () => {
                 >
                   View Full Details & RSVP
                 </Button>
+                {isAuthenticated && (
+                  <Button 
+                    variant="outline"
+                    onClick={() => {
+                      setDialogOpen(false);
+                      handleEditEvent(selectedEvent);
+                    }}
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit
+                  </Button>
+                )}
                 <Button 
                   variant="outline" 
                   onClick={() => setDialogOpen(false)}
@@ -464,29 +476,49 @@ const CalendarPage: React.FC = () => {
                   {selectedDayEvents.map((event) => (
                     <div
                       key={event.id}
-                      onClick={() => {
-                        setDayEventsDialogOpen(false);
-                        handleEventClick(event);
-                      }}
-                      className="p-3 bg-muted/30 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors border"
+                      className="p-3 bg-muted/30 rounded-lg border hover:bg-muted/50 transition-colors"
                     >
-                      <div className="font-medium text-sm mb-1">{event.title}</div>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <Clock className="h-3 w-3" />
-                        <span>{formatEventTime(event.startTime)}</span>
-                        {event.endTime && (
-                          <>
-                            <span>-</span>
-                            <span>{formatEventTime(event.endTime)}</span>
-                          </>
+                      <div className="flex items-start justify-between">
+                        <div 
+                          className="flex-1 cursor-pointer"
+                          onClick={() => {
+                            setDayEventsDialogOpen(false);
+                            handleEventClick(event);
+                          }}
+                        >
+                          <div className="font-medium text-sm mb-1">{event.title}</div>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <Clock className="h-3 w-3" />
+                            <span>{formatEventTime(event.startTime)}</span>
+                            {event.endTime && (
+                              <>
+                                <span>-</span>
+                                <span>{formatEventTime(event.endTime)}</span>
+                              </>
+                            )}
+                          </div>
+                          {event.location && (
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                              <MapPin className="h-3 w-3" />
+                              <span>{event.location}</span>
+                            </div>
+                          )}
+                        </div>
+                        {isAuthenticated && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDayEventsDialogOpen(false);
+                              handleEditEvent(event);
+                            }}
+                            className="ml-2 h-auto p-1"
+                          >
+                            <Edit className="h-3 w-3" />
+                          </Button>
                         )}
                       </div>
-                      {event.location && (
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                          <MapPin className="h-3 w-3" />
-                          <span>{event.location}</span>
-                        </div>
-                      )}
                     </div>
                   ))}
                 </div>
