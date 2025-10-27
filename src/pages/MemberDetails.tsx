@@ -164,6 +164,19 @@ const MemberDetailsPage: React.FC = () => {
 
   const canEdit = user && member && (user.ghlContactId === member.id || user.role === 'admin');
 
+  // Check if member has Enhanced or Elite membership
+  const hasEnhancedOrElite = member && (
+    member.tags?.includes('enhanced') || 
+    member.tags?.includes('elite') ||
+    member.tags?.includes('admin')
+  );
+
+  // Check if member has Elite membership only
+  const hasElite = member && (
+    member.tags?.includes('elite') ||
+    member.tags?.includes('admin')
+  );
+
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -367,7 +380,8 @@ const MemberDetailsPage: React.FC = () => {
                         </div>
                       )}
 
-                      {member.website && (
+                      {/* Website - Enhanced/Elite Only */}
+                      {hasEnhancedOrElite && member.website && (
                         <div className="flex items-center gap-3">
                           <Globe className="h-4 w-4 text-muted-foreground" />
                           <a
@@ -382,56 +396,64 @@ const MemberDetailsPage: React.FC = () => {
                       )}
                     </div>
                   </div>
-                  {/* Address Information */}
-                    <h3 className="font-semibold mb-3 flex items-center gap-2">
-                      Address & Location
-                    </h3>
-                  <div className="space-y-2">
-                    {member.address1 && (
-                      <p className="text-sm text-muted-foreground">{member.address1}</p>
-                    )}
-                    <p className="text-sm text-muted-foreground">
-                      {[member.city, member.state, member.postalCode]
-                        .filter(Boolean)
-                        .join(', ')}
-                    </p>
-                  </div>
-
-                  {/* Embedded Map */}
-                    <div className="w-full h-64 bg-muted rounded-lg overflow-hidden border">
-                      <iframe
-                        src={`https://maps.google.com/maps?q=${encodeURIComponent([
-                          member.address1,
-                          member.city,
-                          member.state,
-                          member.postalCode
-                        ].filter(Boolean).join(', '))}&t=&z=12&ie=UTF8&iwloc=&output=embed`}
-                        width="100%"
-                        height="100%"
-                        style={{ border: 0 }}
-                        allowFullScreen
-                        loading="lazy"
-                        referrerPolicy="no-referrer-when-downgrade"
-                        title="Member Location"
-                      />
-                    </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full"
-                    onClick={() => {
-                      const address = [
-                        member.address1,
-                        member.city,
-                        member.state,
-                        member.postalCode
-                      ].filter(Boolean).join(', ');
-                      window.open(`https://maps.google.com/?q=${encodeURIComponent(address)}`, '_blank');
-                    }}
-                  >
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    View on Maps
-                  </Button>
+                  
+                  {/* Address Information - Enhanced/Elite Only */}
+                  {(member.address1 || member.city || member.state || member.postalCode) && (
+                    <>
+                      <h3 className="font-semibold mb-3 flex items-center gap-2">
+                        Address & Location
+                      </h3>
+                      <div className="space-y-2">
+                        {member.address1 && (
+                          <p className="text-sm text-muted-foreground">{member.address1}</p>
+                        )}
+                        <p className="text-sm text-muted-foreground">
+                          {[member.city, member.state, member.postalCode]
+                            .filter(Boolean)
+                            .join(', ')}
+                        </p>
+                      </div>
+                    {hasEnhancedOrElite && 
+                      (<>
+                        {/* Embedded Map */}
+                        <div className="w-full h-64 bg-muted rounded-lg overflow-hidden border">
+                          <iframe
+                            src={`https://maps.google.com/maps?q=${encodeURIComponent([
+                              member.address1,
+                              member.city,
+                              member.state,
+                              member.postalCode
+                            ].filter(Boolean).join(', '))}&t=&z=12&ie=UTF8&iwloc=&output=embed`}
+                            width="100%"
+                            height="100%"
+                            style={{ border: 0 }}
+                            allowFullScreen
+                            loading="lazy"
+                            referrerPolicy="no-referrer-when-downgrade"
+                            title="Member Location"
+                          />
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full"
+                          onClick={() => {
+                            const address = [
+                              member.address1,
+                              member.city,
+                              member.state,
+                              member.postalCode
+                            ].filter(Boolean).join(', ');
+                            window.open(`https://maps.google.com/?q=${encodeURIComponent(address)}`, '_blank');
+                          }}
+                        >
+                          <ExternalLink className="h-4 w-4 mr-2" />
+                          View on Maps
+                        </Button>
+                      </>)
+                    }
+                    </>
+                  )}
                 </CardContent>
               </Card>
           </div>
@@ -489,8 +511,8 @@ const MemberDetailsPage: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Cover Image Upload - Only show when editing */}
-                  {canEdit && isEditing && (
+                  {/* Cover Image Upload - Elite Only */}
+                  {canEdit && isEditing && hasElite && (
                     <div className="flex-shrink-0">
                       <CoverImageUpload
                         contactId={member?.id || ''}
@@ -566,20 +588,6 @@ const MemberDetailsPage: React.FC = () => {
                     </div>
 
                     <div>
-                      <label htmlFor="bio" className="block text-sm font-medium mb-1">
-                        Bio / About
-                      </label>
-                      <Textarea
-                        id="bio"
-                        name="bio"
-                        value={formData.bio}
-                        onChange={handleFormChange}
-                        placeholder="Tell us about yourself or your business..."
-                        rows={4}
-                      />
-                    </div>
-
-                    <div>
                       <label htmlFor="tagline" className="block text-sm font-medium mb-1">
                         Tagline
                       </label>
@@ -592,116 +600,143 @@ const MemberDetailsPage: React.FC = () => {
                       />
                     </div>
 
+                    {/* Enhanced/Elite Only Fields */}
+                    {hasEnhancedOrElite && (
+                      <>
+                        <div>
+                          <label htmlFor="bio" className="block text-sm font-medium mb-1">
+                            Bio / About
+                            <span className="text-xs text-muted-foreground ml-2">(Enhanced/Elite only)</span>
+                          </label>
+                          <Textarea
+                            id="bio"
+                            name="bio"
+                            value={formData.bio}
+                            onChange={handleFormChange}
+                            placeholder="Tell us about yourself or your business..."
+                            rows={4}
+                          />
+                        </div>
+
+                        <div>
+                          <label htmlFor="website" className="block text-sm font-medium mb-1">
+                            Website
+                            <span className="text-xs text-muted-foreground ml-2">(Enhanced/Elite only)</span>
+                          </label>
+                          <Input
+                            id="website"
+                            name="website"
+                            type="url"
+                            value={formData.website}
+                            onChange={handleFormChange}
+                            placeholder="https://example.com"
+                          />
+                        </div>
+
+                        <h3 className="font-semibold mb-3">
+                          Address Information
+                          <span className="text-xs text-muted-foreground ml-2 font-normal">(Enhanced/Elite only)</span>
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label htmlFor="address1" className="block text-sm font-medium mb-1">
+                              Street Address
+                            </label>
+                            <Input
+                              id="address1"
+                              name="address1"
+                              value={formData.address1}
+                              onChange={handleFormChange}
+                              placeholder="123 Main Street"
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="city" className="block text-sm font-medium mb-1">
+                              City
+                            </label>
+                            <Input
+                              id="city"
+                              name="city"
+                              value={formData.city}
+                              onChange={handleFormChange}
+                              placeholder="City"
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label htmlFor="state" className="block text-sm font-medium mb-1">
+                              State
+                            </label>
+                            <Input
+                              id="state"
+                              name="state"
+                              value={formData.state}
+                              onChange={handleFormChange}
+                              placeholder="UT"
+                              maxLength={2}
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="postalCode" className="block text-sm font-medium mb-1">
+                              ZIP Code
+                            </label>
+                            <Input
+                              id="postalCode"
+                              name="postalCode"
+                              value={formData.postalCode}
+                              onChange={handleFormChange}
+                              placeholder="12345"
+                            />
+                          </div>
+                        </div>
+                      </>
+                    )}
+
+                    {/* Coupon Codes - Elite Only */}
+                    {hasElite && (
+                      <div>
+                        <label htmlFor="couponCodes" className="block text-sm font-medium mb-1">
+                          Coupon Codes
+                          <span className="text-xs text-muted-foreground ml-2">(Elite only)</span>
+                        </label>
+                        <CouponCodesInput
+                          id="couponCodes"
+                          name="couponCodes"
+                          value={getCouponCodesArray()}
+                          onChange={handleCouponCodesChange}
+                          placeholder="Add a coupon code..."
+                          className="w-full"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Press Enter or comma to add a coupon code. Click X to remove.
+                        </p>
+                      </div>
+                    )}
+
                     <div>
-                      <label htmlFor="couponCodes" className="block text-sm font-medium mb-1">
-                        Coupon Codes
+                      <label htmlFor="businessName" className="block text-sm font-medium mb-1">
+                        Business Name
                       </label>
-                      <CouponCodesInput
-                        id="couponCodes"
-                        name="couponCodes"
-                        value={getCouponCodesArray()}
-                        onChange={handleCouponCodesChange}
-                        placeholder="Add a coupon code..."
-                        className="w-full"
+                      <Input
+                        id="businessName"
+                        name="businessName"
+                        value={formData.businessName}
+                        onChange={handleFormChange}
                       />
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Press Enter or comma to add a coupon code. Click X to remove.
-                      </p>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label htmlFor="businessName" className="block text-sm font-medium mb-1">
-                          Business Name
-                        </label>
-                        <Input
-                          id="businessName"
-                          name="businessName"
-                          value={formData.businessName}
-                          onChange={handleFormChange}
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor="website" className="block text-sm font-medium mb-1">
-                          Website
-                        </label>
-                        <Input
-                          id="website"
-                          name="website"
-                          type="url"
-                          value={formData.website}
-                          onChange={handleFormChange}
-                          placeholder="https://example.com"
-                        />
-                      </div>
-                    </div>
-
-                    <h3 className="font-semibold mb-3">Address Information</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label htmlFor="address1" className="block text-sm font-medium mb-1">
-                          Street Address
-                        </label>
-                        <Input
-                          id="address1"
-                          name="address1"
-                          value={formData.address1}
-                          onChange={handleFormChange}
-                          placeholder="123 Main Street"
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor="city" className="block text-sm font-medium mb-1">
-                          City
-                        </label>
-                        <Input
-                          id="city"
-                          name="city"
-                          value={formData.city}
-                          onChange={handleFormChange}
-                          placeholder="City"
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label htmlFor="state" className="block text-sm font-medium mb-1">
-                          State
-                        </label>
-                        <Input
-                          id="state"
-                          name="state"
-                          value={formData.state}
-                          onChange={handleFormChange}
-                          placeholder="UT"
-                          maxLength={2}
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor="postalCode" className="block text-sm font-medium mb-1">
-                          ZIP Code
-                        </label>
-                        <Input
-                          id="postalCode"
-                          name="postalCode"
-                          value={formData.postalCode}
-                          onChange={handleFormChange}
-                          placeholder="12345"
-                        />
-                      </div>
                     </div>
                   </div>
                 ) : (
                   <div className="space-y-6 sm:ml-24">
-                    {/* Bio */}
-                    {member.bio && (
+                    {/* Bio - Enhanced/Elite Only */}
+                    {hasEnhancedOrElite && member.bio && (
                       <div>
                         <p className="text-muted-foreground leading-relaxed">{member.bio}</p>
                       </div>
                     )}
 
-                    {/* Coupon Codes */}
-                    {(member as any).coupon_codes && (() => {
+                    {/* Coupon Codes - Elite Only */}
+                    {hasElite && (member as any).coupon_codes && (() => {
                       try {
                         const codes = JSON.parse((member as any).coupon_codes);
                         return codes.length > 0 ? (
