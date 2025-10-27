@@ -9,11 +9,13 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
-import { getEventsList, type Event } from '@/services/events';
+import { getCurrentYearEvents, type CalendarEvent } from '@/services/calendar';
 import { Calendar, MapPin } from 'lucide-react';
 import Autoplay from "embla-carousel-autoplay";
 import radioShowImg from '@/assets/radio-show.jpg';
 import meetingImg from '@/assets/meeting-image.jpg';
+
+const GHL_CALENDAR_ID = '9XpDcFHv3SmCUuHeuOOg';
 
 interface MembershipSlide {
   type: 'membership';
@@ -29,7 +31,7 @@ interface MembershipSlide {
 
 interface EventSlide {
   type: 'event';
-  event: Event;
+  event: CalendarEvent;
 }
 
 interface MainSlide {
@@ -105,33 +107,43 @@ export const HeroCarousel = () => {
     const fetchUpcomingEvents = async () => {
       try {
         console.log('Fetching events for carousel...');
-        const events = await getEventsList();
+        const events = await getCurrentYearEvents(GHL_CALENDAR_ID);
         console.log('Events fetched:', events);
+        console.log('Number of events:', events.length);
         
         // Filter and sort upcoming events
         const now = new Date();
-        console.log('Current date:', now);
+        console.log('Current date:', now.toISOString());
         
         const upcomingEvents = events
           .filter(event => {
             const eventDate = new Date(event.startTime);
             const isUpcoming = eventDate > now;
-            console.log(`Event: ${event.title}, Date: ${eventDate}, Is upcoming: ${isUpcoming}`);
+            console.log(`Event: "${event.title}"`);
+            console.log(`  Start time string: ${event.startTime}`);
+            console.log(`  Parsed date: ${eventDate.toISOString()}`);
+            console.log(`  Is upcoming: ${isUpcoming}`);
             return isUpcoming;
           })
           .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
           .slice(0, 3);
 
         console.log('Upcoming events to display:', upcomingEvents);
+        console.log('Number of upcoming events:', upcomingEvents.length);
 
         // Build slides array
         const allSlides: SlideData[] = [
           { type: 'main' },
-          ...membershipSlides,
-          ...upcomingEvents.map(event => ({ type: 'event' as const, event }))
+          ...upcomingEvents.map(event => ({ type: 'event' as const, event })),
+          ...membershipSlides
         ];
 
         console.log('Total slides:', allSlides.length);
+        console.log('Slides breakdown:', {
+          main: 1,
+          membership: membershipSlides.length,
+          events: upcomingEvents.length
+        });
         setSlides(allSlides);
       } catch (error) {
         console.error('Error fetching events:', error);
@@ -169,7 +181,7 @@ export const HeroCarousel = () => {
       </span>
       </p>
 
-      <h3 className="text-3xl bg-gradient-to-b from-highlight to-highlight text-transparent bg-clip-text py-0">
+      <h3 className="hidden sm:inline text-3xl bg-gradient-to-b from-highlight to-highlight text-transparent bg-clip-text py-0">
         Your Business is Our Business!
       </h3>
 
@@ -179,41 +191,6 @@ export const HeroCarousel = () => {
           onClick={() => navigate('/join')}
         >
           Join Now!
-        </Button>
-      </div>
-    </div>
-  );
-
-  const renderMembershipSlide = (slide: MembershipSlide) => (
-    <div className="lg:text-start mb-4 px-4 md:px-16">
-      <main className="text-4xl md:text-5xl font-semibold">
-        <h1 className="text-white mb-1">
-          {slide.title}
-        </h1>
-        <p className="text-xl md:text-2xl text-white/90 mt-1 mb-2">
-          {slide.subtitle}
-        </p>
-      </main>
-
-      <p className="text-base text-white/90 font-light md:w-10/12 lg:mx-0">
-        {slide.description}
-      </p>
-
-      <ul className="space-y-1 text-sm text-left text-white/90 md:w-10/12 lg:mx-0 mb-8">
-        {slide.bulletPoints.map((point, idx) => (
-          <li key={idx} className="flex items-start gap-2">
-            <span className="text-highlight text-md">✓</span>
-            <span>{point}</span>
-          </li>
-        ))}
-      </ul>
-
-      <div className="space-y-4 md:space-y-0 md:space-x-4">
-        <Button
-          className="w-full md:w-1/3 bg-highlight hover:bg-highlight/90 font-semibold"
-          onClick={() => navigate(slide.ctaLink)}
-        >
-          {slide.ctaText}
         </Button>
       </div>
     </div>
@@ -232,11 +209,6 @@ export const HeroCarousel = () => {
             {event.title}
           </h2>
 
-          {event.description && (
-            <p className="text-lg text-white/90 mb-4 line-clamp-3">
-              {event.description}
-            </p>
-          )}
 
           <div className="flex flex-col md:flex-row gap-4 text-white/90 mb-6">
             <div className="flex items-center gap-2">
@@ -250,6 +222,12 @@ export const HeroCarousel = () => {
                 })}
               </span>
             </div>
+            
+            {event.description && (
+              <p className="text-lg text-white/90 mb-4 line-clamp-3">
+                {event.description}
+              </p>
+            )}
             
             {event.location && (
               <div className="flex items-center gap-2">
@@ -271,6 +249,41 @@ export const HeroCarousel = () => {
       </div>
     );
   };
+
+  const renderMembershipSlide = (slide: MembershipSlide) => (
+    <div className="lg:text-start mb-4 px-4 md:px-16">
+      <main className="text-4xl md:text-5xl font-semibold">
+        <h1 className="text-white mb-1">
+          {slide.title}
+        </h1>
+        <p className="text-xl md:text-2xl text-white/90 mt-1 mb-2">
+          {slide.subtitle}
+        </p>
+      </main>
+
+      <p className="text-base text-white/90 font-light md:w-10/12 lg:mx-0">
+        {slide.description}
+      </p>
+
+      <ul className="space-y-1 text-sm text-left text-white/90 md:w-10/12 lg:mx-0 mb-4">
+        {slide.bulletPoints.map((point, idx) => (
+          <li key={idx} className="flex items-start gap-2">
+            <span className="text-highlight text-md">✓</span>
+            <span>{point}</span>
+          </li>
+        ))}
+      </ul>
+
+      <div className="space-y-4 md:space-y-0 md:space-x-4">
+        <Button
+          className="w-full md:w-1/3 bg-highlight hover:bg-highlight/90 font-semibold"
+          onClick={() => navigate(slide.ctaLink)}
+        >
+          {slide.ctaText}
+        </Button>
+      </div>
+    </div>
+  );
 
   if (loading) {
     return (
@@ -319,7 +332,7 @@ export const HeroCarousel = () => {
               <section 
                 className={cn(
                   `bg-cover bg-center bg-no-repeat ${bgColorClass} bg-opacity-30 bg-blend-multiply`,
-                  'relative h-[450px] md:h-[400px]'
+                  'relative h-[400px] md:h-[450px]'
                 )}
                 style={bgStyle}
               >
@@ -328,8 +341,8 @@ export const HeroCarousel = () => {
                   "container grid place-items-top py-12 md:py-12 gap-10 max-w-full overflow-hidden"
                 )}>
                   {slide.type === 'main' && renderMainSlide()}
-                  {slide.type === 'membership' && renderMembershipSlide(slide)}
                   {slide.type === 'event' && renderEventSlide(slide)}
+                  {slide.type === 'membership' && renderMembershipSlide(slide)}
                 </div>
               </section>
             </CarouselItem>
