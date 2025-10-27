@@ -77,18 +77,6 @@ const benefits: Array<{
     checks: { basic: false, enhanced: true, elite: true },
   },
   {
-    label: "Member listing website link",
-    checks: { basic: false, enhanced: true, elite: true },
-  },
-  {
-    label: "Member listing address map",
-    checks: { basic: false, enhanced: true, elite: true },
-  },
-  {
-    label: "Member listing business bio",
-    checks: { basic: false, enhanced: true, elite: true },
-  },
-  {
     label: "Business Spotlight once a year on Radio",
     checks: { basic: false, enhanced: false, elite: true },
   },
@@ -186,7 +174,7 @@ export default function ChamberMembershipBenefits() {
                     size="sm"
                     onClick={() => navigate('/basic-membership')}
                     className={cn(
-                      "bg-highlight-foreground hover:bg-highlight-foreground/90 text-card w-full text-wrap px-2 md:px-3 h-12"
+                      "bg-card-foreground hover:bg-card-foreground/90 text-card w-full text-wrap px-2 md:px-3 h-12"
                     )}
                   >
                     Choose Basic
