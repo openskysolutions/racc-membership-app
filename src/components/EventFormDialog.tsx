@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Clock, MapPin, User, Save, X, AlertCircle, Link, Image, Download } from 'lucide-react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogOverlay, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -9,8 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuthStore } from '@/stores/authStore';
 import { createCalendarEvent, updateCalendarEvent, CalendarEvent, CreateEventPayload, UpdateEventPayload } from '@/services/calendar';
-import { uploadAvatar, validateAvatarFile, createImagePreview, revokeImagePreview } from '@/services/avatarUpload';
-import cn from 'classnames';
+import { uploadAvatar, validateAvatarFile, createImagePreview, revokeImagePreview, uploadEventCoverImage } from '@/services/avatarUpload';
 
 interface EventFormDialogProps {
   open: boolean;
@@ -178,8 +177,8 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
       const preview = createImagePreview(file);
       setCoverPreview(preview);
 
-      // Upload to GoHighLevel media storage
-      const uploadResult = await uploadAvatar(file, user?.ghlContactId || '');
+      // Upload to GoHighLevel media storage using event cover endpoint
+      const uploadResult = await uploadEventCoverImage(file);
       
       // Update form data
       handleInputChange('coverImageUrl', uploadResult.mediaUrl);
@@ -344,11 +343,6 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogOverlay className={cn(
-        "fixed inset-0 z-50",
-        "bg-muted-foreground/80 dark:bg-neutral-800/80 backdrop-blur-sm",
-        "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" 
-      )}/>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">

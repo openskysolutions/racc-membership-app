@@ -53,6 +53,45 @@ export async function uploadAvatar(file: File, contactId: string): Promise<Uploa
 }
 
 /**
+ * Upload event cover image to GoHighLevel media storage
+ * @param file - The image file to upload
+ */
+export async function uploadEventCoverImage(file: File): Promise<UploadAvatarResponse> {
+  try {
+    // Convert file to base64
+    const fileData = await fileToBase64(file);
+    
+    // Prepare JSON payload (no contactId required for event covers)
+    const payload = {
+      locationId: '5FAB1z0AhuVlEdqOzjVX', // Your GHL location ID
+      fileData: fileData,
+      fileName: file.name,
+      mimeType: file.type
+    };
+    
+    // Upload to GoHighLevel media storage using event cover endpoint
+    const response = await api.post('/medias/upload-event-cover', payload);
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(`Failed to upload event cover image: ${response.statusText} - ${errorData.message || ''}`);
+    }
+    
+    const data = await response.json();
+    
+    return {
+      success: true,
+      mediaUrl: data.mediaUrl,
+      mediaId: data.mediaId,
+      message: data.message || 'Event cover image uploaded successfully'
+    };
+  } catch (error: any) {
+    console.error('Error uploading event cover image:', error);
+    throw new Error(`Failed to upload event cover image: ${error.message}`);
+  }
+}
+
+/**
  * Convert File to base64 string
  * @param file - The file to convert
  */

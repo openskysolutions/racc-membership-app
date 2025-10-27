@@ -23,7 +23,7 @@ const MembershipLevels: React.FC = () => {
             <ul className="text-left space-y-2 text-sm mb-6 flex-grow">
               <li>• Business listed in Chamber directory on Chamber website</li>
               <li>• Subscription to the Chamber newsletter</li>
-              <li>• Free booth at Spring Expo and Fall Festival</li>
+              <li>• $30 booth at the Fall Festival (must register by July 1st)</li>
               <li>• Discounted quarterly education courses</li>
               <li>• Networking opportunities at lunches</li>
               <li>• Sponsorship opportunities</li>
@@ -32,7 +32,7 @@ const MembershipLevels: React.FC = () => {
               size="sm"
               onClick={() => navigate('/basic-membership')}
               className={cn(
-                "bg-highlight-foreground hover:bg-highlight-foreground/90 text-card w-full mt-auto"
+                "bg-card-foreground hover:bg-card-foreground/80 dark:bg-card-foreground text-card w-full mt-auto"
               )}
             >
               Choose Basic
@@ -52,10 +52,9 @@ const MembershipLevels: React.FC = () => {
             <div className="text-3xl font-bold mb-4">$550<span className="text-sm font-normal">/year</span></div>
             <ul className="text-left space-y-2 text-sm mb-6 flex-grow">
               <li>• All Basic benefits</li>
-              <li>• Business featured once a year on radio</li>
-              <li>• Small ad on luncheon placemats</li>
-              <li>• Upgraded directory listing to include links to your website and your social media pages</li>
-              <li>• Free luncheon sponsorship once a year</li>
+              <li>• Upgraded listing in Chamber Directory to include link to your business website</li>
+              <li>• One free ticket to luncheons every month (excludes Annual Dinner)</li>
+              <li>• Business featured once a year in Richfield Reaper</li>
             </ul>
             <Button
               size="sm"
@@ -78,10 +77,10 @@ const MembershipLevels: React.FC = () => {
             <div className="text-3xl font-bold mb-4">$900<span className="text-sm font-normal">/year</span></div>
             <ul className="text-left space-y-2 text-sm mb-6 flex-grow">
               <li>• All Enhanced benefits</li>
-              <li>• Board nomination eligibility</li>
-              <li>• Executive roundtable access</li>
-              <li>• Premium marketing placement</li>
-              <li>• Strategic planning input</li>
+              <li>• Upgraded directory listing to include links to your social media pages</li>
+              <li>• Business Spotlight once a year on Radio</li>
+              <li>• Free luncheon sponsorship once a year</li>
+              <li>• Ad on placemats for luncheons</li>
             </ul>
             <Button
               size="sm"

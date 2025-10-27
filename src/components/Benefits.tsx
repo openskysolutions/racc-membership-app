@@ -44,11 +44,11 @@ const benefits: Array<{
     checks: { basic: true, enhanced: true, elite: true },
   },
   {
-    label: "Free booth at the Fall Festival",
+    label: "$30 booth at the Fall Festival (must register by July 1st)",
     checks: { basic: true, enhanced: true, elite: true },
   },
   {
-    label: "Free monthly education courses",
+    label: "Discounted monthly education courses",
     checks: { basic: true, enhanced: true, elite: true },
   },
   {
@@ -64,12 +64,12 @@ const benefits: Array<{
       "Upgraded listing in Chamber Directory to include link to your business website",
     checks: { basic: false, enhanced: true, elite: true },
   },
+  // {
+  //   label: "Business announced as new member on Chamber social media pages",
+  //   checks: { basic: false, enhanced: true, elite: true },
+  // },
   {
-    label: "Business announced as new member on Chamber social media pages",
-    checks: { basic: false, enhanced: true, elite: true },
-  },
-  {
-    label: "One free ticket to monthly luncheons",
+    label: "One free ticket to luncheons every month (excludes Annual Dinner)",
     checks: { basic: false, enhanced: true, elite: true },
   },
   {
@@ -81,27 +81,26 @@ const benefits: Array<{
     checks: { basic: false, enhanced: false, elite: true },
   },
   {
-    label: "Small ad on placemats for luncheons",
+    label: "Ad on placemats for luncheons",
     checks: { basic: false, enhanced: false, elite: true },
   },
   {
     label:
-      "Upgraded directory listing to include links to your website and your social media pages",
+      "Upgraded directory listing to include links to your social media pages",
     checks: { basic: false, enhanced: false, elite: true },
   },
   {
-    label: "Free luncheon sponsorship (not exclusive) once a year",
+    label: "Free luncheon sponsorship once a year",
     checks: { basic: false, enhanced: false, elite: true },
   },
 ];
 
 const newMemberBenefits: string[] = [
-  "$500 worth of advertising on Mid-Utah Radio for new Chamber members in 2025",
-  "Subscription to the Chamber newsletter",
+  "$500 worth of advertising on Mid-Utah Radio for new Chamber members in 2026",
   "Time to share about your business at first Chamber luncheon",
-  "Business announced as new member at first Chamber luncheon",
+  "Business announced as new member and 2 minutes to introduce your business at first Chamber luncheon",
   "Ribbon cutting, open house or groundbreaking support for new business",
-  "Business announced as new member in Chamber newsletter and in newspaper",
+  "Business announced as new member in Chamber newsletter, in newspaper, radio, and on social media",
 ];
 
 function CheckCell({ active }: { active: boolean }) {
@@ -127,7 +126,7 @@ export default function ChamberMembershipBenefits() {
     <div className="mx-auto max-w-6xl space-y-4 mb-16">
 
       {/* Benefits table */}
-      <Card className="shadow-sm mb-8">
+      <Card className="shadow-sm mb-8 text-am">
         <CardHeader>
           <CardTitle>Benefits by Membership Level</CardTitle>
         </CardHeader>
@@ -159,34 +158,34 @@ export default function ChamberMembershipBenefits() {
                 <TableCell className="pl-2 pr-0 py-4 font-semibold">
                   Choose Your Membership
                 </TableCell>
-                <TableCell className="px-3 text-center py-4">
+                <TableCell className="px-1 text-center py-2">
                   <Button
                     size="sm"
                     onClick={() => navigate('/basic-membership')}
                     className={cn(
-                      "bg-highlight-foreground hover:bg-highlight-foreground/90 text-card w-full"
+                      "bg-highlight-foreground hover:bg-highlight-foreground/90 text-card w-full text-wrap px-2 md:px-3 h-12"
                     )}
                   >
                     Choose Basic
                   </Button>
                 </TableCell>
-                <TableCell className="px-3 text-center py-4">
+                <TableCell className="px-1 text-center py-2">
                   <Button
                     size="sm"
                     onClick={() => navigate('/enhanced-membership')}
                     className={cn(
-                      "bg-blue-500 hover:bg-blue-600 text-white w-full"
+                      "bg-blue-500 hover:bg-blue-600 text-white w-full text-wrap px-2 md:px-3 h-12"
                     )}
                   >
                     Choose Enhanced
                   </Button>
                 </TableCell>
-                <TableCell className="px-3 text-center py-4">
+                <TableCell className="px-1 text-center py-2">
                   <Button
                     size="sm"
                     onClick={() => navigate('/elite-membership')}
                     className={cn(
-                      "bg-highlight-foreground hover:bg-highlight-foreground/90 text-card w-full"
+                      "bg-highlight-foreground hover:bg-highlight-foreground/90 text-card w-full text-wrap px-2 md:px-3 h-12"
                     )}
                   >
                     Choose Elite

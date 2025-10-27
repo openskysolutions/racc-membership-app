@@ -60,34 +60,66 @@ const EliteMembershipPage: React.FC = () => {
                   <div className="flex items-start gap-3">
                     <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
                     <div>
-                      <h3 className="font-semibold">Board Nomination Eligibility</h3>
-                      <p className="text-muted-foreground">Eligible to be nominated and serve on the Chamber Board of Directors</p>
+                      <h3 className="font-semibold">Upgraded directory listing</h3>
+                      <p className="text-muted-foreground">Upgraded directory listing to include links to your social media pages</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <h3 className="font-semibold">Business Radio Spotlight</h3>
+                      <p className="text-muted-foreground">Business Spotlight once a year on Radio</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <h3 className="font-semibold">Sponsorship Opportunity</h3>
+                      <p className="text-muted-foreground">Free luncheon sponsorship once a year</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <h3 className="font-semibold">Luncheon Placemat Advertising</h3>
+                      <p className="text-muted-foreground">Advertisement on luncheon placemats throughout the year</p>
                     </div>
                   </div>
                   
-                  <div className="flex items-start gap-3">
+                  {/* <div className="flex items-start gap-3">
+                    <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <h3 className="font-semibold">Board Nomination Eligibility</h3>
+                      <p className="text-muted-foreground">Eligible to be nominated and serve on the Chamber Board of Directors</p>
+                    </div>
+                  </div> */}
+                  
+                  {/* <div className="flex items-start gap-3">
                     <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
                     <div>
                       <h3 className="font-semibold">Executive Roundtable Access</h3>
                       <p className="text-muted-foreground">Exclusive access to executive roundtable discussions and strategic sessions</p>
                     </div>
-                  </div>
+                  </div> */}
                   
-                  <div className="flex items-start gap-3">
+                  {/* <div className="flex items-start gap-3">
                     <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
                     <div>
                       <h3 className="font-semibold">Premium Marketing Placement</h3>
                       <p className="text-muted-foreground">Priority placement in Chamber marketing materials and communications</p>
                     </div>
-                  </div>
+                  </div> */}
                   
-                  <div className="flex items-start gap-3">
+                  {/* <div className="flex items-start gap-3">
                     <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
                     <div>
                       <h3 className="font-semibold">Strategic Planning Input</h3>
                       <p className="text-muted-foreground">Direct input into Chamber strategic planning and community development initiatives</p>
                     </div>
-                  </div>
+                  </div> */}
                 </div>
               </CardContent>
             </Card>

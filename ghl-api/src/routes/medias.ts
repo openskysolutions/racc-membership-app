@@ -7,6 +7,7 @@ const {
   deleteMedia, 
   uploadAvatar,
   uploadCoverImage,
+  uploadEventCoverImage,
 } = require('@/controllers/mediasController');
 const { requireAuth } = require('@/middleware/auth');
 const router = express.Router();
@@ -173,5 +174,60 @@ router.delete('/:id', deleteMedia);
  */
 router.post('/upload-avatar', uploadAvatar);
 router.post('/upload-coverImage', uploadCoverImage);
+
+/**
+ * @swagger
+ * /medias/upload-event-cover:
+ *   post:
+ *     summary: Upload cover image for an event
+ *     tags:
+ *       - Medias
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               fileData:
+ *                 type: string
+ *                 description: Base64 encoded image data
+ *               fileName:
+ *                 type: string
+ *                 description: Name of the file
+ *               mimeType:
+ *                 type: string
+ *                 description: MIME type of the file
+ *               locationId:
+ *                 type: string
+ *                 description: GoHighLevel location ID (optional)
+ *             required:
+ *               - fileData
+ *     responses:
+ *       201:
+ *         description: Event cover image uploaded successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 mediaId:
+ *                   type: string
+ *                 mediaUrl:
+ *                   type: string
+ *                 message:
+ *                   type: string
+ *       400:
+ *         description: Bad request - missing fileData
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Upload failed
+ */
+router.post('/upload-event-cover', uploadEventCoverImage);
 
 module.exports = router;

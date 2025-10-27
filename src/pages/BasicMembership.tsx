@@ -53,7 +53,7 @@ const BasicMembershipPage: React.FC = () => {
                     <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
                     <div>
                       <h3 className="font-semibold">Chamber Directory Listing</h3>
-                      <p className="text-muted-foreground">Your business listed in our Chamber directory on the Chamber website</p>
+                      <p className="text-muted-foreground">Business listed in Chamber directory on Chamber website</p>
                     </div>
                   </div>
                   
@@ -61,23 +61,23 @@ const BasicMembershipPage: React.FC = () => {
                     <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
                     <div>
                       <h3 className="font-semibold">Chamber Newsletter</h3>
-                      <p className="text-muted-foreground">Subscription to our regular Chamber newsletter with updates and opportunities</p>
+                      <p className="text-muted-foreground">Subscription to the Chamber newsletter</p>
                     </div>
                   </div>
                   
                   <div className="flex items-start gap-3">
                     <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
                     <div>
-                      <h3 className="font-semibold">Free Event Booths</h3>
-                      <p className="text-muted-foreground">Free booth at Spring Expo and Fall Festival events</p>
+                      <h3 className="font-semibold">$30 Fall Festival Booth</h3>
+                      <p className="text-muted-foreground">$30 booth at the Fall Festival (must register by July 1st)</p>
                     </div>
                   </div>
                   
                   <div className="flex items-start gap-3">
                     <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
                     <div>
-                      <h3 className="font-semibold">Educational Courses</h3>
-                      <p className="text-muted-foreground">Discounted quarterly education courses to help grow your business</p>
+                      <h3 className="font-semibold">Education Courses</h3>
+                      <p className="text-muted-foreground">Discounted quarterly education courses</p>
                     </div>
                   </div>
                   
@@ -85,7 +85,7 @@ const BasicMembershipPage: React.FC = () => {
                     <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
                     <div>
                       <h3 className="font-semibold">Networking Opportunities</h3>
-                      <p className="text-muted-foreground">Access to networking opportunities at Chamber lunches</p>
+                      <p className="text-muted-foreground">Networking opportunities at lunches</p>
                     </div>
                   </div>
                   
@@ -93,9 +93,41 @@ const BasicMembershipPage: React.FC = () => {
                     <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
                     <div>
                       <h3 className="font-semibold">Sponsorship Opportunities</h3>
-                      <p className="text-muted-foreground">Opportunities to sponsor Chamber events and initiatives</p>
+                      <p className="text-muted-foreground">Sponsorship opportunities</p>
                     </div>
                   </div>
+                  
+                  {/* <div className="flex items-start gap-3">
+                    <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <h3 className="font-semibold">$500 Mid-Utah Radio Advertising</h3>
+                      <p className="text-muted-foreground">$500 worth of advertising on Mid-Utah Radio for new Chamber members in 2026</p>
+                    </div>
+                  </div> */}
+                  
+                  {/* <div className="flex items-start gap-3">
+                    <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <h3 className="font-semibold">First Luncheon Introduction</h3>
+                      <p className="text-muted-foreground">Business announced as new member and 2 minutes to introduce your business at first Chamber luncheon</p>
+                    </div>
+                  </div> */}
+                  
+                  {/* <div className="flex items-start gap-3">
+                    <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <h3 className="font-semibold">Ribbon Cutting & Event Support</h3>
+                      <p className="text-muted-foreground">Ribbon cutting, open house or groundbreaking support for new business</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start gap-3">
+                    <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <h3 className="font-semibold">New Member Announcement</h3>
+                      <p className="text-muted-foreground">Business announced as new member in Chamber newsletter, in newspaper, radio, and on social media</p>
+                    </div>
+                  </div> */}
                 </div>
               </CardContent>
             </Card>

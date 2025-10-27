@@ -265,6 +265,105 @@ async function uploadCoverImage(req, res, next) {
   }
 }
 
+async function uploadEventCoverImage(req, res, next) {
+  try {
+    console.log('Event Cover Image upload request received');
+    console.log('Body keys:', Object.keys(req.body));
+    
+    const { locationId = process.env.LOCATION_ID, fileData, fileName, mimeType } = req.body;
+
+    if (!fileData) {
+      return res.status(400).json({ error: 'File data is required' });
+    }
+
+    // Convert base64 to buffer
+    let fileBuffer;
+    if (fileData.startsWith('data:')) {
+      const base64Data = fileData.split(',')[1];
+      fileBuffer = Buffer.from(base64Data, 'base64');
+    } else {
+      fileBuffer = Buffer.from(fileData, 'base64');
+    }
+
+    console.log(`Processing event cover image upload, file size: ${fileBuffer.length} bytes`);
+
+    // Use GoHighLevel's media storage API
+    const axios = require('axios');
+    const FormData = require('form-data');
+
+    const formData = new FormData();
+
+    formData.append('locationId', locationId);
+    formData.append('file', fileBuffer, {
+      filename: fileName || `event-cover-${Date.now()}.jpg`,
+      contentType: mimeType || 'image/jpeg'
+    });
+
+    console.log('Uploading event cover image to GoHighLevel media storage...');
+
+    const ghlResponse = await axios.post('https://services.leadconnectorhq.com/medias/upload-file', formData, {
+      headers: {
+        ...formData.getHeaders(),
+        'Authorization': `Bearer ${process.env.PRIVATE_INTEGRATION_TOKEN}`,
+        'Version': '2021-07-28'
+      },
+      timeout: 30000,
+      maxContentLength: Infinity,
+      maxBodyLength: Infinity
+    });
+
+    console.log('GoHighLevel upload successful:', ghlResponse.data);
+
+    // Extract the media URL from the response
+    const mediaData = ghlResponse.data;
+    const mediaUrl = mediaData.url || mediaData.fileUrl || mediaData.src || mediaData.mediaUrl;
+    const mediaId = mediaData.id || mediaData.mediaId;
+
+    if (!mediaUrl) {
+      console.error('No media URL in response:', mediaData);
+      throw new Error('Upload succeeded but no media URL returned');
+    }
+
+    const response = {
+      success: true,
+      mediaId: mediaId,
+      mediaUrl: mediaUrl,
+      message: 'Event cover image uploaded successfully to GoHighLevel'
+    };
+
+    return res.status(201).json(response);
+
+  } catch (err) {
+    console.error('Event cover image upload error details:', err);
+    console.error('Error stack:', err.stack);
+
+    let errorMessage = 'Failed to upload event cover image to GoHighLevel';
+    let statusCode = 500;
+
+    if (err.response) {
+      statusCode = err.response.status;
+      console.error('GoHighLevel API response:', err.response.data);
+
+      if (err.response.data?.message) {
+        if (Array.isArray(err.response.data.message)) {
+          errorMessage = `GoHighLevel API error: ${err.response.data.message.join(', ')}`;
+        } else {
+          errorMessage = `GoHighLevel API error: ${err.response.data.message}`;
+        }
+      } else {
+        errorMessage = `GoHighLevel API error (${statusCode}): ${err.message}`;
+      }
+    } else if (err.request) {
+      errorMessage = 'Network error connecting to GoHighLevel API';
+    }
+
+    res.status(statusCode).json({
+      error: errorMessage,
+      details: err.message
+    });
+  }
+}
+
 // Bulk Operations
 async function bulkUpdateMediaObjects(req, res, next) {
   try {
@@ -286,6 +385,8 @@ module.exports = {
   uploadAvatar,
   // Cover Image Upload
   uploadCoverImage,
+  // Event Cover Image Upload
+  uploadEventCoverImage,
   // Media Folders
   createMediaFolder,
   // Bulk Operations
