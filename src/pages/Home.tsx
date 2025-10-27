@@ -9,7 +9,7 @@ const HomePage: React.FC = () => {
     <div>
       <HeroCarousel />
     {/* Hero Section */}
-    <div className="text-center my-16 px-6">
+    <div className="text-center my-8 sm:my-16 px-6">
       <h1 className="text-xl md:text-3xl font-semibold mb-4">Start Your Richfield Area Chamber of Commerce Membership Today</h1>
       <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
         Join a thriving community of local businesses and unlock opportunities for growth, networking, and community impact. Your membership helps strengthen our local economy while providing valuable benefits for your business.

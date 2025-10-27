@@ -162,9 +162,11 @@ export const HeroCarousel = () => {
         businesses with the government, and promote
         programs and events to improve our community.
       <br/>
+      <span className='hidden md:inline'>
         Be assured that the Chamber is here
         to help as you reach your business, life,
         and professional goals because
+      </span>
       </p>
 
       <h3 className="text-3xl bg-gradient-to-b from-highlight to-highlight text-transparent bg-clip-text py-0">
