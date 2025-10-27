@@ -94,6 +94,11 @@ const MemberDetailsPage: React.FC = () => {
 
         const memberData: Member = await response.json();
 
+        console.log('Member data:', memberData);
+        console.log('Member tags:', memberData.tags);
+        console.log('Tags type:', typeof memberData.tags);
+        console.log('Tags is array:', Array.isArray(memberData.tags));
+
         setMember(memberData);
 
         // Initialize form data
@@ -164,17 +169,20 @@ const MemberDetailsPage: React.FC = () => {
 
   const canEdit = user && member && (user.ghlContactId === member.id || user.role === 'admin');
 
-  // Check if member has Enhanced or Elite membership
-  const hasEnhancedOrElite = member && (
-    member.tags?.includes('enhanced') || 
-    member.tags?.includes('elite') ||
-    member.tags?.includes('admin')
+  // Check if member has Enhanced or Elite membership (case-insensitive and includes partial matches)
+  const hasEnhancedOrElite = member && member.tags && (
+    member.tags.some(tag => tag.toLowerCase().includes('enhanced')) || 
+    member.tags.some(tag => tag.toLowerCase().includes('elite')) ||
+    member.tags.some(tag => tag.toLowerCase() === 'admin')
   );
 
-  // Check if member has Elite membership only
-  const hasElite = member && (
-    member.tags?.includes('elite') ||
-    member.tags?.includes('admin')
+  console.log('hasEnhancedOrElite:', hasEnhancedOrElite);
+  console.log('member?.tags:', member?.tags);
+
+  // Check if member has Elite membership only (case-insensitive and includes partial matches)
+  const hasElite = member && member.tags && (
+    member.tags.some(tag => tag.toLowerCase().includes('elite')) ||
+    member.tags.some(tag => tag.toLowerCase() === 'admin')
   );
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -397,7 +405,7 @@ const MemberDetailsPage: React.FC = () => {
                     </div>
                   </div>
                   
-                  {/* Address Information - Enhanced/Elite Only */}
+                  {/* Address Information - Always show if available */}
                   {(member.address1 || member.city || member.state || member.postalCode) && (
                     <>
                       <h3 className="font-semibold mb-3 flex items-center gap-2">
@@ -413,45 +421,46 @@ const MemberDetailsPage: React.FC = () => {
                             .join(', ')}
                         </p>
                       </div>
-                    {hasEnhancedOrElite && 
-                      (<>
-                        {/* Embedded Map */}
-                        <div className="w-full h-64 bg-muted rounded-lg overflow-hidden border">
-                          <iframe
-                            src={`https://maps.google.com/maps?q=${encodeURIComponent([
-                              member.address1,
-                              member.city,
-                              member.state,
-                              member.postalCode
-                            ].filter(Boolean).join(', '))}&t=&z=12&ie=UTF8&iwloc=&output=embed`}
-                            width="100%"
-                            height="100%"
-                            style={{ border: 0 }}
-                            allowFullScreen
-                            loading="lazy"
-                            referrerPolicy="no-referrer-when-downgrade"
-                            title="Member Location"
-                          />
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full"
-                          onClick={() => {
-                            const address = [
-                              member.address1,
-                              member.city,
-                              member.state,
-                              member.postalCode
-                            ].filter(Boolean).join(', ');
-                            window.open(`https://maps.google.com/?q=${encodeURIComponent(address)}`, '_blank');
-                          }}
-                        >
-                          <ExternalLink className="h-4 w-4 mr-2" />
-                          View on Maps
-                        </Button>
-                      </>)
-                    }
+
+                      {/* Embedded Map - Enhanced/Elite Only */}
+                      {hasEnhancedOrElite && (
+                        <>
+                          <div className="w-full h-64 bg-muted rounded-lg overflow-hidden border">
+                            <iframe
+                              src={`https://maps.google.com/maps?q=${encodeURIComponent([
+                                member.address1,
+                                member.city,
+                                member.state,
+                                member.postalCode
+                              ].filter(Boolean).join(', '))}&t=&z=12&ie=UTF8&iwloc=&output=embed`}
+                              width="100%"
+                              height="100%"
+                              style={{ border: 0 }}
+                              allowFullScreen
+                              loading="lazy"
+                              referrerPolicy="no-referrer-when-downgrade"
+                              title="Member Location"
+                            />
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full"
+                            onClick={() => {
+                              const address = [
+                                member.address1,
+                                member.city,
+                                member.state,
+                                member.postalCode
+                              ].filter(Boolean).join(', ');
+                              window.open(`https://maps.google.com/?q=${encodeURIComponent(address)}`, '_blank');
+                            }}
+                          >
+                            <ExternalLink className="h-4 w-4 mr-2" />
+                            View on Maps
+                          </Button>
+                        </>
+                      )}
                     </>
                   )}
                 </CardContent>
