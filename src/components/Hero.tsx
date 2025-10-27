@@ -12,9 +12,9 @@ export const Hero = () => {
     )}>
       <div className={cn(
         "w-full h-full backdrop-blur-[0px] backdrop-brightness-50",
-        "container grid 2xl:grid-cols-1 place-items-top py-20 md:py-32 md:px-16 gap-10 max-w-full"
+        "container grid 2xl:grid-cols-1 place-items-top pt-14 py-10 md:py-16 md:px-16 gap-10 max-w-full"
       )}>
-        <div className="text-center lg:text-start space-y-6 mb-12">
+        <div className="text-center lg:text-start space-y-6 mb-4">
           <main className="text-5xl md:text-5xl lg:text-6xl font-semibold">
             <h1 className="inline text-muted dark:text-card-foreground">
               Why Join The{" "}
@@ -24,7 +24,7 @@ export const Hero = () => {
             </h1>
           </main>
 
-          <p className="text-xl text-left text-muted font-extralight dark:text-card-foreground md:w-10/12 mx-auto lg:mx-0">
+          <p className="text-md text-left text-muted font-extralight dark:text-card-foreground md:w-10/12 mx-auto lg:mx-0">
           Together, we can create a strong local economy,
           make connections, represent the interests of
           businesses with the government, and promote
@@ -35,13 +35,13 @@ export const Hero = () => {
           and professional goals because
           </p>
 
-          <h3 className="text-3xl bg-gradient-to-b from-highlight to-highlight text-transparent bg-clip-text py-4">
+          <h3 className="text-3xl bg-gradient-to-b from-highlight to-highlight text-transparent bg-clip-text py-0">
           Your Business is Our Business!
           </h3>
 
           <div className="space-y-4 md:space-y-0 md:space-x-4">
             <Button
-              className="w-full md:w-1/3 bg-highlight"
+              className="w-full md:w-1/3 bg-highlight font-semibold"
               onClick={() => navigate('/join')}
             >
               Join Now!
