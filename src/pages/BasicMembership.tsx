@@ -96,38 +96,6 @@ const BasicMembershipPage: React.FC = () => {
                       <p className="text-muted-foreground">Sponsorship opportunities</p>
                     </div>
                   </div>
-                  
-                  {/* <div className="flex items-start gap-3">
-                    <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <h3 className="font-semibold">$500 Mid-Utah Radio Advertising</h3>
-                      <p className="text-muted-foreground">$500 worth of advertising on Mid-Utah Radio for new Chamber members in 2026</p>
-                    </div>
-                  </div> */}
-                  
-                  {/* <div className="flex items-start gap-3">
-                    <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <h3 className="font-semibold">First Luncheon Introduction</h3>
-                      <p className="text-muted-foreground">Business announced as new member and 2 minutes to introduce your business at first Chamber luncheon</p>
-                    </div>
-                  </div> */}
-                  
-                  {/* <div className="flex items-start gap-3">
-                    <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <h3 className="font-semibold">Ribbon Cutting & Event Support</h3>
-                      <p className="text-muted-foreground">Ribbon cutting, open house or groundbreaking support for new business</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-start gap-3">
-                    <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <h3 className="font-semibold">New Member Announcement</h3>
-                      <p className="text-muted-foreground">Business announced as new member in Chamber newsletter, in newspaper, radio, and on social media</p>
-                    </div>
-                  </div> */}
                 </div>
               </CardContent>
             </Card>

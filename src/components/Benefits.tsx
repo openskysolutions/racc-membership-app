@@ -77,6 +77,18 @@ const benefits: Array<{
     checks: { basic: false, enhanced: true, elite: true },
   },
   {
+    label: "Member listing website link",
+    checks: { basic: false, enhanced: true, elite: true },
+  },
+  {
+    label: "Member listing address map",
+    checks: { basic: false, enhanced: true, elite: true },
+  },
+  {
+    label: "Member listing business bio",
+    checks: { basic: false, enhanced: true, elite: true },
+  },
+  {
     label: "Business Spotlight once a year on Radio",
     checks: { basic: false, enhanced: false, elite: true },
   },
@@ -85,12 +97,23 @@ const benefits: Array<{
     checks: { basic: false, enhanced: false, elite: true },
   },
   {
-    label:
-      "Upgraded directory listing to include links to your social media pages",
+    label: "Upgraded directory listing to include links to your social media pages",
     checks: { basic: false, enhanced: false, elite: true },
   },
   {
     label: "Free luncheon sponsorship once a year",
+    checks: { basic: false, enhanced: false, elite: true },
+  },
+  {
+    label: "Member listing Cover image & social links",
+    checks: { basic: false, enhanced: false, elite: true },
+  },
+  {
+    label: "Member listing coupon uploads",
+    checks: { basic: false, enhanced: false, elite: true },
+  },
+  {
+    label: "Member listing business image gallery",
     checks: { basic: false, enhanced: false, elite: true },
   },
 ];

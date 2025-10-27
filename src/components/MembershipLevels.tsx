@@ -55,6 +55,9 @@ const MembershipLevels: React.FC = () => {
               <li>• Upgraded listing in Chamber Directory to include link to your business website</li>
               <li>• One free ticket to luncheons every month (excludes Annual Dinner)</li>
               <li>• Business featured once a year in Richfield Reaper</li>
+              <li>• Member listing website link</li>
+              <li>• Member listing address map</li>
+              <li>• Member listing business bio</li>
             </ul>
             <Button
               size="sm"
@@ -81,6 +84,9 @@ const MembershipLevels: React.FC = () => {
               <li>• Business Spotlight once a year on Radio</li>
               <li>• Free luncheon sponsorship once a year</li>
               <li>• Ad on placemats for luncheons</li>
+              <li>• Member listing Cover image & social links</li>
+              <li>• Member listing coupon uploads</li>
+              <li>• Member listing business image gallery</li>
             </ul>
             <Button
               size="sm"
