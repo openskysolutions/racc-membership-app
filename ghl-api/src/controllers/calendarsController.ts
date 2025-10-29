@@ -94,9 +94,13 @@ async function createAppointment(req, res, next) {
 
 async function getAppointment(req, res, next) {
   try {
-    const result = await svc.getAppointment({ appointmentId: req.params.id }, { headers: req.headers });
+    // Use our custom ghlService instead of the SDK due to URL template bug
+    const result = await ghlService.getAppointment(req.params.id);
     res.json(result);
-  } catch (err) { next(err); }
+  } catch (err) { 
+    console.error('Error fetching appointment:', err);
+    next(err); 
+  }
 }
 
 // Get custom fields for an appointment (lazy load)

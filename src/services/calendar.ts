@@ -210,6 +210,51 @@ export async function getUpcomingEvents(calendarId: string): Promise<CalendarEve
 }
 
 /**
+ * Get a single event by ID
+ * @param eventId - The event/appointment ID
+ */
+export async function getEventById(eventId: string): Promise<CalendarEvent> {
+  try {
+    console.log('Fetching event by ID:', eventId);
+    
+    const response = await api.get(`/calendars/appointments/${eventId}`);
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(`Failed to fetch event: ${response.statusText} - ${errorData.message || ''}`);
+    }
+    
+    const data = await response.json();
+    const appointment = data?.appointment || data;
+    
+    console.log('Fetched event:', appointment);
+    
+    // Transform response to CalendarEvent format
+    return {
+      id: appointment.id,
+      title: appointment.title,
+      description: appointment.description || appointment.calendarNotes,
+      startTime: appointment.startTime,
+      endTime: appointment.endTime,
+      location: appointment.address || appointment.location,
+      calendarId: appointment.calendarId,
+      status: appointment.appointmentStatus || 'confirmed',
+      attendees: appointment.attendees || [],
+      isAllDay: appointment.isAllDay || false,
+      timezone: appointment.selectedTimezone || 'America/Denver',
+      // Additional HighLevel fields
+      internalNote: appointment.internalNote,
+      calendarNotes: appointment.calendarNotes,
+      appointmentStatus: appointment.appointmentStatus,
+      contactId: appointment.contactId
+    };
+  } catch (error: any) {
+    console.error('Error fetching event:', error);
+    throw new Error(`Failed to fetch event: ${error.message}`);
+  }
+}
+
+/**
  * Format event date and time for display
  */
 export function formatEventDateTime(startTime: string, endTime: string, isAllDay?: boolean): string {

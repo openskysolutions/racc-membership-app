@@ -1,14 +1,17 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, MapPin, Users, Plus, Edit } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Users, Plus, Edit, X, Clock, MapPin } from 'lucide-react';
 import { getCurrentYearEvents, CalendarEvent, getEventCustomFields } from '@/services/calendar';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import EventFormDialog from '@/components/EventFormDialog';
 import { useAuthStore } from '@/stores/authStore';
+import { formatEventDate, formatEventTime, formatLocation } from '@/lib/eventUtils';
+import { EventCountdown } from '@/components/EventCountdown';
+import { EventRegistrationDialog, RegistrationFormData } from '@/components/EventRegistrationDialog';
 
 // GoHighLevel Calendar ID - RACC Events
 const GHL_CALENDAR_ID = '9XpDcFHv3SmCUuHeuOOg';
@@ -20,6 +23,7 @@ const CalendarPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [eventPageUrl, setEventPageUrl] = useState<string>('');
+  const [eventCoverImageUrl, setEventCoverImageUrl] = useState<string>('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [createEventDialogOpen, setCreateEventDialogOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -28,6 +32,8 @@ const CalendarPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
+  const [showRegisterDialog, setShowRegisterDialog] = useState(false);
+  const [isRegistered, setIsRegistered] = useState(false);
 
   // Check for URL parameters to trigger create event dialog
   useEffect(() => {
@@ -77,6 +83,13 @@ const CalendarPage: React.FC = () => {
       event.id === updatedEvent.id ? updatedEvent : event
     ));
     setSelectedEvent(null);
+  };
+
+  const handleRegister = (formData: RegistrationFormData) => {
+    // TODO: Implement actual registration logic
+    console.log('Registration submitted:', formData);
+    setIsRegistered(true);
+    setShowRegisterDialog(false);
   };
 
   // Calendar computation
@@ -165,7 +178,7 @@ const CalendarPage: React.FC = () => {
     setSelectedEvent(event);
     setDialogOpen(true);
     
-    // Fetch custom fields for the event to get pageUrl
+    // Fetch custom fields for the event to get pageUrl and coverImageUrl
     try {
       const customFields = await getEventCustomFields(event.id);
       if (customFields?.pageUrl) {
@@ -173,9 +186,15 @@ const CalendarPage: React.FC = () => {
       } else {
         setEventPageUrl('');
       }
+      if (customFields?.coverImageUrl) {
+        setEventCoverImageUrl(customFields.coverImageUrl);
+      } else {
+        setEventCoverImageUrl('');
+      }
     } catch (error) {
       console.error('Failed to fetch event custom fields:', error);
       setEventPageUrl('');
+      setEventCoverImageUrl('');
     }
   };
 
@@ -194,23 +213,6 @@ const CalendarPage: React.FC = () => {
       setSelectedDate(date);
       setCreateEventDialogOpen(true);
     }
-  };
-
-  const formatEventTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    });
-  };
-
-  const formatEventDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
   };
 
   if (loading) {
@@ -351,118 +353,122 @@ const CalendarPage: React.FC = () => {
       </Card>
 
       {/* Event Details Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <CalendarIcon className="h-5 w-5" />
+      <Dialog 
+        open={dialogOpen} 
+        onOpenChange={(open) => {
+          setDialogOpen(open);
+          if (!open) { setEventCoverImageUrl(''); }
+        }}
+      >
+        <DialogContent className={`border-0 outline-0 max-w-2xl overflow-hidden ${eventCoverImageUrl ? '[&>button]:bg-white/90 [&>button]:text-black [&>button]:hover:bg-white [&>button]:z-20' : ''}  p-0`}>
+          <DialogHeader 
+            className="relative min-h-80 bg-cover bg-center rounded-t-lg p-12 pb-20 gap-4 flex flex-col items-center justify-end"
+            style={{ 
+              backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.6)), url(${eventCoverImageUrl})` 
+            }}
+          >
+            {selectedEvent?.isAllDay && (
+              <Badge variant="outline" className="bg-white/20 text-white border-white/30">
+                All Day
+              </Badge>
+            )}
+            <p className={`mb-2 text-center text-lg font-medium ${eventCoverImageUrl ? 'text-white' : ''}`}>
+              {selectedEvent && formatEventDate(selectedEvent.startTime)}
+              <br className='sm:hidden'/>
+              <span className='hidden sm:inline px-4'>|</span> 
+              {selectedEvent && formatEventTime(selectedEvent.startTime)} - 
+              {selectedEvent?.endTime && formatEventTime(selectedEvent.endTime)}
+            </p>
+            <DialogTitle className={`flex items-center justify-center text-center text-3xl sm:text-4xl gap-2 ${eventCoverImageUrl ? 'text-white drop-shadow-lg' : ''}`}>
               {selectedEvent?.title}
             </DialogTitle>
-            <DialogDescription>
-              
-            {selectedEvent?.description && (
-              <div>
-                <h4 className="font-medium mb-2">Description</h4>
-                <p className="text-sm text-muted-foreground leading-relaxed">
+            <p className={`text-lg font-medium text-center ${eventCoverImageUrl ? 'text-white' : ''}`}>
+              {selectedEvent?.location && formatLocation(selectedEvent.location)}
+            </p>
+            <DialogDescription className={`text-center max-w-2xl ${eventCoverImageUrl ? 'text-gray-100' : ''}`}>
+              {selectedEvent?.description && (
+                <p className="text-sm sm:text-md leading-snug">
                   {selectedEvent.description}
                 </p>
-              </div>
-            )}
-            </DialogDescription>
-          </DialogHeader>
-        
-        {selectedEvent && (
-          <div className="space-y-6">
-            {/* Event Info */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 text-sm">
-                <Clock className="h-4 w-4 text-muted-foreground" />
-                <span>{formatEventDate(selectedEvent.startTime)}</span>
-                <span>•</span>
-                <span>{formatEventTime(selectedEvent.startTime)}</span>
-                {selectedEvent.endTime && (
-                  <>
-                    <span>-</span>
-                    <span>{formatEventTime(selectedEvent.endTime)}</span>
-                  </>
-                )}
-              </div>
-              
-              {selectedEvent.location && (
-                <div className="flex items-center gap-2 text-sm">
-                  <MapPin className="h-4 w-4 text-muted-foreground" />
-                  <span>{selectedEvent.location}</span>
-                </div>
               )}
-              
-              {selectedEvent.attendees && selectedEvent.attendees.length > 0 && (
+            </DialogDescription>
+
+            {/* Register Button */}
+            {!isRegistered && selectedEvent && (
+              <Button 
+                size="lg" 
+                className="mt-4 bg-highlight hover:bg-primary text-card font-medium px-8 py-3"
+                onClick={() => setShowRegisterDialog(true)}
+              >
+                Register Now
+              </Button>
+            )}
+
+            {selectedEvent && selectedEvent.attendees && selectedEvent.attendees.length > 0 && (
+              <div className="dialog-body space-y-4 px-6 pb-0">
                 <div className="flex items-center gap-2 text-sm">
                   <Users className="h-4 w-4 text-muted-foreground" />
                   <span>{selectedEvent.attendees.length} attendees</span>
                 </div>
-              )}
-              
-              <div className="flex gap-2">
-                <Badge variant={selectedEvent.status === 'confirmed' ? 'default' : 'secondary'}>
-                  {selectedEvent.status}
-                </Badge>
-                {selectedEvent.isAllDay && (
-                  <Badge variant="outline">All Day</Badge>
-                )}
               </div>
-            </div>
-            
-            {/* Actions */}
-            <div className="flex gap-2">
-              {eventPageUrl ? (
-                <Button 
-                  asChild
-                  className="flex-1"
-                  size='sm'
-                >
-                  <a 
-                    href={eventPageUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                  >
-                    View Full Details & RSVP
-                  </a>
-                </Button>
-              ) : (
-                <Button 
-                  onClick={() => {
-                    setDialogOpen(false);
-                    navigate('/news-events');
-                  }}
-                  className="flex-1"
-                  size='sm'
-                >
-                  View Full Details & RSVP
-                </Button>
-              )}
-              {isAuthenticated && (
-                <Button 
-                  variant="outline"
-                  onClick={() => {
-                    setDialogOpen(false);
-                    handleEditEvent(selectedEvent);
-                  }}
-                  size='sm'
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit
-                </Button>
-              )}
+            )}
+
+            {/* Countdown Timer */}
+            {selectedEvent && (
+              <EventCountdown 
+                startTime={selectedEvent.startTime} 
+                scale="xs"
+                className="absolute -bottom-4 mx-4" 
+              />
+            )}
+          </DialogHeader>
+        
+
+          <DialogFooter className='flex flex-row w-full p-3 pt-3 items-center sm:justify-end'>
+            {selectedEvent && (
               <Button 
-                variant="outline" 
-                onClick={() => setDialogOpen(false)}
-                  size='sm'
+                variant="default"
+                size='sm'
+                onClick={() => navigate(`/events/${selectedEvent.id}`)}
               >
-                Close
+                View Full Details
               </Button>
-            </div>
-          </div>
-        )}
+            )}
+            {eventPageUrl && 
+              <Button 
+                asChild
+                className=""
+                size='sm'
+                variant="outline"
+              >
+                <a 
+                  href={eventPageUrl} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                >
+                  Event Website
+                </a>
+              </Button>
+            }
+            {isAuthenticated && (
+              <Button 
+                variant="outline"
+                onClick={() => {
+                  setDialogOpen(false);
+                  handleEditEvent(selectedEvent as CalendarEvent);
+                }}
+                size='sm'
+                className='w-9'
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+            )}
+            <DialogClose asChild>
+              <Button variant="outline" size='sm' className='w-9'>
+                <X className="h-3 w-3" />
+              </Button>
+            </DialogClose>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
@@ -500,7 +506,7 @@ const CalendarPage: React.FC = () => {
                         className="flex-1 cursor-pointer"
                         onClick={() => {
                           setDayEventsDialogOpen(false);
-                          handleEventClick(event);
+                          navigate(`/events/${event.id}`);
                         }}
                       >
                         <div className="font-medium text-sm mb-1">{event.title}</div>
@@ -584,6 +590,16 @@ const CalendarPage: React.FC = () => {
         onEventCreated={handleEventCreated}
         onEventUpdated={handleEventUpdated}
       />
+
+      {/* Registration Dialog */}
+      {selectedEvent && (
+        <EventRegistrationDialog
+          open={showRegisterDialog}
+          onOpenChange={setShowRegisterDialog}
+          eventTitle={selectedEvent.title}
+          onRegister={handleRegister}
+        />
+      )}
     </div>
   );
 };

@@ -4,13 +4,14 @@ import PagesLayout from '@/components/layouts/pagesLayout';
 import { useAuthStore } from '@/stores/authStore';
 
 import HomePage from '@/pages/Home';
-import NewsEventsPage from '@/pages/NewsEvents';
+// import NewsEventsPage from '@/pages/NewsEvents';
 import AboutPage from '@/pages/About';
 import MembersPage from '@/pages/Members';
 import MemberDetailsPage from '@/pages/MemberDetails';
 import JobPostingsPage from '@/pages/JobPostings';
 import ContactPage from '@/pages/Contact';
 import CalendarPage from '@/pages/Calendar';
+import EventDetailPage from '@/pages/EventDetail';
 import LeaderboardPage from '@/pages/Leaderboard';
 import DiscussionsPage from '@/pages/Discussions';
 import CoursesPage from '@/pages/Courses';
@@ -80,12 +81,13 @@ export default function AppRoutes() {
         <Route path="basic-membership" element={<BasicMembershipPage />} />
         <Route path="enhanced-membership" element={<EnhancedMembershipPage />} />
         <Route path="elite-membership" element={<EliteMembershipPage />} />
-        <Route path="news-events" element={<NewsEventsPage />} />
+        {/* <Route path="news-events" element={<NewsEventsPage />} /> */}
         <Route path="members" element={<MembersPage />} />
         <Route path="members/:id" element={<MemberDetailsPage />} />
         <Route path="job-postings" element={<JobPostingsPage />} />
         <Route path="contact" element={<ContactPage />} />
         <Route path="calendar" element={<CalendarPage />} />
+        <Route path="events/:id" element={<EventDetailPage />} />
         <Route path="about" element={<AboutPage />} />
         <Route path="about-copy" element={<AboutPage />} />
         <Route path="privacy" element={<Privacy />} />

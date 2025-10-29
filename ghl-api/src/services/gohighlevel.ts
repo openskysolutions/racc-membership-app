@@ -1130,6 +1130,31 @@ class GoHighLevelService {
   }
 
   /**
+   * Get a single appointment by ID using direct HTTP call
+   * @param appointmentId - The appointment ID to fetch
+   */
+  async getAppointment(appointmentId: string): Promise<any> {
+    if (!this.client) {
+      throw new Error('GoHighLevel client not initialized');
+    }
+
+    try {
+      console.log(`🔍 Fetching appointment: ${appointmentId}`);
+      
+      // Use the correct GoHighLevel API endpoint for fetching a single appointment
+      const response = await this.client.get(`/calendars/events/appointments/${appointmentId}`);
+      
+      console.log(`✅ Successfully fetched appointment: ${appointmentId}`);
+      
+      return response.data;
+    } catch (error: any) {
+      console.error('Failed to fetch appointment:', error);
+      console.error('Error response:', error.response?.data);
+      throw new Error(`Failed to fetch appointment: ${error.message}`);
+    }
+  }
+
+  /**
    * Update/edit an appointment using direct HTTP call
    * @param appointmentId - The appointment ID to update
    * @param payload - The appointment data to update
@@ -1141,10 +1166,27 @@ class GoHighLevelService {
 
     try {
       // Extract custom fields and internal note from payload
-      const { internalNote, pageUrl, coverImageUrl, downloadFileUrl, customFieldsRecordId, ...appointmentPayload } = payload;
+      const { internalNote, pageUrl, coverImageUrl, downloadFileUrl, customFieldsRecordId, description, location, ...rest } = payload;
+      
+      // Build the update payload with only fields that GHL accepts
+      // Note: GoHighLevel uses 'address' not 'location', and 'calendarNotes' not 'description'
+      const appointmentPayload: any = {
+        ...rest,
+        // Convert description to calendarNotes if description is provided
+        ...(description && { calendarNotes: description }),
+        // Convert location to address if location is provided
+        ...(location && { address: location }),
+        // Add flags to bypass slot validation when updating
+        ignoreDateRange: true,
+        ignoreFreeSlotValidation: true,
+      };
+      
+      console.log('📝 Updating appointment with payload:', JSON.stringify(appointmentPayload, null, 2));
       
       // Update the appointment via GoHighLevel API
       const response = await this.client.put(`/calendars/events/appointments/${appointmentId}`, appointmentPayload);
+      
+      console.log('✅ Appointment updated successfully');
       
       // Save custom fields to custom object (if any custom fields provided)
       if (internalNote || pageUrl || coverImageUrl || downloadFileUrl) {
@@ -1166,7 +1208,7 @@ class GoHighLevelService {
         endTime: payload.endTime,
         location: payload.address || payload.location || '',
         address: payload.address || payload.location || '',
-        calendarNotes: payload.calendarNotes || '',
+        calendarNotes: payload.calendarNotes || payload.description || '',
         internalNote: internalNote || '',
         appointmentStatus: payload.appointmentStatus || response.data.appoinmentStatus || 'confirmed',
         // Include custom fields in response
@@ -1178,7 +1220,7 @@ class GoHighLevelService {
       return completeAppointment;
       
     } catch (error: any) {
-      console.error('Failed to update appointment:', error);
+      console.error('❌ Failed to update appointment:', error.message);
       console.error('Error response:', error.response?.data);
       throw new Error(`Failed to update appointment: ${error.message}`);
     }
