@@ -273,7 +273,7 @@ const EventDetailPage: React.FC = () => {
               {formatEventDate(event.startTime)} 
               <br className='sm:hidden'/>
               <span className='hidden sm:inline px-6'>|</span> 
-              {formatEventTime(event.startTime)} - 
+              {formatEventTime(event.startTime)}{' - '}
               {formatEventTime(event.endTime)}
             </p>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-semibold text-card mb-4">
