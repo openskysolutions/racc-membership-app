@@ -57,6 +57,7 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
   const { user } = useAuthStore();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isMultiDay, setIsMultiDay] = useState(false);
   
   // File upload states
   const [coverUploading, setCoverUploading] = useState(false);
@@ -89,14 +90,21 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
         const startDate = new Date(event.startTime);
         const endDate = new Date(event.endTime);
         
+        // Format dates in local timezone to avoid UTC conversion issues
+        const startDateStr = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`;
+        const endDateStr = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
+        
+        // Detect if event is multi-day
+        setIsMultiDay(startDateStr !== endDateStr);
+        
         // Set basic form data immediately
         setFormData({
           title: event.title,
           description: event.description || '',
-          startDate: startDate.toISOString().split('T')[0],
-          startTime: startDate.toTimeString().slice(0, 5),
-          endDate: endDate.toISOString().split('T')[0],
-          endTime: endDate.toTimeString().slice(0, 5),
+          startDate: startDateStr,
+          startTime: `${String(startDate.getHours()).padStart(2, '0')}:${String(startDate.getMinutes()).padStart(2, '0')}`,
+          endDate: endDateStr,
+          endTime: `${String(endDate.getHours()).padStart(2, '0')}:${String(endDate.getMinutes()).padStart(2, '0')}`,
           location: event.location || '',
           appointmentStatus: event.status as any || 'new',
           toNotify: false,
@@ -133,6 +141,8 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
         const endTime = new Date(startTime);
         endTime.setHours(startTime.getHours() + 1);
         
+        setIsMultiDay(false);
+        
         setFormData({
           title: '',
           description: '',
@@ -152,6 +162,67 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
       setError(null);
     }
   }, [open, isEditing, event, selectedDate]);
+
+  // Smart date/time change handlers
+  const handleStartDateChange = (newStartDate: string) => {
+    setFormData(prev => {
+      const updates: Partial<FormData> = { startDate: newStartDate };
+      
+      // If not multi-day, update end date to match start date
+      if (!isMultiDay) {
+        updates.endDate = newStartDate;
+      }
+      
+      return { ...prev, ...updates };
+    });
+  };
+
+  const handleStartTimeChange = (newStartTime: string) => {
+    setFormData(prev => {
+      const updates: Partial<FormData> = { startTime: newStartTime };
+      
+      // Check if end time would be before start time (crossing midnight)
+      if (!isMultiDay && prev.endTime < newStartTime) {
+        // Event crosses midnight, update end date to next day
+        const startDate = new Date(prev.startDate + 'T00:00:00');
+        startDate.setDate(startDate.getDate() + 1);
+        updates.endDate = startDate.toISOString().split('T')[0];
+      }
+      
+      return { ...prev, ...updates };
+    });
+  };
+
+  const handleEndTimeChange = (newEndTime: string) => {
+    setFormData(prev => {
+      const updates: Partial<FormData> = { endTime: newEndTime };
+      
+      // Check if end time is before start time (crossing midnight)
+      if (!isMultiDay && newEndTime < prev.startTime) {
+        // Event crosses midnight, update end date to next day
+        const startDate = new Date(prev.startDate + 'T00:00:00');
+        startDate.setDate(startDate.getDate() + 1);
+        updates.endDate = startDate.toISOString().split('T')[0];
+      } else if (!isMultiDay && newEndTime >= prev.startTime) {
+        // End time is after start time on same day
+        updates.endDate = prev.startDate;
+      }
+      
+      return { ...prev, ...updates };
+    });
+  };
+
+  const handleMultiDayToggle = (checked: boolean) => {
+    setIsMultiDay(checked);
+    
+    if (!checked) {
+      // Single day event - sync end date to start date
+      setFormData(prev => ({
+        ...prev,
+        endDate: prev.startDate
+      }));
+    }
+  };
 
   const handleInputChange = (field: keyof FormData, value: string | boolean) => {
     setFormData(prev => ({
@@ -233,8 +304,14 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
       return 'End date and time are required';
     }
     
-    const startDateTime = new Date(`${formData.startDate}T${formData.startTime}`);
-    const endDateTime = new Date(`${formData.endDate}T${formData.endTime}`);
+    // Parse dates in local timezone to avoid UTC conversion issues
+    const [startYear, startMonth, startDay] = formData.startDate.split('-').map(Number);
+    const [startHour, startMinute] = formData.startTime.split(':').map(Number);
+    const startDateTime = new Date(startYear, startMonth - 1, startDay, startHour, startMinute);
+    
+    const [endYear, endMonth, endDay] = formData.endDate.split('-').map(Number);
+    const [endHour, endMinute] = formData.endTime.split(':').map(Number);
+    const endDateTime = new Date(endYear, endMonth - 1, endDay, endHour, endMinute);
     
     if (endDateTime <= startDateTime) {
       return 'End time must be after start time';
@@ -261,8 +338,14 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
     
     try {
       // Combine date and time for ISO strings
-      const startDateTime = new Date(`${formData.startDate}T${formData.startTime}`);
-      const endDateTime = new Date(`${formData.endDate}T${formData.endTime}`);
+      // Parse dates in local timezone to avoid UTC conversion issues
+      const [startYear, startMonth, startDay] = formData.startDate.split('-').map(Number);
+      const [startHour, startMinute] = formData.startTime.split(':').map(Number);
+      const startDateTime = new Date(startYear, startMonth - 1, startDay, startHour, startMinute);
+      
+      const [endYear, endMonth, endDay] = formData.endDate.split('-').map(Number);
+      const [endHour, endMinute] = formData.endTime.split(':').map(Number);
+      const endDateTime = new Date(endYear, endMonth - 1, endDay, endHour, endMinute);
       
       // Prepare custom fields
       const customFields: CustomFields = {
@@ -343,21 +426,24 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
-            {isEditing ? 'Edit Event' : 'Create New Event'}
-          </DialogTitle>
-          <DialogDescription>
-            {isEditing 
-              ? 'Update the details for this calendar event.'
-              : 'Fill in the details to create a new calendar event.'
-            }
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-hidden flex flex-col p-0 gap-0">
+        <div className="px-6 pt-6 pb-2 shadow-sm border-b">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              {isEditing ? 'Edit Event' : 'Create New Event'}
+            </DialogTitle>
+            <DialogDescription>
+              {isEditing 
+                ? 'Update the details for this calendar event.'
+                : 'Fill in the details to create a new calendar event.'
+              }
+            </DialogDescription>
+          </DialogHeader>
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+          <div className="px-6 py-6 overflow-y-auto flex-1 space-y-6">
           {error && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
@@ -404,172 +490,186 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
               disabled
             />
           </div>
+          
+          {/* Page URL */}
+          <div className="space-y-2">
+            <Label htmlFor="pageUrl" className="flex items-center gap-2">
+              <Link className="h-4 w-4" />
+              Event Page URL
+            </Label>
+            <Input
+              id="pageUrl"
+              value={formData.pageUrl}
+              onChange={(e) => handleInputChange('pageUrl', e.target.value)}
+              placeholder="https://example.com/event-details"
+              type="url"
+            />
+          </div>
 
-          {/* Custom Fields Section */}
-          <div className="space-y-4 p-4 border rounded-lg bg-gray-50">
-            <h3 className="text-sm font-medium text-gray-700">Event Resources</h3>
-            
-            {/* Page URL */}
-            <div className="space-y-2">
-              <Label htmlFor="pageUrl" className="flex items-center gap-2">
-                <Link className="h-4 w-4" />
-                Event Page URL
-              </Label>
+          {/* Cover Image */}
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <Image className="h-4 w-4" />
+              Cover Image
+            </Label>
+            <div className="flex flex-col gap-2">
               <Input
-                id="pageUrl"
-                value={formData.pageUrl}
-                onChange={(e) => handleInputChange('pageUrl', e.target.value)}
-                placeholder="https://example.com/event-details"
+                value={formData.coverImageUrl}
+                onChange={(e) => handleInputChange('coverImageUrl', e.target.value)}
+                placeholder="Or paste image URL..."
                 type="url"
               />
-            </div>
-
-            {/* Cover Image */}
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                <Image className="h-4 w-4" />
-                Cover Image
-              </Label>
-              <div className="flex flex-col gap-2">
-                <Input
-                  value={formData.coverImageUrl}
-                  onChange={(e) => handleInputChange('coverImageUrl', e.target.value)}
-                  placeholder="Or paste image URL..."
-                  type="url"
+              <div className="flex items-center gap-2">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleCoverImageUpload(file);
+                  }}
+                  className="hidden"
+                  id="cover-upload"
                 />
-                <div className="flex items-center gap-2">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) handleCoverImageUpload(file);
-                    }}
-                    className="hidden"
-                    id="cover-upload"
-                  />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => document.getElementById('cover-upload')?.click()}
+                  disabled={coverUploading}
+                >
+                  {coverUploading ? 'Uploading...' : 'Upload Image'}
+                </Button>
+                {formData.coverImageUrl && (
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => document.getElementById('cover-upload')?.click()}
-                    disabled={coverUploading}
+                    onClick={() => window.open(formData.coverImageUrl, '_blank')}
                   >
-                    {coverUploading ? 'Uploading...' : 'Upload Image'}
+                    Preview
                   </Button>
-                  {formData.coverImageUrl && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => window.open(formData.coverImageUrl, '_blank')}
-                    >
-                      Preview
-                    </Button>
-                  )}
-                </div>
+                )}
               </div>
             </div>
+          </div>
 
-            {/* Download File */}
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                <Download className="h-4 w-4" />
-                Download File (PDF, Images, etc.)
-              </Label>
-              <div className="flex flex-col gap-2">
-                <Input
-                  value={formData.downloadFileUrl}
-                  onChange={(e) => handleInputChange('downloadFileUrl', e.target.value)}
-                  placeholder="Or paste file URL..."
-                  type="url"
+          {/* Download File */}
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <Download className="h-4 w-4" />
+              Download File (PDF, Images, etc.)
+            </Label>
+            <div className="flex flex-col gap-2">
+              <Input
+                value={formData.downloadFileUrl}
+                onChange={(e) => handleInputChange('downloadFileUrl', e.target.value)}
+                placeholder="Or paste file URL..."
+                type="url"
+              />
+              <div className="flex items-center gap-2">
+                <input
+                  type="file"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleDownloadFileUpload(file);
+                  }}
+                  className="hidden"
+                  id="download-upload"
                 />
-                <div className="flex items-center gap-2">
-                  <input
-                    type="file"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) handleDownloadFileUpload(file);
-                    }}
-                    className="hidden"
-                    id="download-upload"
-                  />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => document.getElementById('download-upload')?.click()}
+                  disabled={downloadUploading}
+                >
+                  {downloadUploading ? 'Uploading...' : 'Upload File'}
+                </Button>
+                {formData.downloadFileUrl && (
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => document.getElementById('download-upload')?.click()}
-                    disabled={downloadUploading}
+                    onClick={() => window.open(formData.downloadFileUrl, '_blank')}
                   >
-                    {downloadUploading ? 'Uploading...' : 'Upload File'}
+                    Preview
                   </Button>
-                  {formData.downloadFileUrl && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => window.open(formData.downloadFileUrl, '_blank')}
-                    >
-                      Preview
-                    </Button>
-                  )}
-                </div>
+                )}
               </div>
             </div>
           </div>
 
           {/* Date and Time */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="startDate" className="flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                Start Date *
-              </Label>
-              <Input
-                id="startDate"
-                type="date"
-                value={formData.startDate}
-                onChange={(e) => handleInputChange('startDate', e.target.value)}
-                required
+          <div className="space-y-4">
+            {/* Multi-day checkbox */}
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="isMultiDay"
+                checked={isMultiDay}
+                onChange={(e) => handleMultiDayToggle(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300"
               />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="startTime" className="flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                Start Time *
+              <Label htmlFor="isMultiDay" className="text-sm font-normal cursor-pointer">
+                Multi-day event
               </Label>
-              <Input
-                id="startTime"
-                type="time"
-                value={formData.startTime}
-                onChange={(e) => handleInputChange('startTime', e.target.value)}
-                required
-              />
             </div>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="endDate">End Date *</Label>
-              <Input
-                id="endDate"
-                type="date"
-                value={formData.endDate}
-                onChange={(e) => handleInputChange('endDate', e.target.value)}
-                required
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="startDate" className="flex items-center gap-2">
+                  Start Date *
+                </Label>
+                <Input
+                  id="startDate"
+                  type="date"
+                  value={formData.startDate}
+                  onChange={(e) => handleStartDateChange(e.target.value)}
+                  required
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="startTime" className="flex items-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  Start Time *
+                </Label>
+                <Input
+                  id="startTime"
+                  type="time"
+                  value={formData.startTime}
+                  onChange={(e) => handleStartTimeChange(e.target.value)}
+                  required
+                />
+              </div>
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="endTime">End Time *</Label>
-              <Input
-                id="endTime"
-                type="time"
-                value={formData.endTime}
-                onChange={(e) => handleInputChange('endTime', e.target.value)}
-                required
-              />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="endDate">
+                  End Date * {!isMultiDay && <span className="text-xs text-muted-foreground">(auto-synced)</span>}
+                </Label>
+                <Input
+                  id="endDate"
+                  type="date"
+                  value={formData.endDate}
+                  onChange={(e) => handleInputChange('endDate', e.target.value)}
+                  disabled={!isMultiDay}
+                  required
+                  className={!isMultiDay ? 'opacity-60 cursor-not-allowed' : ''}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="endTime">End Time *</Label>
+                <Input
+                  id="endTime"
+                  type="time"
+                  value={formData.endTime}
+                  onChange={(e) => handleEndTimeChange(e.target.value)}
+                  required
+                />
+              </div>
             </div>
           </div>
 
@@ -621,9 +721,10 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
               </Label>
             </div>
           )}
+          </div>
 
-          {/* Actions */}
-          <div className="flex gap-3 pt-4">
+          {/* Sticky Footer */}
+          <div className="sticky bottom-0 bg-background border-t px-6 py-4 flex gap-3">
             <Button 
               type="submit" 
               disabled={loading}

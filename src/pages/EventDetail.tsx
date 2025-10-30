@@ -11,7 +11,8 @@ import {
   User,
   ArrowLeft,
   Bookmark,
-  CheckCircle2
+  CheckCircle2,
+  Edit
 } from 'lucide-react';
 import RacTree from '@/assets/rac-christmas-tree.jpg';
 import { CalendarEvent, getEventById, getEventCustomFields } from '@/services/calendar';
@@ -24,10 +25,17 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { formatEventDate, formatEventTime, formatLocation } from '@/lib/eventUtils';
 import { EventCountdown } from '@/components/EventCountdown';
 import { EventRegistrationDialog, RegistrationFormData } from '@/components/EventRegistrationDialog';
+import EventFormDialog from '@/components/EventFormDialog';
+import { useAuthStore } from '@/stores/authStore';
+
+// GoHighLevel Calendar ID - RACC Events
+const GHL_CALENDAR_ID = '9XpDcFHv3SmCUuHeuOOg';
+const GHL_LOCATION_ID = '5FAB1z0AhuVlEdqOzjVX';
 
 const EventDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuthStore();
   
   const [event, setEvent] = useState<CalendarEvent | null>(null);
   const [loading, setLoading] = useState(true);
@@ -41,6 +49,7 @@ const EventDetailPage: React.FC = () => {
   const [isRegistered, setIsRegistered] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [showRegisterDialog, setShowRegisterDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
 
   useEffect(() => {
     const fetchEventDetails = async () => {
@@ -115,6 +124,21 @@ const EventDetailPage: React.FC = () => {
     console.log('Registration submitted:', formData);
     setIsRegistered(true);
     setShowRegisterDialog(false);
+  };
+
+  const handleEventUpdated = async (updatedEvent: CalendarEvent) => {
+    // Update local state with new event data
+    setEvent(updatedEvent);
+    
+    // Refresh custom fields
+    try {
+      const fields = await getEventCustomFields(updatedEvent.id);
+      setCustomFields(fields || {});
+    } catch (err) {
+      console.error('Failed to fetch updated custom fields:', err);
+    }
+    
+    setShowEditDialog(false);
   };
 
   const handleAddToCalendar = () => {
@@ -204,6 +228,17 @@ const EventDetailPage: React.FC = () => {
 
         {/* Quick Actions */}
         <div className="absolute top-4 right-4 flex gap-2">
+          {isAuthenticated && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowEditDialog(true)}
+              className="bg-background/80 backdrop-blur-sm hover:bg-background/90"
+              title="Edit Event"
+            >
+              <Edit className="h-5 w-5" />
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="icon"
@@ -261,7 +296,7 @@ const EventDetailPage: React.FC = () => {
         </div>
         
         {/* Countdown Timer */}
-        <EventCountdown startTime={event.startTime} className="absolute -bottom-4 mx-4" />
+        <EventCountdown startTime={event.startTime} className="absolute -bottom-4" />
       </div>
 
       {/* Main Content */}
@@ -535,6 +570,18 @@ const EventDetailPage: React.FC = () => {
           onOpenChange={setShowRegisterDialog}
           eventTitle={event.title}
           onRegister={handleRegister}
+        />
+      )}
+
+      {/* Edit Event Dialog */}
+      {event && (
+        <EventFormDialog
+          open={showEditDialog}
+          onOpenChange={setShowEditDialog}
+          calendarId={GHL_CALENDAR_ID}
+          locationId={GHL_LOCATION_ID}
+          event={event}
+          onEventUpdated={handleEventUpdated}
         />
       )}
     </div>
