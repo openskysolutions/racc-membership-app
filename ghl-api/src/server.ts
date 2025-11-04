@@ -4,7 +4,7 @@ require('dotenv').config();
 import app from './app';
 import { databaseService } from '@/services/database';
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
 // Initialize database before starting server
 async function startServer() {
@@ -14,9 +14,11 @@ async function startServer() {
     await databaseService.initialize();
     console.log('Database initialized successfully');
 
-    // Start server
-    app.listen(PORT, () => {
-      console.log(`Server running at http://localhost:${PORT}/api`);
+    // Start server - bind to 0.0.0.0 to allow connections from local network
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`Server running at:`);
+      console.log(`  - Local:   http://localhost:${PORT}/api`);
+      console.log(`  - Network: http://192.168.200.0:${PORT}/api`);
       console.log(`Swagger documentation available at http://localhost:${PORT}/api/docs`);
       console.log('Ready to accept registration requests');
       

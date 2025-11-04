@@ -1,8 +1,12 @@
 {
-  "appId": "com.example.dbstudio",
-  "appName": "db-studio",
+  "appId": "com.racc.membership",
+  "appName": "Richfield Area Chamber of Commerce",
   "webDir": "dist",
   "server": {
-    "androidScheme": "https"
+    "androidScheme": "https",
+    "iosScheme": "https"
+  },
+  "ios": {
+    "contentInset": "automatic"
   }
 }
