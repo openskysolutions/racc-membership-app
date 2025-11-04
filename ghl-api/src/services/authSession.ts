@@ -170,7 +170,12 @@ class AuthSessionService {
 
     // Store session in database for persistence
     try {
-      await databaseService.createSession(memberId, sessionId, accessToken, expiresAt);
+      await databaseService.createSession({
+        userId: memberId,
+        sessionId,
+        accessToken,
+        expiresAt
+      });
     } catch (error) {
       console.error('Failed to persist session to database:', error);
       // Continue anyway - session will work from cache until restart

@@ -246,8 +246,6 @@ export async function getUpcomingEvents(calendarId: string): Promise<CalendarEve
  */
 export async function getEventById(eventId: string): Promise<CalendarEvent> {
   try {
-    console.log('Fetching event by ID:', eventId);
-    
     const response = await api.get(`/calendars/appointments/${eventId}`);
     
     if (!response.ok) {
@@ -257,8 +255,6 @@ export async function getEventById(eventId: string): Promise<CalendarEvent> {
     
     const data = await response.json();
     const appointment = data?.appointment || data;
-    
-    console.log('Fetched event:', appointment);
     
     // Transform response to CalendarEvent format
     return {

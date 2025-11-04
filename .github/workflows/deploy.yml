@@ -75,6 +75,7 @@ jobs:
           # Backend environment variables (mix of secrets and vars)
           PORT: ${{ vars.PORT }}
           NODE_ENV: ${{ vars.NODE_ENV }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
           PRIVATE_INTEGRATION_TOKEN: ${{ secrets.PRIVATE_INTEGRATION_TOKEN }}
           LOCATION_ID: ${{ vars.LOCATION_ID }}
           CALENDAR_ID: ${{ vars.CALENDAR_ID }}
@@ -101,6 +102,7 @@ jobs:
           # Set all environment variables for the entire session
           export PORT="$PORT"
           export NODE_ENV="$NODE_ENV"
+          export DATABASE_URL="$DATABASE_URL"
           export PRIVATE_INTEGRATION_TOKEN="$PRIVATE_INTEGRATION_TOKEN"
           export LOCATION_ID="$LOCATION_ID"
           export CALENDAR_ID="$CALENDAR_ID"
@@ -120,6 +122,7 @@ jobs:
           cat > .env << EOF
           PORT=\$PORT
           NODE_ENV=\$NODE_ENV
+          DATABASE_URL=\$DATABASE_URL
           PRIVATE_INTEGRATION_TOKEN=\$PRIVATE_INTEGRATION_TOKEN
           LOCATION_ID=\$LOCATION_ID
           CALENDAR_ID=\$CALENDAR_ID
@@ -137,7 +140,11 @@ jobs:
           npm install
           
           # Build the API with proper path alias resolution
-          npm run build
+          echo "Building backend..."
+          if ! npm run build; then
+            echo "ERROR: Backend build failed"
+            exit 1
+          fi
           
           # Verify the build was successful and imports are resolved
           if [ ! -f "dist/server.js" ]; then
@@ -152,20 +159,63 @@ jobs:
           fi
           
           echo "API build successful - path aliases properly resolved"
-          pm2 describe racc-api > /dev/null
-          if [ \$? -eq 0 ]; then
-            echo "Restarting existing racc-api service"
-            pm2 restart racc-api
+          
+          # Zero-downtime deployment: Start new process on different port, test it, then switch
+          echo "=== Starting zero-downtime deployment for API ==="
+          
+          # Check if racc-api is already running
+          pm2 describe racc-api > /dev/null 2>&1
+          API_RUNNING=\$?
+          
+          if [ \$API_RUNNING -eq 0 ]; then
+            echo "Existing racc-api service detected - performing rolling update"
+            
+            # Start new instance with a temporary name on a test port
+            PORT_TEMP=3099 pm2 start dist/server.js --name racc-api-new --wait-ready --listen-timeout 10000
+            
+            # Wait for new instance to be ready
+            sleep 3
+            
+            # Health check on new instance
+            echo "Running health check on new API instance..."
+            HEALTH_CHECK=\$(curl -f -s http://localhost:3099/health || echo "FAILED")
+            
+            if [[ "\$HEALTH_CHECK" == "FAILED" ]]; then
+              echo "ERROR: New API instance failed health check"
+              pm2 logs racc-api-new --lines 20
+              pm2 delete racc-api-new
+              echo "Keeping existing racc-api service running"
+              exit 1
+            fi
+            
+            echo "New API instance health check passed"
+            
+            # Stop new temporary instance
+            pm2 delete racc-api-new
+            
+            # Now reload the main instance (PM2 will do graceful reload)
+            echo "Reloading main API instance..."
+            pm2 reload racc-api --update-env
+            
           else
-            echo "Starting new racc-api service"
-            pm2 start dist/server.js --name racc-api
+            echo "No existing racc-api service - starting fresh"
+            pm2 start dist/server.js --name racc-api --wait-ready --listen-timeout 10000
           fi
           
           # Verify API is running
-          sleep 2
+          sleep 3
           if ! pm2 describe racc-api | grep -q "online"; then
             echo "ERROR: racc-api failed to start"
-            pm2 logs racc-api --lines 10
+            pm2 logs racc-api --lines 20
+            exit 1
+          fi
+          
+          # Final health check
+          echo "Running final health check on API..."
+          FINAL_HEALTH=\$(curl -f -s http://localhost:3000/health || echo "FAILED")
+          if [[ "\$FINAL_HEALTH" == "FAILED" ]]; then
+            echo "ERROR: API service not responding to health checks"
+            pm2 logs racc-api --lines 20
             exit 1
           fi
           
@@ -207,7 +257,17 @@ jobs:
           echo "Build dependencies verified successfully"
           
           # Build frontend with environment variables
-          VITE_API_BASE_URL="\$VITE_API_BASE_URL" TEMP_GHL_TOKEN="\$TEMP_GHL_TOKEN" npm run build
+          echo "Building frontend..."
+          if ! VITE_API_BASE_URL="\$VITE_API_BASE_URL" TEMP_GHL_TOKEN="\$TEMP_GHL_TOKEN" npm run build; then
+            echo "ERROR: Frontend build failed"
+            exit 1
+          fi
+          
+          # Verify build output exists
+          if [ ! -f "dist/index.html" ]; then
+            echo "ERROR: Frontend build failed - dist/index.html not found"
+            exit 1
+          fi
           
           # Frontend build successful, now set up the serving
           echo "Frontend build successful"
@@ -218,14 +278,52 @@ jobs:
           grep -r "members.richfieldareachamber.com" dist/ | head -3 || echo "No production URL found in build"
           
           # Start or restart frontend service using serve.js from the build directory
-          pm2 describe racc-frontend > /dev/null
-          if [ \$? -eq 0 ]; then
-            echo "Stopping existing racc-frontend service"
-            pm2 delete racc-frontend
-          fi
+          echo "=== Starting zero-downtime deployment for Frontend ==="
           
-          echo "Starting new racc-frontend service with serve.js"
-          pm2 start serve.js --name racc-frontend --cwd /root/racc-membership-app
+          pm2 describe racc-frontend > /dev/null 2>&1
+          FRONTEND_RUNNING=\$?
+          
+          if [ \$FRONTEND_RUNNING -eq 0 ]; then
+            echo "Existing racc-frontend service detected - performing rolling update"
+            
+            # Start new instance on different port for testing
+            PORT=3099 pm2 start serve.js --name racc-frontend-new --cwd /root/racc-membership-app
+            
+            # Wait for service to start
+            sleep 3
+            
+            # Health check on new instance
+            echo "Running health check on new frontend instance..."
+            if ! curl -f -s http://localhost:3099 > /dev/null; then
+              echo "ERROR: New frontend instance failed health check"
+              pm2 logs racc-frontend-new --lines 20
+              pm2 delete racc-frontend-new
+              echo "Keeping existing racc-frontend service running"
+              exit 1
+            fi
+            
+            # Test client-side routing on new instance
+            if ! curl -f -s http://localhost:3099/register > /dev/null; then
+              echo "ERROR: New frontend instance not handling routes properly"
+              pm2 logs racc-frontend-new --lines 20
+              pm2 delete racc-frontend-new
+              echo "Keeping existing racc-frontend service running"
+              exit 1
+            fi
+            
+            echo "New frontend instance health checks passed"
+            
+            # Stop the temporary test instance
+            pm2 delete racc-frontend-new
+            
+            # Now reload the main instance
+            echo "Reloading main frontend instance..."
+            pm2 reload racc-frontend
+            
+          else
+            echo "No existing racc-frontend service - starting fresh"
+            pm2 start serve.js --name racc-frontend --cwd /root/racc-membership-app
+          fi
           
           # Verify frontend service is running
           sleep 3

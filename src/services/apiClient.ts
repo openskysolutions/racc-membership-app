@@ -6,11 +6,12 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
 
 /**
- * Get authentication token from localStorage (OAuth 2.0 PKCE)
+ * Get authentication token from localStorage or sessionStorage (OAuth 2.0 PKCE)
+ * Checks localStorage first (remember me), then sessionStorage (session only)
  */
 function getAuthToken(): string | null {
   try {
-    return localStorage.getItem('token');
+    return localStorage.getItem('token') || sessionStorage.getItem('token');
   } catch (error) {
     console.warn('Failed to retrieve auth token:', error);
   }

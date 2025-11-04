@@ -1,30 +1,28 @@
 /**
- * Database service for SQLite user management
+ * Database service using Prisma ORM for PostgreSQL
  * Handles user registration, authentication, and session management
+ * Production-ready with type safety and excellent developer experience
  */
 
-import sqlite3 from 'sqlite3';
-import { Database, open } from 'sqlite';
+import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
-import path from 'path';
+
+// Initialize Prisma Client
+const prisma = new PrismaClient({
+  log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+});
 
 interface User {
   id?: number;
-  firstName?: string;
-  lastName?: string;
   email: string;
   passwordHash: string;
-  businessName?: string;
-  phone?: string;
-  website?: string;
   role: string;
   status: string;
   emailVerified: boolean;
-  ghlContactId?: string;
-  paymentStatus?: string;
-  membershipTier?: string;
-  createdAt?: string;
-  updatedAt?: string;
+  ghlContactId?: string | null;
+  lastLoginAt?: Date | string | null;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
 }
 
 interface Session {
@@ -32,240 +30,193 @@ interface Session {
   userId: number;
   sessionId: string;
   accessToken: string;
-  expiresAt: string;
-  createdAt?: string;
+  expiresAt: Date | string;
+  createdAt?: Date | string;
 }
 
 class DatabaseService {
-  private db: Database | null = null;
-
   /**
-   * Initialize database connection and create tables
+   * Initialize database connection (Prisma connects automatically)
    */
   async initialize(): Promise<void> {
     try {
-      const dbPath = path.join(__dirname, '../../data/membership.db');
-      
-      this.db = await open({
-        filename: dbPath,
-        driver: sqlite3.Database
-      });
-
-      // Create users table
-      await this.db.exec(`
-        CREATE TABLE IF NOT EXISTS users (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          firstName TEXT,
-          lastName TEXT,
-          email TEXT UNIQUE NOT NULL,
-          passwordHash TEXT NOT NULL,
-          businessName TEXT,
-          phone TEXT,
-          website TEXT,
-          role TEXT DEFAULT 'member',
-          status TEXT DEFAULT 'pending',
-          emailVerified BOOLEAN DEFAULT FALSE,
-          ghlContactId TEXT,
-          paymentStatus TEXT DEFAULT 'pending',
-          membershipTier TEXT DEFAULT 'standard',
-          createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-          updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-      `);
-
-      // Create sessions table
-      await this.db.exec(`
-        CREATE TABLE IF NOT EXISTS sessions (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          userId INTEGER NOT NULL,
-          sessionId TEXT UNIQUE NOT NULL,
-          accessToken TEXT NOT NULL,
-          expiresAt DATETIME NOT NULL,
-          createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-          FOREIGN KEY (userId) REFERENCES users (id) ON DELETE CASCADE
-        )
-      `);
-
-      // Create appointment_custom_fields table
-      await this.db.exec(`
-        CREATE TABLE IF NOT EXISTS appointment_custom_fields (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          appointmentId TEXT UNIQUE NOT NULL,
-          pageUrl TEXT,
-          coverImageUrl TEXT,
-          downloadFileUrl TEXT,
-          internalNote TEXT,
-          createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-          updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-      `);
-
-      // Create indexes for better performance
-      await this.db.exec(`
-        CREATE INDEX IF NOT EXISTS idx_users_email ON users (email);
-        CREATE INDEX IF NOT EXISTS idx_users_ghlContactId ON users (ghlContactId);
-        CREATE INDEX IF NOT EXISTS idx_sessions_sessionId ON sessions (sessionId);
-        CREATE INDEX IF NOT EXISTS idx_sessions_userId ON sessions (userId);
-        CREATE INDEX IF NOT EXISTS idx_appointment_custom_fields_appointmentId ON appointment_custom_fields (appointmentId);
-      `);
-
-      // Migration: Make firstName and lastName nullable for existing databases
-      try {
-        // Check if we need to migrate (if firstName/lastName are NOT NULL)
-        const tableInfo = await this.db.all("PRAGMA table_info(users)");
-        const firstNameCol = tableInfo.find((col: any) => col.name === 'firstName');
-        const lastNameCol = tableInfo.find((col: any) => col.name === 'lastName');
-        
-        if (firstNameCol?.notnull === 1 || lastNameCol?.notnull === 1) {
-          console.log('🔄 Migrating database: Making firstName and lastName nullable...');
-          
-          // SQLite doesn't support ALTER COLUMN, so we need to recreate the table
-          await this.db.exec(`
-            BEGIN TRANSACTION;
-            
-            -- Create new table with updated schema
-            CREATE TABLE users_new (
-              id INTEGER PRIMARY KEY AUTOINCREMENT,
-              firstName TEXT,
-              lastName TEXT,
-              email TEXT UNIQUE NOT NULL,
-              passwordHash TEXT NOT NULL,
-              businessName TEXT,
-              phone TEXT,
-              website TEXT,
-              role TEXT DEFAULT 'member',
-              status TEXT DEFAULT 'pending',
-              emailVerified BOOLEAN DEFAULT FALSE,
-              ghlContactId TEXT,
-              paymentStatus TEXT DEFAULT 'pending',
-              membershipTier TEXT DEFAULT 'standard',
-              createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-              updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
-            );
-            
-            -- Copy data from old table
-            INSERT INTO users_new SELECT * FROM users;
-            
-            -- Drop old table
-            DROP TABLE users;
-            
-            -- Rename new table
-            ALTER TABLE users_new RENAME TO users;
-            
-            -- Recreate indexes
-            CREATE INDEX idx_users_email ON users (email);
-            CREATE INDEX idx_users_ghlContactId ON users (ghlContactId);
-            
-            COMMIT;
-          `);
-          
-          console.log('✅ Migration completed: firstName and lastName are now nullable');
-        }
-      } catch (migrationError) {
-        console.error('⚠️ Migration warning (non-fatal):', migrationError);
-        // Don't throw - migration failure shouldn't prevent app from starting
-      }
-
-      console.log('Database initialized successfully');
+      // Test connection
+      await prisma.$connect();
+      console.log('✅ PostgreSQL connected successfully (Prisma ORM)');
     } catch (error) {
-      console.error('Database initialization failed:', error);
+      console.error('❌ Database connection error:', error);
       throw error;
     }
   }
 
   /**
-   * Create a new user with hashed password
+   * Create a new user (authentication only - profile data comes from GHL)
    */
-  async createUser(userData: Omit<User, 'id' | 'createdAt' | 'updatedAt'>): Promise<User> {
-    if (!this.db) throw new Error('Database not initialized');
+  async createUser(user: Omit<User, 'id' | 'createdAt' | 'updatedAt'>): Promise<User> {
+    // Hash password before storing
+    const passwordHash = await bcrypt.hash(user.passwordHash, 12);
 
-    try {
-      // Hash password
-      const saltRounds = 12;
-      const passwordHash = await bcrypt.hash(userData.passwordHash, saltRounds);
-
-      const result = await this.db.run(`
-        INSERT INTO users (
-          firstName, lastName, email, passwordHash, businessName, 
-          phone, website, role, status, emailVerified, ghlContactId,
-          paymentStatus, membershipTier
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `, [
-        userData.firstName,
-        userData.lastName,
-        userData.email,
+    const newUser = await prisma.user.create({
+      data: {
+        email: user.email,
         passwordHash,
-        userData.businessName || null,
-        userData.phone || null,
-        userData.website || null,
-        userData.role,
-        userData.status,
-        userData.emailVerified,
-        userData.ghlContactId || null,
-        userData.paymentStatus || 'pending',
-        userData.membershipTier || 'standard'
-      ]);
+        role: user.role,
+        status: user.status,
+        emailVerified: user.emailVerified,
+        ghlContactId: user.ghlContactId || null,
+      },
+    });
 
-      if (result.lastID) {
-        return await this.getUserById(result.lastID);
-      }
-      throw new Error('Failed to create user');
-    } catch (error: any) {
-      if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
-        throw new Error('User with this email already exists');
-      }
-      throw error;
-    }
+    return this.mapUser(newUser);
   }
 
   /**
-   * Get user by ID
+   * Find user by email
+   */
+  async findUserByEmail(email: string): Promise<User | null> {
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    return user ? this.mapUser(user) : null;
+  }
+
+  /**
+   * Find user by ID
+   */
+  async findUserById(id: number): Promise<User | null> {
+    const user = await prisma.user.findUnique({
+      where: { id },
+    });
+
+    return user ? this.mapUser(user) : null;
+  }
+
+  /**
+   * Find user by GHL Contact ID
+   */
+  async findUserByGhlContactId(ghlContactId: string): Promise<User | null> {
+    const user = await prisma.user.findUnique({
+      where: { ghlContactId },
+    });
+
+    return user ? this.mapUser(user) : null;
+  }
+
+  /**
+   * Update user (authentication fields only)
+   */
+  async updateUser(id: number, updates: Partial<User>): Promise<User> {
+    // Filter allowed fields
+    const allowedFields = ['email', 'passwordHash', 'role', 'status', 'emailVerified', 'ghlContactId', 'lastLoginAt'];
+    const data: any = {};
+
+    Object.entries(updates).forEach(([key, value]) => {
+      if (allowedFields.includes(key) && value !== undefined) {
+        // Hash password if it's being updated
+        if (key === 'passwordHash' && typeof value === 'string') {
+          // We'll handle this separately
+          data[key] = value;
+        } else {
+          data[key] = value;
+        }
+      }
+    });
+
+    // Hash password if it's being updated
+    if (data.passwordHash) {
+      data.passwordHash = await bcrypt.hash(data.passwordHash, 12);
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id },
+      data,
+    });
+
+    return this.mapUser(updatedUser);
+  }
+
+  /**
+   * Update user status (helper method for auth flows)
+   */
+  async updateUserStatus(userId: number, status: string): Promise<void> {
+    await prisma.user.update({
+      where: { id: userId },
+      data: { status },
+    });
+  }
+
+  /**
+   * Update user GHL contact ID (helper method)
+   */
+  async updateUserGhlContactId(userId: number, ghlContactId: string): Promise<void> {
+    await prisma.user.update({
+      where: { id: userId },
+      data: { ghlContactId },
+    });
+  }
+
+  /**
+   * Get user by ID (alias for findUserById to match SQLite API)
    */
   async getUserById(id: number): Promise<User> {
-    if (!this.db) throw new Error('Database not initialized');
-
-    const user = await this.db.get(`
-      SELECT * FROM users WHERE id = ?
-    `, [id]);
-
-    if (!user) {
-      throw new Error('User not found');
-    }
-
+    const user = await this.findUserById(id);
+    if (!user) throw new Error('User not found');
     return user;
   }
 
   /**
-   * Get user by email
+   * Get user by email (alias for findUserByEmail to match SQLite API)
    */
   async getUserByEmail(email: string): Promise<User | null> {
-    if (!this.db) throw new Error('Database not initialized');
-
-    const user = await this.db.get(`
-      SELECT * FROM users WHERE email = ?
-    `, [email]);
-
-    return user || null;
+    return this.findUserByEmail(email);
   }
 
   /**
-   * Get user by GoHighLevel contact ID
+   * Get user by GHL contact ID (alias for findUserByGhlContactId to match SQLite API)
    */
   async getUserByGhlContactId(ghlContactId: string): Promise<User | null> {
-    if (!this.db) throw new Error('Database not initialized');
-
-    const user = await this.db.get(`
-      SELECT * FROM users WHERE ghlContactId = ?
-    `, [ghlContactId]);
-
-    return user || null;
+    return this.findUserByGhlContactId(ghlContactId);
   }
 
   /**
-   * Verify user password
+   * Get all users with optional limit (for admin)
+   */
+  /**
+   * Get all users with optional pagination
+   */
+  async getAllUsers(limit?: number, offset?: number): Promise<User[]> {
+    const users = await prisma.user.findMany({
+      take: limit,
+      skip: offset,
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return users.map(user => this.mapUser(user));
+  }
+
+  /**
+   * Delete user
+   */
+  async deleteUser(id: number): Promise<void> {
+    await prisma.user.delete({
+      where: { id },
+    });
+  }
+
+  /**
+   * Update payment status (deprecated - membership status is managed in GHL)
+   * Kept for backward compatibility but doesn't store paymentStatus anymore
+   */
+  async updateUserPaymentStatus(userId: number, paymentStatus: string, membershipTier?: string): Promise<void> {
+    console.log(`[DEPRECATED] updateUserPaymentStatus called for user ${userId}. Payment status is now managed in GoHighLevel.`);
+  }
+
+  /**
+   * Verify password
    */
   async verifyPassword(email: string, password: string): Promise<User | null> {
-    const user = await this.getUserByEmail(email);
+    const user = await this.findUserByEmail(email);
     if (!user) return null;
 
     const isValid = await bcrypt.compare(password, user.passwordHash);
@@ -273,313 +224,129 @@ class DatabaseService {
   }
 
   /**
-   * Update user's GoHighLevel contact ID
+   * Hash password
    */
-  async updateUserGhlContactId(userId: number, ghlContactId: string): Promise<void> {
-    if (!this.db) throw new Error('Database not initialized');
-
-    await this.db.run(`
-      UPDATE users 
-      SET ghlContactId = ?, updatedAt = CURRENT_TIMESTAMP 
-      WHERE id = ?
-    `, [ghlContactId, userId]);
+  async hashPassword(password: string): Promise<string> {
+    return bcrypt.hash(password, 12);
   }
 
   /**
-   * Update user's payment status
+   * Create session
    */
-  async updateUserPaymentStatus(userId: number, paymentStatus: string, membershipTier?: string): Promise<void> {
-    if (!this.db) throw new Error('Database not initialized');
+  async createSession(session: Omit<Session, 'id' | 'createdAt'>): Promise<Session> {
+    const newSession = await prisma.session.create({
+      data: {
+        userId: session.userId,
+        sessionId: session.sessionId,
+        accessToken: session.accessToken,
+        expiresAt: new Date(session.expiresAt),
+      },
+    });
 
-    const updates = [paymentStatus];
-    let query = `
-      UPDATE users 
-      SET paymentStatus = ?, updatedAt = CURRENT_TIMESTAMP
-    `;
-
-    if (membershipTier) {
-      query += `, membershipTier = ?`;
-      updates.push(membershipTier);
-    }
-
-    query += ` WHERE id = ?`;
-    updates.push(userId.toString());
-
-    await this.db.run(query, updates);
+    return this.mapSession(newSession);
   }
 
   /**
-   * Update user status (active/pending/suspended)
+   * Find session by session ID
    */
-  async updateUserStatus(userId: number, status: string): Promise<void> {
-    if (!this.db) throw new Error('Database not initialized');
+  async findSessionBySessionId(sessionId: string): Promise<Session | null> {
+    const session = await prisma.session.findUnique({
+      where: { sessionId },
+    });
 
-    await this.db.run(`
-      UPDATE users 
-      SET status = ?, updatedAt = CURRENT_TIMESTAMP 
-      WHERE id = ?
-    `, [status, userId]);
+    return session ? this.mapSession(session) : null;
   }
 
   /**
-   * Create a new session
-   */
-  async createSession(userId: number, sessionId: string, accessToken: string, expiresAt: string): Promise<Session> {
-    if (!this.db) throw new Error('Database not initialized');
-
-    const result = await this.db.run(`
-      INSERT INTO sessions (userId, sessionId, accessToken, expiresAt)
-      VALUES (?, ?, ?, ?)
-    `, [userId, sessionId, accessToken, expiresAt]);
-
-    if (result.lastID) {
-      return await this.getSessionById(result.lastID);
-    }
-    throw new Error('Failed to create session');
-  }
-
-  /**
-   * Get session by session ID
-   */
-  async getSessionBySessionId(sessionId: string): Promise<Session | null> {
-    if (!this.db) throw new Error('Database not initialized');
-
-    const session = await this.db.get(`
-      SELECT * FROM sessions WHERE sessionId = ? AND expiresAt > datetime('now')
-    `, [sessionId]);
-
-    return session || null;
-  }
-
-  /**
-   * Get session by access token
+   * Find session by access token (backward compatibility)
    */
   async getSessionByToken(accessToken: string): Promise<Session | null> {
-    if (!this.db) throw new Error('Database not initialized');
+    const session = await prisma.session.findFirst({
+      where: { accessToken },
+    });
 
-    const session = await this.db.get(`
-      SELECT * FROM sessions WHERE accessToken = ? AND expiresAt > datetime('now')
-    `, [accessToken]);
-
-    return session || null;
+    return session ? this.mapSession(session) : null;
   }
 
   /**
-   * Get session by ID
+   * Alias for findSessionBySessionId (backward compatibility)
    */
-  async getSessionById(id: number): Promise<Session> {
-    if (!this.db) throw new Error('Database not initialized');
-
-    const session = await this.db.get(`
-      SELECT * FROM sessions WHERE id = ?
-    `, [id]);
-
-    if (!session) {
-      throw new Error('Session not found');
-    }
-
-    return session;
+  async getSessionBySessionId(sessionId: string): Promise<Session | null> {
+    return this.findSessionBySessionId(sessionId);
   }
 
   /**
-   * Delete session (logout)
+   * Delete session
    */
   async deleteSession(sessionId: string): Promise<void> {
-    if (!this.db) throw new Error('Database not initialized');
-
-    await this.db.run(`
-      DELETE FROM sessions WHERE sessionId = ?
-    `, [sessionId]);
+    await prisma.session.delete({
+      where: { sessionId },
+    });
   }
 
   /**
-   * Clean up expired sessions
+   * Delete expired sessions
+   */
+  async deleteExpiredSessions(): Promise<void> {
+    await prisma.session.deleteMany({
+      where: {
+        expiresAt: {
+          lt: new Date(),
+        },
+      },
+    });
+  }
+
+  /**
+   * Cleanup expired sessions (alias for deleteExpiredSessions - backward compatibility)
    */
   async cleanupExpiredSessions(): Promise<void> {
-    if (!this.db) throw new Error('Database not initialized');
-
-    await this.db.run(`
-      DELETE FROM sessions WHERE expiresAt <= datetime('now')
-    `);
+    return this.deleteExpiredSessions();
   }
 
   /**
-   * Update user information (admin only)
+   * Map Prisma user to User interface
    */
-  async updateUser(userId: number, updates: Partial<User>): Promise<void> {
-    if (!this.db) throw new Error('Database not initialized');
-
-    const allowedFields = [
-      'firstName', 'lastName', 'email', 'businessName', 'phone', 'website',
-      'role', 'status', 'membershipTier', 'paymentStatus', 'emailVerified'
-    ];
-
-    const updateFields: string[] = [];
-    const updateValues: any[] = [];
-
-    // Build dynamic update query
-    for (const [key, value] of Object.entries(updates)) {
-      if (allowedFields.includes(key) && value !== undefined) {
-        updateFields.push(`${key} = ?`);
-        updateValues.push(value);
-      }
-    }
-
-    if (updateFields.length === 0) {
-      throw new Error('No valid fields to update');
-    }
-
-    updateFields.push('updatedAt = CURRENT_TIMESTAMP');
-    updateValues.push(userId);
-
-    const query = `
-      UPDATE users 
-      SET ${updateFields.join(', ')}
-      WHERE id = ?
-    `;
-
-    await this.db.run(query, updateValues);
-  }
-
-  /**
-   * Delete user account (admin only)
-   */
-  async deleteUser(userId: number): Promise<void> {
-    if (!this.db) throw new Error('Database not initialized');
-
-    // Delete user sessions first (cascade should handle this, but let's be explicit)
-    await this.db.run('DELETE FROM sessions WHERE userId = ?', [userId]);
-    
-    // Delete the user
-    const result = await this.db.run('DELETE FROM users WHERE id = ?', [userId]);
-    
-    if (result.changes === 0) {
-      throw new Error('User not found or already deleted');
-    }
-  }
-
-  /**
-   * Get all users (for admin purposes)
-   */
-  async getAllUsers(limit = 100, offset = 0): Promise<User[]> {
-    if (!this.db) throw new Error('Database not initialized');
-
-    const users = await this.db.all(`
-      SELECT * FROM users 
-      ORDER BY createdAt DESC 
-      LIMIT ? OFFSET ?
-    `, [limit, offset]);
-
-    return users;
-  }
-
-  /**
-   * Save or update custom fields for an appointment
-   */
-  async upsertAppointmentCustomFields(
-    appointmentId: string,
-    customFields: {
-      pageUrl?: string;
-      coverImageUrl?: string;
-      downloadFileUrl?: string;
-      internalNote?: string;
-    }
-  ): Promise<void> {
-    if (!this.db) throw new Error('Database not initialized');
-
-    const { pageUrl, coverImageUrl, downloadFileUrl, internalNote } = customFields;
-
-    await this.db.run(`
-      INSERT INTO appointment_custom_fields (
-        appointmentId, pageUrl, coverImageUrl, downloadFileUrl, internalNote, updatedAt
-      ) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-      ON CONFLICT(appointmentId) DO UPDATE SET
-        pageUrl = excluded.pageUrl,
-        coverImageUrl = excluded.coverImageUrl,
-        downloadFileUrl = excluded.downloadFileUrl,
-        internalNote = excluded.internalNote,
-        updatedAt = CURRENT_TIMESTAMP
-    `, [appointmentId, pageUrl || null, coverImageUrl || null, downloadFileUrl || null, internalNote || null]);
-  }
-
-  /**
-   * Get custom fields for an appointment
-   */
-  async getAppointmentCustomFields(appointmentId: string): Promise<{
-    pageUrl: string;
-    coverImageUrl: string;
-    downloadFileUrl: string;
-    internalNote: string;
-  } | null> {
-    if (!this.db) throw new Error('Database not initialized');
-
-    const result = await this.db.get(
-      'SELECT pageUrl, coverImageUrl, downloadFileUrl, internalNote FROM appointment_custom_fields WHERE appointmentId = ?',
-      [appointmentId]
-    );
-
-    if (!result) return null;
-
+  private mapUser(user: any): User {
     return {
-      pageUrl: result.pageUrl || '',
-      coverImageUrl: result.coverImageUrl || '',
-      downloadFileUrl: result.downloadFileUrl || '',
-      internalNote: result.internalNote || ''
+      id: user.id,
+      email: user.email,
+      passwordHash: user.passwordHash,
+      role: user.role,
+      status: user.status,
+      emailVerified: user.emailVerified,
+      ghlContactId: user.ghlContactId,
+      lastLoginAt: user.lastLoginAt?.toISOString() || null,
+      createdAt: user.createdAt?.toISOString(),
+      updatedAt: user.updatedAt?.toISOString(),
     };
   }
 
   /**
-   * Get custom fields for multiple appointments (batch operation)
+   * Map Prisma session to Session interface
    */
-  async getAppointmentCustomFieldsBatch(appointmentIds: string[]): Promise<Map<string, {
-    pageUrl: string;
-    coverImageUrl: string;
-    downloadFileUrl: string;
-    internalNote: string;
-  }>> {
-    if (!this.db) throw new Error('Database not initialized');
-    if (appointmentIds.length === 0) return new Map();
-
-    const placeholders = appointmentIds.map(() => '?').join(',');
-    const results = await this.db.all(
-      `SELECT appointmentId, pageUrl, coverImageUrl, downloadFileUrl, internalNote 
-       FROM appointment_custom_fields 
-       WHERE appointmentId IN (${placeholders})`,
-      appointmentIds
-    );
-
-    const customFieldsMap = new Map();
-    for (const result of results) {
-      customFieldsMap.set(result.appointmentId, {
-        pageUrl: result.pageUrl || '',
-        coverImageUrl: result.coverImageUrl || '',
-        downloadFileUrl: result.downloadFileUrl || '',
-        internalNote: result.internalNote || ''
-      });
-    }
-
-    return customFieldsMap;
-  }
-
-  /**
-   * Delete custom fields for an appointment
-   */
-  async deleteAppointmentCustomFields(appointmentId: string): Promise<void> {
-    if (!this.db) throw new Error('Database not initialized');
-
-    await this.db.run('DELETE FROM appointment_custom_fields WHERE appointmentId = ?', [appointmentId]);
+  private mapSession(session: any): Session {
+    return {
+      id: session.id,
+      userId: session.userId,
+      sessionId: session.sessionId,
+      accessToken: session.accessToken,
+      expiresAt: session.expiresAt.toISOString(),
+      createdAt: session.createdAt?.toISOString(),
+    };
   }
 
   /**
    * Close database connection
    */
   async close(): Promise<void> {
-    if (this.db) {
-      await this.db.close();
-      this.db = null;
-    }
+    await prisma.$disconnect();
+    console.log('Database connection closed');
   }
 }
 
 // Export singleton instance
 export const databaseService = new DatabaseService();
+
+// Export Prisma client for advanced queries if needed
+export { prisma };

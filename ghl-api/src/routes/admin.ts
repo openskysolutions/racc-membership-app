@@ -6,6 +6,7 @@
 import express from 'express';
 import { requireAuth, requireAdmin } from '@/middleware/auth';
 import { databaseService } from '@/services/database';
+import { enrichUsersWithGhlData, enrichUserWithGhlData } from '@/services/userEnrichment';
 
 const router = express.Router();
 
@@ -87,10 +88,14 @@ router.get('/users', requireAuth, requireAdmin, async (req, res) => {
       status = '' 
     } = req.query;
 
-    const users = await databaseService.getAllUsers(
+    // Get users from database (auth fields only)
+    const dbUsers = await databaseService.getAllUsers(
       parseInt(limit as string), 
       parseInt(offset as string)
     );
+
+    // Enrich users with profile data from GoHighLevel
+    const users = await enrichUsersWithGhlData(dbUsers);
 
     // Filter users based on search criteria
     let filteredUsers = users;
@@ -98,8 +103,8 @@ router.get('/users', requireAuth, requireAdmin, async (req, res) => {
     if (search) {
       const searchTerm = (search as string).toLowerCase();
       filteredUsers = filteredUsers.filter(user => 
-        user.firstName.toLowerCase().includes(searchTerm) ||
-        user.lastName.toLowerCase().includes(searchTerm) ||
+        (user.firstName && user.firstName.toLowerCase().includes(searchTerm)) ||
+        (user.lastName && user.lastName.toLowerCase().includes(searchTerm)) ||
         user.email.toLowerCase().includes(searchTerm) ||
         (user.businessName && user.businessName.toLowerCase().includes(searchTerm))
       );
@@ -113,11 +118,8 @@ router.get('/users', requireAuth, requireAdmin, async (req, res) => {
       filteredUsers = filteredUsers.filter(user => user.status === status);
     }
 
-    // Remove password hashes from response
-    const safeUsers = filteredUsers.map(user => {
-      const { passwordHash, ...safeUser } = user;
-      return safeUser;
-    });
+    // EnrichedUser type already excludes passwordHash, so users are safe to return
+    const safeUsers = filteredUsers;
 
     // Get total count for pagination
     const total = safeUsers.length;
@@ -383,12 +385,15 @@ router.delete('/users/:id', requireAuth, requireAdmin, async (req, res) => {
     const userId = parseInt(req.params.id);
 
     // Validate user exists
-    const existingUser = await databaseService.getUserById(userId);
-    if (!existingUser) {
+    const dbUser = await databaseService.getUserById(userId);
+    if (!dbUser) {
       return res.status(404).json({
         error: 'User not found'
       });
     }
+
+    // Enrich for display name
+    const existingUser = await enrichUserWithGhlData(dbUser);
 
     // Prevent admin from deleting themselves
     if (userId === parseInt(req.user.id)) {
@@ -409,7 +414,7 @@ router.delete('/users/:id', requireAuth, requireAdmin, async (req, res) => {
       deletedUser: {
         id: userId,
         email: existingUser.email,
-        name: `${existingUser.firstName} ${existingUser.lastName}`
+        name: `${existingUser.firstName || ''} ${existingUser.lastName || ''}`.trim() || existingUser.email
       }
     });
 
@@ -475,8 +480,11 @@ router.delete('/users/:id', requireAuth, requireAdmin, async (req, res) => {
  */
 router.get('/stats', requireAuth, requireAdmin, async (req, res) => {
   try {
-    // Get all users for statistics
-    const users = await databaseService.getAllUsers(1000, 0); // Get all users
+    // Get all users from database (auth fields only)
+    const dbUsers = await databaseService.getAllUsers(1000, 0); // Get all users
+    
+    // Enrich users with profile data from GoHighLevel for membership tier stats
+    const users = await enrichUsersWithGhlData(dbUsers);
 
     const stats = {
       users: {

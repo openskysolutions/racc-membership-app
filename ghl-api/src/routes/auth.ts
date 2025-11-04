@@ -6,6 +6,7 @@ import { authSessionService } from '@/services/authSession';
 import { databaseService } from '@/services/database';
 import { ghlService } from '@/services/gohighlevel';
 import { emailService } from '@/services/emailService';
+import { enrichUserWithGhlData } from '@/services/userEnrichment';
 
 const router = express.Router();
 
@@ -60,8 +61,8 @@ router.post('/authorize', async (req, res) => {
     }
 
     // Authenticate user - first check database, then verify active status in GoHighLevel
-    const user = await databaseService.verifyPassword(email, password);
-    if (!user) {
+    const dbUser = await databaseService.verifyPassword(email, password);
+    if (!dbUser) {
       return res.status(401).json({
         error: 'invalid_grant',
         error_description: 'Invalid email or password'
@@ -84,10 +85,10 @@ router.post('/authorize', async (req, res) => {
     const userRole = await ghlService.getUserRole(email);
     
     // Update local database role if it differs from HighLevel tags
-    if (user.role !== userRole) {
+    if (dbUser.role !== userRole) {
       try {
-        await databaseService.updateUser(user.id!, { role: userRole });
-        user.role = userRole; // Update the user object for the response
+        await databaseService.updateUser(dbUser.id!, { role: userRole });
+        dbUser.role = userRole; // Update the user object for the response
       } catch (updateError) {
         console.error('Failed to update user role in database:', updateError);
         // Continue with auth even if database update fails
@@ -95,21 +96,24 @@ router.post('/authorize', async (req, res) => {
     }
 
     // Update local database status to match GoHighLevel if needed
-    if (user.status !== 'active') {
+    if (dbUser.status !== 'active') {
       try {
-        await databaseService.updateUserStatus(user.id!, 'active');
+        await databaseService.updateUserStatus(dbUser.id!, 'active');
       } catch (updateError) {
         console.error('Failed to update user status in database:', updateError);
         // Continue with auth even if database update fails
       }
     }
 
+    // Enrich user with profile data from GoHighLevel
+    const user = await enrichUserWithGhlData(dbUser);
+
     // Generate authorization code
     const authCode = crypto.randomBytes(32).toString('base64url');
     
     // Store authorization code with PKCE data
     authorizationCodes.set(authCode, {
-      userId: user.id!,
+      userId: dbUser.id!,
       codeChallenge,
       codeChallengeMethod,
       redirectUri,
@@ -202,14 +206,17 @@ router.post('/token', async (req, res) => {
     // Code is valid, remove it (one-time use)
     authorizationCodes.delete(code);
 
-    // Get user data
-    const user = await databaseService.getUserById(authData.userId);
-    if (!user) {
+    // Get user data from database (auth fields only)
+    const dbUser = await databaseService.getUserById(authData.userId);
+    if (!dbUser) {
       return res.status(400).json({
         error: 'invalid_grant',
         error_description: 'User not found'
       });
     }
+
+    // Enrich with profile data from GoHighLevel
+    const user = await enrichUserWithGhlData(dbUser);
 
     // Determine expiration time based on remember preference
     // Remember me: 30 days, otherwise: 1 hour
@@ -260,8 +267,8 @@ router.post('/session', async (req, res) => {
     // If no code but has email/password/codeChallenge, do the full flow
     if (!code && email && password && codeChallenge && verifier) {
       // Step 1: Authenticate and get authorization code
-      const user = await databaseService.verifyPassword(email, password);
-      if (!user) {
+      const dbUser = await databaseService.verifyPassword(email, password);
+      if (!dbUser) {
         return res.status(401).json({
           error: 'invalid_grant',
           error_description: 'Invalid email or password'
@@ -281,9 +288,9 @@ router.post('/session', async (req, res) => {
       }
 
       // Update local database status to match GoHighLevel if needed
-      if (user.status !== 'active') {
+      if (dbUser.status !== 'active') {
         try {
-          await databaseService.updateUserStatus(user.id!, 'active');
+          await databaseService.updateUserStatus(dbUser.id!, 'active');
         } catch (updateError) {
           console.error('Failed to update user status in database:', updateError);
           // Continue with auth even if database update fails
@@ -306,9 +313,12 @@ router.post('/session', async (req, res) => {
       // Determine expiration time based on remember preference
       const expiresIn = remember ? (30 * 24 * 3600) : 3600;
 
+      // Enrich user with profile data from GoHighLevel
+      const user = await enrichUserWithGhlData(dbUser);
+
       // Create session directly (skip authorization code step)
-      const accessToken = authSessionService.generateAccessToken(user.id);
-      const session = await authSessionService.createSession(user.id!, accessToken, expiresIn);
+      const accessToken = authSessionService.generateAccessToken(dbUser.id);
+      const session = await authSessionService.createSession(dbUser.id!, accessToken, expiresIn);
       
       return res.json({
         success: true,
@@ -374,21 +384,24 @@ router.post('/session', async (req, res) => {
     // Code is valid, remove it (one-time use)
     authorizationCodes.delete(code);
 
-    // Get user data
-    const user = await databaseService.getUserById(authData.userId);
-    if (!user) {
+    // Get user data from database (auth fields only)
+    const dbUser = await databaseService.getUserById(authData.userId);
+    if (!dbUser) {
       return res.status(400).json({
         error: 'invalid_grant',
         error_description: 'User not found'
       });
     }
 
+    // Enrich user with profile data from GoHighLevel
+    const user = await enrichUserWithGhlData(dbUser);
+
     // Determine expiration time based on remember preference from authData
     const expiresIn = authData.remember ? (30 * 24 * 3600) : 3600;
 
     // Create session and generate tokens
-    const accessToken = authSessionService.generateAccessToken(user.id);
-    const session = await authSessionService.createSession(user.id!, accessToken, expiresIn);
+    const accessToken = authSessionService.generateAccessToken(dbUser.id);
+    const session = await authSessionService.createSession(dbUser.id!, accessToken, expiresIn);
     
     res.json({
       success: true,
@@ -455,13 +468,16 @@ router.post('/check-session', async (req, res) => {
     }
 
     // Session is valid, return user info
-    const user = await databaseService.getUserById(session.memberId);
-    if (!user) {
+    const dbUser = await databaseService.getUserById(session.memberId);
+    if (!dbUser) {
       return res.status(401).json({
         error: 'user_not_found',
         error_description: 'User associated with session not found'
       });
     }
+
+    // Enrich user with profile data from GoHighLevel
+    const user = await enrichUserWithGhlData(dbUser);
 
     res.json({
       valid: true,
@@ -526,14 +542,17 @@ router.get('/profile', async (req, res) => {
       });
     }
 
-    // Get user data
-    const user = await databaseService.getUserById(session.memberId);
-    if (!user) {
+    // Get user data from database (auth fields only)
+    const dbUser = await databaseService.getUserById(session.memberId);
+    if (!dbUser) {
       return res.status(401).json({
         error: 'user_not_found',
         error_description: 'User associated with session not found'
       });
     }
+
+    // Enrich user with profile data from GoHighLevel
+    const user = await enrichUserWithGhlData(dbUser);
 
     // Check HighLevel tags to sync role (but don't fail auth if this fails)
     let currentRole = user.role;
@@ -541,8 +560,8 @@ router.get('/profile', async (req, res) => {
       const newRole = await ghlService.getUserRole(user.email);
       
       // Update role if it changed
-      if (user.role !== newRole) {
-        await databaseService.updateUser(user.id!, { role: newRole });
+      if (dbUser.role !== newRole) {
+        await databaseService.updateUser(dbUser.id!, { role: newRole });
         currentRole = newRole;
       }
     } catch (roleUpdateError) {
@@ -790,19 +809,12 @@ router.post('/register', async (req, res) => {
     let user;
     try {
       user = await databaseService.createUser({
-        firstName: firstName || 'New',
-        lastName: lastName || 'Member',
         email,
         passwordHash: password, // This will be hashed in the service
-        businessName,
-        phone,
-        website,
         role: 'member',
         status: 'pending',
         emailVerified: false,
-        ghlContactId,
-        paymentStatus: 'pending',
-        membershipTier
+        ghlContactId
       });
     } catch (dbError) {
       console.error('Failed to create user in database:', dbError);
@@ -846,21 +858,24 @@ router.post('/register', async (req, res) => {
     }
     */
 
+    // Enrich user with profile data from GoHighLevel
+    const enrichedUser = await enrichUserWithGhlData(user);
+
     // Return registration success response
     res.status(201).json({
       message: 'Registration successful',
       user: {
-        id: user.id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        businessName: user.businessName,
-        phone: user.phone,
-        website: user.website,
-        role: user.role,
-        status: user.status,
-        membershipTier: user.membershipTier,
-        ghlContactId: user.ghlContactId
+        id: enrichedUser.id,
+        firstName: enrichedUser.firstName,
+        lastName: enrichedUser.lastName,
+        email: enrichedUser.email,
+        businessName: enrichedUser.businessName,
+        phone: enrichedUser.phone,
+        website: enrichedUser.website,
+        role: enrichedUser.role,
+        status: enrichedUser.status,
+        membershipTier: enrichedUser.membershipTier,
+        ghlContactId: enrichedUser.ghlContactId
       },
       payment: {
         required: true,
@@ -901,8 +916,8 @@ router.post('/login', async (req, res) => {
     }
 
     // Verify user credentials
-    const user = await databaseService.verifyPassword(email, password);
-    if (!user) {
+    const dbUser = await databaseService.verifyPassword(email, password);
+    if (!dbUser) {
       return res.status(401).json({
         error: 'Invalid credentials',
         message: 'Email or password is incorrect'
@@ -910,13 +925,16 @@ router.post('/login', async (req, res) => {
     }
 
     // Check if user is active
-    if (user.status !== 'active') {
+    if (dbUser.status !== 'active') {
       return res.status(403).json({
         error: 'Account not active',
         message: 'Please complete your registration and payment',
-        userStatus: user.status
+        userStatus: dbUser.status
       });
     }
+
+    // Enrich user with profile data from GoHighLevel
+    const user = await enrichUserWithGhlData(dbUser);
 
     // Create session
     const session = await authSessionService.createSession(user.id, 'access_token', 3600);
@@ -958,8 +976,7 @@ router.post('/payment-webhook', async (req, res) => {
 
     if (status === 'completed' || status === 'success') {
       // Find user by GHL contact ID
-      const users = await databaseService.getAllUsers(1000); // Get all users for search
-      const user = users.find(u => u.ghlContactId === contactId);
+      const user = await databaseService.getUserByGhlContactId(contactId);
       
       if (!user) {
         console.error(`User not found for contact ID: ${contactId}`);
@@ -968,15 +985,14 @@ router.post('/payment-webhook', async (req, res) => {
         });
       }
 
-      // Update user payment status
-      await databaseService.updateUserPaymentStatus(user.id, 'completed', membershipTier);
+      // Update user status to active (payment status is now tracked in GHL)
       await databaseService.updateUserStatus(user.id, 'active');
 
       // Activate member in GoHighLevel
       await ghlService.handlePaymentSuccess(contactId, {
         paymentId,
         amount,
-        membershipTier: membershipTier || user.membershipTier
+        membershipTier: membershipTier
       });
 
       console.log(`Payment completed for user ${user.email} (${contactId})`);
@@ -1010,13 +1026,16 @@ router.get('/profile/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
 
-    // Find the user in database
-    const user = await databaseService.getUserById(parseInt(userId));
-    if (!user) {
+    // Find the user in database (auth fields only)
+    const dbUser = await databaseService.getUserById(parseInt(userId));
+    if (!dbUser) {
       return res.status(404).json({
         error: 'User not found'
       });
     }
+
+    // Enrich user with profile data from GoHighLevel
+    const user = await enrichUserWithGhlData(dbUser);
 
     // Return user profile (without password)
     res.json({
@@ -1371,19 +1390,12 @@ router.post('/register-existing', async (req, res) => {
     let user;
     try {
       user = await databaseService.createUser({
-        firstName,
-        lastName,
         email,
         passwordHash: password, // This will be hashed in the service
-        businessName,
-        phone,
-        website,
         role: 'member',
         status: 'pending',
         emailVerified: false,
-        ghlContactId,
-        paymentStatus: 'pending',
-        membershipTier
+        ghlContactId
       });
     } catch (dbError) {
       console.error('Failed to create user in database:', dbError);
@@ -1413,22 +1425,25 @@ router.post('/register-existing', async (req, res) => {
       paymentLink = null;
     }
 
+    // Enrich user with profile data from GoHighLevel
+    const enrichedUser = await enrichUserWithGhlData(user);
+
     // Return registration success response
     res.status(201).json({
       message: 'Registration successful',
       registrationType: isExistingContact ? 'existing-contact' : 'new-contact',
       user: {
-        id: user.id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        businessName: user.businessName,
-        phone: user.phone,
-        website: user.website,
-        role: user.role,
-        status: user.status,
-        membershipTier: user.membershipTier,
-        ghlContactId: user.ghlContactId
+        id: enrichedUser.id,
+        firstName: enrichedUser.firstName,
+        lastName: enrichedUser.lastName,
+        email: enrichedUser.email,
+        businessName: enrichedUser.businessName,
+        phone: enrichedUser.phone,
+        website: enrichedUser.website,
+        role: enrichedUser.role,
+        status: enrichedUser.status,
+        membershipTier: enrichedUser.membershipTier,
+        ghlContactId: enrichedUser.ghlContactId
       },
       payment: {
         required: true,

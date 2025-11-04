@@ -12,52 +12,52 @@ const router = Router();
  * GoHighLevel payment success webhook
  * This endpoint receives notifications when payments are completed
  */
-router.post('/ghl/payment/success', async (req: Request, res: Response) => {
-  try {
-    console.log('🎉 Payment success webhook received:', JSON.stringify(req.body, null, 2));
+// router.post('/ghl/payment/success', async (req: Request, res: Response) => {
+//   try {
+//     console.log('🎉 Payment success webhook received:', JSON.stringify(req.body, null, 2));
     
-    const { contactId, orderId, amount, currency, membershipTier, paymentId } = req.body;
+//     const { contactId, orderId, amount, currency, membershipTier, paymentId } = req.body;
     
-    if (!contactId) {
-      return res.status(400).json({ error: 'Missing contactId in webhook payload' });
-    }
+//     if (!contactId) {
+//       return res.status(400).json({ error: 'Missing contactId in webhook payload' });
+//     }
 
-    // Find the user by GHL contact ID
-    const user = await databaseService.getUserByGhlContactId(contactId);
-    if (!user) {
-      console.error('User not found for GHL contact ID:', contactId);
-      return res.status(404).json({ error: 'User not found' });
-    }
+//     // Find the user by GHL contact ID
+//     const user = await databaseService.getUserByGhlContactId(contactId);
+//     if (!user) {
+//       console.error('User not found for GHL contact ID:', contactId);
+//       return res.status(404).json({ error: 'User not found' });
+//     }
 
-    // Handle payment success in GoHighLevel
-    await ghlService.handlePaymentSuccess(contactId, {
-      orderId,
-      amount: amount || 0,
-      currency: currency || 'USD',
-      membershipTier: membershipTier || user.membershipTier,
-      paymentId: paymentId || orderId
-    });
+//     // Handle payment success in GoHighLevel
+//     await ghlService.handlePaymentSuccess(contactId, {
+//       orderId,
+//       amount: amount || 0,
+//       currency: currency || 'USD',
+//       membershipTier: membershipTier || user.membershipTier,
+//       paymentId: paymentId || orderId
+//     });
 
-    // Update user status to active in database
-    await databaseService.updateUserStatus(user.id, 'active');
+//     // Update user status to active in database
+//     await databaseService.updateUserStatus(user.id, 'active');
 
-    console.log(`✅ Payment processed successfully for user ${user.email} (${contactId})`);
+//     console.log(`✅ Payment processed successfully for user ${user.email} (${contactId})`);
 
-    res.json({ 
-      success: true, 
-      message: 'Payment processed successfully',
-      userId: user.id,
-      contactId: contactId
-    });
+//     res.json({ 
+//       success: true, 
+//       message: 'Payment processed successfully',
+//       userId: user.id,
+//       contactId: contactId
+//     });
 
-  } catch (error: any) {
-    console.error('❌ Error processing payment webhook:', error);
-    res.status(500).json({ 
-      error: 'Payment processing failed', 
-      message: error.message 
-    });
-  }
-});
+//   } catch (error: any) {
+//     console.error('❌ Error processing payment webhook:', error);
+//     res.status(500).json({ 
+//       error: 'Payment processing failed', 
+//       message: error.message 
+//     });
+//   }
+// });
 
 /**
  * GoHighLevel payment failed webhook

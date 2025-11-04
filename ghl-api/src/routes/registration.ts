@@ -120,19 +120,12 @@ router.post('/register', async (req, res) => {
     let user;
     try {
       user = await databaseService.createUser({
-        firstName,
-        lastName,
         email,
         passwordHash: password, // This will be hashed in the service
-        businessName,
-        phone,
-        website,
         role: 'member',
         status: 'pending',
         emailVerified: false,
         ghlContactId,
-        paymentStatus: 'pending',
-        membershipTier
       });
     } catch (dbError) {
       console.error('Failed to create user in database:', dbError);
@@ -259,55 +252,55 @@ router.post('/verify-email', async (req, res) => {
  * POST /api/auth/payment-webhook
  * Handle payment completion webhook from GoHighLevel
  */
-router.post('/payment-webhook', async (req, res) => {
-  try {
-    const { contactId, paymentId, amount, status, membershipTier } = req.body;
+// router.post('/payment-webhook', async (req, res) => {
+//   try {
+//     const { contactId, paymentId, amount, status, membershipTier } = req.body;
 
-    if (status === 'completed' || status === 'success') {
-      // Find user by GHL contact ID
-      const users = await databaseService.getAllUsers(1000); // Get all users for search
-      const user = users.find(u => u.ghlContactId === contactId);
+//     if (status === 'completed' || status === 'success') {
+//       // Find user by GHL contact ID
+//       const users = await databaseService.getAllUsers(1000); // Get all users for search
+//       const user = users.find(u => u.ghlContactId === contactId);
       
-      if (!user) {
-        console.error(`User not found for contact ID: ${contactId}`);
-        return res.status(404).json({
-          error: 'User not found for contact'
-        });
-      }
+//       if (!user) {
+//         console.error(`User not found for contact ID: ${contactId}`);
+//         return res.status(404).json({
+//           error: 'User not found for contact'
+//         });
+//       }
 
-      // Update user payment status
-      await databaseService.updateUserPaymentStatus(user.id, 'completed', membershipTier);
-      await databaseService.updateUserStatus(user.id, 'active');
+//       // Update user payment status
+//       await databaseService.updateUserPaymentStatus(user.id, 'completed', membershipTier);
+//       await databaseService.updateUserStatus(user.id, 'active');
 
-      // Activate member in GoHighLevel
-      await ghlService.handlePaymentSuccess(contactId, {
-        paymentId,
-        amount,
-        membershipTier: membershipTier || user.membershipTier
-      });
+//       // Activate member in GoHighLevel
+//       await ghlService.handlePaymentSuccess(contactId, {
+//         paymentId,
+//         amount,
+//         membershipTier: membershipTier || user.membershipTier
+//       });
 
-      console.log(`Payment completed for user ${user.email} (${contactId})`);
+//       console.log(`Payment completed for user ${user.email} (${contactId})`);
 
-      res.json({
-        message: 'Payment processed successfully',
-        userId: user.id,
-        status: 'active'
-      });
-    } else {
-      res.json({
-        message: 'Payment status received',
-        status
-      });
-    }
+//       res.json({
+//         message: 'Payment processed successfully',
+//         userId: user.id,
+//         status: 'active'
+//       });
+//     } else {
+//       res.json({
+//         message: 'Payment status received',
+//         status
+//       });
+//     }
 
-  } catch (error) {
-    console.error('Payment webhook error:', error);
-    res.status(500).json({
-      error: 'Internal server error',
-      message: 'Failed to process payment webhook'
-    });
-  }
-});
+//   } catch (error) {
+//     console.error('Payment webhook error:', error);
+//     res.status(500).json({
+//       error: 'Internal server error',
+//       message: 'Failed to process payment webhook'
+//     });
+//   }
+// });
 
 /**
  * GET /api/auth/membership-tiers
@@ -359,13 +352,9 @@ router.post('/login', async (req, res) => {
       message: 'Login successful',
       user: {
         id: user.id,
-        firstName: user.firstName,
-        lastName: user.lastName,
         email: user.email,
-        businessName: user.businessName,
         role: user.role,
         status: user.status,
-        membershipTier: user.membershipTier
       },
       session: {
         sessionId: session.id,

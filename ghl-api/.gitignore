@@ -21,3 +21,5 @@ logs/
 # Uploads
 public/uploads/
 temp/
+
+/src/generated/prisma
