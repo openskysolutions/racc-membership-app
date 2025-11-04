@@ -11,7 +11,7 @@ import EventFormDialog from '@/components/EventFormDialog';
 import { useAuthStore } from '@/stores/authStore';
 import { formatEventDate, formatEventTime, formatLocation } from '@/lib/eventUtils';
 import { EventCountdown } from '@/components/EventCountdown';
-import { EventRegistrationDialog, RegistrationFormData } from '@/components/EventRegistrationDialog';
+import { EventRegistrationDialog } from '@/components/EventRegistrationDialog';
 import EventBg from '@/assets/explosive-event-cover.jpg'
 
 // GoHighLevel Calendar ID - RACC Events
@@ -141,7 +141,7 @@ const CalendarPage: React.FC = () => {
     setSelectedEvent(null);
   };
 
-  const handleRegister = (formData: RegistrationFormData) => {
+  const handleRegister = () => {
     // TODO: Implement actual registration logic
     setIsRegistered(true);
     setShowRegisterDialog(false);

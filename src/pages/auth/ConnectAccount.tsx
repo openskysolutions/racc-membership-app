@@ -254,16 +254,6 @@ export const ConnectAccountPage = () => {
     if (error) setError(null);
   };
 
-  const handleTryAgain = () => {
-    setStep('verify');
-    setError(null);
-    setVerificationResult(null);
-    // If there's an email from URL, keep it; otherwise reset to empty
-    if (!emailFromUrl) {
-      setEmail('');
-    }
-  };
-
   const getStepTitle = () => {
     switch (step) {
       case 'verify':
