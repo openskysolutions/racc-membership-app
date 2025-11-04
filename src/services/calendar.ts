@@ -25,6 +25,11 @@ export interface CalendarEvent {
   calendarNotes?: string;
   appointmentStatus?: string;
   contactId?: string;
+  // Recurring event fields
+  isRecurring?: boolean;
+  rrule?: string;
+  originalRecurringEventId?: string; // Alternative field name
+  masterEventId?: string; // GoHighLevel's field for linking instances to master
   // Custom fields
   pageUrl?: string;
   coverImageUrl?: string;
@@ -73,6 +78,17 @@ export interface UpdateEventPayload {
   coverImageUrl?: string;
   downloadFileUrl?: string;
   customFieldsRecordId?: string;
+  // Recurring event fields
+  isCustomRecurring?: boolean;
+  rrule?: string;
+  selectedTimezone?: string;
+  // Control how recurring events are updated
+  // Only valid value is 'this_and_following_events' (updates this + all future)
+  // Omit this field to update only the single instance
+  recurringEventUpdateType?: 'this_and_following_events';
+  ignoreDateRange?: boolean;
+  ignoreFreeSlotValidation?: boolean;
+  toNotify?: boolean;
 }
 
 export interface Calendar {
@@ -88,11 +104,13 @@ export interface Calendar {
  * @param calendarId - The GoHighLevel calendar ID
  * @param startDate - Optional start date filter
  * @param endDate - Optional end date filter
+ * @param bustCache - Optional flag to add cache-busting timestamp (use after updates)
  */
 export async function getCalendarEvents(
   calendarId: string, 
   startDate?: Date, 
-  endDate?: Date
+  endDate?: Date,
+  bustCache?: boolean
 ): Promise<CalendarEvent[]> {
   try {
     const params = new URLSearchParams();
@@ -101,6 +119,11 @@ export async function getCalendarEvents(
     }
     if (endDate) {
       params.append('endDate', endDate.toISOString());
+    }
+    // Add cache-busting parameter to force fresh data from GoHighLevel
+    // This helps work around GoHighLevel's API caching of events list
+    if (bustCache) {
+      params.append('_t', Date.now().toString());
     }
 
     const queryString = params.toString();
@@ -134,7 +157,16 @@ export async function getCalendarEvents(
       internalNote: event.internalNote,
       calendarNotes: event.calendarNotes,
       appointmentStatus: event.appointmentStatus,
-      contactId: event.contactId
+      contactId: event.contactId,
+      // Custom fields (batch-loaded from backend)
+      pageUrl: event.pageUrl,
+      coverImageUrl: event.coverImageUrl,
+      downloadFileUrl: event.downloadFileUrl,
+      customFieldsRecordId: event.customFieldsRecordId,
+      // Recurring event fields
+      isRecurring: event.isRecurring,
+      rrule: event.rrule,
+      masterEventId: event.masterEventId
     }));
   } catch (error: any) {
     console.error('Error fetching calendar events:', error);
@@ -171,15 +203,14 @@ export async function getCalendar(calendarId: string): Promise<Calendar> {
 }
 
 /**
- * Get events for the current year (12 months from now)
- * @param calendarId - The GoHighLevel calendar ID
+ * Get events for the current year (12 months)
  */
-export async function getCurrentYearEvents(calendarId: string): Promise<CalendarEvent[]> {
+export async function getCurrentYearEvents(calendarId: string, bustCache?: boolean): Promise<CalendarEvent[]> {
   const now = new Date();
   const startOfYear = new Date(now.getFullYear(), now.getMonth(), 1); // Start from current month
   const endOfYear = new Date(now.getFullYear() + 1, now.getMonth(), 0, 23, 59, 59); // End 12 months from now
   
-  return getCalendarEvents(calendarId, startOfYear, endOfYear);
+  return getCalendarEvents(calendarId, startOfYear, endOfYear, bustCache);
 }
 
 /**
@@ -246,7 +277,12 @@ export async function getEventById(eventId: string): Promise<CalendarEvent> {
       internalNote: appointment.internalNote,
       calendarNotes: appointment.calendarNotes,
       appointmentStatus: appointment.appointmentStatus,
-      contactId: appointment.contactId
+      contactId: appointment.contactId,
+      // Recurring event fields
+      isRecurring: appointment.isRecurring,
+      rrule: appointment.rrule,
+      originalRecurringEventId: appointment.originalRecurringEventId,
+      masterEventId: appointment.masterEventId
     };
   } catch (error: any) {
     console.error('Error fetching event:', error);
@@ -384,6 +420,61 @@ export async function updateCalendarEvent(eventId: string, eventData: UpdateEven
 }
 
 /**
+ * Update custom fields for all future events in a recurring series
+ * This only updates custom fields (cover image, page URL, etc.) for all future instances
+ * The main appointment fields (title, description, etc.) are handled by GoHighLevel's recurringEventUpdateType
+ * @param calendarId - The calendar ID
+ * @param currentEvent - The current event being edited
+ * @param customFieldsUpdate - The custom fields to update (pageUrl, coverImageUrl, downloadFileUrl)
+ */
+export async function updateRecurringSeriesCustomFields(
+  calendarId: string,
+  currentEvent: CalendarEvent,
+  customFieldsUpdate: {
+    pageUrl?: string;
+    coverImageUrl?: string;
+    downloadFileUrl?: string;
+    internalNote?: string;
+  }
+): Promise<number> {
+  try {
+    console.log('Updating custom fields for recurring series:', { 
+      currentEventId: currentEvent.id,
+      title: currentEvent.title,
+      customFieldsUpdate
+    });
+    
+    // Make a single API call to the backend
+    // The backend will handle fetching all events and updating them
+    const response = await api.post(
+      `/calendars/appointments/${currentEvent.id}/recurring-series-custom-fields`,
+      {
+        calendarId,
+        customFields: {
+          pageUrl: customFieldsUpdate.pageUrl || '',
+          coverImageUrl: customFieldsUpdate.coverImageUrl || '',
+          downloadFileUrl: customFieldsUpdate.downloadFileUrl || '',
+          internalNote: customFieldsUpdate.internalNote || ''
+        }
+      }
+    );
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(`Failed to update recurring series: ${response.statusText} - ${errorData.message || ''}`);
+    }
+    
+    const result = await response.json();
+    console.log(`✓ Successfully updated ${result.updatedCount} events in recurring series`);
+    
+    return result.updatedCount || 0;
+  } catch (error: any) {
+    console.error('Error updating recurring series custom fields:', error);
+    throw new Error(`Failed to update recurring series custom fields: ${error.message}`);
+  }
+}
+
+/**
  * Delete a calendar event/appointment in GoHighLevel
  * @param eventId - The event ID to delete
  */
@@ -419,7 +510,9 @@ export async function getEventCustomFields(eventId: string): Promise<{
   try {
     console.log('Fetching custom fields for event:', eventId);
     
-    const response = await api.get(`/calendars/appointments/${eventId}/custom-fields`);
+    // Add cache-busting timestamp to ensure fresh data
+    const timestamp = Date.now();
+    const response = await api.get(`/calendars/appointments/${eventId}/custom-fields?_t=${timestamp}`);
     
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));

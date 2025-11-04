@@ -69,10 +69,19 @@ function sanitizeRequestBody(body: any): any {
   
   const sanitized = { ...body };
   const sensitiveFields = ['password', 'token', 'secret', 'authorization', 'auth', 'key'];
+  const fileDataFields = ['fileData', 'file', 'image', 'avatar', 'coverImage'];
   
+  // Redact sensitive fields
   for (const field of sensitiveFields) {
     if (sanitized[field]) {
       sanitized[field] = '[REDACTED]';
+    }
+  }
+  
+  // Truncate file data fields (they're too large)
+  for (const field of fileDataFields) {
+    if (sanitized[field] && typeof sanitized[field] === 'string' && sanitized[field].length > 100) {
+      sanitized[field] = `[FILE_DATA: ${sanitized[field].substring(0, 50)}... (${sanitized[field].length} bytes)]`;
     }
   }
   

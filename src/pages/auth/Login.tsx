@@ -16,7 +16,8 @@ export const AuthPage = () => {
   const location = useLocation();
   const setUser = useAuthStore(state => state.setUser);
 
-  // Get the intended destination from location state, default to home
+  // Get the intended destination from location state
+  // If coming from a protected route, use that. Otherwise stay on home page.
   const from = location.state?.from?.pathname || '/';
 
   const handleSubmit = async (e: React.FormEvent) => {

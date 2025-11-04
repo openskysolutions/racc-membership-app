@@ -52,7 +52,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
         role: userData.role || null 
       });
     } catch (error) {
-      console.error('Auth check failed:', error);
+      // console.error('Auth check failed:', error);
       set({ user: null, isAuthenticated: false, isLoading: false, role: null });
     }
   }

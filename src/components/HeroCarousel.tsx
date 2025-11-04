@@ -9,7 +9,7 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
-import { getCurrentYearEvents, type CalendarEvent } from '@/services/calendar';
+import { getCurrentYearEvents, getEventCustomFields, type CalendarEvent } from '@/services/calendar';
 import { Calendar, MapPin } from 'lucide-react';
 import Autoplay from "embla-carousel-autoplay";
 import radioShowImg from '@/assets/radio-show.jpg';
@@ -32,6 +32,7 @@ interface MembershipSlide {
 interface EventSlide {
   type: 'event';
   event: CalendarEvent;
+  coverImageUrl?: string;
 }
 
 interface MainSlide {
@@ -131,10 +132,27 @@ export const HeroCarousel = () => {
         console.log('Upcoming events to display:', upcomingEvents);
         console.log('Number of upcoming events:', upcomingEvents.length);
 
+        // Fetch cover images for upcoming events
+        const eventSlidesPromises = upcomingEvents.map(async (event) => {
+          try {
+            const customFields = await getEventCustomFields(event.id);
+            return { 
+              type: 'event' as const, 
+              event,
+              coverImageUrl: customFields.coverImageUrl 
+            };
+          } catch (error) {
+            console.error(`Failed to fetch custom fields for event ${event.id}:`, error);
+            return { type: 'event' as const, event };
+          }
+        });
+
+        const eventSlides = await Promise.all(eventSlidesPromises);
+
         // Build slides array
         const allSlides: SlideData[] = [
           { type: 'main' },
-          ...upcomingEvents.map(event => ({ type: 'event' as const, event })),
+          ...eventSlides,
           ...membershipSlides
         ];
 
@@ -323,8 +341,9 @@ export const HeroCarousel = () => {
             bgStyle = { backgroundImage: `url(${slide.bgImage})` };
             bgColorClass = slide.bgColor;
           } else if (slide.type === 'event') {
-            // Use a default event background image
-            bgStyle = { backgroundImage: `url(${radioShowImg})` };
+            // Use event cover image if available, otherwise fall back to default
+            const coverImage = slide.coverImageUrl || radioShowImg;
+            bgStyle = { backgroundImage: `url(${coverImage})` };
           }
 
           return (

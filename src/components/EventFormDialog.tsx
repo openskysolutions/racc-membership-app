@@ -58,6 +58,9 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isMultiDay, setIsMultiDay] = useState(false);
+  const [shouldUpdateRecurringSeries, setShouldUpdateRecurringSeries] = useState(true); // Default to updating all
+  const [showRecurringConfirmDialog, setShowRecurringConfirmDialog] = useState(false);
+  const [pendingFormSubmit, setPendingFormSubmit] = useState(false);
   
   // File upload states
   const [coverUploading, setCoverUploading] = useState(false);
@@ -86,6 +89,16 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
   useEffect(() => {
     if (open) {
       if (isEditing && event) {
+        console.log('EventFormDialog: Editing event', {
+          id: event.id,
+          title: event.title,
+          isRecurring: event.isRecurring,
+          rrule: event.rrule,
+          originalRecurringEventId: event.originalRecurringEventId,
+          masterEventId: event.masterEventId
+        });
+        console.log('EventFormDialog: isEditing =', isEditing, 'event?.isRecurring =', event?.isRecurring, 'Checkbox should show:', isEditing && event?.isRecurring);
+        
         // Pre-fill form with event data
         const startDate = new Date(event.startTime);
         const endDate = new Date(event.endTime);
@@ -160,6 +173,13 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
         });
       }
       setError(null);
+      // Reset dialog states
+      setPendingFormSubmit(false);
+      setShouldUpdateRecurringSeries(true); // Reset to default
+    } else {
+      // When dialog closes, reset states
+      setPendingFormSubmit(false);
+      setShouldUpdateRecurringSeries(true);
     }
   }, [open, isEditing, event, selectedDate]);
 
@@ -333,6 +353,17 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
       return;
     }
     
+    // If editing a recurring event and dialog hasn't been shown yet, show confirmation dialog
+    if (isEditing && event?.isRecurring && !pendingFormSubmit) {
+      setShowRecurringConfirmDialog(true);
+      return;
+    }
+    
+    // If we get here, either it's not recurring or user already made their choice
+    await performUpdate();
+  };
+
+  const performUpdate = async () => {
     setLoading(true);
     setError(null);
     
@@ -358,26 +389,127 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
         // Update existing event
         console.log('DEBUG: Editing event with ID:', event.id);
         console.log('DEBUG: Full event object:', event);
+        console.log('DEBUG: Should update recurring series:', shouldUpdateRecurringSeries);
         
-        const updatePayload: UpdateEventPayload = {
-          calendarId,
-          title: formData.title,
-          description: formData.description,
-          startTime: startDateTime.toISOString(),
-          endTime: endDateTime.toISOString(),
-          location: formData.location,
-          appointmentStatus: formData.appointmentStatus,
-          address: formData.location,
-          calendarNotes: formData.description,
-          internalNote: formData.internalNote,
-          // Send custom fields directly
-          pageUrl: customFields.pageUrl,
-          coverImageUrl: customFields.coverImageUrl,
-          downloadFileUrl: customFields.downloadFileUrl,
-        };
-        
-        const updatedEvent = await updateCalendarEvent(event.id, updatePayload);
-        onEventUpdated?.(updatedEvent);
+        // For recurring series updates, we need to handle appointment fields and custom fields separately
+        if (shouldUpdateRecurringSeries && event.isRecurring) {
+          console.log('🔄 Updating recurring series - checking which fields changed');
+          
+          // Detect which fields changed
+          const appointmentFieldsChanged = 
+            formData.title !== event.title ||
+            formData.description !== (event.description || event.calendarNotes || '') ||
+            formData.location !== (event.location || '') ||
+            startDateTime.getTime() !== new Date(event.startTime).getTime() ||
+            endDateTime.getTime() !== new Date(event.endTime).getTime() ||
+            formData.appointmentStatus !== event.appointmentStatus;
+          
+          const customFieldsChanged = 
+            formData.pageUrl !== (event.pageUrl || '') ||
+            formData.coverImageUrl !== (event.coverImageUrl || '') ||
+            formData.downloadFileUrl !== (event.downloadFileUrl || '') ||
+            formData.internalNote !== (event.internalNote || '');
+          
+          try {
+            // For recurring series: Update everything in a single call
+            // Note: When GoHighLevel updates "this_and_following_events", it recreates the series with new IDs
+            // So we MUST include all fields (appointment + custom) in the initial update
+            // Custom fields are automatically saved via upsertAppointmentCustomObject in the backend
+            if (appointmentFieldsChanged || customFieldsChanged) {
+              console.log('📝 Updating recurring series (appointment + custom fields in single call)');
+              const appointmentUpdatePayload: UpdateEventPayload = {
+                calendarId,
+                title: formData.title,
+                description: formData.description,
+                startTime: startDateTime.toISOString(),
+                endTime: endDateTime.toISOString(),
+                location: formData.location,
+                appointmentStatus: formData.appointmentStatus,
+                address: formData.location,
+                calendarNotes: formData.description,
+                selectedTimezone: event.timezone || 'America/Denver',
+                recurringEventUpdateType: 'this_and_following_events', // Update all future occurrences
+                isCustomRecurring: true,
+                rrule: event.rrule,
+                ignoreDateRange: true,
+                ignoreFreeSlotValidation: true,
+                // Include custom fields in the appointment update
+                // The backend will save these via upsertAppointmentCustomObject
+                pageUrl: customFields.pageUrl,
+                coverImageUrl: customFields.coverImageUrl,
+                downloadFileUrl: customFields.downloadFileUrl,
+                internalNote: formData.internalNote,
+              };
+              
+              await updateCalendarEvent(event.id, appointmentUpdatePayload);
+              console.log('✅ Recurring series updated (appointment + custom fields)');
+            } else {
+              console.log('ℹ️ No changes detected - nothing to update');
+            }
+            
+            // Return updated event for the callback
+            const updatedEvent = {
+              ...event,
+              title: formData.title,
+              description: formData.description,
+              startTime: startDateTime.toISOString(),
+              endTime: endDateTime.toISOString(),
+              location: formData.location,
+              appointmentStatus: formData.appointmentStatus,
+              pageUrl: customFields.pageUrl,
+              coverImageUrl: customFields.coverImageUrl,
+              downloadFileUrl: customFields.downloadFileUrl,
+            };
+            
+            if (onEventUpdated) {
+              await onEventUpdated(updatedEvent);
+              console.log('onEventUpdated callback completed');
+            }
+          } catch (seriesError) {
+            console.error('Failed to update recurring series:', seriesError);
+            throw seriesError;
+          }
+        } else {
+          // Single event update (or single instance of recurring event)
+          const updatePayload: UpdateEventPayload = {
+            calendarId,
+            title: formData.title,
+            description: formData.description,
+            startTime: startDateTime.toISOString(),
+            endTime: endDateTime.toISOString(),
+            location: formData.location,
+            appointmentStatus: formData.appointmentStatus,
+            address: formData.location,
+            calendarNotes: formData.description,
+            internalNote: formData.internalNote,
+            selectedTimezone: event.timezone || 'America/Denver',
+            // Send custom fields directly
+            pageUrl: customFields.pageUrl,
+            coverImageUrl: customFields.coverImageUrl,
+            downloadFileUrl: customFields.downloadFileUrl,
+            // For recurring events updating single instance, preserve the recurrence pattern
+            ...(event.isRecurring && {
+              isCustomRecurring: true,
+              rrule: event.rrule,
+              ignoreDateRange: true,
+              ignoreFreeSlotValidation: true,
+            }),
+            toNotify: formData.toNotify,
+          };
+          
+          console.log('DEBUG: Update payload:', updatePayload);
+          
+          const updatedEvent = await updateCalendarEvent(event.id, updatePayload);
+          
+          console.log('Event updated successfully:', updatedEvent.id);
+          
+          // Wait for the callback to complete before closing
+          console.log('Calling onEventUpdated callback...');
+          if (onEventUpdated) {
+            await onEventUpdated(updatedEvent);
+            console.log('onEventUpdated callback completed');
+          }
+        }
       } else {
         // Create new event
         const createPayload: CreateEventPayload = {
@@ -408,9 +540,14 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
         };
         
         const newEvent = await createCalendarEvent(createPayload);
-        onEventCreated?.(newEvent);
+        
+        // Wait for the callback to complete before closing
+        if (onEventCreated) {
+          await onEventCreated(newEvent);
+        }
       }
       
+      // Close dialog after callbacks complete
       onOpenChange(false);
     } catch (err: any) {
       console.error('Error saving event:', err);
@@ -721,6 +858,8 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
               </Label>
             </div>
           )}
+
+          {/* Note: Recurring event update choice is now handled via confirmation dialog */}
           </div>
 
           {/* Sticky Footer */}
@@ -745,6 +884,63 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
           </div>
         </form>
       </DialogContent>
+
+      {/* Recurring Event Update Confirmation Dialog */}
+      <Dialog open={showRecurringConfirmDialog} onOpenChange={setShowRecurringConfirmDialog}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Update Recurring Event</DialogTitle>
+            <DialogDescription>
+              This is a recurring event. How would you like to apply your changes?
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-3">
+              <button
+                onClick={() => {
+                  setShouldUpdateRecurringSeries(true);
+                  setPendingFormSubmit(true);
+                  setShowRecurringConfirmDialog(false);
+                  // Trigger the actual update
+                  setTimeout(() => performUpdate(), 0);
+                }}
+                className="w-full p-4 text-left border-2 border-primary bg-primary/5 rounded-lg hover:bg-primary/10 transition-colors"
+              >
+                <div className="font-semibold text-primary">Update all future events (Recommended)</div>
+                <div className="text-sm text-muted-foreground mt-1">
+                  Apply changes to this event and all future occurrences in the series
+                </div>
+              </button>
+              
+              <button
+                onClick={() => {
+                  setShouldUpdateRecurringSeries(false);
+                  setPendingFormSubmit(true);
+                  setShowRecurringConfirmDialog(false);
+                  // Trigger the actual update
+                  setTimeout(() => performUpdate(), 0);
+                }}
+                className="w-full p-4 text-left border-2 border-border rounded-lg hover:bg-accent transition-colors"
+              >
+                <div className="font-semibold">Update only this event</div>
+                <div className="text-sm text-muted-foreground mt-1">
+                  Apply changes to only this single occurrence
+                </div>
+              </button>
+            </div>
+          </div>
+          
+          <div className="flex justify-end">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowRecurringConfirmDialog(false)}
+            >
+              Cancel
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 };

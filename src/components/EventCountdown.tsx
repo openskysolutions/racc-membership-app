@@ -64,13 +64,6 @@ export const EventCountdown: React.FC<EventCountdownProps> = ({
       const eventTime = new Date(startTime).getTime();
       const difference = eventTime - now;
 
-      console.log('=== COUNTDOWN DEBUG ===');
-      console.log('Current time:', new Date(now).toString());
-      console.log('Event time:', new Date(eventTime).toString());
-      console.log('Difference (ms):', difference);
-      console.log('Difference (minutes):', difference / (1000 * 60));
-      console.log('startTime prop:', startTime);
-
       if (difference <= 0) {
         setTimeRemaining({
           days: 0,
@@ -91,8 +84,6 @@ export const EventCountdown: React.FC<EventCountdownProps> = ({
       const hours = totalHours % 24;
       const minutes = totalMinutes % 60;
       const seconds = totalSeconds % 60;
-
-      console.log('Calculated:', { days, hours, minutes, seconds, totalMinutes, totalHours });
 
       setTimeRemaining({
         days,

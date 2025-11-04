@@ -1,7 +1,7 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Users, Plus, Edit, X, Clock, MapPin } from 'lucide-react';
-import { getCurrentYearEvents, CalendarEvent, getEventCustomFields } from '@/services/calendar';
+import { getCurrentYearEvents, CalendarEvent } from '@/services/calendar';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -12,7 +12,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { formatEventDate, formatEventTime, formatLocation } from '@/lib/eventUtils';
 import { EventCountdown } from '@/components/EventCountdown';
 import { EventRegistrationDialog, RegistrationFormData } from '@/components/EventRegistrationDialog';
-import RacTree from '@/assets/rac-christmas-tree.jpg';
+import EventBg from '@/assets/explosive-event-cover.jpg'
 
 // GoHighLevel Calendar ID - RACC Events
 const GHL_CALENDAR_ID = '9XpDcFHv3SmCUuHeuOOg';
@@ -36,6 +36,19 @@ const CalendarPage: React.FC = () => {
   const [showRegisterDialog, setShowRegisterDialog] = useState(false);
   const [isRegistered, setIsRegistered] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false); // Default to hidden on mobile
+  const [refreshTrigger, setRefreshTrigger] = useState(0); // Trigger to force refresh
+  const [visibleEventsCount, setVisibleEventsCount] = useState(5); // How many events to show in the list
+
+  // Refresh events when page gains focus (returning from event detail page)
+  // useEffect(() => {
+  //   const handleFocus = () => {
+  //     console.log('Calendar page focused - refreshing events');
+  //     setRefreshTrigger(prev => prev + 1);
+  //   };
+
+  //   window.addEventListener('focus', handleFocus);
+  //   return () => window.removeEventListener('focus', handleFocus);
+  // }, []);
 
   // Check for URL parameters to trigger create event dialog
   useEffect(() => {
@@ -46,65 +59,64 @@ const CalendarPage: React.FC = () => {
     }
   }, [searchParams, navigate]);
 
+  // Fetch events function - extracted so it can be reused
+  const fetchEvents = useCallback(async () => {
+    try {
+      setLoading(true);
+      const ghlEventsData = await getCurrentYearEvents(GHL_CALENDAR_ID);
+      setEvents(ghlEventsData);
+    } catch (error) {
+      console.error('Error loading events:', error);
+      setEvents([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Fetch events on mount and when currentDate or refreshTrigger changes
   useEffect(() => {
-    const fetchEvents = async () => {
-      try {
-        setLoading(true);
-        const ghlEventsData = await getCurrentYearEvents(GHL_CALENDAR_ID);
-        setEvents(ghlEventsData);
-      } catch (error) {
-        console.error('Error loading events:', error);
-        setEvents([]);
-      } finally {
-        setLoading(false);
+    fetchEvents();
+  }, [fetchEvents, currentDate, refreshTrigger]); // Re-fetch when month changes or refresh triggered
+
+  // Refetch events when user returns to this page (e.g., from EventDetail)
+  // This ensures the calendar shows updated data after events are edited elsewhere
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        fetchEvents();
       }
     };
 
-    fetchEvents();
-  }, [currentDate]); // Re-fetch when month changes
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [fetchEvents]);
 
   // Fetch custom fields only for upcoming events (lazy loading)
+  // Custom fields are now batch-loaded on the backend and included in the events
+  // No need for separate lazy loading anymore
+
+  // Load more events on scroll
   useEffect(() => {
-    const fetchUpcomingEventCustomFields = async () => {
-      const now = new Date();
-      const upcoming = events
-        .filter(event => new Date(event.startTime) >= now)
-        .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
-        .slice(0, 10); // Only fetch for first 10 upcoming events
-
-      const updatedEvents = await Promise.all(
-        upcoming.map(async (event) => {
-          // Skip if already has custom fields
-          if (event.coverImageUrl) return event;
-
-          try {
-            const customFields = await getEventCustomFields(event.id);
-            return {
-              ...event,
-              pageUrl: customFields?.pageUrl,
-              coverImageUrl: customFields?.coverImageUrl,
-              downloadFileUrl: customFields?.downloadFileUrl
-            };
-          } catch (error) {
-            console.error(`Error fetching custom fields for event ${event.id}:`, error);
-            return event;
-          }
-        })
-      );
-
-      // Update only the events that we fetched custom fields for
-      setEvents(prevEvents =>
-        prevEvents.map(event => {
-          const updated = updatedEvents.find(e => e.id === event.id);
-          return updated || event;
-        })
-      );
+    const handleScroll = () => {
+      // Check if user scrolled near bottom of page
+      const scrollPosition = window.innerHeight + window.scrollY;
+      const pageHeight = document.documentElement.scrollHeight;
+      
+      if (scrollPosition >= pageHeight - 500) { // 500px before bottom
+        const now = new Date();
+        const upcomingEventsCount = events.filter(event => new Date(event.startTime) >= now).length;
+        
+        // Load 5 more if we haven't loaded all yet
+        if (visibleEventsCount < upcomingEventsCount) {
+          console.log(`Scrolled near bottom - loading 5 more events (${visibleEventsCount} -> ${visibleEventsCount + 5})`);
+          setVisibleEventsCount(prev => Math.min(prev + 5, upcomingEventsCount));
+        }
+      }
     };
 
-    if (events.length > 0) {
-      fetchUpcomingEventCustomFields();
-    }
-  }, [events.length]); // Only run when events list changes
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [events, visibleEventsCount]);
 
   // Event handlers
   const handleCreateEvent = (date?: Date) => {
@@ -123,10 +135,21 @@ const CalendarPage: React.FC = () => {
     // fetchEvents();
   };
 
-  const handleEventUpdated = (updatedEvent: CalendarEvent) => {
-    setEvents(prev => prev.map(event =>
-      event.id === updatedEvent.id ? updatedEvent : event
-    ));
+  const handleEventUpdated = async (updatedEvent: CalendarEvent) => {
+    // Refresh all events to show any recurring series updates
+    // Use cache busting to work around GoHighLevel's API caching
+    try {
+      const ghlEventsData = await getCurrentYearEvents(GHL_CALENDAR_ID, true); // bustCache = true
+      setEvents(ghlEventsData);
+      // Trigger a refresh of custom fields for visible events
+      setRefreshTrigger(prev => prev + 1);
+    } catch (error) {
+      console.error('Error refreshing events:', error);
+      // Fallback to just updating the single event
+      setEvents(prev => prev.map(event =>
+        event.id === updatedEvent.id ? updatedEvent : event
+      ));
+    }
     setSelectedEvent(null);
   };
 
@@ -223,24 +246,9 @@ const CalendarPage: React.FC = () => {
     setSelectedEvent(event);
     setDialogOpen(true);
 
-    // Fetch custom fields for the event to get pageUrl and coverImageUrl
-    try {
-      const customFields = await getEventCustomFields(event.id);
-      if (customFields?.pageUrl) {
-        setEventPageUrl(customFields.pageUrl);
-      } else {
-        setEventPageUrl('');
-      }
-      if (customFields?.coverImageUrl) {
-        setEventCoverImageUrl(customFields.coverImageUrl);
-      } else {
-        setEventCoverImageUrl('');
-      }
-    } catch (error) {
-      console.error('Failed to fetch event custom fields:', error);
-      setEventPageUrl('');
-      setEventCoverImageUrl('');
-    }
+    // Custom fields are already included in the event object from batch-loading
+    setEventPageUrl(event.pageUrl || '');
+    setEventCoverImageUrl(event.coverImageUrl || '');
   };
 
   const handleDayClick = (date: Date) => {
@@ -263,10 +271,13 @@ const CalendarPage: React.FC = () => {
   // Get sorted upcoming events (must be before any early returns)
   const upcomingEvents = useMemo(() => {
     const now = new Date();
-    return events
+    const allUpcoming = events
       .filter(event => new Date(event.startTime) >= now)
       .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
-  }, [events]);
+    
+    // Only return the visible slice
+    return allUpcoming.slice(0, visibleEventsCount);
+  }, [events, visibleEventsCount]);
 
   if (loading) {
     return (
@@ -285,9 +296,6 @@ const CalendarPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div className="lg:col-span-2">
             <h1 className="text-3xl font-bold mb-2">Event Calendar</h1>
-            <p className="text-muted-foreground">
-              View and manage upcoming RACC events and activities.
-            </p>
           </div>
           <div className="hidden lg:flex flex-col items-start">
             <h2 className="text-3xl font-bold mb-2">Upcoming Events</h2>
@@ -318,9 +326,9 @@ const CalendarPage: React.FC = () => {
       </div>
 
       {/* Two Column Layout - wraps on mobile */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Left Column - Calendar */}
-        <div className={`lg:col-span-2 ${showCalendar ? 'block' : 'hidden lg:block'}`}>
+        <div className={`md:col-span-2 ${showCalendar ? 'block' : 'hidden md:block'}`}>
           {/* Calendar Controls */}
           <Card className="mb-6 -mx-5 sm:mx-0">
             <CardHeader className="pb-4 px-2">
@@ -426,7 +434,7 @@ const CalendarPage: React.FC = () => {
         </div>
 
         {/* Right Column - Upcoming Events List */}
-        <div className="lg:col-span-1">
+        <div className="md:col-span-1">
           {/* Mobile header for upcoming events */}
           <div className="lg:hidden mb-4">
             <h2 className="text-2xl font-bold mb-1">Upcoming Events</h2>
@@ -454,7 +462,7 @@ const CalendarPage: React.FC = () => {
                   <div
                     className="relative min-h-40 bg-cover bg-center"
                     style={{
-                      backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.4), rgba(0,0,0,0.7)), url(${event.coverImageUrl || RacTree})`
+                      backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.4), rgba(0,0,0,0.7)), url(${event.coverImageUrl || EventBg})`
                     }}
                   >
                     <div className="relative p-4 flex flex-col justify-center gap-2 min-h-40">

@@ -14,7 +14,7 @@ import {
   CheckCircle2,
   Edit
 } from 'lucide-react';
-import RacTree from '@/assets/rac-christmas-tree.jpg';
+import EventCoverImage from '@/assets/explosive-event-cover.jpg';
 import { CalendarEvent, getEventById, getEventCustomFields } from '@/services/calendar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -127,18 +127,37 @@ const EventDetailPage: React.FC = () => {
   };
 
   const handleEventUpdated = async (updatedEvent: CalendarEvent) => {
-    // Update local state with new event data
-    setEvent(updatedEvent);
+    console.log('handleEventUpdated called with event:', updatedEvent.id);
+    console.log('Current event ID from URL:', id);
     
-    // Refresh custom fields
-    try {
-      const fields = await getEventCustomFields(updatedEvent.id);
-      setCustomFields(fields || {});
-    } catch (err) {
-      console.error('Failed to fetch updated custom fields:', err);
+    // For recurring events, GoHighLevel may return the base ID instead of the composite instance ID
+    // Extract base ID to compare properly
+    const extractBaseId = (eventId: string) => eventId.split('_')[0];
+    const currentBaseId = extractBaseId(id || '');
+    const updatedBaseId = extractBaseId(updatedEvent.id);
+    
+    if (currentBaseId !== updatedBaseId) {
+      console.error('WARNING: Base event ID changed from', currentBaseId, 'to', updatedBaseId);
+      console.error('This indicates a problem with the update API call');
     }
     
-    setShowEditDialog(false);
+    // Re-fetch the complete event data from the server to ensure we have all fields
+    // Use the original URL ID (with timestamp) to fetch the correct instance
+    try {
+      const freshEventData = await getEventById(id!);
+      setEvent(freshEventData);
+      
+      // Refresh custom fields
+      const fields = await getEventCustomFields(id!);
+      setCustomFields(fields || {});
+    } catch (err) {
+      console.error('Failed to refresh event data:', err);
+      // Fallback to using the updated event data we received
+      setEvent(updatedEvent);
+    }
+    
+    // Don't close the dialog here - let the dialog handle its own closing
+    // after this callback completes
   };
 
   const handleAddToCalendar = () => {
@@ -212,7 +231,7 @@ const EventDetailPage: React.FC = () => {
       <div 
         className="relative flex flex-col items-center py-20 bg-cover bg-center p-6 pb-20"
         style={{
-          backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.6)), url(${customFields.coverImageUrl || RacTree})`
+          backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.6)), url(${customFields.coverImageUrl || EventCoverImage})`
         }}
       >
         {/* Back Button */}

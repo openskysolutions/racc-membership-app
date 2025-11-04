@@ -111,6 +111,11 @@ async function getAppointmentCustomFields(req, res, next) {
     
     const customFields = await ghlService.getAppointmentCustomFields(appointmentId);
     
+    // Prevent caching to ensure fresh data after updates
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    
     if (!customFields) {
       // Return empty custom fields if none exist
       return res.json({
@@ -324,6 +329,34 @@ async function deleteEventNotification(req, res, next) {
   } catch (err) { next(err); }
 }
 
+// Update custom fields for an appointment (without updating the appointment itself)
+async function updateAppointmentCustomFields(req, res, next) {
+  try {
+    const appointmentId = req.params.id;
+    const { customFields, recordId } = req.body;
+    
+    console.log(`📝 Updating custom fields for appointment: ${appointmentId}`);
+    console.log(`Custom fields data:`, customFields);
+    
+    if (!customFields) {
+      return res.status(400).json({ 
+        error: { message: 'customFields object is required' }
+      });
+    }
+    
+    const result = await ghlService.upsertAppointmentCustomObject(
+      appointmentId,
+      customFields,
+      recordId
+    );
+    
+    res.json(result);
+  } catch (err) {
+    console.error('Error updating appointment custom fields:', err);
+    next(err);
+  }
+}
+
 async function validateGroupsSlug(req, res, next) {
   try {
     const result = await svc.validateGroupsSlug({ slug: req.params.slug }, { headers: req.headers });
@@ -331,12 +364,117 @@ async function validateGroupsSlug(req, res, next) {
   } catch (err) { next(err); }
 }
 
+/**
+ * Update custom fields for all events in a recurring series
+ * This is more efficient than the frontend making individual calls for each event
+ * POST /api/calendars/appointments/:id/recurring-series-custom-fields
+ */
+async function updateRecurringSeriesCustomFields(req, res, next) {
+  try {
+    const { id: appointmentId } = req.params;
+    const { calendarId, customFields } = req.body;
+    
+    console.log(`📝 Updating custom fields for recurring series starting from appointment: ${appointmentId}`);
+    console.log(`Custom fields:`, customFields);
+    
+    // Get all events from the calendar
+    const now = new Date();
+    const startDate = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000)); // 30 days ago
+    const endDate = new Date(now.getTime() + (365 * 24 * 60 * 60 * 1000)); // 1 year ahead
+    
+    const allEvents = await ghlService.getCalendarEvents(calendarId, startDate, endDate);
+    
+    // Extract base ID helper function
+    const extractBaseId = (eventId: string) => {
+      return eventId.includes('_') && /\d{13}_\d+$/.test(eventId) 
+        ? eventId.split('_')[0] 
+        : eventId;
+    };
+    
+    const currentBaseId = extractBaseId(appointmentId);
+    
+    // Find the current event to get its details
+    const currentEvent = allEvents.find(e => e.id === appointmentId);
+    if (!currentEvent) {
+      throw new Error(`Event ${appointmentId} not found`);
+    }
+    
+    // Determine the series ID
+    const seriesId = currentEvent.masterEventId || currentEvent.originalRecurringEventId || currentBaseId;
+    const currentEventDate = new Date(currentEvent.startTime);
+    
+    console.log(`🔍 Filtering events - seriesId: ${seriesId}, currentBaseId: ${currentBaseId}`);
+    
+    // Find all future events in the same recurring series
+    const futureEvents = allEvents.filter(event => {
+      const eventDate = new Date(event.startTime);
+      const eventBaseId = extractBaseId(event.id);
+      
+      const isSameSeries = 
+        (event.masterEventId && event.masterEventId === seriesId) ||
+        (event.originalRecurringEventId && event.originalRecurringEventId === seriesId) ||
+        eventBaseId === seriesId;
+      
+      const isFutureOrCurrent = eventDate >= currentEventDate;
+      
+      return isSameSeries && isFutureOrCurrent;
+    });
+    
+    console.log(`📊 Found ${futureEvents.length} events in recurring series to update`);
+    
+    // Update custom fields for each event
+    // Note: All events in a recurring series share the same custom object record (using base ID)
+    // So we only need to update once, but we'll update each to ensure consistency
+    let successCount = 0;
+    let errors = [];
+    
+    for (const event of futureEvents) {
+      try {
+        console.log(`Updating custom fields for event ${event.id}`);
+        
+        await ghlService.upsertAppointmentCustomObject(
+          event.id,
+          {
+            pageUrl: customFields.pageUrl,
+            coverImageUrl: customFields.coverImageUrl,
+            downloadFileUrl: customFields.downloadFileUrl,
+            internalNote: customFields.internalNote
+          }
+        );
+        
+        successCount++;
+        console.log(`✅ Updated event ${event.id}`);
+      } catch (error: any) {
+        console.error(`❌ Failed to update event ${event.id}:`, error.message);
+        errors.push({ eventId: event.id, error: error.message });
+      }
+    }
+    
+    console.log(`✓ Successfully updated ${successCount} out of ${futureEvents.length} events`);
+    
+    // Set cache control headers
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    
+    res.json({
+      success: true,
+      updatedCount: successCount,
+      totalEvents: futureEvents.length,
+      errors: errors.length > 0 ? errors : undefined
+    });
+  } catch (err) {
+    console.error('Error updating recurring series custom fields:', err);
+    next(err);
+  }
+}
+
 module.exports = { 
   listCalendars, getCalendarById, createCalendar, updateCalendar, deleteCalendar,
   // Groups
   getGroups, createCalendarGroup, editGroup, deleteGroup, disableGroup, validateGroupsSlug,
   // Appointments
-  createAppointment, getAppointment, editAppointment, getAppointmentCustomFields,
+  createAppointment, getAppointment, editAppointment, getAppointmentCustomFields, updateAppointmentCustomFields, updateRecurringSeriesCustomFields,
   // Events
   getCalendarEvents, getAllLocationEvents, deleteEvent,
   // Blocked Slots

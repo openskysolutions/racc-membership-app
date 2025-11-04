@@ -102,12 +102,12 @@ async function uploadAvatar(req, res, next) {
       maxBodyLength: Infinity
     });
     
-    console.log('GoHighLevel upload successful:', ghlResponse.data);
-    
     // Extract the media URL from the response
     const mediaData = ghlResponse.data;
     const mediaUrl = mediaData.url || mediaData.src || mediaData.mediaUrl;
     const mediaId = mediaData.id || mediaData.mediaId;
+    
+    console.log('✅ Avatar upload successful - mediaId:', mediaId);
     
     if (!mediaUrl) {
       console.error('No media URL in response:', mediaData);
@@ -212,12 +212,12 @@ async function uploadCoverImage(req, res, next) {
       maxBodyLength: Infinity
     });
 
-    console.log('GoHighLevel upload successful:', ghlResponse.data);
-
     // Extract the media URL from the response
     const mediaData = ghlResponse.data;
     const mediaUrl = mediaData.url || mediaData.fileUrl || mediaData.src || mediaData.mediaUrl;
     const mediaId = mediaData.id || mediaData.mediaId;
+
+    console.log('✅ Cover image upload successful - mediaId:', mediaId);
 
     if (!mediaUrl) {
       console.error('No media URL in response:', mediaData);
@@ -312,12 +312,12 @@ async function uploadEventCoverImage(req, res, next) {
       maxBodyLength: Infinity
     });
 
-    console.log('GoHighLevel upload successful:', ghlResponse.data);
-
     // Extract the media URL from the response
     const mediaData = ghlResponse.data;
     const mediaUrl = mediaData.url || mediaData.fileUrl || mediaData.src || mediaData.mediaUrl;
     const mediaId = mediaData.id || mediaData.mediaId;
+
+    console.log('✅ GoHighLevel upload successful - mediaId:', mediaId);
 
     if (!mediaUrl) {
       console.error('No media URL in response:', mediaData);

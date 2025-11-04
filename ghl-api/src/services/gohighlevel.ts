@@ -1085,7 +1085,7 @@ class GoHighLevelService {
       
       console.log(`✅ Success - Status: ${response.status}`);
       console.log(`Response data keys:`, Object.keys(response.data || {}));
-      console.log(`Full response data:`, JSON.stringify(response.data, null, 2));
+      // console.log(`Full response data:`, JSON.stringify(response.data, null, 2));
       
       // Handle the events array from response
       const events = response.data?.events || [];
@@ -1101,7 +1101,7 @@ class GoHighLevelService {
         console.log(`Sample event fields:`, Object.keys(events[0]));
       }
       
-      // Return events without custom fields - they will be loaded on demand
+      // Format events
       const formattedEvents = events.map((event: any) => ({
         id: event.id,
         title: event.title || 'Untitled Event',
@@ -1115,9 +1115,15 @@ class GoHighLevelService {
         locationId: event.locationId,
         isRecurring: event.isRecurring,
         rrule: event.rrule,
+        originalRecurringEventId: event.originalRecurringEventId,
+        masterEventId: event.masterEventId,
         calendarNotes: event.calendarNotes || event.notes || '',
         ...event
       }));
+      
+      // Batch-load custom fields for all events in a single API call
+      console.log(`🔄 Batch-loading custom fields for ${formattedEvents.length} events...`);
+      await this.batchLoadCustomFields(formattedEvents);
       
       return formattedEvents;
       
@@ -1168,6 +1174,12 @@ class GoHighLevelService {
       // Extract custom fields and internal note from payload
       const { internalNote, pageUrl, coverImageUrl, downloadFileUrl, customFieldsRecordId, description, location, ...rest } = payload;
       
+      // For recurring events, GoHighLevel expects the base event ID (without timestamp)
+      // Event IDs come in format: baseId_timestamp_duration
+      const baseAppointmentId = appointmentId.includes('_') ? appointmentId.split('_')[0] : appointmentId;
+      
+      console.log(`📝 Updating appointment - Original ID: ${appointmentId}, Base ID: ${baseAppointmentId}`);
+      
       // Build the update payload with only fields that GHL accepts
       // Note: GoHighLevel uses 'address' not 'location', and 'calendarNotes' not 'description'
       const appointmentPayload: any = {
@@ -1183,15 +1195,16 @@ class GoHighLevelService {
       
       console.log('📝 Updating appointment with payload:', JSON.stringify(appointmentPayload, null, 2));
       
-      // Update the appointment via GoHighLevel API
-      const response = await this.client.put(`/calendars/events/appointments/${appointmentId}`, appointmentPayload);
+      // Update the appointment via GoHighLevel API using the base ID
+      const response = await this.client.put(`/calendars/events/appointments/${baseAppointmentId}`, appointmentPayload);
       
       console.log('✅ Appointment updated successfully');
       
       // Save custom fields to custom object (if any custom fields provided)
+      // Use the base appointment ID for custom objects (same as we use for the appointment update)
       if (internalNote || pageUrl || coverImageUrl || downloadFileUrl) {
         await this.upsertAppointmentCustomObject(
-          appointmentId,
+          baseAppointmentId,
           { pageUrl, coverImageUrl, downloadFileUrl, internalNote },
           customFieldsRecordId // Pass existing record ID if available
         );
@@ -1341,34 +1354,66 @@ class GoHighLevelService {
     }
 
     try {
+      // Extract base ID from composite appointment ID (format: baseId_timestamp_duration)
+      // Only split if it looks like a composite ID (has underscores with numeric parts)
+      const baseAppointmentId = appointmentId.includes('_') && /\d{13}_\d+$/.test(appointmentId)
+        ? appointmentId.split('_')[0]
+        : appointmentId;
+        
+      if (baseAppointmentId !== appointmentId) {
+        console.log(`📝 Using base appointment ID: ${baseAppointmentId} (from recurring instance ${appointmentId})`);
+      } else {
+        console.log(`📝 Using appointment ID: ${appointmentId}`);
+      }
+      
+      // If no existing record ID provided, check if one exists by searching
+      let recordIdToUse = existingRecordId;
+      if (!recordIdToUse) {
+        console.log(`🔍 Searching for existing custom object for appointment ${baseAppointmentId}`);
+        try {
+          const existingFields = await this.getAppointmentCustomFields(appointmentId);
+          if (existingFields && existingFields.recordId) {
+            console.log(`✅ Found existing record: ${existingFields.recordId}`);
+            recordIdToUse = existingFields.recordId;
+          } else {
+            console.log(`📝 No existing record found, will create new one`);
+          }
+        } catch (searchError: any) {
+          console.warn(`⚠️  Error searching for existing custom fields (will create new):`, searchError.message);
+          // Continue to create new record if search fails
+        }
+      }
+      
       // Generate a unique ID for the custom object record if creating new
-      const uniqueId = existingRecordId ? undefined : `${Date.now()}-${randomBytes(8).toString('hex')}`;
+      const uniqueId = recordIdToUse ? undefined : `${Date.now()}-${randomBytes(8).toString('hex')}`;
       
       // Prepare the record data - only send properties object (GoHighLevel requirement)
+      // NOTE: Use lowercase property keys to match GoHighLevel's fieldKey format
+      // Even though display names are camelCase, stored properties are lowercase
       const recordData = {
         properties: {
-          appointmentid: appointmentId,  // lowercase
-          pageurl: customFields.pageUrl || '',  // lowercase
-          coverimageurl: customFields.coverImageUrl || '',  // lowercase
-          downloadfileurl: customFields.downloadFileUrl || '',  // lowercase
-          internalnote: customFields.internalNote || '',  // lowercase
+          appointmentid: baseAppointmentId,  // Use base ID for recurring, full ID for non-recurring
+          pageurl: customFields.pageUrl || '',  // lowercase to match fieldKey
+          coverimageurl: customFields.coverImageUrl || '',  // lowercase to match fieldKey
+          downloadfileurl: customFields.downloadFileUrl || '',  // lowercase to match fieldKey
+          internalnote: customFields.internalNote || '',  // lowercase to match fieldKey
           ...(uniqueId && { id: uniqueId })  // Only include id when creating new record
         }
       };
 
-      console.log(`📝 Custom object record data:`, JSON.stringify(recordData, null, 2));
-
       let recordId: string;
 
-      if (existingRecordId) {
+      if (recordIdToUse) {
         // Update existing record
-        console.log(`📝 Updating custom object record ${existingRecordId} for appointment ${appointmentId}`);
+        console.log(`📝 Updating custom object record ${recordIdToUse} for appointment ${appointmentId}`);
         try {
+          // For PUT requests, locationId might need to be a query parameter instead of body
+          const requestBody = recordData; // Only send properties
           const response = await this.client.put(
-            `/objects/${this.APPOINTMENT_CUSTOM_OBJECT_ID}/records/${existingRecordId}`,
-            recordData
+            `/objects/${this.APPOINTMENT_CUSTOM_OBJECT_ID}/records/${recordIdToUse}?locationId=${this.locationId}`,
+            requestBody
           );
-          recordId = existingRecordId;
+          recordId = recordIdToUse;
           console.log(`✅ Successfully updated custom object record`);
         } catch (updateError: any) {
           console.error('Failed to update custom object record:', updateError.response?.data);
@@ -1406,16 +1451,24 @@ class GoHighLevelService {
           throw createError;
         }
         
-        // Create association between appointment and custom object record
+        // For recurring events, skip association creation as it may fail with base IDs
+        // The custom object lookup works via the appointmentid property search, not associations
+        if (baseAppointmentId !== appointmentId) {
+          console.log(`⚠️  Skipping association creation for recurring event (associations don't work with base IDs)`);
+          console.log(`   Custom object will be found via appointmentid property: ${baseAppointmentId}`);
+          return { recordId };
+        }
+        
+        // Create association between appointment and custom object record (non-recurring only)
         // Uses the association schema key created in setup-custom-objects.js
-        console.log(`🔗 Creating record association between appointment ${appointmentId} and custom object record ${recordId}`);
+        console.log(`🔗 Creating record association between appointment ${baseAppointmentId} and custom object record ${recordId}`);
         try {
           const associationResponse = await this.client.post(
             `/associations/${this.APPOINTMENT_ASSOCIATION_KEY}/records`,
             {
               locationId: this.locationId,
               firstRecordId: recordId, // custom object record
-              secondRecordId: appointmentId // appointment
+              secondRecordId: baseAppointmentId // appointment ID
             }
           );
           
@@ -1435,11 +1488,24 @@ class GoHighLevelService {
 
       return { recordId };
     } catch (error: any) {
-      console.error('Failed to upsert appointment custom object:', error.message);
+      console.error('❌ Failed to upsert appointment custom object:', error.message);
+      console.error('Error details:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        appointmentId,
+        baseAppointmentId: appointmentId.includes('_') && /\d{13}_\d+$/.test(appointmentId)
+          ? appointmentId.split('_')[0]
+          : appointmentId
+      });
       
       // Provide more helpful error message
       if (error.response?.status === 422) {
         throw new Error(`Custom object fields not configured. Please add the required fields in GoHighLevel UI first.`);
+      }
+      
+      if (error.response?.status === 404) {
+        throw new Error(`404 Error: GoHighLevel custom object or appointment not found. AppointmentId: ${appointmentId}`);
       }
       
       throw new Error(`Failed to save appointment custom fields: ${error.message}`);
@@ -1462,7 +1528,17 @@ class GoHighLevelService {
     }
 
     try {
-      console.log(`🔍 Fetching custom fields for appointment ${appointmentId}`);
+      // Extract base ID from composite appointment ID (format: baseId_timestamp_duration)
+      // Only split if it looks like a composite ID (has underscores with numeric parts)
+      const baseAppointmentId = appointmentId.includes('_') && /\d{13}_\d+$/.test(appointmentId)
+        ? appointmentId.split('_')[0]
+        : appointmentId;
+      
+      if (baseAppointmentId !== appointmentId) {
+        console.log(`🔍 Fetching custom fields for appointment ${baseAppointmentId} (from recurring instance ${appointmentId})`);
+      } else {
+        console.log(`🔍 Fetching custom fields for appointment ${appointmentId}`);
+      }
       
       // Search for custom object records by appointmentid field
       // POST /objects/:schemaKey/records/search requires page and pageLimit
@@ -1471,38 +1547,160 @@ class GoHighLevelService {
         {
           locationId: this.locationId,
           page: 1,
-          pageLimit: 10
+          pageLimit: 100  // Increase to see more records
         }
       );
 
       const records = response.data?.records || response.data?.data || [];
       
-      // Filter client-side by appointmentid since server-side filter doesn't work as expected
-      const record = records.find((r: any) => {
+      console.log(`📊 Found ${records.length} total custom object records`);
+      console.log(`🔍 Looking for appointmentid: ${baseAppointmentId}`);
+      
+      // Log matching appointmentid values to debug
+      const matchingAppointmentIds = records
+        .map((r: any) => (r.properties || {}).appointmentid)
+        .filter((id: string) => id && id.includes(baseAppointmentId));
+      
+      if (matchingAppointmentIds.length > 0) {
+        console.log(`📋 Found ${matchingAppointmentIds.length} matching appointmentid(s):`, matchingAppointmentIds);
+      } else {
+        console.log(`⚠️  No matching appointmentids found for: ${baseAppointmentId}`);
+      }
+      
+      // Filter client-side by base appointmentId since server-side filter doesn't work as expected
+      // NOTE: Use lowercase property keys as that's how they're stored in GoHighLevel
+      // If multiple records exist for same appointmentId, take the most recently updated one
+      const matchingRecords = records.filter((r: any) => {
         const props = r.properties || {};
-        return props.appointmentid === appointmentId;
+        return props.appointmentid === baseAppointmentId;  // lowercase to match stored property
       });
       
-      if (!record) {
-        console.log(`📝 No custom fields found for appointment ${appointmentId}`);
+      if (matchingRecords.length === 0) {
+        console.log(`❌ No custom fields found for appointment ${appointmentId} (looking for ${baseAppointmentId})`);
         return null;
       }
       
-      console.log(`✅ Found custom fields for appointment ${appointmentId}`);
+      // Sort by dateUpdated/updatedAt descending and take the most recent
+      const record = matchingRecords.sort((a: any, b: any) => {
+        const aDate = a.dateUpdated || a.updatedAt || a.dateAdded || a.createdAt || 0;
+        const bDate = b.dateUpdated || b.updatedAt || b.dateAdded || b.createdAt || 0;
+        return new Date(bDate).getTime() - new Date(aDate).getTime();
+      })[0];
       
       // GoHighLevel stores custom fields in the "properties" object with lowercase keys
+      // even though the display names in the UI are camelCase
       const props = record.properties || {};
       return {
-        pageUrl: props.pageurl || props.pageUrl || '',
-        coverImageUrl: props.coverimageurl || props.coverImageUrl || '',
-        downloadFileUrl: props.downloadfileurl || props.downloadFileUrl || '',
-        internalNote: props.internalnote || props.internalNote || '',
+        pageUrl: props.pageurl || '',
+        coverImageUrl: props.coverimageurl || '',
+        downloadFileUrl: props.downloadfileurl || '',
+        internalNote: props.internalnote || '',
         recordId: record.id || record._id
       };
     } catch (error: any) {
       console.error(`Failed to fetch custom fields for appointment ${appointmentId}:`, error.message);
       console.error('Error response:', error.response?.data);
       return null; // Return null instead of throwing to handle gracefully
+    }
+  }
+
+  /**
+   * Batch-load custom fields for multiple events efficiently
+   * Fetches all custom object records in a single API call and maps them to events
+   * @param events - Array of event objects to attach custom fields to
+   */
+  async batchLoadCustomFields(events: any[]): Promise<void> {
+    if (!this.client || events.length === 0) {
+      return;
+    }
+
+    try {
+      console.log(`🔄 Batch-loading custom fields for ${events.length} events`);
+      
+      // Fetch ALL custom object records in a single call (max 500 per API limit)
+      const response = await this.client.post(
+        `/objects/${this.APPOINTMENT_CUSTOM_OBJECT_ID}/records/search`,
+        {
+          locationId: this.locationId,
+          page: 1,
+          pageLimit: 500  // API maximum is 500
+        }
+      );
+
+      const records = response.data?.records || response.data?.data || [];
+      console.log(`📦 Retrieved ${records.length} custom object records`);
+      
+      // Create a lookup map: appointmentId -> custom fields
+      // If duplicates exist, keep the most recently updated record
+      const customFieldsMap = new Map();
+      const duplicateTracker = new Map(); // Track duplicate counts
+      
+      records.forEach((record: any) => {
+        const props = record.properties || {};
+        const appointmentId = props.appointmentid;
+        if (appointmentId) {
+          const existing = customFieldsMap.get(appointmentId);
+          
+          // If no existing record, or this record is newer, use it
+          if (!existing) {
+            customFieldsMap.set(appointmentId, {
+              pageUrl: props.pageurl || '',
+              coverImageUrl: props.coverimageurl || '',
+              downloadFileUrl: props.downloadfileurl || '',
+              internalNote: props.internalnote || '',
+              recordId: record.id || record._id,
+              dateUpdated: record.dateUpdated || record.updatedAt || record.dateAdded || record.createdAt
+            });
+          } else {
+            // Compare dates - keep the newer one
+            const existingDate = new Date(existing.dateUpdated || 0).getTime();
+            const currentDate = new Date(record.dateUpdated || record.updatedAt || record.dateAdded || record.createdAt || 0).getTime();
+            
+            if (currentDate > existingDate) {
+              console.log(`🔄 Found duplicate for ${appointmentId}, replacing ${existing.recordId} with newer ${record.id || record._id}`);
+              customFieldsMap.set(appointmentId, {
+                pageUrl: props.pageurl || '',
+                coverImageUrl: props.coverimageurl || '',
+                downloadFileUrl: props.downloadfileurl || '',
+                internalNote: props.internalnote || '',
+                recordId: record.id || record._id,
+                dateUpdated: record.dateUpdated || record.updatedAt || record.dateAdded || record.createdAt
+              });
+            }
+            
+            // Track duplicate count
+            duplicateTracker.set(appointmentId, (duplicateTracker.get(appointmentId) || 1) + 1);
+          }
+        }
+      });
+      
+      console.log(`📋 Built lookup map with ${customFieldsMap.size} custom field records`);
+      
+      // Attach custom fields to each event
+      let matchedCount = 0;
+      events.forEach(event => {
+        // Extract base ID from composite appointment ID if needed
+        const baseId = event.id.includes('_') && /\d{13}_\d+$/.test(event.id)
+          ? event.id.split('_')[0]
+          : event.id;
+        
+        const customFields = customFieldsMap.get(baseId);
+        if (customFields) {
+          event.pageUrl = customFields.pageUrl;
+          event.coverImageUrl = customFields.coverImageUrl;
+          event.downloadFileUrl = customFields.downloadFileUrl;
+          event.internalNote = customFields.internalNote;
+          event.customFieldsRecordId = customFields.recordId;
+          matchedCount++;
+        }
+      });
+      
+      console.log(`✅ Attached custom fields to ${matchedCount}/${events.length} events`);
+      
+    } catch (error: any) {
+      console.error('❌ Failed to batch-load custom fields:', error.message);
+      console.error('Error response:', error.response?.data);
+      // Don't throw - just log the error and continue without custom fields
     }
   }
 }

@@ -18,7 +18,7 @@ import LogoDark from "@/assets/racc-logo-dark.png";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu";
 import { useAuthStore } from "@/stores/authStore";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useTheme } from "@/providers/theme-provider";
 import { Moon, Sun } from "lucide-react";
 import cn from "classnames";
@@ -71,6 +71,7 @@ export const Navbar = () => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const {isAuthenticated, user, handleLogout } = useAuthStore();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const { theme, setTheme } = useTheme();
 
@@ -143,7 +144,7 @@ export const Navbar = () => {
                       size="sm"
                       color="red"
                       variant={"outline"}
-                      onClick={() => navigate('/login')}
+                      onClick={() => navigate('/login', { state: { from: location } })}
                       className={cn(
                         "hidden md:inline-flex",
                         // "p-2 h-7 text-xs"
@@ -318,7 +319,7 @@ export const Navbar = () => {
                             variant={"outline"}
                             onClick={() => {
                               setIsOpen(false);
-                              navigate('/login');
+                              navigate('/login', { state: { from: location } });
                             }}
                             className=""
                           >
