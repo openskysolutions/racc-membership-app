@@ -171,7 +171,7 @@ jobs:
             echo "Existing racc-api service detected - performing rolling update"
             
             # Start new instance with a temporary name on a test port
-            PORT_TEMP=3099 pm2 start dist/server.js --name racc-api-new --wait-ready --listen-timeout 10000
+            PORT_TEMP=3099 pm2 start dist/server.js --name racc-api-new
             
             # Wait for new instance to be ready
             sleep 3
@@ -199,7 +199,7 @@ jobs:
             
           else
             echo "No existing racc-api service - starting fresh"
-            pm2 start dist/server.js --name racc-api --wait-ready --listen-timeout 10000
+            pm2 start dist/server.js --name racc-api
           fi
           
           # Verify API is running

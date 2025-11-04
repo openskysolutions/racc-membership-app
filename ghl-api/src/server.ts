@@ -19,6 +19,11 @@ async function startServer() {
       console.log(`Server running at http://localhost:${PORT}/api`);
       console.log(`Swagger documentation available at http://localhost:${PORT}/api/docs`);
       console.log('Ready to accept registration requests');
+      
+      // Signal to PM2 that the app is ready (for zero-downtime deployments)
+      if (process.send) {
+        process.send('ready');
+      }
     });
   } catch (error) {
     console.error('Failed to start server:', error);
