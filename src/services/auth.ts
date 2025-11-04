@@ -3,6 +3,7 @@
 interface LoginCredentials {
   email: string;
   password: string;
+  remember?: boolean;
 }
   
 interface AuthResponse {
@@ -59,7 +60,7 @@ export async function generateCodeChallenge(verifier: string): Promise<string> {
 /**
  * Exchange authorization code for token using PKCE verifier
  */
-export async function exchangeTokenWithCode(code: string): Promise<any> {
+export async function exchangeTokenWithCode(code: string, remember: boolean = false): Promise<any> {
   const codeVerifier = sessionStorage.getItem('pkce_code_verifier');
   if (!codeVerifier) throw new Error('Missing PKCE code verifier');
   
@@ -77,7 +78,9 @@ export async function exchangeTokenWithCode(code: string): Promise<any> {
   const data = await response.json();
   if (!response.ok) throw new Error(data.error_description || 'Token exchange failed');
   
-  localStorage.setItem('token', data.access_token);
+  // Store token based on "remember me" preference
+  const storage = remember ? localStorage : sessionStorage;
+  storage.setItem('token', data.access_token);
   sessionStorage.removeItem('pkce_code_verifier');
   
   return data;
@@ -104,7 +107,8 @@ export async function login(credentials: LoginCredentials): Promise<AuthResponse
         password: credentials.password,
         codeChallenge: codeChallenge,
         codeChallengeMethod: 'S256',
-        redirectUri: window.location.origin + '/auth'
+        redirectUri: window.location.origin + '/auth',
+        remember: credentials.remember || false
       }),
     });
 
@@ -115,8 +119,8 @@ export async function login(credentials: LoginCredentials): Promise<AuthResponse
 
     const authData = await authResponse.json();
     
-    // Step 2: Exchange authorization code for token
-    const tokenData = await exchangeTokenWithCode(authData.code);
+    // Step 2: Exchange authorization code for token (pass remember preference)
+    const tokenData = await exchangeTokenWithCode(authData.code, credentials.remember || false);
     
     // Step 3: Fetch user profile using the token
     const userProfile = await getProfile();
@@ -138,7 +142,7 @@ export async function login(credentials: LoginCredentials): Promise<AuthResponse
  */
 export async function getProfile(): Promise<AuthResponse['user']> {
   try {
-    const token = localStorage.getItem('token');
+    const token = await getToken();
     if (!token) throw new Error('No token found');
     
     const response = await fetch(`${API_BASE_URL}/auth/profile`, {
@@ -166,14 +170,16 @@ export async function getProfile(): Promise<AuthResponse['user']> {
  */
 export async function logout(): Promise<void> {
   localStorage.removeItem('token');
+  sessionStorage.removeItem('token');
   sessionStorage.removeItem('pkce_code_verifier');
 }
 
 /**
- * Get stored token
+ * Get stored token from either localStorage or sessionStorage
  */
 export async function getToken(): Promise<string | null> {
-  return localStorage.getItem('token');
+  // Check localStorage first (remember me), then sessionStorage
+  return localStorage.getItem('token') || sessionStorage.getItem('token');
 }
 
 /**
@@ -182,4 +188,42 @@ export async function getToken(): Promise<string | null> {
 export async function hasToken(): Promise<boolean> {
   const token = await getToken();
   return !!token;
+}
+
+/**
+ * Validate if the current token is still valid on the backend
+ * Returns true if valid, false if invalid/expired
+ * Does not throw errors - always returns cleanly
+ */
+export async function validateToken(): Promise<boolean> {
+  try {
+    const token = await getToken();
+    if (!token) return false;
+
+    const response = await fetch(`${API_BASE_URL}/auth/validate`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      return false;
+    }
+
+    const data = await response.json();
+    
+    // If token is invalid, clear it from storage
+    if (!data.valid) {
+      await logout();
+      return false;
+    }
+
+    return data.valid;
+  } catch (error) {
+    // On any error, consider token invalid
+    console.error('Token validation error:', error);
+    return false;
+  }
 }

@@ -13,12 +13,12 @@ function App() {
   const { setLocationInfo, setLoading, setError } = useLocationStore();
 
   useEffect(() => {
-    // Check for existing authentication token
-    const token = localStorage.getItem('token');
+    // Check for existing authentication token in either storage
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
     if (token) {
       checkAuth();
     } else {
-      // Not logged in: clear loading state without fetching
+      // No token found: clear loading state without fetching
       useAuthStore.setState({ isLoading: false });
     }
   }, [checkAuth]);

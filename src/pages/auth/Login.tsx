@@ -24,7 +24,7 @@ export const AuthPage = () => {
     e.preventDefault();
     setError(null);
     try {
-      const response = await login({ email, password });
+      const response = await login({ email, password, remember });
       setUser(response.user);
       // Redirect to the page they were trying to access, or home if no specific page
       navigate(from, { replace: true });

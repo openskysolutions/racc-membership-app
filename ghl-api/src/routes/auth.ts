@@ -24,6 +24,7 @@ const authorizationCodes = new Map<string, {
   codeChallenge: string;
   codeChallengeMethod: string;
   redirectUri?: string;
+  remember?: boolean; // Remember me preference
   expiresAt: Date;
 }>();
 
@@ -38,7 +39,8 @@ router.post('/authorize', async (req, res) => {
       password, 
       codeChallenge, 
       codeChallengeMethod = 'S256',
-      redirectUri 
+      redirectUri,
+      remember = false
     } = req.body;
 
     // Validate required parameters
@@ -67,11 +69,9 @@ router.post('/authorize', async (req, res) => {
     }
 
     // Check if user has "active" tag in GoHighLevel
-    console.log(`🔍 Checking GoHighLevel active status for user: ${email}`);
     const { isActive, contact } = await ghlService.isUserActive(email);
     
     if (!isActive) {
-      console.log(`❌ User ${email} does not have 'active' tag in GoHighLevel`);
       return res.status(403).json({
         error: 'access_denied',
         error_description: 'Account not active. Please ensure your membership is current and you have the "active" tag in GoHighLevel.',
@@ -80,8 +80,6 @@ router.post('/authorize', async (req, res) => {
       });
     }
 
-    console.log(`✅ User ${email} verified as active in GoHighLevel`);
-
     // Check for admin role based on HighLevel tags
     const userRole = await ghlService.getUserRole(email);
     
@@ -89,7 +87,6 @@ router.post('/authorize', async (req, res) => {
     if (user.role !== userRole) {
       try {
         await databaseService.updateUser(user.id!, { role: userRole });
-        console.log(`📝 Updated local database role from '${user.role}' to '${userRole}' for user ${email}`);
         user.role = userRole; // Update the user object for the response
       } catch (updateError) {
         console.error('Failed to update user role in database:', updateError);
@@ -101,7 +98,6 @@ router.post('/authorize', async (req, res) => {
     if (user.status !== 'active') {
       try {
         await databaseService.updateUserStatus(user.id!, 'active');
-        console.log(`📝 Updated local database status to 'active' for user ${email}`);
       } catch (updateError) {
         console.error('Failed to update user status in database:', updateError);
         // Continue with auth even if database update fails
@@ -117,10 +113,9 @@ router.post('/authorize', async (req, res) => {
       codeChallenge,
       codeChallengeMethod,
       redirectUri,
+      remember, // Store remember preference
       expiresAt: new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
     });
-
-    console.log(`✅ Authorization code generated for user ${user.email}`);
 
     res.json({
       code: authCode,
@@ -216,17 +211,18 @@ router.post('/token', async (req, res) => {
       });
     }
 
+    // Determine expiration time based on remember preference
+    // Remember me: 30 days, otherwise: 1 hour
+    const expiresIn = authData.remember ? (30 * 24 * 3600) : 3600;
+
     // Create session and generate tokens
     const accessToken = authSessionService.generateAccessToken(user.id);
-    const session = await authSessionService.createSession(user.id!, accessToken, 3600, user); // Pass complete user data
+    const session = await authSessionService.createSession(user.id!, accessToken, expiresIn, user); // Pass complete user data
     
-    console.log(`✅ Access token generated for user ${user.email}:`, accessToken);
-    console.log(`✅ Session created:`, { sessionId: session.id, expiresAt: session.expiresAt });
-
     res.json({
       access_token: session.token,
       token_type: 'Bearer',
-      expires_in: 3600, // 1 hour
+      expires_in: expiresIn,
       user: {
         id: user.id,
         email: user.email,
@@ -256,23 +252,13 @@ router.post('/token', async (req, res) => {
  */
 router.post('/session', async (req, res) => {
   try {
-    const { code, codeVerifier, code_verifier, email, password, codeChallenge, codeChallengeMethod } = req.body;
+    const { code, codeVerifier, code_verifier, email, password, codeChallenge, codeChallengeMethod, remember } = req.body;
     
     // Support both camelCase and snake_case for flexibility
     const verifier = codeVerifier || code_verifier;
     
-    console.log('🔍 Session request received:', {
-      hasCode: !!code,
-      hasCodeVerifier: !!verifier,
-      hasEmail: !!email,
-      hasPassword: !!password,
-      hasCodeChallenge: !!codeChallenge
-    });
-    
     // If no code but has email/password/codeChallenge, do the full flow
     if (!code && email && password && codeChallenge && verifier) {
-      console.log('🔄 No code provided, performing full PKCE flow...');
-      
       // Step 1: Authenticate and get authorization code
       const user = await databaseService.verifyPassword(email, password);
       if (!user) {
@@ -283,11 +269,9 @@ router.post('/session', async (req, res) => {
       }
 
       // Check if user has "active" tag in GoHighLevel
-      console.log(`🔍 Checking GoHighLevel active status for user: ${email}`);
       const { isActive, contact } = await ghlService.isUserActive(email);
       
       if (!isActive) {
-        console.log(`❌ User ${email} does not have 'active' tag in GoHighLevel`);
         return res.status(403).json({
           error: 'access_denied',
           error_description: 'Account not active. Please ensure your membership is current and you have the "active" tag in GoHighLevel.',
@@ -296,13 +280,10 @@ router.post('/session', async (req, res) => {
         });
       }
 
-      console.log(`✅ User ${email} verified as active in GoHighLevel`);
-
       // Update local database status to match GoHighLevel if needed
       if (user.status !== 'active') {
         try {
           await databaseService.updateUserStatus(user.id!, 'active');
-          console.log(`📝 Updated local database status to 'active' for user ${email}`);
         } catch (updateError) {
           console.error('Failed to update user status in database:', updateError);
           // Continue with auth even if database update fails
@@ -322,12 +303,13 @@ router.post('/session', async (req, res) => {
         });
       }
 
+      // Determine expiration time based on remember preference
+      const expiresIn = remember ? (30 * 24 * 3600) : 3600;
+
       // Create session directly (skip authorization code step)
       const accessToken = authSessionService.generateAccessToken(user.id);
-      const session = await authSessionService.createSession(user.id!, accessToken, 3600);
+      const session = await authSessionService.createSession(user.id!, accessToken, expiresIn);
       
-      console.log(`✅ Direct session created for user ${user.email}`);
-
       return res.json({
         success: true,
         session: {
@@ -401,12 +383,13 @@ router.post('/session', async (req, res) => {
       });
     }
 
+    // Determine expiration time based on remember preference from authData
+    const expiresIn = authData.remember ? (30 * 24 * 3600) : 3600;
+
     // Create session and generate tokens
     const accessToken = authSessionService.generateAccessToken(user.id);
-    const session = await authSessionService.createSession(user.id!, accessToken, 3600); // 1 hour
+    const session = await authSessionService.createSession(user.id!, accessToken, expiresIn);
     
-    console.log(`✅ Session created for user ${user.email} via /session endpoint`);
-
     res.json({
       success: true,
       session: {
@@ -525,12 +508,8 @@ router.get('/profile', async (req, res) => {
 
     const token = authHeader.substring(7); // Remove 'Bearer ' prefix
     
-    console.log(`🔍 Profile request - Token received:`, token);
-    
     // Check if session exists and is valid
     const session = await authSessionService.getSessionByToken(token);
-    
-    console.log(`🔍 Session lookup result:`, session ? { id: session.id, expiresAt: session.expiresAt } : 'null');
     
     if (!session) {
       return res.status(401).json({
@@ -559,17 +538,13 @@ router.get('/profile', async (req, res) => {
     // Check HighLevel tags to sync role (but don't fail auth if this fails)
     let currentRole = user.role;
     try {
-      console.log(`🔍 Syncing role from HighLevel tags for user: ${user.email}`);
       const newRole = await ghlService.getUserRole(user.email);
       
       // Update role if it changed
       if (user.role !== newRole) {
         await databaseService.updateUser(user.id!, { role: newRole });
         currentRole = newRole;
-        console.log(`🔄 Updated user role from '${user.role}' to '${newRole}' based on HighLevel tags`);
       }
-      
-      console.log(`✅ Role sync complete - user ${user.email} role: ${currentRole}`);
     } catch (roleUpdateError) {
       console.error('Failed to sync role from HighLevel, using database role:', roleUpdateError);
       // Continue with existing role from database
@@ -603,6 +578,47 @@ router.get('/profile', async (req, res) => {
 });
 
 /**
+ * GET /auth/validate
+ * Lightweight endpoint to check if token is valid without fetching full profile
+ * Returns 200 with { valid: true/false } - never returns errors
+ */
+router.get('/validate', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    
+    // No token provided
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.json({ valid: false, reason: 'no_token' });
+    }
+
+    const token = authHeader.substring(7);
+    
+    // Check if session exists and is valid
+    const session = await authSessionService.getSessionByToken(token);
+    
+    if (!session) {
+      return res.json({ valid: false, reason: 'session_not_found' });
+    }
+
+    // Check if session is expired
+    if (new Date(session.expiresAt) <= new Date()) {
+      return res.json({ valid: false, reason: 'session_expired' });
+    }
+
+    // Session is valid
+    return res.json({ 
+      valid: true,
+      expiresAt: session.expiresAt 
+    });
+
+  } catch (error: any) {
+    console.error('Validation error:', error);
+    // Even on error, return clean response
+    return res.json({ valid: false, reason: 'validation_error' });
+  }
+});
+
+/**
  * POST /auth/logout
  * Logout user and invalidate session
  */
@@ -627,11 +643,9 @@ router.post('/logout', async (req, res) => {
       if (session) {
         // Invalidate the session
         await authSessionService.invalidateSession(session.id);
-        console.log(`✅ Session invalidated for user: ${session.memberId}`);
       }
     } catch (sessionError) {
       // If session doesn't exist or is already invalid, that's fine for logout
-      console.log('Session not found or already invalid during logout');
     }
 
     res.json({

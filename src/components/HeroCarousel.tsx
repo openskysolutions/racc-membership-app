@@ -107,30 +107,19 @@ export const HeroCarousel = () => {
   useEffect(() => {
     const fetchUpcomingEvents = async () => {
       try {
-        console.log('Fetching events for carousel...');
         const events = await getCurrentYearEvents(GHL_CALENDAR_ID);
-        console.log('Events fetched:', events);
-        console.log('Number of events:', events.length);
         
         // Filter and sort upcoming events
         const now = new Date();
-        console.log('Current date:', now.toISOString());
         
         const upcomingEvents = events
           .filter(event => {
             const eventDate = new Date(event.startTime);
             const isUpcoming = eventDate > now;
-            console.log(`Event: "${event.title}"`);
-            console.log(`  Start time string: ${event.startTime}`);
-            console.log(`  Parsed date: ${eventDate.toISOString()}`);
-            console.log(`  Is upcoming: ${isUpcoming}`);
             return isUpcoming;
           })
           .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
           .slice(0, 3);
-
-        console.log('Upcoming events to display:', upcomingEvents);
-        console.log('Number of upcoming events:', upcomingEvents.length);
 
         // Fetch cover images for upcoming events
         const eventSlidesPromises = upcomingEvents.map(async (event) => {
@@ -142,7 +131,6 @@ export const HeroCarousel = () => {
               coverImageUrl: customFields.coverImageUrl 
             };
           } catch (error) {
-            console.error(`Failed to fetch custom fields for event ${event.id}:`, error);
             return { type: 'event' as const, event };
           }
         });
@@ -155,13 +143,6 @@ export const HeroCarousel = () => {
           ...eventSlides,
           ...membershipSlides
         ];
-
-        console.log('Total slides:', allSlides.length);
-        console.log('Slides breakdown:', {
-          main: 1,
-          membership: membershipSlides.length,
-          events: upcomingEvents.length
-        });
         setSlides(allSlides);
       } catch (error) {
         console.error('Error fetching events:', error);

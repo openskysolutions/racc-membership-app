@@ -39,17 +39,6 @@ const CalendarPage: React.FC = () => {
   const [refreshTrigger, setRefreshTrigger] = useState(0); // Trigger to force refresh
   const [visibleEventsCount, setVisibleEventsCount] = useState(5); // How many events to show in the list
 
-  // Refresh events when page gains focus (returning from event detail page)
-  // useEffect(() => {
-  //   const handleFocus = () => {
-  //     console.log('Calendar page focused - refreshing events');
-  //     setRefreshTrigger(prev => prev + 1);
-  //   };
-
-  //   window.addEventListener('focus', handleFocus);
-  //   return () => window.removeEventListener('focus', handleFocus);
-  // }, []);
-
   // Check for URL parameters to trigger create event dialog
   useEffect(() => {
     if (searchParams.get('create') === 'true') {
@@ -108,7 +97,6 @@ const CalendarPage: React.FC = () => {
         
         // Load 5 more if we haven't loaded all yet
         if (visibleEventsCount < upcomingEventsCount) {
-          console.log(`Scrolled near bottom - loading 5 more events (${visibleEventsCount} -> ${visibleEventsCount + 5})`);
           setVisibleEventsCount(prev => Math.min(prev + 5, upcomingEventsCount));
         }
       }
@@ -155,7 +143,6 @@ const CalendarPage: React.FC = () => {
 
   const handleRegister = (formData: RegistrationFormData) => {
     // TODO: Implement actual registration logic
-    console.log('Registration submitted:', formData);
     setIsRegistered(true);
     setShowRegisterDialog(false);
   };

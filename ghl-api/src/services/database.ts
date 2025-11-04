@@ -295,6 +295,19 @@ class DatabaseService {
   }
 
   /**
+   * Get session by access token
+   */
+  async getSessionByToken(accessToken: string): Promise<Session | null> {
+    if (!this.db) throw new Error('Database not initialized');
+
+    const session = await this.db.get(`
+      SELECT * FROM sessions WHERE accessToken = ? AND expiresAt > datetime('now')
+    `, [accessToken]);
+
+    return session || null;
+  }
+
+  /**
    * Get session by ID
    */
   async getSessionById(id: number): Promise<Session> {

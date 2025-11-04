@@ -508,7 +508,6 @@ export async function getEventCustomFields(eventId: string): Promise<{
   recordId?: string;
 }> {
   try {
-    console.log('Fetching custom fields for event:', eventId);
     
     // Add cache-busting timestamp to ensure fresh data
     const timestamp = Date.now();
@@ -520,7 +519,6 @@ export async function getEventCustomFields(eventId: string): Promise<{
     }
     
     const customFields = await response.json();
-    console.log('Fetched custom fields:', customFields);
     
     return customFields;
   } catch (error: any) {

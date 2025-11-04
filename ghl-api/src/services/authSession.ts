@@ -1,17 +1,68 @@
 // AuthSession service - implements Better Auth PKCE token exchange and session management
 // Follows OAuth 2.1/OIDC Authorization Code with PKCE flow
 
+import { databaseService } from './database';
+
 /**
  * Service for managing authentication sessions using Better Auth PKCE
  * Implements OAuth 2.1/OIDC Authorization Code with PKCE flow
+ * Uses database for persistence with in-memory cache for performance
  */
 class AuthSessionService {
-  private sessions: Map<string, any>;
+  private sessionCache: Map<string, any>; // In-memory cache for fast lookups
   private pkceChallenge: Map<string, any>;
+  private cleanupInterval: NodeJS.Timeout | null;
 
   constructor() {
-    this.sessions = new Map(); // In-memory session store
+    this.sessionCache = new Map(); // Cache indexed by token
     this.pkceChallenge = new Map(); // Temporary PKCE challenge storage
+    this.cleanupInterval = null;
+    
+    // Start periodic cleanup task (runs every hour)
+    this.startCleanupTask();
+  }
+  
+  /**
+   * Start periodic cleanup task to remove expired sessions
+   */
+  private startCleanupTask() {
+    // Run cleanup every hour
+    this.cleanupInterval = setInterval(async () => {
+      await this.cleanupExpiredSessions();
+    }, 60 * 60 * 1000); // 1 hour
+  }
+  
+  /**
+   * Clean up all expired sessions from database and cache
+   */
+  private async cleanupExpiredSessions() {
+    try {
+      // Clean up from database
+      await databaseService.cleanupExpiredSessions();
+      
+      // Clean up from cache
+      const now = new Date();
+      let cleanedCount = 0;
+      
+      for (const [key, session] of this.sessionCache.entries()) {
+        if (session.expiresAt && new Date(session.expiresAt) <= now) {
+          this.sessionCache.delete(key);
+          cleanedCount++;
+        }
+      }
+    } catch (error) {
+      console.error('Error during session cleanup:', error);
+    }
+  }
+  
+  /**
+   * Stop the cleanup task (for graceful shutdown)
+   */
+  public stopCleanupTask() {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = null;
+    }
   }
 
   /**
@@ -117,15 +168,17 @@ class AuthSessionService {
       user: user // Store complete user data
     };
 
-    // Store session in memory (constitution requirement: ephemeral tokens)
-    this.sessions.set(sessionId, session);
-    this.sessions.set(accessToken, session); // Also index by token for lookups
+    // Store session in database for persistence
+    try {
+      await databaseService.createSession(memberId, sessionId, accessToken, expiresAt);
+    } catch (error) {
+      console.error('Failed to persist session to database:', error);
+      // Continue anyway - session will work from cache until restart
+    }
 
-    // Set cleanup timer for expired session
-    setTimeout(() => {
-      this.sessions.delete(sessionId);
-      this.sessions.delete(accessToken);
-    }, expiresIn * 1000);
+    // Store in cache for fast lookups
+    this.sessionCache.set(sessionId, session);
+    this.sessionCache.set(accessToken, session); // Also index by token for lookups
 
     return session;
   }
@@ -134,7 +187,26 @@ class AuthSessionService {
    * Validate and retrieve session by ID
    */
   async getSession(sessionId) {
-    const session = this.sessions.get(sessionId);
+    // Check cache first (fast path)
+    let session = this.sessionCache.get(sessionId);
+    
+    if (!session) {
+      // Cache miss - check database
+      const dbSession = await databaseService.getSessionBySessionId(sessionId);
+      
+      if (dbSession) {
+        // Found in database, add to cache
+        session = {
+          id: dbSession.sessionId,
+          memberId: dbSession.userId,
+          token: dbSession.accessToken,
+          expiresAt: dbSession.expiresAt,
+          createdAt: dbSession.createdAt
+        };
+        this.sessionCache.set(sessionId, session);
+        this.sessionCache.set(dbSession.accessToken, session);
+      }
+    }
     
     if (!session) {
       return null;
@@ -142,8 +214,8 @@ class AuthSessionService {
 
     // Check if session has expired
     if (new Date(session.expiresAt) <= new Date()) {
-      this.sessions.delete(sessionId);
-      this.sessions.delete(session.token);
+      this.sessionCache.delete(sessionId);
+      this.sessionCache.delete(session.token);
       return null;
     }
 
@@ -154,7 +226,26 @@ class AuthSessionService {
    * Validate and retrieve session by access token
    */
   async getSessionByToken(token) {
-    const session = this.sessions.get(token);
+    // Check cache first (fast path)
+    let session = this.sessionCache.get(token);
+    
+    if (!session) {
+      // Cache miss - check database
+      const dbSession = await databaseService.getSessionByToken(token);
+      
+      if (dbSession) {
+        // Found in database, add to cache
+        session = {
+          id: dbSession.sessionId,
+          memberId: dbSession.userId,
+          token: dbSession.accessToken,
+          expiresAt: dbSession.expiresAt,
+          createdAt: dbSession.createdAt
+        };
+        this.sessionCache.set(dbSession.sessionId, session);
+        this.sessionCache.set(token, session);
+      }
+    }
     
     if (!session) {
       return null;
@@ -162,8 +253,8 @@ class AuthSessionService {
 
     // Check if session has expired
     if (new Date(session.expiresAt) <= new Date()) {
-      this.sessions.delete(session.id);
-      this.sessions.delete(token);
+      this.sessionCache.delete(session.id);
+      this.sessionCache.delete(token);
       return null;
     }
 
@@ -203,8 +294,8 @@ class AuthSessionService {
     
     // 6. Store user info in session
     session.user = userData;
-    this.sessions.set(session.id, session);
-    this.sessions.set(accessToken, session);
+    this.sessionCache.set(session.id, session);
+    this.sessionCache.set(accessToken, session);
     
     return {
       session,
@@ -216,7 +307,19 @@ class AuthSessionService {
    * Invalidate session (logout)
    */
   async invalidateSession(sessionId) {
-    this.sessions.delete(sessionId);
+    // Remove from cache
+    const session = this.sessionCache.get(sessionId);
+    if (session) {
+      this.sessionCache.delete(sessionId);
+      this.sessionCache.delete(session.token);
+    }
+    
+    // Remove from database
+    try {
+      await databaseService.deleteSession(sessionId);
+    } catch (error) {
+      console.error('Error deleting session from database:', error);
+    }
   }
 
   /**
