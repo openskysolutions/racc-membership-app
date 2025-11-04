@@ -28,6 +28,15 @@ app.use(express.json({ limit: '10mb' }));
 // Request logging middleware
 app.use(requestLogger);
 
+// Health check endpoint (before other routes, no auth required)
+app.get('/health', (req, res) => {
+  res.status(200).json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    service: 'racc-api'
+  });
+});
+
 // Swagger docs
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 

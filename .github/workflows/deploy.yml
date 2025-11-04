@@ -163,6 +163,9 @@ jobs:
           # Zero-downtime deployment: Start new process on different port, test it, then switch
           echo "=== Starting zero-downtime deployment for API ==="
           
+          # Clean up any leftover test instances from previous failed deployments
+          pm2 delete racc-api-new 2>/dev/null || true
+          
           # Check if racc-api is already running
           pm2 describe racc-api > /dev/null 2>&1
           API_RUNNING=\$?
@@ -172,7 +175,7 @@ jobs:
             
             # Start new instance with a temporary name on a test port
             # wait-ready: PM2 waits for process.send('ready') signal before marking as online
-            PORT_TEMP=3099 pm2 start dist/server.js --name racc-api-new --wait-ready --listen-timeout 15000
+            PORT=3099 pm2 start dist/server.js --name racc-api-new --wait-ready --listen-timeout 15000
             
             # Wait for new instance to be ready
             sleep 3
@@ -280,6 +283,9 @@ jobs:
           
           # Start or restart frontend service using serve.js from the build directory
           echo "=== Starting zero-downtime deployment for Frontend ==="
+          
+          # Clean up any leftover test instances from previous failed deployments
+          pm2 delete racc-frontend-new 2>/dev/null || true
           
           pm2 describe racc-frontend > /dev/null 2>&1
           FRONTEND_RUNNING=\$?
