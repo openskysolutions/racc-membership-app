@@ -10,8 +10,8 @@ import path from 'path';
 
 interface User {
   id?: number;
-  firstName: string;
-  lastName: string;
+  firstName?: string;
+  lastName?: string;
   email: string;
   passwordHash: string;
   businessName?: string;
@@ -55,8 +55,8 @@ class DatabaseService {
       await this.db.exec(`
         CREATE TABLE IF NOT EXISTS users (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
-          firstName TEXT NOT NULL,
-          lastName TEXT NOT NULL,
+          firstName TEXT,
+          lastName TEXT,
           email TEXT UNIQUE NOT NULL,
           passwordHash TEXT NOT NULL,
           businessName TEXT,
@@ -108,6 +108,63 @@ class DatabaseService {
         CREATE INDEX IF NOT EXISTS idx_sessions_userId ON sessions (userId);
         CREATE INDEX IF NOT EXISTS idx_appointment_custom_fields_appointmentId ON appointment_custom_fields (appointmentId);
       `);
+
+      // Migration: Make firstName and lastName nullable for existing databases
+      try {
+        // Check if we need to migrate (if firstName/lastName are NOT NULL)
+        const tableInfo = await this.db.all("PRAGMA table_info(users)");
+        const firstNameCol = tableInfo.find((col: any) => col.name === 'firstName');
+        const lastNameCol = tableInfo.find((col: any) => col.name === 'lastName');
+        
+        if (firstNameCol?.notnull === 1 || lastNameCol?.notnull === 1) {
+          console.log('🔄 Migrating database: Making firstName and lastName nullable...');
+          
+          // SQLite doesn't support ALTER COLUMN, so we need to recreate the table
+          await this.db.exec(`
+            BEGIN TRANSACTION;
+            
+            -- Create new table with updated schema
+            CREATE TABLE users_new (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              firstName TEXT,
+              lastName TEXT,
+              email TEXT UNIQUE NOT NULL,
+              passwordHash TEXT NOT NULL,
+              businessName TEXT,
+              phone TEXT,
+              website TEXT,
+              role TEXT DEFAULT 'member',
+              status TEXT DEFAULT 'pending',
+              emailVerified BOOLEAN DEFAULT FALSE,
+              ghlContactId TEXT,
+              paymentStatus TEXT DEFAULT 'pending',
+              membershipTier TEXT DEFAULT 'standard',
+              createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+              updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+            );
+            
+            -- Copy data from old table
+            INSERT INTO users_new SELECT * FROM users;
+            
+            -- Drop old table
+            DROP TABLE users;
+            
+            -- Rename new table
+            ALTER TABLE users_new RENAME TO users;
+            
+            -- Recreate indexes
+            CREATE INDEX idx_users_email ON users (email);
+            CREATE INDEX idx_users_ghlContactId ON users (ghlContactId);
+            
+            COMMIT;
+          `);
+          
+          console.log('✅ Migration completed: firstName and lastName are now nullable');
+        }
+      } catch (migrationError) {
+        console.error('⚠️ Migration warning (non-fatal):', migrationError);
+        // Don't throw - migration failure shouldn't prevent app from starting
+      }
 
       console.log('Database initialized successfully');
     } catch (error) {

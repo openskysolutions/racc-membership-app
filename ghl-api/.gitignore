@@ -1,1 +1,23 @@
 node_modules
+
+# Environment files with sensitive data
+.env
+.env.local
+.env.test
+.env.*.local
+
+# Test data
+tests/.env.test
+
+# Logs
+logs/
+*.log
+
+# Database
+data/
+*.db
+*.sqlite
+
+# Uploads
+public/uploads/
+temp/

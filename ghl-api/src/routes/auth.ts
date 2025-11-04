@@ -74,7 +74,7 @@ router.post('/authorize', async (req, res) => {
     if (!isActive) {
       return res.status(403).json({
         error: 'access_denied',
-        error_description: 'Account not active. Please ensure your membership is current and you have the "active" tag in GoHighLevel.',
+        error_description: 'Account not active. Please contact support to ensure your membership is current.',
         userStatus: 'inactive',
         requiresActivation: true
       });
@@ -274,7 +274,7 @@ router.post('/session', async (req, res) => {
       if (!isActive) {
         return res.status(403).json({
           error: 'access_denied',
-          error_description: 'Account not active. Please ensure your membership is current and you have the "active" tag in GoHighLevel.',
+          error_description: 'Account not active. Please contact support to ensure your membership is current.',
           userStatus: 'inactive',
           requiresActivation: true
         });
@@ -1280,11 +1280,11 @@ router.post('/register-existing', async (req, res) => {
       membershipTier = 'standard'
     } = req.body;
 
-    // Validate required fields
-    if (!firstName || !lastName || !email || !password) {
+    // Validate required fields (only email and password are required)
+    if (!email || !password) {
       return res.status(400).json({
         error: 'Missing required fields',
-        details: 'firstName, lastName, email, and password are required'
+        details: 'email and password are required'
       });
     }
 
@@ -1325,14 +1325,11 @@ router.post('/register-existing', async (req, res) => {
           phone,
           website,
           businessName,
-          source: 'RACC Existing Member Registration',
-          tags: ['prospect', 'existing-member-registration', `tier-${membershipTier}`],
+          source: 'RAC Membership App Registration',
+          tags: ['registered'],
           customFields: {
             'Business Name': businessName || '',
-            'Registration Date': new Date().toISOString(),
-            'Member Status': 'pending-payment',
-            'Membership Tier': membershipTier,
-            'Registration Type': 'existing-member'
+            'Registration Date': new Date().toISOString()
           }
         });
         console.log('✅ New GHL contact created:', ghlContactId);
@@ -1348,9 +1345,7 @@ router.post('/register-existing', async (req, res) => {
       try {
         console.log('🔄 Updating existing GHL contact:', existingContactId);
         await ghlService.updateContactTags(existingContactId, [
-          'existing-member-registration',
-          `tier-${membershipTier}`,
-          'prospect'
+          'registered'
         ], 'add');
         
         // Update contact custom fields
@@ -1362,10 +1357,7 @@ router.post('/register-existing', async (req, res) => {
           businessName,
           customFields: {
             'Business Name': businessName || '',
-            'Registration Date': new Date().toISOString(),
-            'Member Status': 'pending-payment',
-            'Membership Tier': membershipTier,
-            'Registration Type': 'existing-member'
+            'Registration Date': new Date().toISOString()
           }
         });
         console.log('✅ Existing GHL contact updated');

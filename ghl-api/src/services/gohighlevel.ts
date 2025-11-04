@@ -7,8 +7,8 @@ import axios, { AxiosInstance } from 'axios';
 import { randomBytes } from 'crypto';
 
 interface ContactData {
-  firstName: string;
-  lastName: string;
+  firstName?: string;
+  lastName?: string;
   email: string;
   phone?: string;
   website?: string;
@@ -114,8 +114,8 @@ class GoHighLevelService {
     try {
       // Use the exact format that works from your successful curl command
       const payload = {
-        firstName: contactData.firstName,
-        lastName: contactData.lastName,
+        firstName: contactData.firstName || '',
+        lastName: contactData.lastName || '',
         email: contactData.email,
         locationId: this.locationId,
         source: contactData.source || 'RACC Membership Portal',

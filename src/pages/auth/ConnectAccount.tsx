@@ -385,8 +385,7 @@ export const ConnectAccountPage = () => {
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription className=''>
                   We've sent a confirmation code to: <strong>{email}</strong>. <br/>
-                  Please check your inbox and enter the code below. Or, {' '}
-                  <span onClick={handleTryAgain} className="font-semibold cursor-pointer">try a different email</span>
+                  Please check your inbox and enter the code below.
                 </AlertDescription>
               </Alert>
 
@@ -607,16 +606,6 @@ export const ConnectAccountPage = () => {
 
                 <div className="flex gap-3">
                   <Button 
-                    type="button"
-                    variant="outline"
-                    onClick={handleTryAgain}
-                    disabled={loading}
-                    className="w-full"
-                  >
-                    Back to Email
-                  </Button>
-                  
-                  <Button 
                     type="submit" 
                     className="w-full"
                     disabled={loading}
@@ -643,10 +632,10 @@ export const ConnectAccountPage = () => {
                 <div>
                   <Button asChild variant="outline" className="h-auto text-sm font-semibold">
                     <Link 
-                  to="/register"
+                  to="/join"
                   className="font-medium text-highlight-foreground"
                 >
-                      Create new account
+                      Create a new membership account
                     </Link>
                   </Button>
                 </div>
