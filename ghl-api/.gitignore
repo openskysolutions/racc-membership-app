@@ -14,8 +14,8 @@ logs/
 *.log
 
 # Database
-data/
-*.db
+# data/
+# *.db
 *.sqlite
 
 # Uploads
