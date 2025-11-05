@@ -129,13 +129,19 @@ export async function getCalendarEvents(
     const queryString = params.toString();
     const url = `/calendars/${calendarId}/events${queryString ? `?${queryString}` : ''}`;
     
+    console.log('[Calendar] Fetching events from:', url);
     const response = await api.get(url);
     
+    console.log('[Calendar] Response status:', response.status, response.statusText);
+    
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[Calendar] Error response:', errorText);
       throw new Error(`Failed to fetch calendar events: ${response.statusText}`);
     }
     
     const data = await response.json();
+    console.log('[Calendar] Received data, event count:', Array.isArray(data) ? data.length : (data?.events?.length || 0));
     
     // Handle different response structures from GoHighLevel
     const events = data?.events || data || [];
@@ -169,8 +175,16 @@ export async function getCalendarEvents(
       masterEventId: event.masterEventId
     }));
   } catch (error: any) {
-    console.error('Error fetching calendar events:', error);
-    throw new Error(`Failed to fetch calendar events: ${error.message}`);
+    console.error('[Calendar] Error details:', {
+      calendarId,
+      startDate: startDate?.toISOString(),
+      endDate: endDate?.toISOString(),
+      errorMessage: error?.message || 'Unknown error',
+      errorName: error?.name,
+      errorType: error?.constructor?.name,
+      apiBaseUrl: import.meta.env.VITE_API_BASE_URL
+    });
+    throw error;
   }
 }
 

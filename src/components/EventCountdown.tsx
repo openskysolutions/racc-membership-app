@@ -109,33 +109,33 @@ export const EventCountdown: React.FC<EventCountdownProps> = ({
 
   return (
     <div className={cn("w-full px-4", styles.container, className)}>
-      <div className="items-center rounded-lg flex bg-gradient-to-b from-amber-400 to-primary bg-opacity-20 backdrop-blur-md">
+      <div className="items-center rounded-lg flex text-card dark:text-neutral-50 bg-gradient-to-b from-amber-400 to-yellow-600 bg-opacity-20 backdrop-blur-md">
         <div className={cn("w-full flex flex-col items-center justify-center", styles.padding)}>
-          <span className={cn("font-bold text-card", styles.numberSize)}>
+          <span className={cn("font-bold", styles.numberSize)}>
             {String(timeRemaining.days).padStart(2, '0')}
           </span>
-          <span className={cn("font-medium text-card", styles.labelSize)}>Days</span>
+          <span className={cn("font-medium", styles.labelSize)}>Days</span>
         </div>
-        <div className={cn("flex items-start font-bold text-card -mt-5", styles.numberSize)}>:</div>
+        <div className={cn("flex items-start font-bold -mt-5", styles.numberSize)}>:</div>
         <div className={cn("w-full flex flex-col items-center justify-center", styles.padding)}>
-          <span className={cn("font-bold text-card", styles.numberSize)}>
+          <span className={cn("font-bold", styles.numberSize)}>
             {String(timeRemaining.hours).padStart(2, '0')}
           </span>
-          <span className={cn("font-medium text-card", styles.labelSize)}>Hours</span>
+          <span className={cn("font-medium", styles.labelSize)}>Hours</span>
         </div>
-        <div className={cn("flex items-start font-bold text-card -mt-5", styles.numberSize)}>:</div>
+        <div className={cn("flex items-start font-bold -mt-5", styles.numberSize)}>:</div>
         <div className={cn("w-full flex flex-col items-center justify-center", styles.padding)}>
-          <span className={cn("font-bold text-card", styles.numberSize)}>
+          <span className={cn("font-bold", styles.numberSize)}>
             {String(timeRemaining.minutes).padStart(2, '0')}
           </span>
-          <span className={cn("font-medium text-card", styles.labelSize)}>Minutes</span>
+          <span className={cn("font-medium", styles.labelSize)}>Minutes</span>
         </div>
-        <div className={cn("flex items-start font-bold text-card -mt-5", styles.numberSize)}>:</div>
+        <div className={cn("flex items-start font-bold -mt-5", styles.numberSize)}>:</div>
         <div className={cn("w-full flex flex-col items-center justify-center", styles.padding)}>
-          <span className={cn("font-bold text-card", styles.numberSize)}>
+          <span className={cn("font-bold", styles.numberSize)}>
             {String(timeRemaining.seconds).padStart(2, '0')}
           </span>
-          <span className={cn("font-medium text-card", styles.labelSize)}>Seconds</span>
+          <span className={cn("font-medium", styles.labelSize)}>Seconds</span>
         </div>
       </div>
     </div>

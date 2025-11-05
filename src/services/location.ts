@@ -1,5 +1,4 @@
 
-const GHL_LOCATION_ID = import.meta.env.VITE_LOCATION_ID;
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export interface LocationInfo {
@@ -19,8 +18,8 @@ export interface LocationInfo {
 
 export const getLocationInfo = async (): Promise<LocationInfo> => {
   try {
-    // Use the backend API endpoint that utilizes the GHL SDK
-    const response = await fetch(`${API_BASE_URL}/locations/${GHL_LOCATION_ID}`, {
+    // Backend will use the location ID from its own environment
+    const response = await fetch(`${API_BASE_URL}/locations`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'

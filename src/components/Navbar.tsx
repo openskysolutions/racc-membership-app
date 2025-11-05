@@ -97,24 +97,6 @@ export const Navbar = () => {
               className="h-full w-auto p-1" 
             />
           </a>
-
-          {/* desktop */}
-          {/* <nav className="hidden md:flex gap-2 flex-grow justify-center items-center">
-            {routeList.map((route: RouteProps, i) => (
-              <a
-                rel="noreferrer noopener"
-                href={route.href}
-                key={i}
-                className={`text-[13px] ${buttonVariants({
-                  variant: "ghost",
-                  size: "sm",
-                })}`}
-              >
-                {route.label}
-              </a>
-            ))}
-          </nav> */}
-
           <div className="md:order-2 gap-2 items-center ml-3 hidden md:inline-flex">
             <Button
               size="sm"
@@ -223,16 +205,16 @@ export const Navbar = () => {
             <Sheet open={isOpen} onOpenChange={setIsOpen}>
               <SheetTrigger className="px-2">
                 <Menu
-                  className="flex md:hidden h-5 w-5"
+                  className="flex md:hidden h-8 w-8"
                   onClick={() => setIsOpen(true)}
                 >
                   <span className="sr-only">Menu Icon</span>
                 </Menu>
               </SheetTrigger>
 
-              <SheetContent side={"left"} className="flex flex-col border-r-1 border-r-stone-400">
+              <SheetContent side={"left"} className="flex flex-col border-r-0">
                 <SheetHeader>
-                  <SheetTitle className="font-medium text-md items-center flex flex-col border-b-1 border-b-stone-300 dark:border-b-stone-400 pb-2">
+                  <SheetTitle className="font-medium text-md items-center flex flex-col border-b-1 border-b-stone-300 dark:border-b-stone-600 pb-6">
                     <a
                       rel="noreferrer noopener"
                       href="https://richfieldareachamber.com"
@@ -255,7 +237,7 @@ export const Navbar = () => {
                       }}
                       className={cn(
                         // buttonVariants({ variant: "ghost" }),  
-                        "border-b-1 border-b-stone-300 dark:border-b-stone-400 text-sm rounded-none w-full py-2 !justify-start text-left"
+                        "border-b-1 border-b-stone-300 dark:border-b-stone-600 text-sm rounded-none w-full py-2 !justify-start text-left"
                       )}
                     >
                       <span className="block text-lg font-semibold">{user?.firstName} {user?.lastName}</span>
@@ -271,7 +253,7 @@ export const Navbar = () => {
                       }}
                       className={cn(
                         // buttonVariants({ variant: "ghost" }),  
-                        "border-b-1 border-b-stone-300 dark:border-b-stone-400 text-sm rounded-none w-full py-2 !justify-start text-left"
+                        "border-b-1 border-b-stone-300 dark:border-b-stone-600 text-lg rounded-none w-full py-2 !justify-start text-left"
                       )}
                     >
                       {label}
@@ -280,24 +262,24 @@ export const Navbar = () => {
                 </nav>
                 <div className="flex-grow"/>
                 <Button
-                  size="sm"
+                  size="lg"
                   onClick={() => {
                     setIsOpen(false);
                     navigate('/nominations');
                   }}
-                  className="bg-card-foreground text-card"
+                  className="bg-card-foreground text-card text-lg"
                 >
                   Nominations
                 </Button>
                 {isAuthenticated 
                   ? <Button
-                      size="sm"
+                      size="lg"
                       variant={"outline"}
                       onClick={() => {
                         setIsOpen(false);
                         logout();
                       }}
-                      className=""
+                      className="text-lg"
                     >
                       Sign out
                     </Button>
@@ -305,23 +287,23 @@ export const Navbar = () => {
                       {import.meta.env.DEV && (
                         <>
                           <Button
-                            size="sm"
+                            size="lg"
                             onClick={() => {
                               setIsOpen(false);
                               navigate('/join');
                             }}
-                            className="bg-highlight-foreground hover:bg-highlight-foreground/90 text-white"
+                            className="bg-highlight-foreground hover:bg-highlight-foreground/90 text-white text-lg"
                           >
                             Join Now
                           </Button>
                           <Button
-                            size="sm"
+                            size="lg"
                             variant={"outline"}
                             onClick={() => {
                               setIsOpen(false);
                               navigate('/login', { state: { from: location } });
                             }}
-                            className=""
+                            className="text-lg"
                           >
                             Member Login
                           </Button>
@@ -337,7 +319,7 @@ export const Navbar = () => {
                     setTheme(theme === "dark" ? "light" : "dark");
                   }}
                 >
-                  <div className="text-foreground text-sm">Toggle theme</div>
+                  <div className="text-foreground text-lg">Toggle theme</div>
                   <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
                   <Moon className="h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100 hidden dark:block" />
                 </div>

@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/table";
 import { FaCheck } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import { openExternalUrl, membershipUrls } from "@/lib/externalBrowser";
 import cn from "classnames";
 
 /**
@@ -133,6 +134,14 @@ function CheckCell({ active }: { active: boolean }) {
 export default function ChamberMembershipBenefits() {
   const navigate = useNavigate();
 
+  const handleMembershipClick = async (path: string) => {
+    const handled = await openExternalUrl(path);
+    if (!handled) {
+      // On web, use React Router
+      navigate(path);
+    }
+  };
+
   return (
     <div className="mx-auto max-w-6xl space-y-4 mb-16">
 
@@ -172,7 +181,7 @@ export default function ChamberMembershipBenefits() {
                 <TableCell className="px-1 text-center py-2">
                   <Button
                     size="sm"
-                    onClick={() => navigate('/basic-membership')}
+                    onClick={() => handleMembershipClick(membershipUrls.basic)}
                     className={cn(
                       "bg-card-foreground hover:bg-card-foreground/90 text-card w-full text-wrap px-2 md:px-3 h-12"
                     )}
@@ -183,7 +192,7 @@ export default function ChamberMembershipBenefits() {
                 <TableCell className="px-1 text-center py-2">
                   <Button
                     size="sm"
-                    onClick={() => navigate('/enhanced-membership')}
+                    onClick={() => handleMembershipClick(membershipUrls.enhanced)}
                     className={cn(
                       "bg-blue-500 hover:bg-blue-600 text-white w-full text-wrap px-2 md:px-3 h-12"
                     )}
@@ -194,7 +203,7 @@ export default function ChamberMembershipBenefits() {
                 <TableCell className="px-1 text-center py-2">
                   <Button
                     size="sm"
-                    onClick={() => navigate('/elite-membership')}
+                    onClick={() => handleMembershipClick(membershipUrls.elite)}
                     className={cn(
                       "bg-highlight-foreground hover:bg-highlight-foreground/90 text-card w-full text-wrap px-2 md:px-3 h-12"
                     )}

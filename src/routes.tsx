@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 
 import PagesLayout from '@/components/layouts/pagesLayout';
 import { useAuthStore } from '@/stores/authStore';
@@ -31,6 +32,17 @@ import Privacy from '@/pages/docs/Privacy';
 import Terms from '@/pages/docs/Terms';
 
 import { ReactNode } from 'react';
+
+// Scroll to top on route change
+function ScrollToTopOnRouteChange() {
+  const location = useLocation();
+  
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
+  
+  return null;
+}
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: ReactNode }) => {
@@ -68,11 +80,13 @@ export default function AppRoutes() {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
   return (
-    <Routes>
-      {/* public routes without layout wrapper */}
+    <>
+      <ScrollToTopOnRouteChange />
+      <Routes>
+        {/* public routes without layout wrapper */}
 
-      {/* routes with layout wrapper */}
-      <Route path="/" element={<PagesLayout />}>  
+        {/* routes with layout wrapper */}
+        <Route path="/" element={<PagesLayout />}>  
         <Route index element={<HomePage />} />
         <Route path="dashboard" element={<HomePage />} />
 
@@ -105,5 +119,6 @@ export default function AppRoutes() {
       {/* fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </>
   );
 }
