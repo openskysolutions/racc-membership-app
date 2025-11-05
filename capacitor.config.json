@@ -2,11 +2,32 @@
   "appId": "com.racc.membership",
   "appName": "Richfield Area Chamber of Commerce",
   "webDir": "dist",
+  "plugins": {
+    "StatusBar": {
+      "overlaysWebView": false,
+      "style": "LIGHT", 
+      "backgroundColor": "#ffffffff"
+    },
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "launchAutoHide": true,
+      "launchFadeOutDuration": 2000,
+      "backgroundColor": "#ffffff",
+      "androidSplashResourceName": "splash",
+      "androidScaleType": "CENTER_CROP",
+      "showSpinner": false,
+      "iosSpinnerStyle": "small",
+      "spinnerColor": "#999999",
+      "splashFullScreen": true,
+      "splashImmersive": true
+    }
+  },
   "server": {
     "androidScheme": "https",
     "iosScheme": "https"
   },
   "ios": {
-    "contentInset": "automatic"
+    "contentInset": "automatic",
+    "backgroundColor": "#525252FF"
   }
 }

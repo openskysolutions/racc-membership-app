@@ -3,10 +3,18 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import { openExternalUrl, membershipUrls } from '@/lib/externalBrowser';
 import cn from 'classnames';
 
 const MembershipLevels: React.FC = () => {
   const navigate = useNavigate();
+
+  const handleMembershipClick = async (path: string) => {
+    const handled = await openExternalUrl(path);
+    if (!handled) {
+      navigate(path);
+    }
+  };
 
   return (
     <div className="mb-8 max-w-6xl mx-auto mb-30">
@@ -30,7 +38,7 @@ const MembershipLevels: React.FC = () => {
             </ul>
             <Button
               size="sm"
-              onClick={() => navigate('/basic-membership')}
+              onClick={() => handleMembershipClick(membershipUrls.basic)}
               className={cn(
                 "bg-card-foreground hover:bg-card-foreground/80 dark:bg-card-foreground text-card w-full mt-auto"
               )}
@@ -61,7 +69,7 @@ const MembershipLevels: React.FC = () => {
             </ul>
             <Button
               size="sm"
-              onClick={() => navigate('/enhanced-membership')}
+              onClick={() => handleMembershipClick(membershipUrls.enhanced)}
               className={cn(
                 "bg-blue-500 hover:bg-blue-600 text-white w-full mt-auto"
               )}
@@ -90,7 +98,7 @@ const MembershipLevels: React.FC = () => {
             </ul>
             <Button
               size="sm"
-              onClick={() => navigate('/elite-membership')}
+              onClick={() => handleMembershipClick(membershipUrls.elite)}
               className={cn(
                 "bg-highlight-foreground hover:bg-highlight-foreground/90 text-card w-full mt-auto"
               )}

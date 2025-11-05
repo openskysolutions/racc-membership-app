@@ -5,7 +5,7 @@ export const Footer = () => {
   const { theme } = useTheme();
 
   return (
-    <footer id="footer" className="bg-card-foreground dark:bg-accent-foreground text-stone-100 text-sm border-t-border dark:border-b-ring pb-5 sm:pb-0">
+    <footer id="footer" className="bg-card-foreground dark:bg-accent-foreground text-stone-100 text-sm border-b-0 border-t-border dark:border-b-0 pb-3 sm:pb-0">
       <div className="rows-span-1 md:row-span-2 col-span-3 sm:col-span-3 md:col-span-2 justify-center items-center sm:hidden flex pt-12">
           <a
             rel="noreferrer noopener"

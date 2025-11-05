@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { useNavigate } from 'react-router-dom';
+import { openExternalUrl, membershipUrls } from '@/lib/externalBrowser';
 import cn from "classnames";
 import {
   Carousel,
@@ -57,7 +58,7 @@ const membershipSlides: MembershipSlide[] = [
     bgImage: meetingImg,
     bgColor: 'bg-sky-800',
     ctaText: 'Join Basic',
-    ctaLink: '/basic-membership'
+    ctaLink: membershipUrls.basic
   },
   {
     type: 'membership',
@@ -74,7 +75,7 @@ const membershipSlides: MembershipSlide[] = [
     bgImage: '/richfieldutah_fall2024138-1-scaled.jpg',
     bgColor: 'bg-highlight-foreground',
     ctaText: 'Join Enhanced',
-    ctaLink: '/enhanced-membership'
+    ctaLink: membershipUrls.enhanced
   },
   {
     type: 'membership',
@@ -91,7 +92,7 @@ const membershipSlides: MembershipSlide[] = [
     bgImage: '/20250213_084901-scaled-1.jpg',
     bgColor: 'bg-foreground',
     ctaText: 'Join Elite',
-    ctaLink: '/elite-membership'
+    ctaLink: membershipUrls.elite
   }
 ];
 
@@ -103,6 +104,13 @@ export const HeroCarousel = () => {
   const plugin = React.useRef(
     Autoplay({ delay: 5000, stopOnInteraction: true })
   );
+
+  const handleMembershipClick = async (path: string) => {
+    const handled = await openExternalUrl(path);
+    if (!handled) {
+      navigate(path);
+    }
+  };
 
   useEffect(() => {
     const fetchUpcomingEvents = async () => {
@@ -276,7 +284,7 @@ export const HeroCarousel = () => {
       <div className="space-y-4 md:space-y-0 md:space-x-4">
         <Button
           className="w-full md:w-1/3 bg-highlight hover:bg-highlight/90 font-semibold"
-          onClick={() => navigate(slide.ctaLink)}
+          onClick={() => handleMembershipClick(slide.ctaLink)}
         >
           {slide.ctaText}
         </Button>
