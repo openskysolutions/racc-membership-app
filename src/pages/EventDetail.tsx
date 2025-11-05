@@ -288,18 +288,18 @@ const EventDetailPage: React.FC = () => {
                 <Badge variant="outline">All Day</Badge>
               )}
             </div>
-            <p className='mb-4 text-xl text-card font-medium text-center'>
+            <p className='mb-4 text-xl text-card dark:text-neutral-50 font-medium text-center'>
               {formatEventDate(event.startTime)} 
               <br className='sm:hidden'/>
               <span className='hidden sm:inline px-6'>|</span> 
               {formatEventTime(event.startTime)}{' - '}
               {formatEventTime(event.endTime)}
             </p>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-semibold text-card mb-4">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-semibold text-card dark:text-neutral-50 mb-4">
               {event.title}
             </h1>
-            <p className='text-xl text-card font-medium'>{formatLocation(event.location || '')}</p>
-            <p className='text-md text-card font-normal leading-6 mt-6 max-w-3xl'>{event.description}</p>
+            <p className='text-xl text-card dark:text-neutral-50 font-medium'>{formatLocation(event.location || '')}</p>
+            <p className='text-md text-card dark:text-neutral-50 font-normal leading-6 mt-6 max-w-3xl'>{event.description}</p>
             
             {/* Register Button */}
             {!isRegistered && (

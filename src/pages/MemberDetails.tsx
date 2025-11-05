@@ -340,7 +340,7 @@ const MemberDetailsPage: React.FC = () => {
       >
         <div className="relative z-10 container mx-auto px-4 h-full flex flex-col items-center justify-center">
           <div className="text-center text-white">
-            <h1 className="text-3xl md:text-5xl font-bold mb-4 text-card">{member.businessName}</h1>
+            <h1 className="text-3xl md:text-5xl font-bold mb-4 text-card dark:text-neutral-50">{member.businessName}</h1>
             <p className="text-lg md:text-xl mb-6 max-w-2xl">
               {(member as any).tagline || "Professional member of the Richfield Area Chamber of Commerce"}
             </p>
