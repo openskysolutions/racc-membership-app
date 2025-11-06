@@ -17,7 +17,7 @@ const MembershipLevels: React.FC = () => {
   };
 
   return (
-    <div className="mb-8 max-w-6xl mx-auto mb-30">
+    <div className="max-w-6xl mx-auto mb-30">
       <h2 className="text-3xl font-bold text-center mb-12">Membership Levels</h2>
       
       <div className="grid md:grid-cols-3 gap-8">

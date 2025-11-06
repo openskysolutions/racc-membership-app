@@ -126,7 +126,7 @@ function CheckCell({ active }: { active: boolean }) {
       }
       aria-label={active ? "Included" : "Not included"}
     >
-      {active ? <FaCheck className="w-3 h-3 md:w-5 md:h-5" /> : null}
+      {active ? <FaCheck className="w-5 h-5" /> : null}
     </div>
   );
 }
@@ -175,18 +175,18 @@ export default function ChamberMembershipBenefits() {
               ))}
               {/* Buttons row */}
               <TableRow className="border-t-2">
-                <TableCell className="pl-2 pr-0 py-4 font-semibold">
+                <TableCell className="pl-2 pr-2 py-4 font-bold">
                   Choose Your Membership
                 </TableCell>
-                <TableCell className="px-1 text-center py-2">
+                <TableCell className="px-0 text-center py-2">
                   <Button
                     size="sm"
                     onClick={() => handleMembershipClick(membershipUrls.basic)}
                     className={cn(
-                      "bg-card-foreground hover:bg-card-foreground/90 text-card w-full text-wrap px-2 md:px-3 h-12"
+                      "bg-card-foreground hover:bg-card-foreground/90 text-card w-full text-wrap px-1 md:px-3 h-9 sm:h-12"
                     )}
                   >
-                    Choose Basic
+                    Basic
                   </Button>
                 </TableCell>
                 <TableCell className="px-1 text-center py-2">
@@ -194,21 +194,21 @@ export default function ChamberMembershipBenefits() {
                     size="sm"
                     onClick={() => handleMembershipClick(membershipUrls.enhanced)}
                     className={cn(
-                      "bg-blue-500 hover:bg-blue-600 text-white w-full text-wrap px-2 md:px-3 h-12"
+                      "bg-blue-500 hover:bg-blue-600 text-white w-full text-wrap font-normal px-1 md:px-3 h-9 sm:h-12"
                     )}
                   >
-                    Choose Enhanced
+                    Enhanced
                   </Button>
                 </TableCell>
-                <TableCell className="px-1 text-center py-2">
+                <TableCell className="px-0 text-center py-2">
                   <Button
                     size="sm"
                     onClick={() => handleMembershipClick(membershipUrls.elite)}
                     className={cn(
-                      "bg-highlight-foreground hover:bg-highlight-foreground/90 text-card w-full text-wrap px-2 md:px-3 h-12"
+                      "bg-highlight-foreground hover:bg-highlight-foreground/90 text-card w-full text-wrap px-1 md:px-3 h-9 sm:h-12"
                     )}
                   >
-                    Choose Elite
+                    Elite
                   </Button>
                 </TableCell>
               </TableRow>

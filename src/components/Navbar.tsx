@@ -83,12 +83,12 @@ export const Navbar = () => {
   return (
     <header className="sticky border-b-[1px] top-0 z-40 w-full bg-white dark:border-b-popover dark:bg-accent-foreground shadow-md">
       <NavigationMenu className="mx-auto">
-        <NavigationMenuList className="container h-20 px-4 w-screen flex justify-between ">
+        <NavigationMenuList className="container h-20 px-4 w-screen flex justify-center md:justify-between items-center relative">
           <a
             rel="noreferrer noopener"
             href="https://richfieldareachamber.com"
             className={cn(
-              "flex flex-row flex-grow-0 flex-shrink-0 h-20 py-1 justify-center md:justify-start ml-10 md:ml-0",
+              "flex flex-row h-18 py-1 self-center justify-center md:justify-start",
             )}
           >
             <img
@@ -201,18 +201,19 @@ export const Navbar = () => {
           </div>
 
           {/* mobile */}
-          <span className="flex md:hidden">
+          <span className="flex md:hidden absolute right-4 z-10">
             <Sheet open={isOpen} onOpenChange={setIsOpen}>
-              <SheetTrigger className="px-2">
-                <Menu
-                  className="flex md:hidden h-8 w-8"
+              <SheetTrigger asChild>
+                <button 
+                  className="p-3 -m-1 touch-manipulation active:scale-95 transition-transform"
                   onClick={() => setIsOpen(true)}
                 >
+                  <Menu className="h-8 w-8" />
                   <span className="sr-only">Menu Icon</span>
-                </Menu>
+                </button>
               </SheetTrigger>
 
-              <SheetContent side={"left"} className="flex flex-col border-r-0">
+              <SheetContent side={"left"} id="mobile-nav" className="flex flex-col border-r-0">
                 <SheetHeader>
                   <SheetTitle className="font-medium text-md items-center flex flex-col border-b-1 border-b-stone-300 dark:border-b-stone-600 pb-6">
                     <a
@@ -237,7 +238,7 @@ export const Navbar = () => {
                       }}
                       className={cn(
                         // buttonVariants({ variant: "ghost" }),  
-                        "border-b-1 border-b-stone-300 dark:border-b-stone-600 text-sm rounded-none w-full py-2 !justify-start text-left"
+                        "border-b-1 border-b-stone-300 dark:border-b-stone-600 text-sm rounded-none w-full py-3 !justify-start text-left focus:outline-none"
                       )}
                     >
                       <span className="block text-lg font-semibold">{user?.firstName} {user?.lastName}</span>
@@ -253,7 +254,7 @@ export const Navbar = () => {
                       }}
                       className={cn(
                         // buttonVariants({ variant: "ghost" }),  
-                        "border-b-1 border-b-stone-300 dark:border-b-stone-600 text-lg rounded-none w-full py-2 !justify-start text-left"
+                        "border-b-1 border-b-stone-300 dark:border-b-stone-600 text-lg rounded-none w-full py-3 !justify-start text-left focus:outline-none"
                       )}
                     >
                       {label}
@@ -284,7 +285,7 @@ export const Navbar = () => {
                       Sign out
                     </Button>
                   : <>
-                      {import.meta.env.DEV && (
+                      {(import.meta.env.DEV || import.meta.env.VITE_PLATFORM === 'mobile') && (
                         <>
                           <Button
                             size="lg"

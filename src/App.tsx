@@ -3,7 +3,9 @@ import { useEffect } from 'react';
 import { useAuthStore } from '@/stores/authStore';
 import { useLocationStore } from '@/stores/locationStore';
 import { getLocationInfo } from '@/services/location';
-import { SafeArea } from 'capacitor-plugin-safe-area';
+// import { SafeArea } from 'capacitor-plugin-safe-area';
+import { StatusBar } from '@capacitor/status-bar';
+import { Capacitor } from '@capacitor/core';
 import { Toaster } from '@/components/ui/sonner';
 
 import "@/App.css";
@@ -11,6 +13,8 @@ import "@/App.css";
 function App() {
   const checkAuth = useAuthStore(state => state.checkAuth);
   const { setLocationInfo, setLoading, setError } = useLocationStore();
+
+  StatusBar.setOverlaysWebView({ overlay: true });
 
   useEffect(() => {
     // Check for existing authentication token in either storage
@@ -43,13 +47,18 @@ function App() {
 
   useEffect(() => {
     (async function(){
-        const safeAreaData = await SafeArea.getSafeAreaInsets();
-        const {insets} = safeAreaData;
-        for (const [key, value] of Object.entries(insets)) {
-            document.documentElement.style.setProperty(
-                `--safe-area-inset-${key}`,
-                `${value}px`,
-            );
+        // const safeAreaData = await SafeArea.getSafeAreaInsets();
+        // const {insets} = safeAreaData;
+        // for (const [key, value] of Object.entries(insets)) {
+        //     document.documentElement.style.setProperty(
+        //         `--safe-area-inset-${key}`,
+        //         `${value}px`,
+        //     );
+        // }
+        
+        if (Capacitor.isNativePlatform()) {
+          await StatusBar.show();
+          await StatusBar.setOverlaysWebView({overlay: true})
         }
     })()
 }, []);
