@@ -121,7 +121,7 @@ export const Navbar = () => {
             </Button>
             {!isAuthenticated &&
               <>
-                {import.meta.env.DEV && (
+                {(import.meta.env.DEV || isNative) && (
                   <>
                     <Button
                       size="sm"
