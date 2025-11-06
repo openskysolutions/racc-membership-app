@@ -1,0 +1,2 @@
+# This file ensures the app-store-assets directory is tracked by git
+# Screenshots and large media files should be added to .gitignore if desired
