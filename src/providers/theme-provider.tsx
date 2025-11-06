@@ -1,4 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
+// import { StatusBar, Style } from '@capacitor/status-bar';
+// import { Capacitor } from '@capacitor/core';
 
 type Theme = "dark" | "light" | "system";
 
@@ -35,6 +37,8 @@ export function ThemeProvider({
 
     root.classList.remove("light", "dark");
 
+    // let actualTheme = theme;
+
     if (theme === "system") {
       const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
         .matches
@@ -42,10 +46,20 @@ export function ThemeProvider({
         : "light";
 
       root.classList.add(systemTheme);
+      // actualTheme = systemTheme;
       return;
     }
 
     root.classList.add(theme);
+    // else {
+    
+    // // Update status bar style on mobile
+    // if (Capacitor.isNativePlatform()) {
+    //   StatusBar.setStyle({
+    //     style: actualTheme === "dark" ? Style.Dark : Style.Light
+    //   }).catch(err => console.error('Failed to set status bar style:', err));
+    
+    // }
   }, [theme]);
 
   const value = {

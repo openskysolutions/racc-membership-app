@@ -3,11 +3,6 @@
   "appName": "Richfield Area Chamber of Commerce",
   "webDir": "dist",
   "plugins": {
-    "StatusBar": {
-      "overlaysWebView": false,
-      "style": "LIGHT", 
-      "backgroundColor": "#ffffffff"
-    },
     "SplashScreen": {
       "launchShowDuration": 2000,
       "launchAutoHide": true,
@@ -27,7 +22,7 @@
     "iosScheme": "https"
   },
   "ios": {
-    "contentInset": "automatic",
+    "contentInset": "never",
     "backgroundColor": "#525252FF"
   }
 }

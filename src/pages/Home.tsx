@@ -15,7 +15,7 @@ const HomePage: React.FC = () => {
         Join a thriving community of local businesses and unlock opportunities for growth, networking, and community impact. Your membership helps strengthen our local economy while providing valuable benefits for your business.
       </p>
     </div>
-    <section className="my-8 sm:my-16 px-6">
+    <section className="my-8 sm:my-16 px-3">
       {/* Member Benefits */}
       <Benefits />
 
