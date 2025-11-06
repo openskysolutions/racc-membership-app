@@ -22,6 +22,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useTheme } from "@/providers/theme-provider";
 import { Moon, Sun } from "lucide-react";
 import cn from "classnames";
+import { Capacitor } from "@capacitor/core";
 
 interface RouteProps {
   href: string;
@@ -74,10 +75,19 @@ export const Navbar = () => {
   const location = useLocation();
 
   const { theme, setTheme } = useTheme();
+  const isNative = Capacitor.isNativePlatform();
 
   const logout = () => {
     handleLogout();
     navigate('/');
+  };
+
+  const handleLogoClick = (e: React.MouseEvent) => {
+    if (isNative) {
+      e.preventDefault();
+      navigate('/');
+    }
+    // If not native, the default href behavior will take over
   };
 
   return (
@@ -86,7 +96,8 @@ export const Navbar = () => {
         <NavigationMenuList className="container h-20 px-4 w-screen flex justify-center md:justify-between items-center relative">
           <a
             rel="noreferrer noopener"
-            href="https://richfieldareachamber.com"
+            href={isNative ? "/" : "https://richfieldareachamber.com"}
+            onClick={handleLogoClick}
             className={cn(
               "flex flex-row h-18 py-1 self-center justify-center md:justify-start",
             )}
@@ -218,7 +229,8 @@ export const Navbar = () => {
                   <SheetTitle className="font-medium text-md items-center flex flex-col border-b-1 border-b-stone-300 dark:border-b-stone-600 pb-6">
                     <a
                       rel="noreferrer noopener"
-                      href="https://richfieldareachamber.com"
+                      href={isNative ? "/" : "https://richfieldareachamber.com"}
+                      onClick={handleLogoClick}
                       className="flex items-center justify-center"
                     >
                       <img
