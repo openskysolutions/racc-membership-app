@@ -277,54 +277,43 @@ const CalendarPage: React.FC = () => {
   }
 
   return (
-    <div className="container py-8 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="mb-3">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2">
-            <h1 className="text-3xl font-bold mb-2">Event Calendar</h1>
-          </div>
-          <div className="hidden lg:flex flex-col items-start">
-            <h2 className="text-3xl font-bold mb-2">Upcoming Events</h2>
-            <p className="text-muted-foreground">
-              {upcomingEvents.length} event{upcomingEvents.length !== 1 ? 's' : ''}
-            </p>
-          </div>
-        </div>
-        <div className='flex flex-row justify-between gap-2 mt-4 lg:mt-0'>
-          {/* Toggle Calendar Button - Mobile/Small screens only */}
-          <Button 
-            size='sm' 
-            variant="outline"
-            onClick={() => setShowCalendar(!showCalendar)} 
-            className="lg:hidden w-fit"
-          >
-            <CalendarIcon className="h-4 w-4 mr-2" />
-            {showCalendar ? 'Hide Calendar' : 'Show Calendar'}
-          </Button>
-          
-          {isAuthenticated && (
-            <Button size='sm' onClick={() => handleCreateEvent()} className="w-fit">
-              <Plus className="h-4 w-4 mr-2" />
-              Create Event
-            </Button>
-          )}
-        </div>
-      </div>
-
+    <>
       {/* Two Column Layout - wraps on mobile */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className={`grid grid-cols-1 lg:grid-cols-[auto_1fr] gap-6 max-w-8xl mx-auto p-4 h-full`}>
         {/* Left Column - Calendar */}
-        <div className={`md:col-span-2 ${showCalendar ? 'block' : 'hidden md:block'}`}>
+        <div className={`flex flex-col h-full col-span-2 lg:col-span-1`}>
+          {/* Header */}
+          <div className="flex justify-between items-start mb-3 flex-shrink-0">
+            <h2 className="text-2xl font-bold">Event Calendar</h2>
+            <div className='flex flex-row justify-between gap-2'>
+              {/* Toggle Calendar Button - Mobile/Small screens only */}
+              <Button 
+                size='sm' 
+                variant="outline"
+                onClick={() => setShowCalendar(!showCalendar)} 
+                className="lg:hidden w-fit h-7"
+              >
+                <CalendarIcon className="h-4 w-4 mr-2" />
+                {showCalendar ? 'Hide Calendar' : 'Show Calendar'}
+              </Button>
+              
+              {isAuthenticated && showCalendar && (
+                <Button size='sm' onClick={() => handleCreateEvent()} className="w-fit h-7">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Event
+                </Button>
+              )}
+            </div>
+          </div>
           {/* Calendar Controls */}
-          <Card className="mb-6 -mx-5 sm:mx-0">
-            <CardHeader className="pb-4 px-2">
+          <Card className={`flex flex-col sm:mx-0 ${showCalendar ? 'flex' : 'hidden lg:flex'}`}>
+            <CardHeader className="py-2 pt-4 px-2 flex-shrink min-w-0">
               <div className="flex items-center justify-between gap-2 sm:gap-4">
                 <Button variant="outline" size="xs" className='h-7 px-1.5' onClick={goToPreviousMonth}>
                   <ChevronLeft className="h-4 w-4" />
                   <span className="sr-only">Previous month</span>
                 </Button>
-                <h2 className="text-lg sm:text-xl font-semibold flex-grow text-center">
+                <h2 className="text-lg sm:text-xl font-semibold flex-grow text-center min-w-0">
                   {monthNames[currentMonth]} {currentYear}
                 </h2>
                 <Button variant="outline" size="xs" className='h-7 px-1.5' onClick={goToNextMonth}>
@@ -336,12 +325,12 @@ const CalendarPage: React.FC = () => {
                 </Button>
               </div>
             </CardHeader>
-            <CardContent className="pt-0 px-1 pb-1">
+            <CardContent className="pt-0 px-1 pb-1 overflow-hidden">
               {/* Calendar Grid */}
-              <div className="grid grid-cols-7 gap-0.5 sm:gap-1 bg-muted/30 rounded-lg overflow-hidden p-0.5 sm:p-1">
-                {/* Day Headers */}
-                {daysOfWeek.map((day) => (
-                  <div key={day} className="bg-background p-1.5 sm:p-3 text-center font-medium text-xs sm:text-sm text-muted-foreground rounded">
+              <div className="grid grid-cols-7 grid-rows-[auto_repeat(6,minmax(0,1fr))] gap-0.5 sm:gap-1 bg-muted/30 rounded-lg overflow-hidden p-0.5 sm:p-1 w-[min(calc(100vw-2rem),calc(100vh-17rem))] aspect-square">
+                  {/* Day Headers */}
+                  {daysOfWeek.map((day) => (
+                  <div key={day} className="bg-background p-1 sm:p-1 text-center font-medium text-xs sm:text-sm text-muted-foreground rounded">
                     <span className="hidden sm:inline">{day}</span>
                     <span className="sm:hidden">{day.slice(0, 1)}</span>
                   </div>
@@ -355,7 +344,7 @@ const CalendarPage: React.FC = () => {
                     <div
                       key={index}
                       onClick={() => day.isCurrentMonth && handleDayClick(day.fullDate)}
-                      className={`bg-background min-h-[60px] sm:min-h-[100px] md:min-h-[120px] p-1 sm:p-2 rounded transition-colors duration-200 relative group flex flex-col ${!day.isCurrentMonth
+                      className={`bg-background h-full p-1 sm:p-1 rounded transition-colors duration-200 relative group flex flex-col ${!day.isCurrentMonth
                           ? 'opacity-50 cursor-not-allowed'
                           : 'cursor-pointer hover:bg-muted/30'
                         } ${day.isToday
@@ -389,7 +378,7 @@ const CalendarPage: React.FC = () => {
                               e.stopPropagation();
                               handleEventClick(event);
                             }}
-                            className="text-xs p-1 sm:p-1.5 bg-highlight-foreground text-primary-foreground hover:bg-highlight rounded cursor-pointer transition-colors duration-200 truncate shadow-sm"
+                            className="text-xs p-0.5 py-0 bg-highlight-foreground text-primary-foreground hover:bg-highlight rounded cursor-pointer transition-colors duration-200 truncate shadow-sm"
                             title={event.title}
                           >
                             <span className="sm:hidden">{event.title.slice(0, 10)}...</span>
@@ -421,16 +410,14 @@ const CalendarPage: React.FC = () => {
         </div>
 
         {/* Right Column - Upcoming Events List */}
-        <div className="md:col-span-1">
+        <div className={`flex flex-col col-span-2 lg:col-span-1 h-full ${!showCalendar ? 'w-[min(calc(100vw-2rem),calc(100vh-16rem))] lg:w-auto' : ''} overflow-auto lg:overflow-hidden`}>
           {/* Mobile header for upcoming events */}
-          <div className="lg:hidden mb-4">
-            <h2 className="text-2xl font-bold mb-1">Upcoming Events</h2>
-            <p className="text-muted-foreground text-sm">
-              {upcomingEvents.length} event{upcomingEvents.length !== 1 ? 's' : ''}
-            </p>
+          <div className="flex justify-between mb-3 flex-shrink-0">
+            <h2 className="text-2xl font-bold">Upcoming Events</h2>
+            <Badge variant="secondary" className='bg-highlight-foreground justify-center text-card font-semibold h-7 w-7 mr-3'>{upcomingEvents.length}</Badge>
           </div>
           
-          <div className="space-y-4">
+          <div className="space-y-4 overflow-y-auto lg:h-[calc(100vh-214px)]">
             {upcomingEvents.length === 0 ? (
               <Card>
                 <CardContent className="p-6 text-center text-muted-foreground">
@@ -734,7 +721,7 @@ const CalendarPage: React.FC = () => {
           onRegister={handleRegister}
         />
       )}
-    </div>
+    </>
   );
 };
 
