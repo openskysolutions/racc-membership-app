@@ -26,6 +26,7 @@ model User {
 
   // Relations
   sessions Session[]
+  votes    Vote[]
 
   @@index([email])
   @@index([ghlContactId])
@@ -46,5 +47,46 @@ model Session {
 
   @@index([sessionId])
   @@map("sessions")
+}
+
+// Nominations table for Business of the Month and Customer Service Superstar awards
+model Nomination {
+  id           Int      @id @default(autoincrement())
+  type         String   // 'business' or 'individual'
+  category     String   // 'business_of_month' or 'customer_service_superstar'
+  name         String?  // Individual's name (for customer service superstar)
+  businessName String   // Business name
+  reason       String   @db.Text
+  status       String   @default("pending") // pending, approved, rejected
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  // Relations
+  votes        Vote[]
+  
+  @@index([type, category])
+  @@index([status])
+  @@index([createdAt])
+  @@map("nominations")
+}
+
+// Votes table for board members to vote on nominations
+model Vote {
+  id           Int        @id @default(autoincrement())
+  nominationId Int
+  userId       Int        // Board member who voted
+  voteValue    Int        // 1-5 rating or simple yes/no (1 or 0)
+  comment      String?    @db.Text
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  
+  // Relations
+  nomination   Nomination @relation(fields: [nominationId], references: [id], onDelete: Cascade)
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([nominationId, userId]) // One vote per user per nomination
+  @@index([nominationId])
+  @@index([userId])
+  @@map("votes")
 }
 

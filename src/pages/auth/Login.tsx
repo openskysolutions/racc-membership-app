@@ -88,14 +88,14 @@ export const AuthPage = () => {
             <div className="text-sm text-center pt-4 space-y-2">
               <div>
                 <span>Don't have an account? </span>
-                <a href="/register" className="font-medium text-highlight-foreground hover:underline">
+                <a href="/join" className="font-medium text-highlight-foreground hover:underline">
                   Create one
                 </a>
               </div>
               <div>
                 <span>Existing RACC member? </span>
-                <a href="/register-existing" className="font-medium text-highlight-foreground hover:underline">
-                  Register with existing contact
+                <a href="/connect-account" className="font-medium text-highlight-foreground hover:underline">
+                  Register current membership
                 </a>
               </div>
             </div>

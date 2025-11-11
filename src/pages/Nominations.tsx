@@ -1,17 +1,11 @@
 import { useState } from 'react';
 import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import BusinessOfMonthBadge from '@/assets/business-of-month.png';
 import CustomerServiceSuperstarBadge from '@/assets/customer-service-superstar.png';
 import BusinessOfYear2024 from '@/assets/business-of-year-2024.jpg';
 import CustomerServiceSuperstar2024 from '@/assets/customer-service-superstar-2024.jpg';
+import NominationForm from '@/components/nominations/NominationForm';
 
 const NominationsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState("bofm");
@@ -89,49 +83,22 @@ const NominationsPage: React.FC = () => {
           </TabsTrigger>
         </TabsList>
         <TabsContent value="bofm" className="flex flex-row justify-center items-center w-full pt-0 mt-0">
-          <Card className='flex flex-col md:flex-row min-h-[459px] w-full overflow-hidden'>
-            <CardHeader className='w-full md:w-1/2 bg-slate-200 flex flex-col justify-center items-center p-8 text-center'>
-              <CardTitle className="text-2xl font-bold mb-4">
-                  <img src={BusinessOfMonthBadge} alt="Business of the Month" className="w-48 md:w-64 h-auto" />
-                </CardTitle>
-              <CardDescription className="text-lg">
-                Nominate an outstanding local business that deserves recognition for their exceptional service and contribution to our community.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col min-h-[485px] w-full md:w-1/2 p-0 justify-center items-center overflow-hidden">
-
-              <iframe 
-                src="https://api.leadconnectorhq.com/widget/survey/hRAdxyEouhBTqz9NE3pM" 
-                id="hRAdxyEouhBTqz9NE3pM" 
-                title="survey"
-                className='flex flex-grow w-full h-full'
-              ></iframe>
-              <script src="https://link.msgsndr.com/js/form_embed.js"></script>
-            </CardContent>
-          </Card>
+          <NominationForm
+            type="business"
+            category="business_of_month"
+            title="Business of the Month"
+            description="Nominate an outstanding local business that deserves recognition for their exceptional service and contribution to our community."
+            badgeImage={BusinessOfMonthBadge}
+          />
         </TabsContent>
         <TabsContent value="superstar" className="flex flex-row justify-center items-center w-full pt-0 mt-0">
-          <Card className='flex flex-col md:flex-row min-h-[459px] md:max-w-[900px] w-full overflow-hidden'>
-            <CardHeader className='w-full md:w-1/2 bg-slate-200 flex flex-col justify-center items-center p-8 text-center'>
-              <CardTitle className="text-2xl font-bold mb-4">
-                  <img src={CustomerServiceSuperstarBadge} alt="Customer Service Superstar of the Month" className="w-48 md:w-64 h-auto" />
-                </CardTitle>
-              <CardDescription className="text-lg">
-                Recognize an individual who has provided exceptional customer service and made a positive impact on your experience.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col min-h-[485px] w-full md:w-1/2 p-0 justify-center items-center overflow-hidden">
-              <iframe 
-                src="https://api.leadconnectorhq.com/widget/survey/8AgiIVHlQR1lDXrjZrkG" 
-                height='600px' 
-                width='100%'               
-                id="8AgiIVHlQR1lDXrjZrkG" 
-                title="survey"
-                className='flex flex-grow w-full h-full'
-              ></iframe>
-              <script src="https://link.msgsndr.com/js/form_embed.js"></script>
-            </CardContent>
-          </Card>
+          <NominationForm
+            type="individual"
+            category="customer_service_superstar"
+            title="Customer Service Superstar of the Month"
+            description="Recognize an individual who has provided exceptional customer service and made a positive impact on your experience."
+            badgeImage={CustomerServiceSuperstarBadge}
+          />
         </TabsContent>
       </Tabs>
     </section>

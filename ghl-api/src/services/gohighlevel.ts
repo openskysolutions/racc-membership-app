@@ -1703,6 +1703,43 @@ class GoHighLevelService {
       // Don't throw - just log the error and continue without custom fields
     }
   }
+
+  /**
+   * Get the configured location ID
+   */
+  getLocationId(): string {
+    return this.locationId;
+  }
+
+  /**
+   * Get location information for the configured location
+   */
+  async getLocationInfo(): Promise<any> {
+    if (this.developmentMode) {
+      // Return mock location data in development mode
+      return {
+        id: this.locationId,
+        name: 'Development Location',
+        address: '123 Main Street',
+        city: 'Salt Lake City',
+        state: 'UT',
+        country: 'US',
+        postalCode: '84101',
+        timezone: 'America/Denver',
+        phone: '(555) 555-5555',
+        email: 'info@example.com',
+        website: 'https://example.com'
+      };
+    }
+
+    try {
+      const response = await this.client.get(`/locations/${this.locationId}`);
+      return response.data.location || response.data;
+    } catch (error: any) {
+      console.error('Failed to fetch location info:', error.message);
+      throw error;
+    }
+  }
 }
 
 // Export singleton instance

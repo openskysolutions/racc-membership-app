@@ -42,6 +42,14 @@ router.put('/:id', requireAuth, async (req, res) => {
 });
 
 /**
+ * DELETE /members/:id
+ * Delete member account from database only (authenticated - own account or admin only)
+ */
+router.delete('/:id', requireAuth, async (req, res) => {
+  return membersController.deleteMember(req, res);
+});
+
+/**
  * PUT /members/:id/avatar
  * Update member avatar (authenticated - own profile or admin only)
  */

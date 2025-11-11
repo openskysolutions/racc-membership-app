@@ -56,7 +56,7 @@ const ProtectedRoute = ({ children }: { children: ReactNode }) => {
   );
 };
 
-// Admin Route Component  
+// Admin Route Component (allows admin and board members/moderators)
 const AdminRoute = ({ children }: { children: ReactNode }) => {
   const { isAuthenticated, user } = useAuthStore();
   const location = useLocation();
@@ -65,7 +65,10 @@ const AdminRoute = ({ children }: { children: ReactNode }) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
   
-  if (user?.role !== 'admin') {
+  // Allow admin and moderator (board member) roles
+  const hasAccess = user?.role === 'admin' || user?.role === 'moderator';
+  
+  if (!hasAccess) {
     return <Navigate to="/" replace />;
   }
   

@@ -18,8 +18,9 @@ export interface LocationInfo {
 
 export const getLocationInfo = async (): Promise<LocationInfo> => {
   try {
-    // Backend will use the location ID from its own environment
-    const response = await fetch(`${API_BASE_URL}/locations`, {
+    // Fetch the configured location from the backend
+    // The backend will use the LOCATION_ID from its environment variables
+    const response = await fetch(`${API_BASE_URL}/locations/current`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'
