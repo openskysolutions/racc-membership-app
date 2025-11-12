@@ -23,6 +23,10 @@ jobs:
         working-directory: ./ghl-api
         run: npm ci
 
+      - name: Generate Prisma Client
+        working-directory: ./ghl-api
+        run: npx prisma generate
+
       - name: Build backend
         working-directory: ./ghl-api
         run: npm run build
@@ -138,6 +142,10 @@ jobs:
           
           # Install all dependencies (including devDependencies for build tools)
           npm install
+          
+          # Generate Prisma Client
+          echo "Generating Prisma Client..."
+          npx prisma generate
           
           # Build the API with proper path alias resolution
           echo "Building backend..."
