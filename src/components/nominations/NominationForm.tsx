@@ -88,13 +88,13 @@ const NominationForm: React.FC<NominationFormProps> = ({
         <CardTitle className="text-2xl font-bold mb-4">
           <img src={badgeImage} alt={title} className="w-48 md:w-64 h-auto" />
         </CardTitle>
-        <CardDescription className="text-lg">{description}</CardDescription>
+        <CardDescription className="text-lg text-gray-800">{description}</CardDescription>
       </CardHeader>
       
       <CardContent className="w-full md:w-1/2 p-6">
         <div className="mb-4 items-center text-center">
-          <h2 className="text-3xl font-bold text-gray-800 leading-tight">2025</h2>
-          <h3 className="text-xl font-semibold text-gray-700">
+          <h2 className="text-3xl font-bold text-muted-foreground leading-tight">2025</h2>
+          <h3 className="text-xl font-semibold text-muted-foreground">
             {category === 'business_of_month' 
               ? 'Business of the Month' 
               : (

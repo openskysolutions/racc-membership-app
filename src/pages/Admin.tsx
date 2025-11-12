@@ -64,7 +64,7 @@ export default function AdminPage() {
 
   if (!hasAccess) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-card">
         <Card className="w-96">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -246,15 +246,15 @@ export default function AdminPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+          <h1 className="text-3xl font-bold text-muted-foreground flex items-center gap-3">
             <RiShieldUserFill className="h-8 w-8 text-highlight-foreground" />
             Admin Dashboard
           </h1>
-          <p className="text-gray-600 mt-2">Manage users and system settings</p>
+          <p className="text-muted-foreground mt-2">Manage users and system settings</p>
         </div>
 
         <Tabs defaultValue={isFullAdmin ? "overview" : "nominations"} className="space-y-6" onValueChange={(value) => {
@@ -433,23 +433,23 @@ export default function AdminPage() {
                 {loading ? (
                   <div className="p-8 text-center">Loading users...</div>
                 ) : (
-                  <div className="overflow-x-auto">
+                  <div className="overflow-x-auto rounded-lg">
                     <table key={`users-table-${users.length}`} className="w-full">
-                      <thead className="bg-gray-50">
+                      <thead className="bg-card">
                         <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                             User
                           </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                             Role & Status
                           </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                             Membership
                           </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                             Joined
                           </th>
-                          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <th className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
                             Actions
                           </th>
                         </tr>
@@ -703,15 +703,15 @@ function UserTableRow({
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   return (
-    <tr className="hover:bg-gray-50">
+    <tr className="bg-card hover:bg-background/80">
       <td className="px-6 py-4 whitespace-nowrap">
         <div>
-          <div className="text-sm font-medium text-gray-900">
+          <div className="text-sm font-medium text-foreground">
             {user.firstName} {user.lastName}
           </div>
-          <div className="text-sm text-gray-500">{user.email}</div>
+          <div className="text-sm text-accent">{user.email}</div>
           {user.businessName && (
-            <div className="text-sm text-gray-500">{user.businessName}</div>
+            <div className="text-sm text-accent">{user.businessName}</div>
           )}
         </div>
       </td>
@@ -730,7 +730,7 @@ function UserTableRow({
           {user.membershipTier || 'standard'}
         </Badge>
       </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+      <td className="px-6 py-4 whitespace-nowrap text-sm text-accent">
         {new Date(user.createdAt).toLocaleDateString()}
       </td>
       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

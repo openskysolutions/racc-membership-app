@@ -64,7 +64,7 @@ const NominationsPage: React.FC = () => {
         onValueChange={setActiveTab} 
         className="w-full md:max-w-[900px]"
       >
-        <TabsList className="h-25 w-full md:h-10 flex flex-col sm:flex-row item-center md:justify-around mb-3 md:mb-6">
+        <TabsList className="h-25 w-full md:h-10 flex flex-col sm:flex-row item-center md:justify-around mb-3 md:mb-6 bg-transparent">
           <TabsTrigger value="bofm">
             <Button 
               variant={activeTab === "bofm" ? "default" : "outline"}
