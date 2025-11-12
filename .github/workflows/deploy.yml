@@ -25,6 +25,8 @@ jobs:
 
       - name: Generate Prisma Client
         working-directory: ./ghl-api
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: npx prisma generate
 
       - name: Build backend
