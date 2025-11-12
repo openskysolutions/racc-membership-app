@@ -38,6 +38,7 @@ const CalendarPage: React.FC = () => {
   const [showCalendar, setShowCalendar] = useState(false); // Default to hidden on mobile
   const [refreshTrigger, setRefreshTrigger] = useState(0); // Trigger to force refresh
   const [visibleEventsCount, setVisibleEventsCount] = useState(5); // How many events to show in the list
+  const [loadedCustomFieldsIds, setLoadedCustomFieldsIds] = useState<Set<string>>(new Set()); // Track which events have loaded custom fields
 
   // Check for URL parameters to trigger create event dialog
   useEffect(() => {
@@ -53,7 +54,29 @@ const CalendarPage: React.FC = () => {
     try {
       setLoading(true);
       const ghlEventsData = await getCurrentYearEvents(GHL_CALENDAR_ID);
-      setEvents(ghlEventsData);
+      
+      // Preserve custom fields from existing events when updating
+      setEvents(prevEvents => {
+        if (prevEvents.length === 0) {
+          // First load, just set the events
+          return ghlEventsData;
+        }
+        
+        // Merge new event data with existing custom fields
+        return ghlEventsData.map(newEvent => {
+          const existingEvent = prevEvents.find(e => e.id === newEvent.id);
+          if (existingEvent?.coverImageUrl || existingEvent?.pageUrl) {
+            // Preserve custom fields from existing event
+            return {
+              ...newEvent,
+              coverImageUrl: existingEvent.coverImageUrl,
+              pageUrl: existingEvent.pageUrl,
+              downloadFileUrl: existingEvent.downloadFileUrl,
+            };
+          }
+          return newEvent;
+        });
+      });
     } catch (error) {
       console.error('Error loading events:', error);
       setEvents([]);
@@ -65,7 +88,8 @@ const CalendarPage: React.FC = () => {
   // Fetch events on mount and when currentDate or refreshTrigger changes
   useEffect(() => {
     fetchEvents();
-  }, [fetchEvents, currentDate, refreshTrigger]); // Re-fetch when month changes or refresh triggered
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentDate, refreshTrigger]); // Re-fetch when month changes or refresh triggered
 
   // Refetch events when user returns to this page (e.g., from EventDetail)
   // This ensures the calendar shows updated data after events are edited elsewhere
@@ -78,11 +102,67 @@ const CalendarPage: React.FC = () => {
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [fetchEvents]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only set up listener once on mount
 
-  // Fetch custom fields only for upcoming events (lazy loading)
-  // Custom fields are now batch-loaded on the backend and included in the events
-  // No need for separate lazy loading anymore
+  // Fetch custom fields for visible upcoming events
+  useEffect(() => {
+    const fetchCustomFieldsForVisibleEvents = async () => {
+      const now = new Date();
+      const upcoming = events
+        .filter(event => new Date(event.startTime) >= now)
+        .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
+        .slice(0, visibleEventsCount);
+
+      // Fetch custom fields for events that haven't been loaded yet
+      const eventsNeedingCustomFields = upcoming.filter(
+        event => !loadedCustomFieldsIds.has(event.id)
+      );
+      
+      if (eventsNeedingCustomFields.length > 0) {
+        
+        // Mark these events as being loaded to prevent duplicate fetches
+        const newLoadedIds = new Set(loadedCustomFieldsIds);
+        eventsNeedingCustomFields.forEach(event => newLoadedIds.add(event.id));
+        setLoadedCustomFieldsIds(newLoadedIds);
+        
+        // Fetch custom fields for each event in parallel
+        const customFieldsPromises = eventsNeedingCustomFields.map(async (event) => {
+          try {
+            const customFields = await getEventCustomFields(event.id);
+            return { eventId: event.id, customFields };
+          } catch (error) {
+            console.error(`Failed to fetch custom fields for event ${event.id}:`, error);
+            return { eventId: event.id, customFields: null };
+          }
+        });
+        
+        const results = await Promise.all(customFieldsPromises);
+        
+        // Update events with custom fields
+        setEvents(prevEvents => {
+          const updated = prevEvents.map(event => {
+            const result = results.find(r => r.eventId === event.id);
+            if (result?.customFields) {
+              return {
+                ...event,
+                pageUrl: result.customFields.pageUrl,
+                coverImageUrl: result.customFields.coverImageUrl,
+                downloadFileUrl: result.customFields.downloadFileUrl,
+              };
+            }
+            return event;
+          });
+          return updated;
+        });
+      }
+    };
+
+    if (events.length > 0 && !loading) {
+      fetchCustomFieldsForVisibleEvents();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [events.length, visibleEventsCount, loading, loadedCustomFieldsIds.size]); // Only re-run when event count, visible count, loading state, or loaded IDs change
 
   // Load more events on scroll
   useEffect(() => {
