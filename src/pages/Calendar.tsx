@@ -12,7 +12,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { formatEventDate, formatEventTime, formatLocation } from '@/lib/eventUtils';
 import { EventCountdown } from '@/components/EventCountdown';
 
-import { isSmallScreen } from '@/lib/platform';
+import { isSmallScreen, isNativeApp } from '@/lib/platform';
 import { openExternalUrl } from '@/lib/externalBrowser';
 import EventBg from '@/assets/explosive-event-cover.jpg'
 
@@ -144,10 +144,16 @@ const CalendarPage: React.FC = () => {
   const handleRegister = async () => {
     // Open the pageUrl in external browser if it exists
     if (eventPageUrl) {
-      const handled = await openExternalUrl(eventPageUrl);
-      if (!handled) {
-        // On web, open in new tab
-        window.open(eventPageUrl, '_blank', 'noopener,noreferrer');
+      if (isNativeApp()) {
+        // On mobile app, open in external browser
+        const handled = await openExternalUrl(eventPageUrl);
+        if (!handled) {
+          // Fallback to opening in new tab
+          window.open(eventPageUrl, '_blank', 'noopener,noreferrer');
+        }
+      } else {
+        // On web, open in current tab
+        window.location.href = eventPageUrl;
       }
     }
   };
@@ -721,7 +727,6 @@ const CalendarPage: React.FC = () => {
         onEventCreated={handleEventCreated}
         onEventUpdated={handleEventUpdated}
       />
-
     </>
   );
 };

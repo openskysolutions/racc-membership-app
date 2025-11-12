@@ -28,6 +28,7 @@ import { EventCountdown } from '@/components/EventCountdown';
 import EventFormDialog from '@/components/EventFormDialog';
 import { useAuthStore } from '@/stores/authStore';
 import { openExternalUrl } from '@/lib/externalBrowser';
+import { isNativeApp } from '@/lib/platform';
 
 // GoHighLevel Calendar ID - RACC Events
 const GHL_CALENDAR_ID = '9XpDcFHv3SmCUuHeuOOg';
@@ -130,10 +131,16 @@ const EventDetailPage: React.FC = () => {
   const handleRegister = async () => {
     // Open the pageUrl in external browser if it exists
     if (customFields.pageUrl) {
-      const handled = await openExternalUrl(customFields.pageUrl);
-      if (!handled) {
-        // On web, open in new tab
-        window.open(customFields.pageUrl, '_blank', 'noopener,noreferrer');
+      if (isNativeApp()) {
+        // On mobile app, open in external browser
+        const handled = await openExternalUrl(customFields.pageUrl);
+        if (!handled) {
+          // Fallback to opening in new tab
+          window.open(customFields.pageUrl, '_blank', 'noopener,noreferrer');
+        }
+      } else {
+        // On web, open in current tab
+        window.location.href = customFields.pageUrl;
       }
     }
   };
