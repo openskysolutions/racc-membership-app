@@ -469,6 +469,27 @@ async function testConnection(req, res, next) {
   }
 }
 
+/**
+ * Get the configured location information (from LOCATION_ID env variable)
+ * This endpoint doesn't require listing all locations, just fetching the one we're configured for
+ */
+async function getCurrentLocation(req, res, next) {
+  try {
+    const { ghlService } = require('@/services/gohighlevel');
+    const locationInfo = await ghlService.getLocationInfo();
+    
+    res.json({
+      location: locationInfo
+    });
+  } catch (err) {
+    console.error('Failed to get current location:', err.message);
+    res.status(500).json({
+      error: "Failed to fetch location information",
+      message: err.message
+    });
+  }
+}
+
 module.exports = { 
   listLocations, getLocationById, createLocation, updateLocation, deleteLocation,
   // Tags
@@ -484,5 +505,7 @@ module.exports = {
   // Templates
   getAllOrEmailSmsTemplates, deleteAnEmailSmsTemplate,
   // Test endpoint
-  testConnection
+  testConnection,
+  // Current location
+  getCurrentLocation
 };

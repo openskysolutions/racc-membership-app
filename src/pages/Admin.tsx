@@ -6,6 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuthStore } from '@/stores/authStore';
 import { adminService, User, AdminStats } from '@/services/admin';
+import { api } from '@/services/apiClient';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,9 +16,24 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Label } from '@/components/ui/label';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield, Users, Edit, Trash2, Search, MoreHorizontal, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
+import { Users, Edit, Trash2, Search, MoreHorizontal, AlertTriangle, CheckCircle, Clock, Award, LucideRefreshCcw, Star } from 'lucide-react';
+import { RiShieldUserFill } from "react-icons/ri";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
+
+interface Nomination {
+  id: number;
+  type: string;
+  category: string;
+  name?: string;
+  businessName: string;
+  reason: string;
+  status: string;
+  createdAt: string;
+  voteCount?: number;
+  averageScore?: number;
+  userVote?: number; // The current user's vote value (1-5) if they've voted
+}
 
 export default function AdminPage() {
   const { user: currentUser } = useAuthStore();
@@ -37,8 +53,16 @@ export default function AdminPage() {
     hasMore: false
   });
 
-  // Check if user has admin access
-  if (!currentUser || currentUser.role !== 'admin') {
+  // Nominations state
+  const [nominations, setNominations] = useState<Nomination[]>([]);
+  const [nominationsLoading, setNominationsLoading] = useState(false);
+  const [nominationCategory, setNominationCategory] = useState<'business_of_month' | 'customer_service_superstar'>('business_of_month');
+
+  // Check if user has admin or board member access
+  const hasAccess = currentUser && (currentUser.role === 'admin' || currentUser.role === 'moderator');
+  const isFullAdmin = currentUser?.role === 'admin';
+
+  if (!hasAccess) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <Card className="w-96">
@@ -48,7 +72,7 @@ export default function AdminPage() {
               Access Denied
             </CardTitle>
             <CardDescription>
-              You don't have permission to access this page. Admin access is required.
+              You don't have permission to access this page. Admin or board member access is required.
             </CardDescription>
           </CardHeader>
         </Card>
@@ -64,6 +88,11 @@ export default function AdminPage() {
   useEffect(() => {
     loadStats();
   }, []);
+
+  useEffect(() => {
+    // Load nominations when category changes
+    loadNominations();
+  }, [nominationCategory]);
 
   const loadData = async () => {
     try {
@@ -95,6 +124,48 @@ export default function AdminPage() {
       setStats(statsData);
     } catch (error) {
       console.error('Failed to load stats:', error);
+    }
+  };
+
+  const loadNominations = async () => {
+    setNominationsLoading(true);
+    try {
+      const params = new URLSearchParams({
+        category: nominationCategory,
+        year: new Date().getFullYear().toString(),
+      });
+
+      const response = await api.get(`/nominations?${params.toString()}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        setNominations(data.nominations || []);
+      } else {
+        throw new Error('Failed to load nominations');
+      }
+    } catch (error: any) {
+      console.error('Error loading nominations:', error);
+      toast.error('Failed to load nominations');
+    } finally {
+      setNominationsLoading(false);
+    }
+  };
+
+  const voteOnNomination = async (nominationId: number, voteValue: number) => {
+    try {
+      const response = await api.post(`/nominations/${nominationId}/vote`, {
+        voteValue,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to submit vote');
+      }
+
+      toast.success(`Vote submitted: ${voteValue}/5`);
+      loadNominations(); // Reload to show updated vote count
+    } catch (error: any) {
+      console.error('Error voting:', error);
+      toast.error('Failed to submit vote');
     }
   };
 
@@ -180,17 +251,39 @@ export default function AdminPage() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-            <Shield className="h-8 w-8 text-red-600" />
+            <RiShieldUserFill className="h-8 w-8 text-highlight-foreground" />
             Admin Dashboard
           </h1>
           <p className="text-gray-600 mt-2">Manage users and system settings</p>
         </div>
 
-        <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="users">User Management</TabsTrigger>
-          </TabsList>
+        <Tabs defaultValue={isFullAdmin ? "overview" : "nominations"} className="space-y-6" onValueChange={(value) => {
+          if (value === 'nominations') {
+            loadNominations();
+          }
+        }}>
+          <div className="overflow-x-auto -mx-6 px-6 pb-2">
+            <TabsList className="w-full sm:w-auto inline-flex">
+              {isFullAdmin && (
+                <>
+                  <TabsTrigger value="overview" className="flex-1 sm:flex-none">
+                    <span className="hidden sm:inline">Overview</span>
+                    <span className="sm:hidden">Overview</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="users" className="flex-1 sm:flex-none">
+                    <Users className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">User Management</span>
+                    <span className="sm:hidden ml-1">Users</span>
+                  </TabsTrigger>
+                </>
+              )}
+              <TabsTrigger value="nominations" className="flex-1 sm:flex-none">
+                <Award className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Nominations</span>
+                <span className="sm:hidden ml-1">Nominations</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
@@ -413,6 +506,130 @@ export default function AdminPage() {
                     Next
                   </Button>
                 </div>
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Nominations Tab */}
+          <TabsContent value="nominations" className="space-y-6">
+            <div className="mb-6 flex flex-col sm:flex-row gap-4">
+              <Select value={nominationCategory} onValueChange={(value: any) => setNominationCategory(value)}>
+                <SelectTrigger className="w-full sm:w-[300px]">
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="business_of_month">Business of the Month</SelectItem>
+                  <SelectItem value="customer_service_superstar">Customer Service Superstar</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <div className="text-sm text-muted-foreground flex-1 items-center flex">
+                {nominations.length} nomination{nominations.length !== 1 ? 's' : ''} • {new Date().toLocaleString('en-US', { month: 'long', year: 'numeric' })}
+              </div>
+
+              <Button onClick={loadNominations} variant="outline" className="ml-auto w-8" size="xs">
+                <LucideRefreshCcw className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {nominationsLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : nominations.length === 0 ? (
+              <Card>
+                <CardContent className="py-12 text-center text-muted-foreground">
+                  No nominations found for this category
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-3">
+                {nominations.map((nomination) => (
+                  <Card key={nomination.id}>
+                    <CardContent className="py-4 gap-4 items-start relative">
+                      {/* Left: Nominee Info and Metadata */}
+                      <div className='flex flex-col sm:flex-row gap-4'>
+                        <div className="flex flex-col items-start gap-0 w-full sm:w-1/3">
+                          <h3 className="font-semibold text-base">
+                            {nomination.name || nomination.businessName}
+                          </h3>
+                          {nomination.name && nomination.businessName && (
+                            <p className="text-sm text-muted-foreground mb-3">
+                              {nomination.businessName}
+                            </p>
+                          )}
+                          <div className="flex flex-row items-center gap-2">
+                          <span className="text-xs text-muted-foreground whitespace-nowrap">
+                            {new Date(nomination.createdAt).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric',
+                            })}
+                          </span>
+                          <Badge variant={
+                            nomination.status === 'pending' ? 'outline' :
+                            nomination.status === 'approved' ? 'default' : 
+                            'destructive'
+                          } className="text-xs">
+                            {nomination.status.charAt(0).toUpperCase() + nomination.status.slice(1)}
+                          </Badge>
+                          {nomination.voteCount !== undefined && nomination.voteCount > 0 && (
+                            <span className="text-xs text-muted-foreground whitespace-nowrap">
+                              {nomination.voteCount} vote{nomination.voteCount !== 1 ? 's' : ''} 
+                              {nomination.averageScore && ` • ${nomination.averageScore.toFixed(1)}/5`}
+                            </span>
+                          )}
+                          </div>
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium ">Nomination Reason:</p>
+                          <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                            {nomination.reason}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Voting Section */}
+                      <div className="mt-4 pt-4 border-t">
+                        <div className="flex items-center justify-between flex-wrap gap-4">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium">Your Vote:</span>
+                            <div className="flex gap-1">
+                              {[1, 2, 3, 4, 5].map((value) => (
+                                <button
+                                  key={value}
+                                  onClick={() => voteOnNomination(nomination.id, value)}
+                                  className={`p-1 rounded hover:bg-muted transition-colors ${
+                                    nomination.userVote === value ? 'text-yellow-500' : 'text-gray-300 hover:text-yellow-400'
+                                  }`}
+                                  title={`Vote ${value} stars`}
+                                >
+                                  <Star
+                                    className="h-5 w-5"
+                                    fill={nomination.userVote && nomination.userVote >= value ? 'currentColor' : 'none'}
+                                  />
+                                </button>
+                              ))}
+                            </div>
+                            {nomination.userVote && (
+                              <span className="text-xs text-muted-foreground ml-2">
+                                You voted {nomination.userVote}/5
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {nomination.voteCount || 0} total vote{nomination.voteCount !== 1 ? 's' : ''}
+                            {nomination.averageScore && nomination.voteCount && nomination.voteCount > 0 && (
+                              <span className="ml-2 font-medium">
+                                • Avg: {nomination.averageScore.toFixed(1)}/5
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
             )}
           </TabsContent>

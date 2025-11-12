@@ -14,7 +14,9 @@ const {
   // Templates
   getAllOrEmailSmsTemplates, deleteAnEmailSmsTemplate,
   // Test Connection
-  testConnection
+  testConnection,
+  // Current Location
+  getCurrentLocation
 } = require('@/controllers/locationsController');
 const router = express.Router();
 
@@ -41,6 +43,27 @@ const router = express.Router();
  *             schema:
  *               $ref: '#/components/schemas/PaginatedResponse'
  */
+
+/**
+ * @swagger
+ * /locations/current:
+ *   get:
+ *     summary: Get the configured location (from LOCATION_ID environment variable)
+ *     tags:
+ *       - Locations
+ *     responses:
+ *       200:
+ *         description: Location information object
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 location:
+ *                   type: object
+ */
+router.get('/current', getCurrentLocation);
+
 router.get('/', listLocations);
 
 /**

@@ -239,7 +239,6 @@ export function generateConfirmationEmail(params: ConfirmationEmailParams): stri
                 <p class="message">
                     Thank you for starting your registration with the chamber. To complete your account setup and unlock member benefits, please verify your email address using the code below.
                 </p>
-                <div class="divider"></div>
             </div>
             <!-- Content -->
             <div class="content">

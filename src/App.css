@@ -93,6 +93,12 @@
   input, textarea, select {
     font-size: 16px !important;
   }
+  /* Reduce placeholder opacity */
+  input::placeholder,
+  textarea::placeholder,
+  select::placeholder {
+    @apply opacity-40;
+  }
   /* Navbar padding for status bar */
   header,
   #mobile-nav {

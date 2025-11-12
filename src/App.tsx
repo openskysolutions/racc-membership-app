@@ -14,8 +14,6 @@ function App() {
   const checkAuth = useAuthStore(state => state.checkAuth);
   const { setLocationInfo, setLoading, setError } = useLocationStore();
 
-  StatusBar.setOverlaysWebView({ overlay: true });
-
   useEffect(() => {
     // Check for existing authentication token in either storage
     const token = localStorage.getItem('token') || sessionStorage.getItem('token');
@@ -28,6 +26,7 @@ function App() {
   }, [checkAuth]);
 
   // Fetch location information on app startup
+  // Now uses /locations/current endpoint which fetches the configured location
   useEffect(() => {
     const fetchLocationInfo = async () => {
       setLoading(true);

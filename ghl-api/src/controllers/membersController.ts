@@ -5,6 +5,9 @@
 
 import { Request, Response } from 'express';
 import { ghlService } from '@/services/gohighlevel';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 interface CustomField {
   id: string;
@@ -147,9 +150,10 @@ class MembersController {
       const totalMembers = transformedMembers.length;
       const paginatedMembers = transformedMembers.slice(pageOffset, pageOffset + pageLimit);
       
-      // Return only business name and ID for each member
+      // Return business name, contact name, and ID for each member
       const simplifiedMembers = paginatedMembers.map(member => ({
         id: member.id,
+        name: `${member.firstName || ''} ${member.lastName || ''}`.trim() || 'Unknown Name',
         businessName: member.businessName || member.companyName || `${member.firstName} ${member.lastName}`.trim() || 'Unknown Business',
         avatar: member.avatar || '/profile-placeholder.png',
       }));
@@ -663,6 +667,58 @@ class MembersController {
     
     // Default fallback
     return 'basic';
+  }
+
+  /**
+   * Delete member account from database only (not from GoHighLevel)
+   * DELETE /members/:id
+   */
+  async deleteMember(req: Request, res: Response): Promise<Response> {
+    const { id } = req.params;
+    const requestingUser = (req as any).user;
+
+    try {
+      // Get the user to be deleted by ghlContactId
+      const userToDelete = await prisma.user.findFirst({
+        where: { ghlContactId: id }
+      });
+
+      if (!userToDelete) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      // Authorization check: users can only delete their own account, unless they're an admin
+      if (requestingUser.id !== userToDelete.id && requestingUser.role !== 'admin') {
+        return res.status(403).json({ error: 'Unauthorized: You can only delete your own account' });
+      }
+
+      // Add "Deleted from app" tag to GoHighLevel contact before deleting from database
+      try {
+        await ghlService.updateContactTags(userToDelete.ghlContactId, ['Deleted from app'], 'add');
+        console.log(`✅ Added "Deleted from app" tag to GHL contact: ${userToDelete.ghlContactId}`);
+      } catch (tagError: any) {
+        console.error('⚠️ Failed to add tag to GoHighLevel, but continuing with deletion:', tagError.message);
+        // Continue with deletion even if tag update fails
+      }
+
+      // Delete the user and all related sessions (cascade)
+      await prisma.user.delete({
+        where: { id: userToDelete.id }
+      });
+
+      console.log(`✅ User deleted from database: ${userToDelete.email} (ID: ${userToDelete.id})`);
+
+      return res.json({
+        success: true,
+        message: 'Account successfully deleted from the system'
+      });
+    } catch (error: any) {
+      console.error('❌ Error deleting member:', error);
+      return res.status(500).json({
+        error: 'Failed to delete account',
+        details: error.message
+      });
+    }
   }
 
   /**
