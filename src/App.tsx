@@ -5,7 +5,7 @@ import { useLocationStore } from '@/stores/locationStore';
 import { getLocationInfo } from '@/services/location';
 // import { SafeArea } from 'capacitor-plugin-safe-area';
 import { StatusBar } from '@capacitor/status-bar';
-import { Capacitor } from '@capacitor/core';
+import { isNativeApp } from '@/lib/platform';
 import { Toaster } from '@/components/ui/sonner';
 
 import "@/App.css";
@@ -55,7 +55,7 @@ function App() {
         //     );
         // }
         
-        if (Capacitor.isNativePlatform()) {
+        if (isNativeApp()) {
           await StatusBar.show();
           await StatusBar.setOverlaysWebView({overlay: true})
         }

@@ -4,7 +4,7 @@
  */
 
 import { Browser } from '@capacitor/browser';
-import { Capacitor } from '@capacitor/core';
+import { isNativeApp } from '@/lib/platform';
 
 const BASE_URL = 'https://members.richfieldareachamber.com';
 
@@ -14,7 +14,7 @@ const BASE_URL = 'https://members.richfieldareachamber.com';
  * On web: Returns false to let React Router handle navigation
  */
 export async function openExternalUrl(path: string): Promise<boolean> {
-  if (Capacitor.isNativePlatform()) {
+  if (isNativeApp()) {
     // On mobile, open in external browser
     const url = path.startsWith('http') ? path : `${BASE_URL}${path}`;
     await Browser.open({ url });

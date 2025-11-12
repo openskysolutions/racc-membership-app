@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
+import { isMobileBuild } from "@/lib/platform";
 // import { StatusBar, Style } from '@capacitor/status-bar';
 // import { Capacitor } from '@capacitor/core';
 
@@ -15,8 +16,12 @@ type ThemeProviderState = {
   setTheme: (theme: Theme) => void;
 };
 
+// Determine default theme based on build target
+// Mobile builds default to dark theme, web builds default to light theme
+const platformDefaultTheme: Theme = isMobileBuild() ? "dark" : "light";
+
 const initialState: ThemeProviderState = {
-  theme: "light",
+  theme: platformDefaultTheme,
   setTheme: () => null,
 };
 
@@ -24,7 +29,7 @@ const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
 
 export function ThemeProvider({
   children,
-  defaultTheme = "light",
+  defaultTheme = platformDefaultTheme,
   storageKey = "vite-ui-theme",
   ...props
 }: ThemeProviderProps) {
