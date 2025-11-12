@@ -53,6 +53,10 @@ class GoHighLevelService {
   // Association key linking custom object to appointments
   // Created by setup-custom-objects.js script
   private readonly APPOINTMENT_ASSOCIATION_KEY = 'appointment_custom_fields_to_appointment';
+  
+  // Cache for custom fields to avoid repeated slow API calls (25-30s per request!)
+  private customFieldsCache: Map<string, { data: any; timestamp: number }> = new Map();
+  private readonly CACHE_TTL = 600000; // 10 minutes cache TTL (GoHighLevel API is very slow, cache longer)
 
   constructor() {
     // Debug: Log environment variables
@@ -79,6 +83,7 @@ class GoHighLevelService {
 
       this.client = axios.create({
         baseURL: process.env.GHL_API_BASE_URL || 'https://services.leadconnectorhq.com',
+        timeout: 60000, // 60 second timeout (GoHighLevel custom objects API is very slow - 25-30s typical)
         headers: {
           'Authorization': `Bearer ${process.env.PRIVATE_INTEGRATION_TOKEN}`,
           'Content-Type': 'application/json',
@@ -92,6 +97,82 @@ class GoHighLevelService {
       });
       
       this.locationId = process.env.LOCATION_ID;
+      
+      // DISABLED: Pre-warm takes 25-30 seconds and often times out
+      // Custom fields will be fetched on first request and cached
+      console.log('⚠️  Custom fields prewarm disabled due to slow GoHighLevel API (25-30s response time)');
+      console.log('   Custom fields will be fetched lazily on first request and cached for 10 minutes');
+      
+      // Schedule first prewarm attempt after 30 seconds (after server is fully up)
+      setTimeout(() => {
+        console.log('🔄 Attempting background cache prewarm...');
+        this.prewarmCustomFieldsCache();
+      }, 30000);
+    }
+  }
+
+  /**
+   * Pre-warm the custom fields cache in the background
+   * This runs on startup and periodically to keep the cache fresh
+   */
+  private async prewarmCustomFieldsCache(retryCount = 0): Promise<void> {
+    if (!this.client) return;
+    
+    const maxRetries = 5;
+    const retryDelays = [5000, 10000, 30000, 60000, 120000]; // 5s, 10s, 30s, 1m, 2m
+    
+    try {
+      console.log(`🔥 Pre-warming custom fields cache... ${retryCount > 0 ? `(retry ${retryCount}/${maxRetries})` : ''}`);
+      const startTime = Date.now();
+      console.log(`⏱️  [PREWARM] Starting GoHighLevel API call at ${new Date().toISOString()}`);
+      
+      const response = await this.client.post(
+        `/objects/${this.APPOINTMENT_CUSTOM_OBJECT_ID}/records/search`,
+        {
+          locationId: this.locationId,
+          page: 1,
+          pageLimit: 100
+        }
+      );
+      
+      const apiDuration = Date.now() - startTime;
+      console.log(`⏱️  [PREWARM] GoHighLevel API responded after ${apiDuration}ms`);
+      
+      const records = response.data?.records || response.data?.data || [];
+      const now = Date.now();
+      this.customFieldsCache.set('all_custom_fields', { data: records, timestamp: now });
+      
+      const totalDuration = Date.now() - startTime;
+      console.log(`✅ Pre-warmed cache with ${records.length} custom field records`);
+      console.log(`⏱️  [PREWARM] Total time: ${totalDuration}ms (API: ${apiDuration}ms)`);
+      
+      // Schedule next refresh in 9 minutes (before 10 minute TTL expires)
+      setTimeout(() => this.prewarmCustomFieldsCache(), 540000);
+    } catch (error: any) {
+      const statusCode = error.response?.status;
+      const errorMessage = error.response?.data?.message || error.message;
+      
+      console.error(`❌ Failed to pre-warm custom fields cache (attempt ${retryCount + 1}/${maxRetries + 1}):`, errorMessage);
+      console.error(`   Status: ${statusCode}, Custom Object ID: ${this.APPOINTMENT_CUSTOM_OBJECT_ID}`);
+      
+      if (statusCode === 503) {
+        console.error('   ⚠️  GoHighLevel API returned 503 (Service Unavailable) - API may be overloaded or rate limited');
+      } else if (statusCode === 404) {
+        console.error('   ⚠️  404 Error - Custom Object ID may be incorrect or not accessible');
+      } else if (statusCode === 401 || statusCode === 403) {
+        console.error('   ⚠️  Authentication error - check PRIVATE_INTEGRATION_TOKEN and LOCATION_ID');
+      }
+      
+      // Retry with exponential backoff
+      if (retryCount < maxRetries) {
+        const delay = retryDelays[retryCount];
+        console.log(`   🔄 Retrying in ${delay / 1000} seconds...`);
+        setTimeout(() => this.prewarmCustomFieldsCache(retryCount + 1), delay);
+      } else {
+        console.error('   ❌ Max retries reached. Custom fields will be fetched on-demand (slower).');
+        // Even after max retries, schedule a retry in 5 minutes to try again
+        setTimeout(() => this.prewarmCustomFieldsCache(0), 300000);
+      }
     }
   }
 
@@ -1122,8 +1203,10 @@ class GoHighLevelService {
       }));
       
       // Batch-load custom fields for all events in a single API call
-      console.log(`🔄 Batch-loading custom fields for ${formattedEvents.length} events...`);
-      await this.batchLoadCustomFields(formattedEvents);
+      // DISABLED: This is too slow (10+ seconds) when fetching 500 records from GHL
+      // Custom fields are now loaded lazily on-demand via /appointments/:id/custom-fields
+      // console.log(`🔄 Batch-loading custom fields for ${formattedEvents.length} events...`);
+      // await this.batchLoadCustomFields(formattedEvents);
       
       return formattedEvents;
       
@@ -1171,6 +1254,9 @@ class GoHighLevelService {
     }
 
     try {
+      const updateStart = Date.now();
+      console.log(`⏱️  [UPDATE] Starting appointment update for ${appointmentId}`);
+      
       // Extract custom fields and internal note from payload
       const { internalNote, pageUrl, coverImageUrl, downloadFileUrl, customFieldsRecordId, description, location, ...rest } = payload;
       
@@ -1179,6 +1265,7 @@ class GoHighLevelService {
       const baseAppointmentId = appointmentId.includes('_') ? appointmentId.split('_')[0] : appointmentId;
       
       console.log(`📝 Updating appointment - Original ID: ${appointmentId}, Base ID: ${baseAppointmentId}`);
+      console.log(`📝 Custom fields recordId from payload: ${customFieldsRecordId || 'none provided'}`);
       
       // Build the update payload with only fields that GHL accepts
       // Note: GoHighLevel uses 'address' not 'location', and 'calendarNotes' not 'description'
@@ -1195,19 +1282,36 @@ class GoHighLevelService {
       
       console.log('📝 Updating appointment with payload:', JSON.stringify(appointmentPayload, null, 2));
       
+      const ghlStart = Date.now();
       // Update the appointment via GoHighLevel API using the base ID
       const response = await this.client.put(`/calendars/events/appointments/${baseAppointmentId}`, appointmentPayload);
+      const ghlDuration = Date.now() - ghlStart;
+      console.log(`⏱️  [UPDATE] GoHighLevel appointment API responded in ${ghlDuration}ms`);
       
       console.log('✅ Appointment updated successfully');
       
       // Save custom fields to custom object (if any custom fields provided)
       // Use the base appointment ID for custom objects (same as we use for the appointment update)
       if (internalNote || pageUrl || coverImageUrl || downloadFileUrl) {
-        await this.upsertAppointmentCustomObject(
+        const customFieldsStart = Date.now();
+        const upsertResult = await this.upsertAppointmentCustomObject(
           baseAppointmentId,
           { pageUrl, coverImageUrl, downloadFileUrl, internalNote },
           customFieldsRecordId // Pass existing record ID if available
         );
+        const customFieldsDuration = Date.now() - customFieldsStart;
+        console.log(`⏱️  [UPDATE] Custom fields upsert completed in ${customFieldsDuration}ms`);
+        console.log(`📋 [UPDATE] Upserted custom fields:`, { pageUrl, coverImageUrl, downloadFileUrl, internalNote });
+        console.log(`📋 [UPDATE] Record ID: ${upsertResult.recordId}`);
+        
+        // Wait a moment for GoHighLevel to propagate the changes
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Invalidate caches for this appointment to force refresh on next fetch
+        const appointmentCacheKey = `appointment_${baseAppointmentId}`;
+        this.customFieldsCache.delete(appointmentCacheKey);
+        this.customFieldsCache.delete('all_custom_fields'); // Also invalidate the all records cache
+        console.log(`🗑️  Invalidated custom fields cache for appointment ${baseAppointmentId} (after 500ms propagation delay)`);
       }
       
       // GoHighLevel's update response is minimal, so combine it with our request data
@@ -1229,6 +1333,9 @@ class GoHighLevelService {
         coverImageUrl: coverImageUrl || '',
         downloadFileUrl: downloadFileUrl || ''
       };
+      
+      const totalDuration = Date.now() - updateStart;
+      console.log(`⏱️  [UPDATE] Total update completed in ${totalDuration}ms`);
       
       return completeAppointment;
       
@@ -1369,19 +1476,23 @@ class GoHighLevelService {
       // If no existing record ID provided, check if one exists by searching
       let recordIdToUse = existingRecordId;
       if (!recordIdToUse) {
-        console.log(`🔍 Searching for existing custom object for appointment ${baseAppointmentId}`);
+        console.log(`🔍 No customFieldsRecordId provided, searching for existing custom object for appointment ${baseAppointmentId}`);
+        const startSearch = Date.now();
         try {
           const existingFields = await this.getAppointmentCustomFields(appointmentId);
+          const searchDuration = Date.now() - startSearch;
           if (existingFields && existingFields.recordId) {
-            console.log(`✅ Found existing record: ${existingFields.recordId}`);
+            console.log(`✅ Found existing record: ${existingFields.recordId} (${searchDuration}ms)`);
             recordIdToUse = existingFields.recordId;
           } else {
-            console.log(`📝 No existing record found, will create new one`);
+            console.log(`📝 No existing record found (${searchDuration}ms), will create new one`);
           }
         } catch (searchError: any) {
           console.warn(`⚠️  Error searching for existing custom fields (will create new):`, searchError.message);
           // Continue to create new record if search fails
         }
+      } else {
+        console.log(`✅ Using provided customFieldsRecordId: ${recordIdToUse} (skipping search)`);
       }
       
       // Generate a unique ID for the custom object record if creating new
@@ -1540,20 +1651,62 @@ class GoHighLevelService {
         console.log(`🔍 Fetching custom fields for appointment ${appointmentId}`);
       }
       
-      // Search for custom object records by appointmentid field
-      // POST /objects/:schemaKey/records/search requires page and pageLimit
-      const response = await this.client.post(
-        `/objects/${this.APPOINTMENT_CUSTOM_OBJECT_ID}/records/search`,
-        {
-          locationId: this.locationId,
-          page: 1,
-          pageLimit: 100  // Increase to see more records
-        }
-      );
-
-      const records = response.data?.records || response.data?.data || [];
+      // Check per-appointment cache first (most granular)
+      const appointmentCacheKey = `appointment_${baseAppointmentId}`;
+      const appointmentCached = this.customFieldsCache.get(appointmentCacheKey);
+      const now = Date.now();
       
-      console.log(`📊 Found ${records.length} total custom object records`);
+      console.log(`🔍 [CACHE DEBUG] Cache size: ${this.customFieldsCache.size} entries`);
+      console.log(`🔍 [CACHE DEBUG] Looking for appointment cache key: ${appointmentCacheKey}`);
+      console.log(`🔍 [CACHE DEBUG] Appointment cached: ${!!appointmentCached}, Valid: ${appointmentCached && (now - appointmentCached.timestamp) < this.CACHE_TTL}`);
+      
+      if (appointmentCached && (now - appointmentCached.timestamp) < this.CACHE_TTL) {
+        console.log(`✅ Using cached custom fields for appointment ${baseAppointmentId} (age: ${Math.round((now - appointmentCached.timestamp) / 1000)}s)`);
+        return appointmentCached.data;
+      }
+      
+      // Check if we have all records cached
+      const allRecordsCacheKey = 'all_custom_fields';
+      const allCached = this.customFieldsCache.get(allRecordsCacheKey);
+      
+      console.log(`🔍 [CACHE DEBUG] All records cached: ${!!allCached}, Valid: ${allCached && (now - allCached.timestamp) < this.CACHE_TTL}`);
+      if (allCached) {
+        console.log(`🔍 [CACHE DEBUG] All records cache age: ${Math.round((now - allCached.timestamp) / 1000)}s, TTL: ${this.CACHE_TTL}ms`);
+      }
+      
+      let records;
+      if (allCached && (now - allCached.timestamp) < this.CACHE_TTL) {
+        console.log(`✅ Using cached all custom fields (${allCached.data?.length || 0} records, age: ${Math.round((now - allCached.timestamp) / 1000)}s)`);
+        records = allCached.data;
+      } else {
+        console.log(`🔄 Fetching ALL custom fields from GoHighLevel API (cache miss or expired)...`);
+        const startTime = Date.now();
+        
+        console.log(`⏱️  [TIMING] Starting GoHighLevel API call at ${new Date().toISOString()}`);
+        
+        // Fetch ALL records since GoHighLevel doesn't support filtering by appointmentid
+        const response = await this.client.post(
+          `/objects/${this.APPOINTMENT_CUSTOM_OBJECT_ID}/records/search`,
+          {
+            locationId: this.locationId,
+            page: 1,
+            pageLimit: 100  // Fetch all records
+          }
+        );
+        
+        const apiDuration = Date.now() - startTime;
+        console.log(`⏱️  [TIMING] GoHighLevel API responded after ${apiDuration}ms`);
+        
+        records = response.data?.records || response.data?.data || [];
+        const totalDuration = Date.now() - startTime;
+        
+        // Cache ALL records for reuse
+        this.customFieldsCache.set(allRecordsCacheKey, { data: records, timestamp: now });
+        console.log(`💾 Cached ${records.length} custom field records`);
+        console.log(`⏱️  [TIMING] Total processing time: ${totalDuration}ms (API: ${apiDuration}ms)`);
+      }
+
+      console.log(`📊 Searching ${records.length} total custom object records`);
       console.log(`🔍 Looking for appointmentid: ${baseAppointmentId}`);
       
       // Log matching appointmentid values to debug
@@ -1590,13 +1743,19 @@ class GoHighLevelService {
       // GoHighLevel stores custom fields in the "properties" object with lowercase keys
       // even though the display names in the UI are camelCase
       const props = record.properties || {};
-      return {
+      const result = {
         pageUrl: props.pageurl || '',
         coverImageUrl: props.coverimageurl || '',
         downloadFileUrl: props.downloadfileurl || '',
         internalNote: props.internalnote || '',
         recordId: record.id || record._id
       };
+      
+      // Cache this individual appointment's custom fields
+      this.customFieldsCache.set(appointmentCacheKey, { data: result, timestamp: now });
+      console.log(`💾 Cached custom fields for appointment ${baseAppointmentId}`);
+      
+      return result;
     } catch (error: any) {
       console.error(`Failed to fetch custom fields for appointment ${appointmentId}:`, error.message);
       console.error('Error response:', error.response?.data);

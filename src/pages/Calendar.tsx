@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Users, Plus, Edit, X, Clock, MapPin } from 'lucide-react';
-import { getCurrentYearEvents, CalendarEvent } from '@/services/calendar';
+import { getCurrentYearEvents, CalendarEvent, getEventCustomFields } from '@/services/calendar';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,8 +11,9 @@ import EventFormDialog from '@/components/EventFormDialog';
 import { useAuthStore } from '@/stores/authStore';
 import { formatEventDate, formatEventTime, formatLocation } from '@/lib/eventUtils';
 import { EventCountdown } from '@/components/EventCountdown';
-import { EventRegistrationDialog } from '@/components/EventRegistrationDialog';
+
 import { isSmallScreen } from '@/lib/platform';
+import { openExternalUrl } from '@/lib/externalBrowser';
 import EventBg from '@/assets/explosive-event-cover.jpg'
 
 // GoHighLevel Calendar ID - RACC Events
@@ -34,8 +35,6 @@ const CalendarPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
-  const [showRegisterDialog, setShowRegisterDialog] = useState(false);
-  const [isRegistered, setIsRegistered] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false); // Default to hidden on mobile
   const [refreshTrigger, setRefreshTrigger] = useState(0); // Trigger to force refresh
   const [visibleEventsCount, setVisibleEventsCount] = useState(5); // How many events to show in the list
@@ -142,10 +141,15 @@ const CalendarPage: React.FC = () => {
     setSelectedEvent(null);
   };
 
-  const handleRegister = () => {
-    // TODO: Implement actual registration logic
-    setIsRegistered(true);
-    setShowRegisterDialog(false);
+  const handleRegister = async () => {
+    // Open the pageUrl in external browser if it exists
+    if (eventPageUrl) {
+      const handled = await openExternalUrl(eventPageUrl);
+      if (!handled) {
+        // On web, open in new tab
+        window.open(eventPageUrl, '_blank', 'noopener,noreferrer');
+      }
+    }
   };
 
   // Calendar computation
@@ -234,9 +238,16 @@ const CalendarPage: React.FC = () => {
     setSelectedEvent(event);
     setDialogOpen(true);
 
-    // Custom fields are already included in the event object from batch-loading
-    setEventPageUrl(event.pageUrl || '');
-    setEventCoverImageUrl(event.coverImageUrl || '');
+    // Fetch custom fields for this event (not batch-loaded to improve initial load performance)
+    try {
+      const customFields = await getEventCustomFields(event.id);
+      setEventPageUrl(customFields?.pageUrl || '');
+      setEventCoverImageUrl(customFields?.coverImageUrl || '');
+    } catch (error) {
+      console.error('Failed to fetch custom fields for event:', error);
+      setEventPageUrl('');
+      setEventCoverImageUrl('');
+    }
   };
 
   const handleDayClick = (date: Date) => {
@@ -514,11 +525,11 @@ const CalendarPage: React.FC = () => {
             </DialogDescription>
 
             {/* Register Button */}
-            {!isRegistered && selectedEvent && (
+            {eventPageUrl && (
               <Button
                 size="lg"
                 className="mt-4 !mb-4 bg-highlight hover:bg-primary text-card font-medium px-8 py-3"
-                onClick={() => setShowRegisterDialog(true)}
+                onClick={handleRegister}
               >
                 Register Now
               </Button>
@@ -711,15 +722,6 @@ const CalendarPage: React.FC = () => {
         onEventUpdated={handleEventUpdated}
       />
 
-      {/* Registration Dialog */}
-      {selectedEvent && (
-        <EventRegistrationDialog
-          open={showRegisterDialog}
-          onOpenChange={setShowRegisterDialog}
-          eventTitle={selectedEvent.title}
-          onRegister={handleRegister}
-        />
-      )}
     </>
   );
 };
