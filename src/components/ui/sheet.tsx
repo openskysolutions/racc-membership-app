@@ -2,7 +2,7 @@ import * as React from "react"
 import * as SheetPrimitive from "@radix-ui/react-dialog"
 import { cva, type VariantProps } from "class-variance-authority"
 import { X } from "lucide-react"
-import { Capacitor } from "@capacitor/core"
+import { isNativeApp } from "@/lib/platform"
 
 import { cn } from "@/lib/utils"
 
@@ -56,7 +56,7 @@ const SheetContent = React.forwardRef<
   React.ElementRef<typeof SheetPrimitive.Content>,
   SheetContentProps
 >(({ side = "right", className, children, ...props }, ref) => {
-  const isMobile = Capacitor.isNativePlatform();
+  const isMobile = isNativeApp();
   
   return (
     <SheetPortal>

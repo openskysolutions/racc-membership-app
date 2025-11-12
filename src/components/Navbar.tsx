@@ -22,7 +22,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useTheme } from "@/providers/theme-provider";
 import { Moon, Sun } from "lucide-react";
 import cn from "classnames";
-import { Capacitor } from "@capacitor/core";
+import { isNativeApp } from "@/lib/platform";
 
 interface RouteProps {
   href: string;
@@ -75,7 +75,7 @@ export const Navbar = () => {
   const location = useLocation();
 
   const { theme, setTheme } = useTheme();
-  const isNative = Capacitor.isNativePlatform();
+  const isNative = isNativeApp();
 
   const logout = () => {
     handleLogout();

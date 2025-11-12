@@ -12,6 +12,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { formatEventDate, formatEventTime, formatLocation } from '@/lib/eventUtils';
 import { EventCountdown } from '@/components/EventCountdown';
 import { EventRegistrationDialog } from '@/components/EventRegistrationDialog';
+import { isSmallScreen } from '@/lib/platform';
 import EventBg from '@/assets/explosive-event-cover.jpg'
 
 // GoHighLevel Calendar ID - RACC Events
@@ -239,10 +240,8 @@ const CalendarPage: React.FC = () => {
   };
 
   const handleDayClick = (date: Date) => {
-    // Check if we're on mobile (screen width < 640px)
-    const isMobile = window.innerWidth < 640;
-
-    if (isMobile) {
+    // Check if we're on a small screen for responsive behavior
+    if (isSmallScreen()) {
       // On mobile, show day events dialog for everyone
       const dayEvents = getEventsForDay(date);
       setSelectedDayEvents(dayEvents);
