@@ -11,7 +11,7 @@ import {
   User,
   ArrowLeft,
   Bookmark,
-  CheckCircle2,
+
   Edit
 } from 'lucide-react';
 import EventCoverImage from '@/assets/explosive-event-cover.jpg';
@@ -24,13 +24,17 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { formatEventDate, formatEventTime, formatLocation } from '@/lib/eventUtils';
 import { EventCountdown } from '@/components/EventCountdown';
-import { EventRegistrationDialog, RegistrationFormData } from '@/components/EventRegistrationDialog';
+
 import EventFormDialog from '@/components/EventFormDialog';
 import { useAuthStore } from '@/stores/authStore';
+import { openExternalUrl } from '@/lib/externalBrowser';
 
 // GoHighLevel Calendar ID - RACC Events
 const GHL_CALENDAR_ID = '9XpDcFHv3SmCUuHeuOOg';
 const GHL_LOCATION_ID = '5FAB1z0AhuVlEdqOzjVX';
+
+// Production URL for shareable links
+const PRODUCTION_URL = 'https://members.richfieldareachamber.com';
 
 const EventDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -46,9 +50,7 @@ const EventDetailPage: React.FC = () => {
     downloadFileUrl?: string;
   }>({});
   const [isBookmarked, setIsBookmarked] = useState(false);
-  const [isRegistered, setIsRegistered] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
-  const [showRegisterDialog, setShowRegisterDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
 
   useEffect(() => {
@@ -99,12 +101,13 @@ const EventDetailPage: React.FC = () => {
   // };
 
   const handleShare = async () => {
+    const shareUrl = getShareableUrl();
     if (navigator.share) {
       try {
         await navigator.share({
           title: event?.title,
           text: event?.description,
-          url: window.location.href
+          url: shareUrl
         });
       } catch (err) {
         console.log('Share cancelled or failed');
@@ -114,16 +117,25 @@ const EventDetailPage: React.FC = () => {
     }
   };
 
+  const getShareableUrl = () => {
+    // Always use production URL for sharing
+    return `${PRODUCTION_URL}/events/${id}`;
+  };
+
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     // You could add a toast notification here
   };
 
-  const handleRegister = (formData: RegistrationFormData) => {
-    // TODO: Implement actual registration logic
-    console.log('Registration submitted:', formData);
-    setIsRegistered(true);
-    setShowRegisterDialog(false);
+  const handleRegister = async () => {
+    // Open the pageUrl in external browser if it exists
+    if (customFields.pageUrl) {
+      const handled = await openExternalUrl(customFields.pageUrl);
+      if (!handled) {
+        // On web, open in new tab
+        window.open(customFields.pageUrl, '_blank', 'noopener,noreferrer');
+      }
+    }
   };
 
   const handleEventUpdated = async (updatedEvent: CalendarEvent) => {
@@ -302,11 +314,11 @@ const EventDetailPage: React.FC = () => {
             <p className='text-md text-card dark:text-neutral-50 font-normal leading-6 mt-6 max-w-3xl'>{event.description}</p>
             
             {/* Register Button */}
-            {!isRegistered && (
+            {customFields.pageUrl && (
               <Button 
                 size="lg" 
                 className="mt-6 bg-highlight hover:bg-primary text-card font-medium px-8 py-6 text-md"
-                onClick={() => setShowRegisterDialog(true)}
+                onClick={handleRegister}
               >
                 Register Now
               </Button>
@@ -443,43 +455,29 @@ const EventDetailPage: React.FC = () => {
             {/* Registration Card */}
             <Card className="sticky top-4">
               <CardContent className="p-6 space-y-4">
-                {isRegistered ? (
-                  <div className="text-center py-4">
-                    <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto mb-3" />
-                    <h3 className="text-lg font-semibold mb-2">You're Registered!</h3>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      We've sent a confirmation to your email.
-                    </p>
-                    <Button variant="outline" className="w-full" onClick={handleAddToCalendar}>
-                      <Download className="mr-2 h-4 w-4" />
-                      Add to Calendar
-                    </Button>
-                  </div>
-                ) : (
-                  <>
-                    <h3 className="text-xl font-bold">Register for Event</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Secure your spot for this amazing event
-                    </p>
-                    
-                    <Button 
-                      className="w-full" 
-                      size="lg"
-                      onClick={() => setShowRegisterDialog(true)}
-                    >
-                      Register Now
-                    </Button>
-
-                    <Button
-                      variant="outline"
-                      className="w-full"
-                      onClick={handleAddToCalendar}
-                    >
-                      <Download className="mr-2 h-4 w-4" />
-                      Add to Calendar
-                    </Button>
-                  </>
+                <h3 className="text-xl font-bold">Register for Event</h3>
+                <p className="text-sm text-muted-foreground">
+                  Secure your spot for this amazing event
+                </p>
+                
+                {customFields.pageUrl && (
+                  <Button 
+                    className="w-full" 
+                    size="lg"
+                    onClick={handleRegister}
+                  >
+                    Register Now
+                  </Button>
                 )}
+
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={handleAddToCalendar}
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  Add to Calendar
+                </Button>
 
                 <Separator />
 
@@ -491,7 +489,7 @@ const EventDetailPage: React.FC = () => {
                       variant="outline"
                       size="sm"
                       className="flex-1"
-                      onClick={() => copyToClipboard(window.location.href)}
+                      onClick={() => copyToClipboard(getShareableUrl())}
                     >
                       Copy Link
                     </Button>
@@ -567,11 +565,11 @@ const EventDetailPage: React.FC = () => {
               <div className="flex gap-2">
                 <input
                   readOnly
-                  value={window.location.href}
+                  value={getShareableUrl()}
                   className="flex-1 px-3 py-2 border rounded-md bg-background"
                 />
                 <Button
-                  onClick={() => copyToClipboard(window.location.href)}
+                  onClick={() => copyToClipboard(getShareableUrl())}
                   variant="outline"
                 >
                   Copy
@@ -581,16 +579,6 @@ const EventDetailPage: React.FC = () => {
           </div>
         </DialogContent>
       </Dialog>
-
-      {/* Registration Dialog */}
-      {event && (
-        <EventRegistrationDialog
-          open={showRegisterDialog}
-          onOpenChange={setShowRegisterDialog}
-          eventTitle={event.title}
-          onRegister={handleRegister}
-        />
-      )}
 
       {/* Edit Event Dialog */}
       {event && (
