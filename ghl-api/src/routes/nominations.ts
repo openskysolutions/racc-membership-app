@@ -8,6 +8,19 @@ const router = express.Router();
 const controller = new NominationsController();
 
 /**
+ * GET /nominations/voting
+ * Get nominations available for voting in current period (REQUIRES AUTH - board members only)
+ * MUST be before /:id routes to avoid conflicts
+ */
+router.get('/voting', requireAuth, (req, res) => controller.getVotingNominations(req, res));
+
+/**
+ * GET /nominations/voting/status
+ * Get current user's voting status (REQUIRES AUTH - board members only)
+ */
+router.get('/voting/status', requireAuth, (req, res) => controller.getVotingStatus(req, res));
+
+/**
  * GET /nominations
  * List nominations with filters (PUBLIC)
  * Query params: type, category, status, year, month, limit, offset

@@ -296,3 +296,151 @@ export const getNominationCategories = () => [
   { value: 'volunteer', label: 'Volunteer of the Year' },
   { value: 'leadership', label: 'Leadership Award' }
 ];
+
+// ========================================
+// VOTING SYSTEM (Board Members Only)
+// ========================================
+
+export interface VotingNomination {
+  id: number;
+  type: string;
+  category: string;
+  name?: string;
+  businessName: string;
+  reason: string;
+  status: string;
+  createdAt: string;
+  voteCount: number;
+}
+
+export interface VotingData {
+  canVote: boolean;
+  votingMonth?: string;
+  targetMonth?: string;
+  deadline?: string;
+  businessOfMonth: VotingNomination[];
+  customerServiceSuperstar: VotingNomination[];
+  error?: string;
+}
+
+export interface VotingStatus {
+  canVote: boolean;
+  votingMonth?: string;
+  targetMonth?: string;
+  deadline?: string;
+  error?: string;
+  hasVoted: {
+    business_of_month: boolean;
+    customer_service_superstar: boolean;
+  };
+  votes: {
+    business_of_month?: {
+      nominationId: number;
+      businessName: string;
+      votedAt: string;
+    } | null;
+    customer_service_superstar?: {
+      nominationId: number;
+      name?: string;
+      businessName: string;
+      votedAt: string;
+    } | null;
+  };
+}
+
+/**
+ * Get nominations available for voting (board members only)
+ */
+export async function getVotingNominations(): Promise<VotingData> {
+  try {
+    const response = await api.get('/nominations/voting');
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      return {
+        canVote: false,
+        error: errorData.error || 'Failed to fetch voting nominations',
+        businessOfMonth: [],
+        customerServiceSuperstar: []
+      };
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching voting nominations:', error);
+    return {
+      canVote: false,
+      error: 'Failed to connect to server',
+      businessOfMonth: [],
+      customerServiceSuperstar: []
+    };
+  }
+}
+
+/**
+ * Get current user's voting status (board members only)
+ */
+export async function getVotingStatus(): Promise<VotingStatus> {
+  try {
+    const response = await api.get('/nominations/voting/status');
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      return {
+        canVote: false,
+        error: errorData.error || 'Failed to fetch voting status',
+        hasVoted: {
+          business_of_month: false,
+          customer_service_superstar: false
+        },
+        votes: {}
+      };
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching voting status:', error);
+    return {
+      canVote: false,
+      error: 'Failed to connect to server',
+      hasVoted: {
+        business_of_month: false,
+        customer_service_superstar: false
+      },
+      votes: {}
+    };
+  }
+}
+
+/**
+ * Submit a vote for a nomination (board members only)
+ */
+export async function submitVote(nominationId: number, comment?: string): Promise<{
+  success: boolean;
+  message?: string;
+  error?: string;
+}> {
+  try {
+    const response = await api.post(`/nominations/${nominationId}/vote`, { comment });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      return {
+        success: false,
+        error: errorData.error || 'Failed to submit vote'
+      };
+    }
+    
+    const data = await response.json();
+    return {
+      success: true,
+      message: data.message || 'Vote submitted successfully'
+    };
+  } catch (error) {
+    console.error('Error submitting vote:', error);
+    return {
+      success: false,
+      error: 'Failed to connect to server'
+    };
+  }
+}

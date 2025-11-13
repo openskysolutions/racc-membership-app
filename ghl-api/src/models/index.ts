@@ -172,7 +172,7 @@ export interface ModerationLog {
  */
 export interface Role {
   id: string;
-  name: 'visitor' | 'member' | 'admin' | 'content-manager';
+  name: 'visitor' | 'member' | 'admin' | 'moderator' | 'board_member' | 'content-manager';
   permissions: string[]; // e.g., ['events:create', 'content:moderate']
 }
 

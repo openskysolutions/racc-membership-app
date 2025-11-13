@@ -495,6 +495,7 @@ router.get('/stats', requireAuth, requireAdmin, async (req, res) => {
         byRole: {
           admin: users.filter(u => u.role === 'admin').length,
           moderator: users.filter(u => u.role === 'moderator').length,
+          board_member: users.filter(u => u.role === 'board_member').length,
           member: users.filter(u => u.role === 'member').length
         },
         byMembershipTier: {

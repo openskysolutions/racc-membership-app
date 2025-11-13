@@ -166,6 +166,13 @@ export const Navbar = () => {
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => navigate('/profile')}>Profile</DropdownMenuItem>
+                    {(user?.role === 'admin' || user?.role === 'moderator' || user?.role === 'board_member') && (
+                      <DropdownMenuItem onClick={() => navigate('/voting')}>
+                        <span className="flex items-center gap-2">
+                          Board Voting
+                        </span>
+                      </DropdownMenuItem>
+                    )}
                     {user?.role === 'admin' && (
                       <DropdownMenuItem onClick={() => navigate('/admin')}>
                         <span className="flex items-center gap-2">
@@ -284,6 +291,19 @@ export const Navbar = () => {
                 >
                   Nominations
                 </Button>
+                {(user?.role === 'admin' || user?.role === 'moderator' || user?.role === 'board_member') && (
+                  <Button
+                    size="lg"
+                    variant={"outline"}
+                    onClick={() => {
+                      setIsOpen(false);
+                      navigate('/voting');
+                    }}
+                    className="text-lg"
+                  >
+                    Board Voting
+                  </Button>
+                )}
                 {isAuthenticated 
                   ? <Button
                       size="lg"

@@ -6,6 +6,28 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
 
 /**
+ * Handle 401 Unauthorized response by redirecting to sign-in
+ * Clears all auth tokens and preserves the current URL to return after login
+ */
+export function handle401Redirect(): void {
+  // Clear invalid session and tokens
+  sessionStorage.removeItem('racc_auth_session');
+  sessionStorage.removeItem('token');
+  localStorage.removeItem('token');
+  
+  // Get current path to return to after login
+  const currentPath = window.location.pathname + window.location.search + window.location.hash;
+  const returnUrl = encodeURIComponent(currentPath);
+  
+  // Redirect to sign-in page with return URL
+  console.log('[Auth] 401 Unauthorized - Redirecting to sign-in with return URL:', currentPath);
+  window.location.href = `/auth/login?returnUrl=${returnUrl}`;
+  
+  // Also trigger custom event for any listeners
+  window.dispatchEvent(new CustomEvent('auth:unauthorized'));
+}
+
+/**
  * Get authentication token from localStorage or sessionStorage (OAuth 2.0 PKCE)
  * Checks localStorage first (remember me), then sessionStorage (session only)
  */
@@ -60,10 +82,7 @@ export async function apiFetch(endpoint: string, init?: RequestInit, retries: nu
       
       // Handle authentication errors
       if (response.status === 401) {
-        // Clear invalid session
-        sessionStorage.removeItem('racc_auth_session');
-        // Redirect to login or trigger auth refresh
-        window.dispatchEvent(new CustomEvent('auth:unauthorized'));
+        handle401Redirect();
       }
       
       return response;

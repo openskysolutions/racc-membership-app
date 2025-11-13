@@ -14,6 +14,7 @@ import ProfilePage from '@/pages/Profile';
 
 import JoinPage from '@/pages/Join';
 import NominationsPage from '@/pages/Nominations';
+import VotingPage from '@/pages/Voting';
 
 import BasicMembershipPage from '@/pages/MembershipBasic';
 import EnhancedMembershipPage from '@/pages/MembershipEnhanced';
@@ -56,7 +57,7 @@ const ProtectedRoute = ({ children }: { children: ReactNode }) => {
   );
 };
 
-// Admin Route Component (allows admin and board members/moderators)
+// Admin Route Component (allows admin and board members)
 const AdminRoute = ({ children }: { children: ReactNode }) => {
   const { isAuthenticated, user } = useAuthStore();
   const location = useLocation();
@@ -65,8 +66,8 @@ const AdminRoute = ({ children }: { children: ReactNode }) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
   
-  // Allow admin and moderator (board member) roles
-  const hasAccess = user?.role === 'admin' || user?.role === 'moderator';
+  // Allow admin, moderator, and board_member roles
+  const hasAccess = user?.role === 'admin' || user?.role === 'moderator' || user?.role === 'board_member';
   
   if (!hasAccess) {
     return <Navigate to="/" replace />;
@@ -101,6 +102,7 @@ export default function AppRoutes() {
 
         <Route path="join" element={<JoinPage />} />
         <Route path="nominations" element={<NominationsPage />} />
+        <Route path="voting" element={<AdminRoute><VotingPage /></AdminRoute>} />
 
         <Route path="basic-membership" element={<BasicMembershipPage />} />
         <Route path="enhanced-membership" element={<EnhancedMembershipPage />} />

@@ -212,6 +212,7 @@ class MembersController {
     const tags = contact.tags || [];
     let role = 'member'; // default
     if (tags.includes('admin')) role = 'admin';
+    else if (tags.includes('board member')) role = 'board_member';
     else if (tags.includes('moderator')) role = 'moderator';
 
     // Parse specialties from custom field

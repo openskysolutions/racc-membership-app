@@ -86,6 +86,13 @@ export function requireModerator(req: Request, res: Response, next: NextFunction
 }
 
 /**
+ * Middleware to require board member or admin role
+ */
+export function requireBoardMember(req: Request, res: Response, next: NextFunction) {
+  return requireRole(['admin', 'moderator', 'board_member'])(req, res, next);
+}
+
+/**
  * Optional authentication - continues without error if no token provided
  */
 export async function optionalAuth(req: Request, res: Response, next: NextFunction) {

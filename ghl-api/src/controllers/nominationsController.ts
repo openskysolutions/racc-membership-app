@@ -37,7 +37,7 @@ export class NominationsController {
         return res.status(400).json({ error: 'Missing required fields' });
       }
 
-      // Create nomination
+      // Create nomination - automatically approved for now
       const nomination = await prisma.nomination.create({
         data: {
           type: data.type,
@@ -45,7 +45,7 @@ export class NominationsController {
           name: data.name,
           businessName: data.businessName,
           reason: data.reason,
-          status: 'pending'
+          status: 'approved' // Auto-approve all nominations for now
         }
       });
 
@@ -124,10 +124,7 @@ export class NominationsController {
       // Calculate vote statistics for each nomination
       const nominationsWithStats = nominations.map(nom => ({
         ...nom,
-        voteCount: nom.votes.length,
-        averageScore: nom.votes.length > 0
-          ? nom.votes.reduce((sum, v) => sum + v.voteValue, 0) / nom.votes.length
-          : 0
+        voteCount: nom.votes.filter(v => v.voteValue).length // Count only true votes
       }));
 
       return res.json({
@@ -174,16 +171,12 @@ export class NominationsController {
         return res.status(404).json({ error: 'Nomination not found' });
       }
 
-      // Calculate vote statistics
-      const voteCount = nomination.votes.length;
-      const averageScore = voteCount > 0
-        ? nomination.votes.reduce((sum, v) => sum + v.voteValue, 0) / voteCount
-        : 0;
+      // Calculate vote statistics (count only true votes)
+      const voteCount = nomination.votes.filter(v => v.voteValue).length;
 
       return res.json({
         ...nomination,
-        voteCount,
-        averageScore
+        voteCount
       });
     } catch (error: any) {
       console.error('❌ Error getting nomination:', error);
@@ -195,13 +188,83 @@ export class NominationsController {
   }
 
   /**
+   * Helper: Get voting period details for current month
+   */
+  private getVotingPeriodDetails(now: Date = new Date()) {
+    const currentMonth = now.getMonth(); // 0-11
+    const currentYear = now.getFullYear();
+    const currentDay = now.getDate();
+    
+    // TEMPORARY: November voting restriction disabled for testing
+    // November (month 10) - no voting allowed
+    // if (currentMonth === 10) {
+    //   return {
+    //     canVote: false,
+    //     votingMonth: null,
+    //     targetMonth: null,
+    //     deadline: null,
+    //     error: 'Voting is not available in November'
+    //   };
+    // }
+    
+    // Check if past voting deadline (20th)
+    if (currentDay > 20) {
+      return {
+        canVote: false,
+        votingMonth: null,
+        targetMonth: null,
+        deadline: new Date(currentYear, currentMonth, 20),
+        error: 'Voting deadline (20th) has passed for this month'
+      };
+    }
+    
+    // Calculate voting month (current) and target month (next)
+    const votingMonth = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+    const targetMonthDate = new Date(currentYear, currentMonth + 1, 1);
+    const targetMonth = `${targetMonthDate.getFullYear()}-${String(targetMonthDate.getMonth() + 1).padStart(2, '0')}`;
+    
+    return {
+      canVote: true,
+      votingMonth,
+      targetMonth,
+      deadline: new Date(currentYear, currentMonth, 20),
+      currentMonth: currentMonth + 1 // 1-12
+    };
+  }
+
+  /**
+   * Helper: Get date range for viewing nominations
+   */
+  private getNominationDateRange(now: Date = new Date()) {
+    const currentMonth = now.getMonth(); // 0-11
+    const currentYear = now.getFullYear();
+    
+    let startDate: Date;
+    
+    // December (11), January (0), February (1) - special period
+    if (currentMonth === 11 || currentMonth === 0 || currentMonth === 1) {
+      // Start from December 1st of appropriate year
+      const decemberYear = currentMonth === 11 ? currentYear : currentYear - 1;
+      startDate = new Date(decemberYear, 11, 1); // December 1st
+    } else {
+      // Regular period: 3 months back including current month
+      startDate = new Date(currentYear, currentMonth - 2, 1);
+    }
+    
+    // End date is end of current month
+    const endDate = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59, 999);
+    
+    return { startDate, endDate };
+  }
+
+  /**
    * Cast a vote on a nomination (board members only)
    * POST /nominations/:id/vote
    */
   async voteOnNomination(req: Request, res: Response): Promise<Response> {
     try {
       const { id } = req.params;
-      const { voteValue, comment } = req.body;
+      const { comment } = req.body;
       const user = (req as any).user;
 
       // Check if user is authenticated
@@ -209,17 +272,18 @@ export class NominationsController {
         return res.status(401).json({ error: 'Authentication required' });
       }
 
-      // Check if user is a board member or admin
-      if (user.role !== 'admin' && user.role !== 'moderator') {
+      // Check if user is a board member, moderator, or admin
+      if (user.role !== 'admin' && user.role !== 'moderator' && user.role !== 'board_member') {
         return res.status(403).json({ error: 'Only board members can vote on nominations' });
       }
 
-      // Validate vote value (1-5)
-      if (!voteValue || voteValue < 1 || voteValue > 5) {
-        return res.status(400).json({ error: 'Vote value must be between 1 and 5' });
+      // Check voting period
+      const votingPeriod = this.getVotingPeriodDetails();
+      if (!votingPeriod.canVote) {
+        return res.status(403).json({ error: votingPeriod.error });
       }
 
-      // Check if nomination exists
+      // Check if nomination exists and get its category
       const nomination = await prisma.nomination.findUnique({
         where: { id: parseInt(id) }
       });
@@ -228,32 +292,44 @@ export class NominationsController {
         return res.status(404).json({ error: 'Nomination not found' });
       }
 
-      // Upsert vote (create or update if already exists)
-      const vote = await prisma.vote.upsert({
+      if (nomination.status !== 'approved') {
+        return res.status(400).json({ error: 'Can only vote on approved nominations' });
+      }
+
+      // Check if user already voted for this category in this voting month
+      const existingVote = await prisma.vote.findFirst({
         where: {
-          nominationId_userId: {
-            nominationId: parseInt(id),
-            userId: user.id
-          }
-        },
-        update: {
-          voteValue,
-          comment,
-          updatedAt: new Date()
-        },
-        create: {
+          userId: user.id,
+          votingCategory: nomination.category,
+          votingMonth: votingPeriod.votingMonth!
+        }
+      });
+
+      if (existingVote) {
+        return res.status(400).json({ 
+          error: 'You have already voted for this category this month',
+          votedNominationId: existingVote.nominationId
+        });
+      }
+
+      // Create vote
+      const vote = await prisma.vote.create({
+        data: {
           nominationId: parseInt(id),
           userId: user.id,
-          voteValue,
+          votingMonth: votingPeriod.votingMonth!,
+          votingCategory: nomination.category,
+          voteValue: true,
           comment
         }
       });
 
-      console.log(`✅ Vote recorded: User ${user.id} voted ${voteValue} on nomination ${id}`);
+      console.log(`✅ Vote recorded: User ${user.id} voted for nomination ${id} (${nomination.category}) in ${votingPeriod.votingMonth}`);
 
       return res.json({
         success: true,
-        vote
+        vote,
+        message: `Vote recorded for ${nomination.category} in ${votingPeriod.targetMonth}`
       });
     } catch (error: any) {
       console.error('❌ Error voting on nomination:', error);
@@ -286,21 +362,12 @@ export class NominationsController {
         orderBy: { createdAt: 'desc' }
       });
 
-      const voteCount = votes.length;
-      const averageScore = voteCount > 0
-        ? votes.reduce((sum, v) => sum + v.voteValue, 0) / voteCount
-        : 0;
-
-      const voteDistribution = [1, 2, 3, 4, 5].map(score => ({
-        score,
-        count: votes.filter(v => v.voteValue === score).length
-      }));
+      // Count only true votes (checkbox system)
+      const voteCount = votes.filter(v => v.voteValue).length;
 
       return res.json({
         votes,
-        voteCount,
-        averageScore,
-        distribution: voteDistribution
+        voteCount
       });
     } catch (error: any) {
       console.error('❌ Error getting votes:', error);
@@ -405,6 +472,174 @@ export class NominationsController {
       console.error('❌ Error updating nomination status:', error);
       return res.status(500).json({
         error: 'Failed to update nomination status',
+        details: error.message
+      });
+    }
+  }
+
+  /**
+   * Get nominations available for voting in the current period
+   * GET /nominations/voting
+   */
+  async getVotingNominations(req: Request, res: Response): Promise<Response> {
+    try {
+      const user = (req as any).user;
+
+      // Check if user is authenticated
+      if (!user) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      // Check if user is a board member, moderator, or admin
+      if (user.role !== 'admin' && user.role !== 'moderator' && user.role !== 'board_member') {
+        return res.status(403).json({ error: 'Only board members can access voting' });
+      }
+
+      // Check voting period
+      const votingPeriod = this.getVotingPeriodDetails();
+      if (!votingPeriod.canVote) {
+        return res.status(403).json({ 
+          error: votingPeriod.error,
+          canVote: false
+        });
+      }
+
+      // Get date range for nominations
+      const { startDate, endDate } = this.getNominationDateRange();
+
+      // Get approved nominations in the date range
+      const nominations = await prisma.nomination.findMany({
+        where: {
+          status: 'approved',
+          createdAt: {
+            gte: startDate,
+            lte: endDate
+          }
+        },
+        include: {
+          votes: {
+            where: {
+              votingMonth: votingPeriod.votingMonth!
+            },
+            select: {
+              id: true,
+              userId: true,
+              voteValue: true
+            }
+          }
+        },
+        orderBy: [
+          { category: 'asc' },
+          { createdAt: 'desc' }
+        ]
+      });
+
+      // Separate by category
+      const businessNominations = nominations.filter(n => n.category === 'business_of_month');
+      const superstarNominations = nominations.filter(n => n.category === 'customer_service_superstar');
+
+      return res.json({
+        canVote: true,
+        votingMonth: votingPeriod.votingMonth,
+        targetMonth: votingPeriod.targetMonth,
+        deadline: votingPeriod.deadline,
+        businessOfMonth: businessNominations.map(n => ({
+          ...n,
+          voteCount: n.votes.filter(v => v.voteValue).length
+        })),
+        customerServiceSuperstar: superstarNominations.map(n => ({
+          ...n,
+          voteCount: n.votes.filter(v => v.voteValue).length
+        }))
+      });
+    } catch (error: any) {
+      console.error('❌ Error getting voting nominations:', error);
+      return res.status(500).json({
+        error: 'Failed to get voting nominations',
+        details: error.message
+      });
+    }
+  }
+
+  /**
+   * Get user's voting status for the current period
+   * GET /nominations/voting/status
+   */
+  async getVotingStatus(req: Request, res: Response): Promise<Response> {
+    try {
+      const user = (req as any).user;
+
+      // Check if user is authenticated
+      if (!user) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      // Check if user is a board member, moderator, or admin
+      if (user.role !== 'admin' && user.role !== 'moderator' && user.role !== 'board_member') {
+        return res.status(403).json({ error: 'Only board members can access voting' });
+      }
+
+      // Check voting period
+      const votingPeriod = this.getVotingPeriodDetails();
+      if (!votingPeriod.canVote) {
+        return res.json({ 
+          canVote: false,
+          error: votingPeriod.error,
+          hasVoted: {
+            business_of_month: false,
+            customer_service_superstar: false
+          }
+        });
+      }
+
+      // Check if user has voted for each category
+      const votes = await prisma.vote.findMany({
+        where: {
+          userId: user.id,
+          votingMonth: votingPeriod.votingMonth!
+        },
+        include: {
+          nomination: {
+            select: {
+              id: true,
+              businessName: true,
+              name: true,
+              category: true
+            }
+          }
+        }
+      });
+
+      const businessVote = votes.find(v => v.votingCategory === 'business_of_month');
+      const superstarVote = votes.find(v => v.votingCategory === 'customer_service_superstar');
+
+      return res.json({
+        canVote: true,
+        votingMonth: votingPeriod.votingMonth,
+        targetMonth: votingPeriod.targetMonth,
+        deadline: votingPeriod.deadline,
+        hasVoted: {
+          business_of_month: !!businessVote,
+          customer_service_superstar: !!superstarVote
+        },
+        votes: {
+          business_of_month: businessVote ? {
+            nominationId: businessVote.nominationId,
+            businessName: businessVote.nomination.businessName,
+            votedAt: businessVote.createdAt
+          } : null,
+          customer_service_superstar: superstarVote ? {
+            nominationId: superstarVote.nominationId,
+            name: superstarVote.nomination.name,
+            businessName: superstarVote.nomination.businessName,
+            votedAt: superstarVote.createdAt
+          } : null
+        }
+      });
+    } catch (error: any) {
+      console.error('❌ Error getting voting status:', error);
+      return res.status(500).json({
+        error: 'Failed to get voting status',
         details: error.message
       });
     }

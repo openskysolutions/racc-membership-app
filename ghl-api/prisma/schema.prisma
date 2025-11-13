@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -72,21 +69,23 @@ model Nomination {
 
 // Votes table for board members to vote on nominations
 model Vote {
-  id           Int        @id @default(autoincrement())
-  nominationId Int
-  userId       Int        // Board member who voted
-  voteValue    Int        // 1-5 rating or simple yes/no (1 or 0)
-  comment      String?    @db.Text
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  id              Int        @id @default(autoincrement())
+  nominationId    Int
+  userId          Int        // Board member who voted
+  votingMonth     String     // Format: YYYY-MM (e.g., "2025-01" for voting in January for February winners)
+  votingCategory  String     // 'business_of_month' or 'customer_service_superstar'
+  voteValue       Boolean    @default(true) // Simple yes/no vote (checkbox)
+  comment         String?    @db.Text
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
   
   // Relations
   nomination   Nomination @relation(fields: [nominationId], references: [id], onDelete: Cascade)
   user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   
-  @@unique([nominationId, userId]) // One vote per user per nomination
+  @@unique([userId, votingCategory, votingMonth]) // One vote per user per category per month
   @@index([nominationId])
   @@index([userId])
+  @@index([votingMonth])
   @@map("votes")
 }
-

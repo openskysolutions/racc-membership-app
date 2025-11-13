@@ -2,6 +2,8 @@
  * Admin Service - API calls for user management
  */
 
+import { handle401Redirect } from './apiClient';
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
 
 export interface User {
@@ -12,7 +14,7 @@ export interface User {
   businessName?: string;
   phone?: string;
   website?: string;
-  role: 'admin' | 'moderator' | 'member';
+  role: 'admin' | 'moderator' | 'board_member' | 'member';
   status: 'active' | 'pending' | 'suspended';
   emailVerified: boolean;
   ghlContactId?: string;
@@ -31,6 +33,7 @@ export interface AdminStats {
     byRole: {
       admin: number;
       moderator: number;
+      board_member: number;
       member: number;
     };
     byMembershipTier: {
@@ -81,6 +84,11 @@ class AdminService {
       headers: this.getAuthHeaders(),
     });
 
+    if (response.status === 401) {
+      handle401Redirect();
+      throw new Error('Unauthorized');
+    }
+
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.error || 'Failed to fetch users');
@@ -98,6 +106,11 @@ class AdminService {
       headers: this.getAuthHeaders(),
       body: JSON.stringify(updates),
     });
+
+    if (response.status === 401) {
+      handle401Redirect();
+      throw new Error('Unauthorized');
+    }
 
     if (!response.ok) {
       const error = await response.json();
@@ -118,6 +131,11 @@ class AdminService {
       body: JSON.stringify({ status, reason }),
     });
 
+    if (response.status === 401) {
+      handle401Redirect();
+      throw new Error('Unauthorized');
+    }
+
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.error || 'Failed to update user status');
@@ -133,6 +151,11 @@ class AdminService {
       headers: this.getAuthHeaders(),
     });
 
+    if (response.status === 401) {
+      handle401Redirect();
+      throw new Error('Unauthorized');
+    }
+
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.error || 'Failed to delete user');
@@ -147,6 +170,11 @@ class AdminService {
       method: 'GET',
       headers: this.getAuthHeaders(),
     });
+
+    if (response.status === 401) {
+      handle401Redirect();
+      throw new Error('Unauthorized');
+    }
 
     if (!response.ok) {
       const error = await response.json();

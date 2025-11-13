@@ -307,6 +307,10 @@ class GoHighLevelService {
         return 'admin';
       }
       
+      if (contact.tags.includes('board member')) {
+        return 'board_member';
+      }
+      
       if (contact.tags.includes('moderator')) {
         return 'moderator';
       }
@@ -885,11 +889,11 @@ class GoHighLevelService {
           id: 'mock_contact_3',
           firstName: 'Jennifer',
           lastName: 'Smith',
-          email: 'moderator@racc.com',
+          email: 'boardmember@racc.com',
           phone: '(435) 555-0103',
           website: 'https://smithfinancial.com',
           businessName: 'Smith Financial Services',
-          tags: ['active', 'moderator'],
+          tags: ['active', 'board member'],
           dateAdded: '2019-08-10T00:00:00.000Z',
           customFields: [
             { id: 'memberSince', value: '2019-08-10' },
@@ -1012,11 +1016,11 @@ class GoHighLevelService {
           id: 'mock_contact_3',
           firstName: 'Jennifer',
           lastName: 'Smith',
-          email: 'moderator@racc.com',
+          email: 'boardmember@racc.com',
           phone: '(435) 555-0103',
           website: 'https://smithfinancial.com',
           businessName: 'Smith Financial Services',
-          tags: ['active', 'moderator', 'elite membership package'],
+          tags: ['active', 'board member', 'elite membership package'],
           dateAdded: '2019-08-10T00:00:00.000Z',
           customFields: [
             { id: 'memberSince', value: '2019-08-10' },

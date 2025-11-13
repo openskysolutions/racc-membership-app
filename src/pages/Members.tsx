@@ -254,6 +254,7 @@ const MembersPage: React.FC = () => {
     switch (role) {
       case 'admin': return 'bg-red-100 text-red-800';
       case 'moderator': return 'bg-blue-100 text-blue-800';
+      case 'board_member': return 'bg-purple-100 text-purple-800';
       case 'member': return 'bg-green-100 text-green-800';
       default: return 'bg-gray-100 text-gray-800';
     }
@@ -350,6 +351,7 @@ const MembersPage: React.FC = () => {
                     <SelectItem value="all">All Roles</SelectItem>
                     <SelectItem value="admin">Admin</SelectItem>
                     <SelectItem value="moderator">Moderator</SelectItem>
+                    <SelectItem value="board_member">Board Member</SelectItem>
                     <SelectItem value="member">Member</SelectItem>
                   </SelectContent>
                 </Select>

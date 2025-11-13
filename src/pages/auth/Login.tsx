@@ -16,9 +16,11 @@ export const AuthPage = () => {
   const location = useLocation();
   const setUser = useAuthStore(state => state.setUser);
 
-  // Get the intended destination from location state
-  // If coming from a protected route, use that. Otherwise stay on home page.
-  const from = location.state?.from?.pathname || '/';
+  // Get the intended destination from location state or query params
+  // Priority: 1) returnUrl query param (from 401 redirect), 2) location state, 3) home page
+  const searchParams = new URLSearchParams(location.search);
+  const returnUrl = searchParams.get('returnUrl');
+  const from = returnUrl ? decodeURIComponent(returnUrl) : (location.state?.from?.pathname || '/');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,6 +29,7 @@ export const AuthPage = () => {
       const response = await login({ email, password, remember });
       setUser(response.user);
       // Redirect to the page they were trying to access, or home if no specific page
+      console.log('[Login] Redirecting to:', from);
       navigate(from, { replace: true });
     } catch (e: any) {
       setError(e.message || 'Login failed');

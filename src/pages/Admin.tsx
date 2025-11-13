@@ -59,7 +59,7 @@ export default function AdminPage() {
   const [nominationCategory, setNominationCategory] = useState<'business_of_month' | 'customer_service_superstar'>('business_of_month');
 
   // Check if user has admin or board member access
-  const hasAccess = currentUser && (currentUser.role === 'admin' || currentUser.role === 'moderator');
+  const hasAccess = currentUser && (currentUser.role === 'admin' || currentUser.role === 'moderator' || currentUser.role === 'board_member');
   const isFullAdmin = currentUser?.role === 'admin';
 
   if (!hasAccess) {
@@ -222,6 +222,7 @@ export default function AdminPage() {
     switch (role) {
       case 'admin': return 'bg-red-100 text-red-800';
       case 'moderator': return 'bg-blue-100 text-blue-800';
+      case 'board_member': return 'bg-purple-100 text-purple-800';
       case 'member': return 'bg-green-100 text-green-800';
       default: return 'bg-gray-100 text-gray-800';
     }
@@ -281,6 +282,11 @@ export default function AdminPage() {
                 <Award className="h-4 w-4 sm:mr-2" />
                 <span className="hidden sm:inline">Nominations</span>
                 <span className="sm:hidden ml-1">Nominations</span>
+              </TabsTrigger>
+              <TabsTrigger value="voting-results" className="flex-1 sm:flex-none">
+                <Star className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Voting Results</span>
+                <span className="sm:hidden ml-1">Results</span>
               </TabsTrigger>
             </TabsList>
           </div>
@@ -347,6 +353,10 @@ export default function AdminPage() {
                       <span>Moderators</span>
                       <Badge className={getRoleBadgeColor('moderator')}>{stats.users.byRole.moderator}</Badge>
                     </div>
+                    <div className="flex items-center gap-2">
+                      <span>Board Members</span>
+                      <Badge className={getRoleBadgeColor('board_member')}>{stats.users.byRole.board_member}</Badge>
+                    </div>
                     <div className="flex justify-between items-center">
                       <span>Members</span>
                       <Badge className={getRoleBadgeColor('member')}>{stats.users.byRole.member}</Badge>
@@ -409,6 +419,7 @@ export default function AdminPage() {
                       <SelectItem value="all">All Roles</SelectItem>
                       <SelectItem value="admin">Admin</SelectItem>
                       <SelectItem value="moderator">Moderator</SelectItem>
+                      <SelectItem value="board_member">Board Member</SelectItem>
                       <SelectItem value="member">Member</SelectItem>
                     </SelectContent>
                   </Select>
@@ -590,7 +601,7 @@ export default function AdminPage() {
                       </div>
 
                       {/* Voting Section */}
-                      <div className="mt-4 pt-4 border-t">
+                      {/* <div className="mt-4 pt-4 border-t">
                         <div className="flex items-center justify-between flex-wrap gap-4">
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-medium">Your Vote:</span>
@@ -626,12 +637,136 @@ export default function AdminPage() {
                             )}
                           </div>
                         </div>
-                      </div>
+                      </div> */}
                     </CardContent>
                   </Card>
                 ))}
               </div>
             )}
+          </TabsContent>
+
+          {/* Voting Results Tab */}
+          <TabsContent value="voting-results" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Star className="h-5 w-5" />
+                  Voting Results & Analytics
+                </CardTitle>
+                <CardDescription>
+                  View voting statistics and results by category and month
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  {/* Month and Category Filters */}
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <Select value={nominationCategory} onValueChange={(value: any) => setNominationCategory(value)}>
+                      <SelectTrigger className="w-full sm:w-[250px]">
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="business_of_month">Business of the Month</SelectItem>
+                        <SelectItem value="customer_service_superstar">Customer Service Superstar</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button onClick={loadNominations} variant="outline">
+                      <LucideRefreshCcw className="h-4 w-4 mr-2" />
+                      Refresh
+                    </Button>
+                  </div>
+
+                  {/* Voting Results */}
+                  {nominationsLoading ? (
+                    <div className="flex justify-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    </div>
+                  ) : nominations.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Award className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>No nominations found for this category.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {/* Filter nominations with at least 1 vote and sort by vote count */}
+                      {(() => {
+                        const votedNominations = [...nominations]
+                          .filter(n => (n.voteCount || 0) > 0)
+                          .sort((a, b) => (b.voteCount || 0) - (a.voteCount || 0));
+                        
+                        if (votedNominations.length === 0) {
+                          return (
+                            <div className="text-center py-8 text-muted-foreground">
+                              <Award className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                              <p>No nominations with votes yet for this category.</p>
+                            </div>
+                          );
+                        }
+                        
+                        return votedNominations.map((nomination, index) => (
+                          <Card key={nomination.id} className={index === 0 ? 'border-yellow-500 bg-yellow-50 dark:bg-yellow-950' : ''}>
+                            <CardContent className="p-3 pt-3">
+                              <div className="flex flex-col md:flex-row items-start justify-between gap-4">
+                                {/* Left side: Name and metadata */}
+                                <div className="flex flex-col w-full sm:w-1/2 ">
+                                  <div className="flex items-center gap-3 flex-wrap">
+                                    <h3 className="text-lg font-semibold text-nowrap">
+                                      {nominationCategory === 'customer_service_superstar' && nomination.name
+                                        ? nomination.name
+                                        : nomination.businessName}
+                                    </h3>
+                                  </div>
+                                  {nominationCategory === 'customer_service_superstar' && nomination.name ? (
+                                    <p className="text-sm text-muted-foreground">
+                                      Company: {nomination.businessName}
+                                    </p>
+                                  ) : nomination.name && (
+                                    <p className="text-sm text-muted-foreground">
+                                      Employee: {nomination.name}
+                                    </p>
+                                  )}
+                                  <p className="mt-2 mb-1 text-xs text-muted-foreground">
+                                    Nominated: {new Date(nomination.createdAt).toLocaleDateString('en-US', { 
+                                      month: 'long', 
+                                      day: 'numeric', 
+                                      year: 'numeric' 
+                                    })}
+                                  </p>
+                                  <div className="flex items-center gap-4">
+                                    {index === 0 && (
+                                      <Badge variant="default" className="bg-yellow-500">
+                                        <Star className="h-3 w-3 mr-1 max-w-1/2" />
+                                        Leading
+                                      </Badge>
+                                    )}
+                                    <div className="flex items-center gap-2">
+                                      <div className="text-sm text-muted-foreground">
+                                        votes:
+                                      </div>
+                                      <div className="text-lg font-semibold text-card bg-highlight h-7 w-7 rounded-full flex items-center justify-center">
+                                        {nomination.voteCount || 0}
+                                      </div>
+                                    </div>
+                                    </div>
+                                </div>
+                                
+                                {/* Right side: Nomination reason */}
+                                <div className="w-full min-w-0 flex flex-col md:self-stretch md:border-l md:pl-4 flex-shrink">
+                                  <p className="text-sm font-medium mb-1">Nomination Reason:</p>
+                                  <p className="text-sm italic text-muted-foreground">
+                                    "{nomination.reason}"
+                                  </p>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ));
+                      })()}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
 
@@ -884,13 +1019,14 @@ function EditUserForm({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="role">Role</Label>
-          <Select value={formData.role} onValueChange={(value: 'admin' | 'moderator' | 'member') => setFormData(prev => ({ ...prev, role: value }))}>
+          <Select value={formData.role} onValueChange={(value: 'admin' | 'moderator' | 'board_member' | 'member') => setFormData(prev => ({ ...prev, role: value }))}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="member">Member</SelectItem>
               <SelectItem value="moderator">Moderator</SelectItem>
+              <SelectItem value="board_member">Board Member</SelectItem>
               <SelectItem value="admin">Admin</SelectItem>
             </SelectContent>
           </Select>
