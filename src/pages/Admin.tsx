@@ -151,24 +151,6 @@ export default function AdminPage() {
     }
   };
 
-  const voteOnNomination = async (nominationId: number, voteValue: number) => {
-    try {
-      const response = await api.post(`/nominations/${nominationId}/vote`, {
-        voteValue,
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to submit vote');
-      }
-
-      toast.success(`Vote submitted: ${voteValue}/5`);
-      loadNominations(); // Reload to show updated vote count
-    } catch (error: any) {
-      console.error('Error voting:', error);
-      toast.error('Failed to submit vote');
-    }
-  };
-
   const handleUpdateUser = async (updates: Partial<User>) => {
     if (!editingUser) return;
 
