@@ -15,6 +15,7 @@ import ProfilePage from '@/pages/Profile';
 import JoinPage from '@/pages/Join';
 import NominationsPage from '@/pages/Nominations';
 import VotingPage from '@/pages/Voting';
+import YearlyVotingPage from '@/pages/YearlyVoting';
 
 import BasicMembershipPage from '@/pages/MembershipBasic';
 import EnhancedMembershipPage from '@/pages/MembershipEnhanced';
@@ -103,6 +104,7 @@ export default function AppRoutes() {
         <Route path="join" element={<JoinPage />} />
         <Route path="nominations" element={<NominationsPage />} />
         <Route path="voting" element={<AdminRoute><VotingPage /></AdminRoute>} />
+        <Route path="yearly-voting" element={<AdminRoute><YearlyVotingPage /></AdminRoute>} />
 
         <Route path="basic-membership" element={<BasicMembershipPage />} />
         <Route path="enhanced-membership" element={<EnhancedMembershipPage />} />

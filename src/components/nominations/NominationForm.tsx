@@ -84,11 +84,11 @@ const NominationForm: React.FC<NominationFormProps> = ({
 
   return (
     <Card className="flex flex-col md:flex-row w-full overflow-hidden">
-      <CardHeader className="w-full md:w-1/2 bg-slate-200 flex flex-col justify-center items-center p-8 text-center">
-        <CardTitle className="text-2xl font-bold mb-4">
-          <img src={badgeImage} alt={title} className="w-48 md:w-64 h-auto" />
+      <CardHeader className="w-full md:w-1/2 bg-slate-200 dark:bg-slate-800 flex flex-col justify-center items-center p-8 text-center">
+        <CardTitle className="text-2xl font-bold mb-4 border-0">
+          <img src={badgeImage} alt={title} className="w-48 md:w-64 h-auto border-0" />
         </CardTitle>
-        <CardDescription className="text-lg text-gray-800">{description}</CardDescription>
+        <CardDescription className="text-lg text-muted-foreground">{description}</CardDescription>
       </CardHeader>
       
       <CardContent className="w-full md:w-1/2 p-6">

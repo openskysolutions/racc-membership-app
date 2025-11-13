@@ -1,6 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '@/stores/authStore';
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { getVotingStatus } from '@/services/nominations';
+import { getYearlyVotingStatus } from '@/services/yearlyVoting';
 import BusinessOfMonthBadge from '@/assets/business-of-month.png';
 import CustomerServiceSuperstarBadge from '@/assets/customer-service-superstar.png';
 import BusinessOfYear2024 from '@/assets/business-of-year-2024.jpg';
@@ -9,19 +13,70 @@ import NominationForm from '@/components/nominations/NominationForm';
 
 const NominationsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState("bofm");
+  const [monthlyVotingOpen, setMonthlyVotingOpen] = useState(false);
+  const [yearlyVotingOpen, setYearlyVotingOpen] = useState(false);
+  const { user } = useAuthStore();
+  const navigate = useNavigate();
+
+  // Check if user is board member
+  const isBoardMember = user && (user.role === 'admin' || user.role === 'moderator' || user.role === 'board_member');
+
+  useEffect(() => {
+    // Only check voting status if user is a board member
+    if (!isBoardMember) return;
+
+    const checkVotingStatus = async () => {
+      try {
+        const [monthlyStatus, yearlyStatus] = await Promise.all([
+          getVotingStatus().catch(() => ({ canVote: false })),
+          getYearlyVotingStatus().catch(() => ({ canVote: false }))
+        ]);
+        
+        setMonthlyVotingOpen(monthlyStatus.canVote || false);
+        setYearlyVotingOpen(yearlyStatus.canVote || false);
+      } catch (error) {
+        console.error('Error checking voting status:', error);
+      }
+    };
+
+    checkVotingStatus();
+  }, [isBoardMember]);
+
+  const showVotingButtons = isBoardMember && (monthlyVotingOpen || yearlyVotingOpen);
 
   return (
     <section className="container flex flex-col items-center py-20 pt-0 px-3">
-      {/* <div className="mb-8 md:mb-16 flerx flex-col justify-start items-center">
-        <h1 className="text-3xl font-bold mb-2 w-full text-center">Nominations</h1>
-      </div> */}
-
       {/* Hero Banner - 2024 Winners */}
       <div className="w-screen pt-8 mb-8 bg-gradient-to-b from-slate-300 to-slate-200">
-        <h2 className="text-2xl w-full font-bold text-center text-gray-800 mb-8">
-          Congratulations to Our 2024 Award Winners!
-        </h2>
-        
+
+        <div className={`flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 mb-6 mx-8`}>
+
+          <h2 className="text-2xl font-bold text-gray-800 text-center">
+            Congratulations to Our 2024 Award Winners!
+          </h2>      {/* Voting Navigation - Only show if voting is open */}
+          {showVotingButtons && (
+            <div className="flex gap-2">
+              {monthlyVotingOpen && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate('/voting')}
+                >
+                  Monthly Voting
+                </Button>
+              )}
+              {yearlyVotingOpen && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate('/yearly-voting')}
+                >
+                  Yearly Voting
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
         <div className="grid grid-cols-2 gap-3 md:gap-6 px-2 max-w-[1200px] mx-auto">
           {/* Business of the Year 2024 */}
           <div className="bg-white rounded-lg shadow-lg overflow-hidden border-2 border-slate-400">

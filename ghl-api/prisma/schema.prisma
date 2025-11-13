@@ -74,6 +74,7 @@ model Vote {
   userId          Int        // Board member who voted
   votingMonth     String     // Format: YYYY-MM (e.g., "2025-01" for voting in January for February winners)
   votingCategory  String     // 'business_of_month' or 'customer_service_superstar'
+  voteType        String     @default("monthly") // 'monthly' or 'yearly'
   voteValue       Boolean    @default(true) // Simple yes/no vote (checkbox)
   comment         String?    @db.Text
   createdAt       DateTime   @default(now())
@@ -83,9 +84,10 @@ model Vote {
   nomination   Nomination @relation(fields: [nominationId], references: [id], onDelete: Cascade)
   user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   
-  @@unique([userId, votingCategory, votingMonth]) // One vote per user per category per month
+  @@unique([userId, votingCategory, votingMonth, voteType]) // One vote per user per category per month per type
   @@index([nominationId])
   @@index([userId])
   @@index([votingMonth])
+  @@index([voteType])
   @@map("votes")
 }

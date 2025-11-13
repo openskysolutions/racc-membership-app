@@ -25,6 +25,13 @@ interface VoteRequest {
 
 export class NominationsController {
   /**
+   * Helper: Convert user.id to number for Prisma queries
+   */
+  private getUserId(user: any): number {
+    return typeof user.id === 'string' ? parseInt(user.id) : user.id;
+  }
+
+  /**
    * Create a new nomination
    * POST /nominations
    */
@@ -195,17 +202,16 @@ export class NominationsController {
     const currentYear = now.getFullYear();
     const currentDay = now.getDate();
     
-    // TEMPORARY: November voting restriction disabled for testing
     // November (month 10) - no voting allowed
-    // if (currentMonth === 10) {
-    //   return {
-    //     canVote: false,
-    //     votingMonth: null,
-    //     targetMonth: null,
-    //     deadline: null,
-    //     error: 'Voting is not available in November'
-    //   };
-    // }
+    if (currentMonth === 10) {
+      return {
+        canVote: false,
+        votingMonth: null,
+        targetMonth: null,
+        deadline: null,
+        error: 'Voting is not available in November'
+      };
+    }
     
     // Check if past voting deadline (20th)
     if (currentDay > 20) {
@@ -640,6 +646,377 @@ export class NominationsController {
       console.error('❌ Error getting voting status:', error);
       return res.status(500).json({
         error: 'Failed to get voting status',
+        details: error.message
+      });
+    }
+  }
+
+  /**
+   * Helper: Get yearly voting period details
+   * Yearly voting is only available October 1-20
+   */
+  private getYearlyVotingPeriodDetails(now: Date = new Date()) {
+    const currentMonth = now.getMonth(); // 0-11 (October = 9)
+    const currentYear = now.getFullYear();
+    const currentDay = now.getDate();
+    
+    // Only allow voting in October (month 9)
+    if (currentMonth !== 9) {
+      return {
+        canVote: false,
+        votingYear: null,
+        error: 'Yearly voting is only available in October'
+      };
+    }
+    
+    // Check if within voting window (1st-20th)
+    if (currentDay < 1 || currentDay > 20) {
+      return {
+        canVote: false,
+        votingYear: null,
+        error: 'Yearly voting is only available October 1-20'
+      };
+    }
+    
+    return {
+      canVote: true,
+      votingYear: currentYear,
+      deadline: new Date(currentYear, 9, 20) // October 20th
+    };
+  }
+
+  /**
+   * Get monthly winners (nominees with highest votes) from Jan-Oct for yearly voting
+   */
+  async getYearlyVotingNominations(req: Request, res: Response) {
+    try {
+      const user = req.user;
+      
+      // Check if user is authenticated
+      if (!user) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      // Check if user is a board member, moderator, or admin
+      if (user.role !== 'admin' && user.role !== 'moderator' && user.role !== 'board_member') {
+        return res.status(403).json({ error: 'Only board members can access yearly voting' });
+      }
+
+      // Check yearly voting period
+      const votingPeriod = this.getYearlyVotingPeriodDetails();
+      if (!votingPeriod.canVote) {
+        return res.json({ 
+          canVote: false,
+          error: votingPeriod.error
+        });
+      }
+
+      const currentYear = votingPeriod.votingYear!;
+      
+      // Get monthly winners from Jan-Oct
+      // Remember: January winners were voted in December of previous year
+      // February winners voted in January, ..., October winners voted in September
+      const monthlyWinners: any = {
+        business_of_month: [],
+        customer_service_superstar: []
+      };
+
+      // For each month Jan-Oct (voting months Dec-Sep of current year)
+      for (let targetMonth = 1; targetMonth <= 10; targetMonth++) {
+        // Calculate the voting month (previous month)
+        let votingMonth: number;
+        let votingYear: number;
+        
+        if (targetMonth === 1) {
+          // January winners were voted in December of previous year
+          votingMonth = 12;
+          votingYear = currentYear - 1;
+        } else {
+          votingMonth = targetMonth - 1;
+          votingYear = currentYear;
+        }
+        
+        const votingMonthStr = `${votingYear}-${String(votingMonth).padStart(2, '0')}`;
+        
+        // Get winner for each category this month
+        for (const category of ['business_of_month', 'customer_service_superstar']) {
+          // Find nomination with most votes for this month/category
+          const winner = await prisma.nomination.findFirst({
+            where: {
+              category: category,
+              status: 'approved'
+            },
+            include: {
+              votes: {
+                where: {
+                  votingMonth: votingMonthStr,
+                  votingCategory: category,
+                  voteType: 'monthly',
+                  voteValue: true
+                }
+              }
+            },
+            orderBy: {
+              votes: {
+                _count: 'desc'
+              }
+            }
+          });
+
+          if (winner && winner.votes.length > 0) {
+            monthlyWinners[category].push({
+              id: winner.id,
+              name: winner.name,
+              businessName: winner.businessName,
+              reason: winner.reason,
+              category: winner.category,
+              monthlyVoteCount: winner.votes.length,
+              winningMonth: targetMonth,
+              votingMonth: votingMonthStr,
+              createdAt: winner.createdAt
+            });
+          }
+        }
+      }
+
+      return res.json({
+        canVote: true,
+        votingYear: currentYear,
+        deadline: votingPeriod.deadline,
+        nominations: monthlyWinners
+      });
+    } catch (error: any) {
+      console.error('❌ Error getting yearly voting nominations:', error);
+      return res.status(500).json({
+        error: 'Failed to get yearly voting nominations',
+        details: error.message
+      });
+    }
+  }
+
+  /**
+   * Get yearly voting status for current user
+   */
+  async getYearlyVotingStatus(req: Request, res: Response) {
+    try {
+      const user = req.user;
+      
+      if (!user) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      // Check if user is a board member, moderator, or admin
+      if (user.role !== 'admin' && user.role !== 'moderator' && user.role !== 'board_member') {
+        return res.status(403).json({ error: 'Only board members can access yearly voting' });
+      }
+
+      // Check yearly voting period
+      const votingPeriod = this.getYearlyVotingPeriodDetails();
+      if (!votingPeriod.canVote) {
+        return res.json({ 
+          canVote: false,
+          error: votingPeriod.error
+        });
+      }
+
+      const votingYear = String(votingPeriod.votingYear);
+      const userId = this.getUserId(user);
+
+      // Get user's yearly votes
+      const votes = await prisma.vote.findMany({
+        where: {
+          userId: userId,
+          votingMonth: votingYear, // For yearly votes, store year in votingMonth field
+          voteType: 'yearly'
+        },
+        include: {
+          nomination: true
+        }
+      });
+
+      const businessVote = votes.find(v => v.votingCategory === 'business_of_month');
+      const superstarVote = votes.find(v => v.votingCategory === 'customer_service_superstar');
+
+      return res.json({
+        canVote: true,
+        votingYear: votingPeriod.votingYear,
+        deadline: votingPeriod.deadline,
+        hasVoted: {
+          business_of_month: !!businessVote,
+          customer_service_superstar: !!superstarVote
+        },
+        votes: {
+          business_of_month: businessVote ? {
+            nominationId: businessVote.nominationId,
+            businessName: businessVote.nomination.businessName,
+            votedAt: businessVote.createdAt
+          } : null,
+          customer_service_superstar: superstarVote ? {
+            nominationId: superstarVote.nominationId,
+            name: superstarVote.nomination.name,
+            businessName: superstarVote.nomination.businessName,
+            votedAt: superstarVote.createdAt
+          } : null
+        }
+      });
+    } catch (error: any) {
+      console.error('❌ Error getting yearly voting status:', error);
+      return res.status(500).json({
+        error: 'Failed to get yearly voting status',
+        details: error.message
+      });
+    }
+  }
+
+  /**
+   * Submit a yearly vote on a nomination
+   */
+  async voteOnYearlyNomination(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const nominationId = parseInt(id);
+      const user = req.user;
+
+      // Check if user is authenticated
+      if (!user) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      // Check if user is a board member, moderator, or admin
+      if (user.role !== 'admin' && user.role !== 'moderator' && user.role !== 'board_member') {
+        return res.status(403).json({ error: 'Only board members can vote on yearly winners' });
+      }
+
+      // Check yearly voting period
+      const votingPeriod = this.getYearlyVotingPeriodDetails();
+      if (!votingPeriod.canVote) {
+        return res.status(403).json({ error: votingPeriod.error });
+      }
+
+      // Get the nomination
+      const nomination = await prisma.nomination.findUnique({
+        where: { id: nominationId }
+      });
+
+      if (!nomination) {
+        return res.status(404).json({ error: 'Nomination not found' });
+      }
+
+      const votingYear = String(votingPeriod.votingYear);
+      const votingCategory = nomination.category;
+      const userId = this.getUserId(user);
+
+      // Check if user has already voted for this category this year
+      const existingVote = await prisma.vote.findFirst({
+        where: {
+          userId: userId,
+          votingMonth: votingYear, // Store year in votingMonth for yearly votes
+          votingCategory: votingCategory,
+          voteType: 'yearly'
+        }
+      });
+
+      if (existingVote) {
+        return res.status(400).json({
+          error: 'You have already voted for this category this year',
+          votedFor: {
+            nominationId: existingVote.nominationId
+          }
+        });
+      }
+
+      // Create the vote
+      const vote = await prisma.vote.create({
+        data: {
+          nominationId,
+          userId: userId,
+          votingMonth: votingYear,
+          votingCategory,
+          voteType: 'yearly',
+          voteValue: true
+        },
+        include: {
+          nomination: true
+        }
+      });
+
+      return res.status(201).json({
+        message: 'Yearly vote submitted successfully',
+        vote: {
+          id: vote.id,
+          nominationId: vote.nominationId,
+          businessName: vote.nomination.businessName,
+          name: vote.nomination.name,
+          votingYear: votingYear,
+          category: votingCategory
+        }
+      });
+    } catch (error: any) {
+      console.error('❌ Error submitting yearly vote:', error);
+      return res.status(500).json({
+        error: 'Failed to submit yearly vote',
+        details: error.message
+      });
+    }
+  }
+
+  /**
+   * Get previous yearly winners (for display outside voting period)
+   */
+  async getYearlyWinners(req: Request, res: Response) {
+    try {
+      const { year } = req.query;
+      const targetYear = year ? parseInt(year as string) : new Date().getFullYear() - 1;
+
+      const yearStr = String(targetYear);
+
+      // Get winners for each category
+      const winners: any = {
+        business_of_month: null,
+        customer_service_superstar: null,
+        year: targetYear
+      };
+
+      for (const category of ['business_of_month', 'customer_service_superstar']) {
+        const winner = await prisma.nomination.findFirst({
+          where: {
+            category: category,
+            status: 'approved'
+          },
+          include: {
+            votes: {
+              where: {
+                votingMonth: yearStr,
+                votingCategory: category,
+                voteType: 'yearly',
+                voteValue: true
+              }
+            }
+          },
+          orderBy: {
+            votes: {
+              _count: 'desc'
+            }
+          }
+        });
+
+        if (winner && winner.votes.length > 0) {
+          winners[category] = {
+            id: winner.id,
+            name: winner.name,
+            businessName: winner.businessName,
+            reason: winner.reason,
+            voteCount: winner.votes.length,
+            createdAt: winner.createdAt
+          };
+        }
+      }
+
+      return res.json(winners);
+    } catch (error: any) {
+      console.error('❌ Error getting yearly winners:', error);
+      return res.status(500).json({
+        error: 'Failed to get yearly winners',
         details: error.message
       });
     }

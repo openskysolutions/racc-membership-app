@@ -2,26 +2,27 @@ import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/stores/authStore';
 import { useNavigate } from 'react-router-dom';
 import { 
-  getVotingNominations, 
-  getVotingStatus, 
-  submitVote, 
-  VotingNomination, 
-  VotingData, 
-  VotingStatus 
-} from '@/services/nominations';
+  getYearlyVotingNominations, 
+  getYearlyVotingStatus, 
+  voteOnYearlyNomination,
+  YearlyVotingPeriod, 
+  YearlyVotingStatus,
+  YearlyVotingNomination
+} from '@/services/yearlyVoting';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, CheckCircle2, AlertCircle, Calendar } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
-const VotingPage: React.FC = () => {
+const YearlyVotingPage: React.FC = () => {
   const { user } = useAuthStore();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [votingData, setVotingData] = useState<VotingData | null>(null);
-  const [votingStatus, setVotingStatus] = useState<VotingStatus | null>(null);
+  const [votingData, setVotingData] = useState<YearlyVotingPeriod | null>(null);
+  const [votingStatus, setVotingStatus] = useState<YearlyVotingStatus | null>(null);
   const [selectedBusiness, setSelectedBusiness] = useState<number | null>(null);
   const [selectedSuperstar, setSelectedSuperstar] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -38,8 +39,8 @@ const VotingPage: React.FC = () => {
     
     try {
       const [nominations, status] = await Promise.all([
-        getVotingNominations(),
-        getVotingStatus()
+        getYearlyVotingNominations(),
+        getYearlyVotingStatus()
       ]);
       
       setVotingData(nominations);
@@ -62,34 +63,28 @@ const VotingPage: React.FC = () => {
     setSuccess(null);
     
     try {
-      const result = await submitVote(nominationId);
-      
-      if (result.success) {
-        setSuccess(result.message || 'Vote submitted successfully!');
-        // Reload voting data to update status
-        await loadVotingData();
-      } else {
-        setError(result.error || 'Failed to submit vote');
-      }
+      await voteOnYearlyNomination(nominationId);
+      setSuccess('Vote submitted successfully!');
+      // Reload voting data to update status
+      await loadVotingData();
     } catch (err: any) {
-      setError('Failed to submit vote');
+      setError(err.message || 'Failed to submit vote');
       console.error(err);
     } finally {
       setSubmitting(false);
     }
   };
 
-  const formatDate = (dateString?: string) => {
+  const formatDate = (dateString?: string | Date) => {
     if (!dateString) return '';
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
   };
 
-  const formatMonth = (monthString?: string) => {
-    if (!monthString) return '';
-    const [year, month] = monthString.split('-');
-    const date = new Date(parseInt(year), parseInt(month) - 1);
-    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  const getMonthName = (monthNumber: number) => {
+    const months = ['January', 'February', 'March', 'April', 'May', 'June', 
+                   'July', 'August', 'September', 'October', 'November', 'December'];
+    return months[monthNumber - 1];
   };
 
   // Check access
@@ -121,13 +116,13 @@ const VotingPage: React.FC = () => {
       <div className="container mx-auto px-4 py-8">
         <Card>
           <CardHeader>
-            <CardTitle>Voting Not Available</CardTitle>
+            <CardTitle>Yearly Voting Not Available</CardTitle>
           </CardHeader>
           <CardContent>
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                {error || votingData?.error || 'Voting is not currently available.'}
+                {error || votingData?.error || 'Yearly voting is not currently available.'}
               </AlertDescription>
             </Alert>
           </CardContent>
@@ -142,7 +137,7 @@ const VotingPage: React.FC = () => {
     hasVoted,
     votedNominationId
   }: { 
-    nomination: VotingNomination; 
+    nomination: YearlyVotingNomination; 
     category: 'business_of_month' | 'customer_service_superstar';
     hasVoted: boolean;
     votedNominationId?: number;
@@ -187,8 +182,13 @@ const VotingPage: React.FC = () => {
                     Employee: {nomination.name}
                   </p>
                 )}
-                <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                  <span>Nominated: {formatDate(nomination.createdAt)}</span>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                  <Badge variant="outline" className="text-xs">
+                    {getMonthName(nomination.winningMonth)} Winner
+                  </Badge>
+                  <Badge variant="secondary" className="text-xs">
+                    {nomination.monthlyVoteCount} monthly votes
+                  </Badge>
                 </div>
                 {isVotedFor && (
                   <div className="mt-3 flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
@@ -218,9 +218,9 @@ const VotingPage: React.FC = () => {
   }: {
     title: string;
     category: 'business_of_month' | 'customer_service_superstar';
-    nominations: VotingNomination[];
+    nominations: YearlyVotingNomination[];
     hasVoted: boolean;
-    votedInfo?: { nominationId: number; businessName: string; name?: string; votedAt: string } | null;
+    votedInfo?: { nominationId: number; businessName: string; name?: string; votedAt: Date } | null;
   }) => {
     const selectedId = category === 'business_of_month' ? selectedBusiness : selectedSuperstar;
 
@@ -231,7 +231,7 @@ const VotingPage: React.FC = () => {
           <Alert className="bg-green-50 dark:bg-green-950 border-green-500">
             <CheckCircle2 className="h-4 w-4 text-green-600" />
             <AlertDescription className="text-green-800 dark:text-green-200">
-              <strong>Thank you for the vote you've submitted for: {formatMonth(votingStatus?.targetMonth)} - {title}</strong>
+              <strong>Thank you for the vote you've submitted for: {votingStatus?.votingYear} - {title}</strong>
               <div className="mt-2">
                 You voted for: <strong>{votedInfo.businessName}</strong>
                 {votedInfo.name && ` (${votedInfo.name})`}
@@ -248,7 +248,7 @@ const VotingPage: React.FC = () => {
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <p className="text-muted-foreground text-center sm:text-left">
-            Select one nomination to vote for {formatMonth(votingStatus?.targetMonth)} winner
+            Select one nomination to vote for {votingStatus?.votingYear} winner
           </p>
           {!hasVoted && nominations.length > 0 && (
             <Button
@@ -271,7 +271,7 @@ const VotingPage: React.FC = () => {
         {nominations.length === 0 ? (
           <Alert>
             <AlertDescription>
-              No approved nominations available for this category.
+              No monthly winners available for this category.
             </AlertDescription>
           </Alert>
         ) : (
@@ -295,26 +295,26 @@ const VotingPage: React.FC = () => {
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <div className="mb-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-2">
-          <h1 className="text-4xl font-bold">Board Member Voting</h1>
+          <h1 className="text-4xl font-bold">Yearly Winners Voting</h1>
           <div className="flex gap-2">
             <Button
-              variant="default"
+              variant="outline"
               size="sm"
-              className="bg-primary"
+              onClick={() => navigate('/voting')}
             >
               Monthly Voting
             </Button>
             <Button
-              variant="outline"
+              variant="default"
               size="sm"
-              onClick={() => navigate('/yearly-voting')}
+              className="bg-primary"
             >
               Yearly Voting
             </Button>
           </div>
         </div>
         <p className="text-muted-foreground">
-          Vote for {formatMonth(votingData.targetMonth)} winners
+          Vote for {votingData.votingYear} winners from monthly champions
         </p>
         
         {votingData.deadline && (
@@ -346,14 +346,14 @@ const VotingPage: React.FC = () => {
       <Tabs defaultValue="business" className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-6">
           <TabsTrigger value="business">
-            Business of the Month
-            {votingStatus?.hasVoted.business_of_month && (
+            Business of the Year
+            {votingStatus?.hasVoted?.business_of_month && (
               <CheckCircle2 className="ml-2 h-4 w-4 text-green-600" />
             )}
           </TabsTrigger>
           <TabsTrigger value="superstar">
-            Customer Service Superstar
-            {votingStatus?.hasVoted.customer_service_superstar && (
+            Customer Service Superstar of the Year
+            {votingStatus?.hasVoted?.customer_service_superstar && (
               <CheckCircle2 className="ml-2 h-4 w-4 text-green-600" />
             )}
           </TabsTrigger>
@@ -361,21 +361,21 @@ const VotingPage: React.FC = () => {
 
         <TabsContent value="business">
           <CategorySection
-            title="Business of the Month"
+            title="Business of the Year"
             category="business_of_month"
-            nominations={votingData.businessOfMonth}
-            hasVoted={votingStatus?.hasVoted.business_of_month || false}
-            votedInfo={votingStatus?.votes.business_of_month}
+            nominations={votingData.nominations?.business_of_month || []}
+            hasVoted={votingStatus?.hasVoted?.business_of_month || false}
+            votedInfo={votingStatus?.votes?.business_of_month}
           />
         </TabsContent>
 
         <TabsContent value="superstar">
           <CategorySection
-            title="Customer Service Superstar"
+            title="Customer Service Superstar of the Year"
             category="customer_service_superstar"
-            nominations={votingData.customerServiceSuperstar}
-            hasVoted={votingStatus?.hasVoted.customer_service_superstar || false}
-            votedInfo={votingStatus?.votes.customer_service_superstar}
+            nominations={votingData.nominations?.customer_service_superstar || []}
+            hasVoted={votingStatus?.hasVoted?.customer_service_superstar || false}
+            votedInfo={votingStatus?.votes?.customer_service_superstar}
           />
         </TabsContent>
       </Tabs>
@@ -383,4 +383,4 @@ const VotingPage: React.FC = () => {
   );
 };
 
-export default VotingPage;
+export default YearlyVotingPage;

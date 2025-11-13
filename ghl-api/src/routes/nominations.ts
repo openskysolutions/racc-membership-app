@@ -21,6 +21,25 @@ router.get('/voting', requireAuth, (req, res) => controller.getVotingNominations
 router.get('/voting/status', requireAuth, (req, res) => controller.getVotingStatus(req, res));
 
 /**
+ * GET /nominations/yearly/voting
+ * Get monthly winners available for yearly voting (Oct 1-20 only) (REQUIRES AUTH - board members only)
+ */
+router.get('/yearly/voting', requireAuth, (req, res) => controller.getYearlyVotingNominations(req, res));
+
+/**
+ * GET /nominations/yearly/status
+ * Get current user's yearly voting status (REQUIRES AUTH - board members only)
+ */
+router.get('/yearly/status', requireAuth, (req, res) => controller.getYearlyVotingStatus(req, res));
+
+/**
+ * GET /nominations/yearly/winners
+ * Get previous yearly winners (PUBLIC)
+ * Query params: year (optional, defaults to previous year)
+ */
+router.get('/yearly/winners', (req, res) => controller.getYearlyWinners(req, res));
+
+/**
  * GET /nominations
  * List nominations with filters (PUBLIC)
  * Query params: type, category, status, year, month, limit, offset
@@ -53,6 +72,12 @@ router.patch('/:id/status', requireAuth, (req, res) => controller.updateStatus(r
  * Body: { voteValue: 1-5, comment?: string }
  */
 router.post('/:id/vote', requireAuth, (req, res) => controller.voteOnNomination(req, res));
+
+/**
+ * POST /nominations/:id/vote/yearly
+ * Vote on a yearly winner (Oct 1-20 only) (REQUIRES AUTH - board members only)
+ */
+router.post('/:id/vote/yearly', requireAuth, (req, res) => controller.voteOnYearlyNomination(req, res));
 
 /**
  * GET /nominations/:id/votes
