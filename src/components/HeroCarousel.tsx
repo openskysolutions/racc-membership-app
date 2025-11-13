@@ -209,7 +209,7 @@ export const HeroCarousel = () => {
 
     return (
       <div className="lg:text-start space-y-6 mb-4 px-4 md:px-16">
-        <div className="bg-card/10 backdrop-blur-sm rounded-lg p-6 md:w-10/12 mx-auto lg:mx-0">
+        <div className="md:w-10/12 mx-auto lg:mx-0">
           <p className="text-sm text-highlight font-semibold mb-2">UPCOMING EVENT</p>
           
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4">
@@ -247,7 +247,7 @@ export const HeroCarousel = () => {
           <div className="space-y-4 md:space-y-0 md:space-x-4">
             <Button
               className="w-full md:w-auto bg-highlight hover:bg-highlight/90 font-semibold"
-              onClick={() => navigate('/calendar')}
+              onClick={() => navigate('/events/' + event.id)}
             >
               View Event Details
             </Button>
