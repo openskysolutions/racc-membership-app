@@ -7,8 +7,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 import { capitalizeFirst } from '@/lib/utils';
-import { Mail, Phone, Globe, Calendar, Shield, User, Edit, Save, X } from 'lucide-react';
+import { Mail, Phone, Globe, Calendar, Shield, User, Edit, Save, X, AlertTriangle } from 'lucide-react';
 import { api } from '@/services/apiClient';
 import type { Member } from '@/types/member';
 import AvatarUpload from '@/components/AvatarUpload';
@@ -281,41 +287,45 @@ const ProfilePage: React.FC = () => {
             </div>
           </div>
           <div className="flex flex-row justify-end gap-1 !mt-0 ml-auto">
+            {!isEditing && (
+              <Button
+                variant="default"
+                onClick={() => setIsEditing(true)}
+                className="px-3 h-8"
+              >
+                Edit Profile
+                <Edit className="h-4 w-4" />
+              </Button>
+            )}
+
             {isEditing && (
-              <>
+              <div className="flex gap-2 items-center">
+                <Button
+                  onClick={handleSubmit}
+                  disabled={updating}
+                  variant='default'
+                  className="h-7 p-1 px-2"
+                >
+                  Save
+                  {updating ? '...' : <Save className="h-4 w-4" />}
+                </Button>
                 <Button
                   variant="outline"
                   onClick={handleCancel}
                   disabled={updating}
-                  className='text-muted-foreground hover:text-muted-foreground hover:bg-muted-foreground/10 h-8 p-2 border-muted-foreground/30'
+                  className='text-muted-foreground hover:text-muted-foreground bg-transparent hover:bg-muted-foreground/10 h-7 p-1 px-2'
                 >
+                  Cancel
                   <X className="h-7 w-7" />
                 </Button>
-                <Button
-                  onClick={handleSubmit}
-                  disabled={updating}
-                  variant='outline'
-                  className="text-green-600 hover:text-green-600 hover:bg-green-700/10 h-8 p-2 border-muted-foreground/30"
-                >
-                  {updating ? '...' : <Save className="h-4 w-4" />}
-                </Button>
-              </>
-            )}
-            {!isEditing && (
-              <Button 
-              variant='outline'
-              className="text-highlight-foreground hover:text-highlight hover:bg-highlight-foreground/10 h-8 p-2 border-highlight-foreground/30"
-              onClick={() => setIsEditing(true)} 
-              >
-                <Edit className="h-5 w-5" />
-              </Button>
+              </div>
             )}
           </div>
         </CardHeader>
         
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-6 pb-10">
           {isEditing ? (
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4 flex flex-col">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="firstName" className="block text-sm font-medium mb-1">
@@ -491,6 +501,15 @@ const ProfilePage: React.FC = () => {
                   />
                 </div>
               </div>
+              <Button
+                onClick={handleSubmit}
+                disabled={updating}
+                variant='default'
+                className='self-center w-1/2 sm:w-1/3'
+              >
+                Update Profile
+                {updating ? '...' : <Save className="h-4 w-4" />}
+              </Button>
             </form>
           ) : (
             <div className="space-y-6">
@@ -605,26 +624,30 @@ const ProfilePage: React.FC = () => {
 
       {/* Danger Zone - Delete Account */}
       {isEditing && (
-        <Card className="max-w-4xl mx-auto mt-4">
-          <CardHeader>
-            <CardTitle className="text-destructive flex items-center gap-2">
-              <Shield className="h-5 w-5" />
-              Danger Zone
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div>
-                <h3 className="font-semibold mb-2">Delete Account</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Permanently delete your account and membership data from the membership portal. This will remove your login credentials and session data. 
-                  {/* Note: Your profile information in our CRM system will remain unchanged. */}
-                </p>
-                <DeleteAccountDialog />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="max-w-4xl mx-auto mt-4">
+          <Accordion type="single" collapsible className="border border-destructive/20 rounded-lg bg-card">
+            <AccordionItem value="danger-zone" className="border-0">
+              <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-destructive/5">
+                <div className="flex items-center gap-2 text-destructive">
+                  <AlertTriangle className="h-5 w-5" />
+                  <span className="font-semibold">Danger Zone</span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-6 pb-4">
+                <div className="space-y-4 pt-2">
+                  <div>
+                    <h3 className="font-semibold mb-2 text-foreground">Delete Account</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Permanently delete your account and membership data from the membership portal. This will remove your login credentials and session data. 
+                      {/* Note: Your profile information in our CRM system will remain unchanged. */}
+                    </p>
+                    <DeleteAccountDialog />
+                  </div>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </div>
       )}
     </div>
   );

@@ -21,6 +21,7 @@ interface AuthResponse {
     membershipTier?: string;
     emailVerified?: boolean;
     ghlContactId?: string;
+    avatarUrl?: string;
     createdAt?: string;
     updatedAt?: string;
   };

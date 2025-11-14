@@ -239,7 +239,18 @@ class MembersController {
 
     // Get avatar URL from custom fields, fall back to placeholder
     // Use the actual custom field ID for avatar_url: 331dKIcjgTa8z8a6mu37
-    const avatarUrl = getCustomField('331dKIcjgTa8z8a6mu37') || getCustomField('avatar_url') || getCustomField('profile_photo') || '/profile-placeholder.png';
+    const avatarUrlField = getCustomField('331dKIcjgTa8z8a6mu37') || getCustomField('avatar_url') || getCustomField('profile_photo');
+    
+    // Debug logging for avatar retrieval (only log if contact name contains specific string)
+    if (contact.businessName?.toLowerCase().includes('monroe') || contact.lastName?.toLowerCase().includes('monroe')) {
+      console.log(`🖼️  Avatar debug for ${contact.firstName} ${contact.lastName}:`, {
+        businessName: contact.businessName,
+        avatarUrlField,
+        customFieldIds: contact.customFields?.map(f => ({ id: f.id, key: f.key, value: f.value?.substring(0, 50) }))
+      });
+    }
+    
+    const avatarUrl = avatarUrlField || '/profile-placeholder.png';
 
     // Get membership tier from tags or custom fields
     const membershipTier = this.getMembershipTier(contact);

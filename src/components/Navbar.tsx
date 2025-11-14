@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/sheet";
 
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Menu } from "lucide-react";
+import { Badge, Menu } from "lucide-react";
 import LogoLight from "@/assets/racc-logo.png";
 import LogoDark from "@/assets/racc-logo-dark.png";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
@@ -42,10 +42,10 @@ const routeList: RouteProps[] = [
   //   href: "/news-events",
   //   label: "News & Events",
   // },
-  {
-    href: "/dashboard",
-    label: "Dashboard",
-  },
+  // {
+  //   href: "/dashboard",
+  //   label: "Dashboard",
+  // },
   {
     href: "/calendar",
     label: "Calendar",
@@ -66,6 +66,10 @@ const routeList: RouteProps[] = [
     href: "/about",
     label: "About",
   },
+  {
+    href: "/profile",
+    label: "Profile",
+  }
 ];
 
 export const Navbar = () => {
@@ -82,22 +86,13 @@ export const Navbar = () => {
     navigate('/');
   };
 
-  const handleLogoClick = (e: React.MouseEvent) => {
-    if (isNative) {
-      e.preventDefault();
-      navigate('/');
-    }
-    // If not native, the default href behavior will take over
-  };
-
   return (
     <header className="sticky border-b-[1px] top-0 z-40 w-full bg-white dark:border-b-popover dark:bg-accent-foreground shadow-md">
       <NavigationMenu className="mx-auto">
         <NavigationMenuList className="container h-20 px-4 w-screen flex justify-center md:justify-between items-center relative">
           <a
             rel="noreferrer noopener"
-            href={isNative ? "/" : "https://richfieldareachamber.com"}
-            onClick={handleLogoClick}
+              onClick={() => navigate('/')}
             className={cn(
               "flex flex-row h-18 py-1 self-center justify-center md:justify-start",
             )}
@@ -150,11 +145,17 @@ export const Navbar = () => {
               </>
             }
             <DropdownMenu>
-              <DropdownMenuTrigger>
-                <Avatar className="border-1 border-input rounded-lg h-9 w-9">
-                  <AvatarImage src="/profile-icon.png"></AvatarImage>
-                  <AvatarFallback>CN</AvatarFallback>
+              <DropdownMenuTrigger
+                className={`rounded-full flex items-center h-9 px-1 py-1 ${isAuthenticated ? 'gap-2 pl-3 rounded-lg hover:bg-neutral-300/40 dark:hover:bg-neutral-300/20' : ''} transition-colors`}
+              >
+                <span className="text-sm font-semibold">{user?.name}</span>
+                <Avatar className="h-8 w-auto">
+                  <AvatarImage
+                    src={user?.avatarUrl ? user.avatarUrl : "/profile-icon.png"}
+                    alt={user?.name || 'User Avatar'}
+                  />
                 </Avatar>
+                <span className="sr-only text-foreground">User menu</span>
               </DropdownMenuTrigger>
               
               <DropdownMenuContent className="min-w-[240px] mt-6 mr-2">
@@ -243,8 +244,10 @@ export const Navbar = () => {
                   <SheetTitle className="font-medium text-md items-center flex flex-col border-b-1 border-b-stone-300 dark:border-b-stone-600 pb-6">
                     <a
                       rel="noreferrer noopener"
-                      href={isNative ? "/" : "https://richfieldareachamber.com"}
-                      onClick={handleLogoClick}
+                      onClick={() => {
+                        setIsOpen(false);
+                        navigate('/')
+                      }}
                       className="flex items-center justify-center"
                     >
                       <img
@@ -262,13 +265,20 @@ export const Navbar = () => {
                         setIsOpen(false);
                         navigate('/profile');
                       }}
-                      className={cn(
-                        // buttonVariants({ variant: "ghost" }),  
-                        "border-b-1 border-b-stone-300 dark:border-b-stone-600 text-sm rounded-none w-full py-3 !justify-start text-left focus:outline-none"
+                      className={cn( 
+                        "flex items-center gap-3 border-b-1 border-b-stone-300 dark:border-b-stone-600 text-sm rounded-none w-full py-3 !justify-start text-left focus:outline-none"
                       )}
                     >
-                      <span className="block text-lg font-semibold">{user?.firstName} {user?.lastName}</span>
-                      <span className="block truncate text-sm font-normal">{user?.email}</span>
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage
+                          src={user?.avatarUrl ? user.avatarUrl : "/profile-icon.png"}
+                          alt={user?.name || 'User Avatar'}
+                        />
+                      </Avatar>
+                      <div>
+                        <span className="flex text-lg leading-none font-semibold p-0 mb-1">{user?.firstName} {user?.lastName}</span>
+                        <span className="flex truncate text-sm font-normal">{user?.email}</span>
+                      </div>
                     </button>
                   }   
                   {routeList.map(({ href, label }: RouteProps) => (

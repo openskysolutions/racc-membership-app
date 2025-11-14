@@ -11,6 +11,7 @@ declare global {
         email: string;
         role: string;
         status: string;
+        ghlContactId?: string;
       };
       session?: {
         id: string;

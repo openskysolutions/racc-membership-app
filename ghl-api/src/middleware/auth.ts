@@ -5,6 +5,7 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { authSessionService } from '@/services/authSession';
+import { databaseService } from '@/services/database';
 
 // Type extensions are automatically available through tsconfig.json
 
@@ -34,8 +35,25 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
       });
     }
     
-    // Attach user info to request
-    req.user = session.user;
+    // Fetch user data from database using memberId from session
+    const dbUser = await databaseService.findUserById(session.memberId);
+    
+    if (!dbUser) {
+      return res.status(401).json({
+        error: 'User not found',
+        details: 'Please log in again'
+      });
+    }
+    
+    // Map database user to request user format
+    req.user = {
+      id: String(dbUser.id),
+      name: dbUser.email.split('@')[0], // Use email prefix as name if no name field
+      email: dbUser.email,
+      role: dbUser.role,
+      status: dbUser.status,
+      ghlContactId: dbUser.ghlContactId || undefined
+    };
     req.session = session;
     
     next();
@@ -104,8 +122,21 @@ export async function optionalAuth(req: Request, res: Response, next: NextFuncti
       const session = await authSessionService.getSessionByToken(token);
       
       if (session) {
-        req.user = session.user;
-        req.session = session;
+        // Fetch user data from database using memberId from session
+        const dbUser = await databaseService.findUserById(session.memberId);
+        
+        if (dbUser) {
+          // Map database user to request user format
+          req.user = {
+            id: String(dbUser.id),
+            name: dbUser.email.split('@')[0],
+            email: dbUser.email,
+            role: dbUser.role,
+            status: dbUser.status,
+            ghlContactId: dbUser.ghlContactId || undefined
+          };
+          req.session = session;
+        }
       }
     }
     

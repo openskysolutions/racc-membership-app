@@ -150,25 +150,6 @@ const MemberDetailsPage: React.FC = () => {
     return (firstName + lastName).toUpperCase() || member.email.charAt(0).toUpperCase();
   };
 
-  const getRoleColor = (role: string) => {
-    switch (role) {
-      case 'admin': return 'bg-red-100 text-red-800 border-red-200';
-      case 'moderator': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'board_member': return 'bg-purple-100 text-purple-800 border-purple-200';
-      case 'member': return 'bg-green-100 text-green-800 border-green-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
-
-  const getRoleIcon = (role: string) => {
-    switch (role) {
-      case 'admin': return <Shield className="h-4 w-4" />;
-      case 'moderator': return <User className="h-4 w-4" />;
-      case 'board_member': return <User className="h-4 w-4" />;
-      default: return <User className="h-4 w-4" />;
-    }
-  };
-
   const canEdit = user && member && (user.ghlContactId === member.id || user.role === 'admin');
 
   // Check if member has Enhanced or Elite membership (case-insensitive and includes partial matches)
@@ -301,31 +282,34 @@ const MemberDetailsPage: React.FC = () => {
 
         {canEdit && !isEditing && (
           <Button
-            variant="ghost"
+            variant="default"
             onClick={() => setIsEditing(true)}
-            className="px-3 h-8 w-8 text-highlight-foreground hover:text-highlight-foreground hover:bg-highlight-foreground/10"
+            className="px-3 h-8"
           >
+            Edit Profile
             <Edit className="h-4 w-4" />
           </Button>
         )}
 
         {isEditing && (
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
             <Button
               onClick={handleSave}
               disabled={updating}
-              variant='ghost'
-              className="text-green-600 hover:text-green-600 hover:bg-green-700/10 px-3"
+              variant='default'
+              className="h-7 p-1 px-2"
             >
+              Save
               {updating ? '...' : <Save className="h-4 w-4" />}
             </Button>
             <Button
-              variant="ghost"
+              variant="outline"
               onClick={handleCancel}
               disabled={updating}
-              className='text-muted-foreground hover:text-muted-foreground hover:bg-muted-foreground/10 px-3'
+              className='text-muted-foreground hover:text-muted-foreground bg-transparent hover:bg-muted-foreground/10 h-7 p-1 px-2'
             >
-              <X className="h-7 w-7 " />
+              Cancel
+              <X className="h-7 w-7" />
             </Button>
           </div>
         )}
@@ -507,12 +491,11 @@ const MemberDetailsPage: React.FC = () => {
                     )}
 
                     <div className="flex flex-wrap gap-2">
-                      <Badge className={`${getRoleColor(member.role)} flex items-center gap-1`}>
-                        {getRoleIcon(member.role)}
+                      <Badge className={`bg-neutral-300/20 text-neutral-500 dark:text-neutral-100 border-neutral-500 dark:border-neutral-300`}>
                         {member.role.charAt(0).toUpperCase() + member.role.slice(1)}
                       </Badge>
 
-                      <Badge variant="outline" className="text-green-700 border-green-300">
+                      <Badge variant="outline" className="text-teal-600 border-teal-600 bg-teal-600/20 dark:text-teal-300 dark:border-teal-300 dark:bg-teal-300/10">
                         {member.status.charAt(0).toUpperCase() + member.status.slice(1)}
                       </Badge>
 
@@ -543,7 +526,7 @@ const MemberDetailsPage: React.FC = () => {
 
               <CardContent className="space-y-6">
                 {isEditing ? (
-                  <div className="space-y-4">
+                  <div className="space-y-4 flex flex-col">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label htmlFor="firstName" className="block text-sm font-medium mb-1">
@@ -736,6 +719,15 @@ const MemberDetailsPage: React.FC = () => {
                         onChange={handleFormChange}
                       />
                     </div>
+                    <Button
+                      onClick={handleSave}
+                      disabled={updating}
+                      variant='default'
+                      className='self-center w-1/2 sm:w-1/3'
+                    >
+                      Update Profile
+                      {updating ? '...' : <Save className="h-4 w-4" />}
+                    </Button>
                   </div>
                 ) : (
                   <div className="space-y-6 sm:ml-24">

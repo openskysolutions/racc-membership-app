@@ -583,6 +583,7 @@ router.get('/profile', async (req, res) => {
       membershipTier: user.membershipTier,
       emailVerified: user.emailVerified,
       ghlContactId: user.ghlContactId,
+      avatarUrl: user.avatarUrl,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt
     });

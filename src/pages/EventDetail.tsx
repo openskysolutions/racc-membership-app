@@ -318,7 +318,7 @@ const EventDetailPage: React.FC = () => {
               {event.title}
             </h1>
             <p className='text-xl text-card dark:text-neutral-50 font-medium'>{formatLocation(event.location || '')}</p>
-            <p className='text-md text-card dark:text-neutral-50 font-normal leading-6 mt-6 max-w-3xl'>{event.description}</p>
+            {/* <p className='text-md text-card dark:text-neutral-50 font-normal leading-6 mt-6 max-w-3xl'>{event.description}</p> */}
             
             {/* Register Button */}
             {customFields.pageUrl && (

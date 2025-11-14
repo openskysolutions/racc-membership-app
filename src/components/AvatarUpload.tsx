@@ -139,14 +139,14 @@ const AvatarUpload: React.FC<AvatarUploadProps> = ({
           type="button"
           variant="secondary"
           size="sm"
-          className={`absolute -bottom-1 -right-1 rounded-full ${buttonSizeClasses[size]} p-0 shadow-lg border-2 border-background/70 hover:border-background bg-secondary/60 hover:bg-secondary/80`}
+          className={`absolute -bottom-1 -right-1 rounded-full ${buttonSizeClasses[size]} p-0 shadow-lg border-2 border-white/80 hover:border-white bg-neutral-500/50 hover:bg-neutral-500/80`}
           onClick={handleButtonClick}
           disabled={disabled || uploading}
         >
           {uploading ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
-            <Camera className="!h-5 !w-5 text-muted-foreground" />
+            <Camera className="!h-5 !w-5 text-white" />
           )}
           <span className="absolute -bottom-5 right-0 text-xs text-muted-foreground/70">Profile Image</span>
         </Button>

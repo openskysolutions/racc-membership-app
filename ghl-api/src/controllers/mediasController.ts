@@ -87,7 +87,6 @@ async function uploadAvatar(req, res, next) {
       filename: fileName || `avatar-${contactId}-${Date.now()}.jpg`,
       contentType: mimeType || 'image/jpeg'
     });
-    formData.append('hosted', 'true'); // Ensure it's hosted on GHL
     
     console.log('Uploading to GoHighLevel with FormData...');
     
@@ -104,7 +103,7 @@ async function uploadAvatar(req, res, next) {
     
     // Extract the media URL from the response
     const mediaData = ghlResponse.data;
-    const mediaUrl = mediaData.url || mediaData.src || mediaData.mediaUrl;
+    const mediaUrl = mediaData.url || mediaData.fileUrl || mediaData.src || mediaData.mediaUrl;
     const mediaId = mediaData.id || mediaData.mediaId;
     
     console.log('✅ Avatar upload successful - mediaId:', mediaId);

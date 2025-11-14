@@ -130,16 +130,16 @@ const CoverImageUpload: React.FC<CoverImageUploadProps> = ({
           type="button"
           variant="secondary"
           size="sm"
-          className={`absolute -bottom-1 -right-1 rounded-full ${buttonSizeClasses[size]} p-0 shadow-lg border-2 border-background/60 bg-secondary/40`}
+          className={`absolute -bottom-1 -right-1 rounded-full ${buttonSizeClasses[size]} p-0 shadow-lg border-1 border-white bg-white/20 hover:bg-neutral-500/70`}
           onClick={handleButtonClick}
           disabled={disabled || uploading}
         >
           {uploading ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
-            <Camera className="!h-5 !w-5 text-muted-foreground" />
+            <Camera className="!h-5 !w-5 text-white" />
           )}
-          <span className="absolute right-12 text-sm text-card/90">Profile Image</span>
+          <span className="absolute right-12 text-sm text-white">Cover Image</span>
         </Button>
 
         {/* Remove Preview Button */}

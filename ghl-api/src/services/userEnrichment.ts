@@ -45,6 +45,7 @@ export interface EnrichedUser {
   website?: string;
   membershipTier?: string;
   tags?: string[];
+  avatarUrl?: string;
   
   // Computed fields
   isActive?: boolean;
@@ -83,6 +84,12 @@ export async function enrichUserWithGhlData(
     const contact = await ghlService.getContact(dbUser.ghlContactId);
     
     if (contact) {
+      // Helper to get custom field value
+      const getCustomField = (fieldId: string, fieldName?: string) => {
+        const field = contact.customFields?.find((f: any) => f.id === fieldId || f.key === fieldName);
+        return field?.value || field?.field_value || '';
+      };
+      
       // Add profile data from GHL
       enrichedUser.firstName = contact.firstName || '';
       enrichedUser.lastName = contact.lastName || '';
@@ -91,6 +98,7 @@ export async function enrichUserWithGhlData(
       enrichedUser.phone = contact.phone || '';
       enrichedUser.website = contact.website || '';
       enrichedUser.tags = contact.tags || [];
+      enrichedUser.avatarUrl = getCustomField('331dKIcjgTa8z8a6mu37', 'avatar_url') || undefined;
       
       // Determine membership tier from tags or custom fields
       enrichedUser.membershipTier = getMembershipTierFromContact(contact);
