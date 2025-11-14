@@ -12,10 +12,10 @@ import {
 } from "@/components/ui/sheet";
 
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Badge, Menu } from "lucide-react";
+import { Menu } from "lucide-react";
 import LogoLight from "@/assets/racc-logo.png";
 import LogoDark from "@/assets/racc-logo-dark.png";
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { Avatar, AvatarImage } from "./ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu";
 import { useAuthStore } from "@/stores/authStore";
 import { useNavigate, useLocation } from "react-router-dom";
