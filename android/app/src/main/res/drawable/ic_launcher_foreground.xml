@@ -1,0 +1,32 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- Main blue circle -->
+    <path
+        android:fillColor="#6ca9bc"
+        android:pathData="M54,10 a44,44 0 1,0 0,88 a44,44 0 1,0 0,-88"/>
+    
+    <!-- Cream sun circle -->
+    <path
+        android:fillColor="#fffbe6"
+        android:pathData="M35,30 a15,15 0 1,0 0,30 a15,15 0 1,0 0,-30"/>
+    
+    <!-- Orange bottom section -->
+    <path
+        android:fillColor="#d6833e"
+        android:pathData="M10,60 L98,60 L98,98 L10,98 Z"/>
+    
+    <!-- Light blue horizontal stripes -->
+    <path
+        android:fillColor="#9bc5d4"
+        android:pathData="M10,35 L98,35 L98,40 L10,40 Z"/>
+    <path
+        android:fillColor="#9bc5d4"
+        android:pathData="M10,42 L98,42 L98,47 L10,47 Z"/>
+    <path
+        android:fillColor="#84b7c8"
+        android:pathData="M10,49 L98,49 L98,54 L10,54 Z"/>
+</vector>

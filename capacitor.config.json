@@ -4,17 +4,7 @@
   "webDir": "dist",
   "plugins": {
     "SplashScreen": {
-      "launchShowDuration": 2000,
-      "launchAutoHide": true,
-      "launchFadeOutDuration": 2000,
-      "backgroundColor": "#ffffff",
-      "androidSplashResourceName": "splash",
-      "androidScaleType": "CENTER_CROP",
-      "showSpinner": false,
-      "iosSpinnerStyle": "small",
-      "spinnerColor": "#999999",
-      "splashFullScreen": true,
-      "splashImmersive": true
+      "launchAutoHide": true
     }
   },
   "server": {
@@ -23,6 +13,16 @@
   },
   "ios": {
     "contentInset": "never",
-    "backgroundColor": "#525252FF"
+    "backgroundColor": "#FFFFFFFF",
+    "plugins": {
+      "SplashScreen": {
+        "launchShowDuration": 2000,
+        "launchAutoHide": true,
+        "launchFadeOutDuration": 1000,
+        "showSpinner": false,
+        "iosSpinnerStyle": "small",
+        "spinnerColor": "#999999"
+      }
+    }
   }
 }

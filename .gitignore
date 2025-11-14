@@ -25,5 +25,15 @@ rac-wordpress
 *.njsproj
 *.sln
 *.sw?
-ios**
-android**
+
+# iOS (keep committed for team development)
+# ios**
+
+# Android sensitive files only
+android/key.properties
+android/*.keystore
+android/*.jks
+android/app/release/
+android/app/build/
+android/.gradle/
+android/local.properties
