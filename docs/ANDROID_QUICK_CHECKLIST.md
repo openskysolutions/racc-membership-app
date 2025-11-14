@@ -15,7 +15,8 @@ Quick reference for deploying to Google Play Store.
 - [ ] Version updated in `android/app/build.gradle`:
   - [ ] `versionCode` incremented
   - [ ] `versionName` updated
-- [ ] Build succeeds: `npm run cap:sync:android:prod`
+- [ ] **Mobile build created**: `npm run build:mobile:prod` ⚠️ CRITICAL
+- [ ] Synced to Android: `npx cap sync android`
 - [ ] No critical errors or warnings
 
 ### App Assets
@@ -51,12 +52,17 @@ java -version  # Should show 17.x.x
 
 ### 2. Build Production
 ```bash
-# Build and sync
-npm run cap:sync:android:prod
+# CRITICAL: Build for mobile (uses production API endpoints)
+npm run build:mobile:prod
+
+# Sync to Android
+npx cap sync android
 
 # Open in Android Studio
-npm run cap:open:android
+npx cap open android
 ```
+
+**⚠️ Important:** Always use `build:mobile:prod` for deployments! Regular `build` uses localhost which won't work on devices.
 
 ### 3. Generate Signed AAB
 In Android Studio:

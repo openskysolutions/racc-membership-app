@@ -39,12 +39,17 @@ npm run cap:add:android
 
 This creates the `android/` directory with the native Android project.
 
-## Step 2: Initial Sync
+## Step 2: Build for Mobile and Sync
 
 ```bash
-# Build and sync for mobile production
-npm run cap:sync:android:prod
+# CRITICAL: Always build for mobile first (uses production API endpoints)
+npm run build:mobile:prod
+
+# Then sync to Android
+npx cap sync android
 ```
+
+**⚠️ Important:** Always use `build:mobile:prod` instead of `build` for mobile deployments. The mobile build uses production API endpoints (`https://api.raccwi.com`) instead of localhost, which is essential for the app to function on devices.
 
 ## Step 3: Configure Android App
 

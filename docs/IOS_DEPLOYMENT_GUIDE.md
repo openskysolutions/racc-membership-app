@@ -19,12 +19,14 @@
 ### 1. Build and Sync
 
 ```bash
-# Build the web app
-npm run build
+# Build the web app for mobile (uses production API endpoints)
+npm run build:mobile:prod
 
 # Sync web assets to iOS
 npx cap sync ios
 ```
+
+**Important:** Always use `build:mobile:prod` instead of `build` for mobile deployments. This ensures the app uses production API endpoints instead of localhost.
 
 ### 2. Open in Xcode
 
