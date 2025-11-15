@@ -22,7 +22,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useTheme } from "@/providers/theme-provider";
 import { Moon, Sun } from "lucide-react";
 import cn from "classnames";
-import { isNativeApp } from "@/lib/platform";
+// import { isNativeApp } from "@/lib/platform";
 
 interface RouteProps {
   href: string;
@@ -79,7 +79,7 @@ export const Navbar = () => {
   const location = useLocation();
 
   const { theme, setTheme } = useTheme();
-  const isNative = isNativeApp();
+  // const isNative = isNativeApp();
 
   const logout = () => {
     handleLogout();
@@ -116,7 +116,7 @@ export const Navbar = () => {
             </Button>
             {!isAuthenticated &&
               <>
-                {(import.meta.env.DEV || isNative) && (
+                {/* {(import.meta.env.DEV || isNative) && ( */}
                   <>
                     <Button
                       size="sm"
@@ -141,7 +141,7 @@ export const Navbar = () => {
                       Sign in
                     </Button>
                   </>
-                )}
+                {/* )} */}
               </>
             }
             <DropdownMenu>
@@ -347,7 +347,7 @@ export const Navbar = () => {
                       Sign out
                     </Button>
                   : <>
-                      {(import.meta.env.DEV || import.meta.env.VITE_PLATFORM === 'mobile') && (
+                      {/* {(import.meta.env.DEV || import.meta.env.VITE_PLATFORM === 'mobile') && ( */}
                         <>
                           <Button
                             size="lg"
@@ -371,7 +371,7 @@ export const Navbar = () => {
                             Member Login
                           </Button>
                         </>
-                      )}
+                      {/* )} */}
                     </>
                 }
 
