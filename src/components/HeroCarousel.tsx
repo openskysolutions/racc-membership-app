@@ -165,7 +165,7 @@ export const HeroCarousel = () => {
   }, []);
 
   const renderMainSlide = () => (
-    <div className="flex flex-col lg:text-start px-4 md:px-16 gap-4">
+    <div className="flex flex-col lg:text-start px-4 md:px-32 gap-4">
       <main className="text-5xl md:text-5xl lg:text-5xl font-semibold">
         <h1 className="inline text-white">
           Why Join The{" "}
@@ -208,7 +208,7 @@ export const HeroCarousel = () => {
     const eventDate = new Date(event.startTime);
 
     return (
-      <div className="lg:text-start space-y-6 mb-4 px-4 md:px-16">
+      <div className="lg:text-start space-y-6 mb-4 px-4 md:px-32">
         <div className="md:w-10/12 mx-auto lg:mx-0">
           <p className="text-sm text-highlight font-semibold mb-2">UPCOMING EVENT</p>
           
@@ -217,7 +217,7 @@ export const HeroCarousel = () => {
           </h2>
 
 
-          <div className="flex flex-col md:flex-row gap-4 text-white/90 mb-6">
+          <div className="flex flex-col gap-4 text-white/90 mb-6">
             <div className="flex items-center gap-2">
               <Calendar className="h-5 w-5 text-highlight" />
               <span>
@@ -258,7 +258,7 @@ export const HeroCarousel = () => {
   };
 
   const renderMembershipSlide = (slide: MembershipSlide) => (
-    <div className="lg:text-start mb-4 px-4 md:px-16">
+    <div className="lg:text-start mb-4 px-4 md:px-32">
       <main className="text-4xl md:text-5xl font-semibold">
         <h1 className="text-white mb-1">
           {slide.title}
@@ -358,8 +358,8 @@ export const HeroCarousel = () => {
         })}
       </CarouselContent>
       
-      <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2 bg-card/50 hover:bg-card/80" />
-      <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 bg-card/50 hover:bg-card/80" />
+      <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2 text-card/50 hover:text-card/80 bg-transparent hover:bg-card/20 border-0 h-16" />
+      <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 text-card/50 hover:text-card/80 bg-transparent hover:bg-card/20 border-0 h-16" />
     </Carousel>
   );
 };
