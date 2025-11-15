@@ -8,8 +8,8 @@ set -e  # Exit on error
 echo "🚀 Starting Android Build Process..."
 echo ""
 
-# Set Java 17
-export JAVA_HOME=~/.sdkman/candidates/java/17.0.9-tem
+# Set Java 21
+export JAVA_HOME=$(/usr/libexec/java_home -v 21)
 export PATH=$JAVA_HOME/bin:$PATH
 
 # Verify Java version
@@ -17,13 +17,13 @@ echo "📋 Checking Java version..."
 java -version
 echo ""
 
-if ! java -version 2>&1 | grep -q "version \"17"; then
-    echo "❌ Error: Java 17 is required but not active"
-    echo "Please run: sdk use java 17.0.9-tem"
+if ! java -version 2>&1 | grep -q "version \"21"; then
+    echo "❌ Error: Java 21 is required but not active"
+    echo "Please install Java 21 or set JAVA_HOME to Java 21"
     exit 1
 fi
 
-echo "✅ Java 17 confirmed"
+echo "✅ Java 21 confirmed"
 echo ""
 
 # Check if keystore exists
