@@ -65,7 +65,10 @@ const SheetContent = React.forwardRef<
       <SheetPrimitive.Content
         ref={ref}
         className={cn(sheetVariants({ side }), className)}
-        style={isAndroidDevice ? { paddingTop: 'var(--safe-area-inset-top, 0px)' } : undefined}
+        style={isAndroidDevice ? { 
+          paddingTop: 'var(--safe-area-inset-top, 0px)',
+          paddingBottom: 'var(--safe-area-inset-bottom, 0px)'
+        } : undefined}
         {...props}
       >
         {children}

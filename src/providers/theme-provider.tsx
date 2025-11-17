@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { isMobileBuild } from "@/lib/platform";
-// import { StatusBar, Style } from '@capacitor/status-bar';
-// import { Capacitor } from '@capacitor/core';
+import { StatusBar, Style } from '@capacitor/status-bar';
+import { Capacitor } from '@capacitor/core';
 
 type Theme = "dark" | "light" | "system";
 
@@ -42,7 +42,7 @@ export function ThemeProvider({
 
     root.classList.remove("light", "dark");
 
-    // let actualTheme = theme;
+    let actualTheme = theme;
 
     if (theme === "system") {
       const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
@@ -51,20 +51,19 @@ export function ThemeProvider({
         : "light";
 
       root.classList.add(systemTheme);
-      // actualTheme = systemTheme;
-      return;
+      actualTheme = systemTheme;
+    } else {
+      root.classList.add(theme);
     }
-
-    root.classList.add(theme);
-    // else {
     
-    // // Update status bar style on mobile
-    // if (Capacitor.isNativePlatform()) {
-    //   StatusBar.setStyle({
-    //     style: actualTheme === "dark" ? Style.Dark : Style.Light
-    //   }).catch(err => console.error('Failed to set status bar style:', err));
-    
-    // }
+    // Update status bar style on mobile
+    // Style.Dark = light icons on dark background
+    // Style.Light = dark icons on light background
+    if (Capacitor.isNativePlatform()) {
+      StatusBar.setStyle({
+        style: actualTheme === "dark" ? Style.Dark : Style.Light
+      }).catch(err => console.error('Failed to set status bar style:', err));
+    }
   }, [theme]);
 
   const value = {
