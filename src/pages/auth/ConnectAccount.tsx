@@ -73,6 +73,12 @@ export const ConnectAccountPage = () => {
         const errorData = await response.json();
         
         // Handle specific error cases
+        if (response.status === 403 && errorData.error_description?.includes('membership_expired')) {
+          // Membership expired
+          setError('membership_expired');
+          return;
+        }
+        
         if (response.status === 409) {
           // Account already exists
           setError(errorData.message || 'An account with this email already exists. Please sign in instead.');
@@ -224,6 +230,14 @@ export const ConnectAccountPage = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
+        
+        // Check for membership expired error
+        if (response.status === 403 && errorData.error_description?.includes('membership_expired')) {
+          setError('membership_expired');
+          setLoading(false);
+          return;
+        }
+        
         throw new Error(errorData.message || 'Registration failed');
       }
 
@@ -310,12 +324,33 @@ export const ConnectAccountPage = () => {
         </CardHeader>
         
         <CardContent className="space-y-4">
-          {error && (
+          {error && error === 'membership_expired' ? (
+              <div className="mt-4 p-4 border border-highlight-foreground/30 dark:border-highlight-foreground/30 rounded-md">
+                <p className="text-sm text-highlight-foreground dark:text-highlight-foreground mb-3 font-medium">
+                  Your Richfield Area Chamber of Commerce membership is past its expiration.
+                </p>
+                <div className="flex flex-col justify-between gap-2">
+                  <Button 
+                    onClick={() => navigate('/join')}
+                    className="bg-highlight-foreground hover:bg-highlight-foreground/90"
+                  >
+                    Renew Now
+                  </Button>
+                  <Button 
+                    onClick={() => navigate('/contact')}
+                    variant="ghost"
+                    className="text-highlight-foreground hover:text-highlight-foreground dark:text-highlight-foreground hover:bg-highlight-foreground/10 dark:hover:bg-highlight-foreground/10"
+                  >
+                    or Contact us here to renew your membership
+                  </Button>
+                </div>
+              </div>
+          ) : error ? (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>{error}</AlertDescription>
             </Alert>
-          )}
+          ) : null}
           
           {success && (
             <Alert className="border-green-200 bg-green-50 text-green-800">

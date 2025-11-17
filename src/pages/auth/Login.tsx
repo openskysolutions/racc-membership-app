@@ -32,7 +32,13 @@ export const AuthPage = () => {
       console.log('[Login] Redirecting to:', from);
       navigate(from, { replace: true });
     } catch (e: any) {
-      setError(e.message || 'Login failed');
+      // Check if the error message contains the membership_expired reason
+      const errorMessage = e.message || 'Login failed';
+      if (errorMessage.includes('membership_expired')) {
+        setError('membership_expired');
+      } else {
+        setError(errorMessage);
+      }
     }
   };
 
@@ -42,7 +48,30 @@ export const AuthPage = () => {
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl">Sign in</CardTitle>
           <CardDescription>
-            {error && <span className="block text-sm text-destructive mt-1">{error}</span>}
+            {error && error === 'membership_expired' ? (
+              <div className="mt-4 p-4 border border-highlight-foreground/30 dark:border-highlight-foreground/30 rounded-md">
+                <p className="text-sm text-highlight-foreground dark:text-highlight-foreground mb-3 font-medium">
+                  Your Richfield Area Chamber of Commerce membership is past its expiration.
+                </p>
+                <div className="flex flex-col justify-between gap-2">
+                  <Button 
+                    onClick={() => navigate('/join')}
+                    className="bg-highlight-foreground hover:bg-highlight-foreground/90"
+                  >
+                    Renew Now
+                  </Button>
+                  <Button 
+                    onClick={() => navigate('/contact')}
+                    variant="ghost"
+                    className="text-highlight-foreground hover:text-highlight-foreground dark:text-highlight-foreground hover:bg-highlight-foreground/10 dark:hover:bg-highlight-foreground/10"
+                  >
+                    or Contact us here to renew your membership
+                  </Button>
+                </div>
+              </div>
+            ) : error ? (
+              <span className="block text-sm text-destructive mt-1">{error}</span>
+            ) : null}
           </CardDescription>
         </CardHeader>
         <CardContent>
