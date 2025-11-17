@@ -22,7 +22,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useTheme } from "@/providers/theme-provider";
 import { Moon, Sun } from "lucide-react";
 import cn from "classnames";
-// import { isNativeApp } from "@/lib/platform";
+import { isAndroid } from "@/lib/platform";
 
 interface RouteProps {
   href: string;
@@ -79,7 +79,7 @@ export const Navbar = () => {
   const location = useLocation();
 
   const { theme, setTheme } = useTheme();
-  // const isNative = isNativeApp();
+  const isAndroidDevice = isAndroid();
 
   const logout = () => {
     handleLogout();
@@ -87,7 +87,10 @@ export const Navbar = () => {
   };
 
   return (
-    <header className="sticky border-b-[1px] top-0 z-40 w-full bg-white dark:border-b-popover dark:bg-accent-foreground shadow-md">
+    <header 
+      className="sticky border-b-[1px] top-0 z-40 w-full bg-white dark:border-b-popover dark:bg-accent-foreground shadow-md"
+      style={isAndroidDevice ? { paddingTop: 'var(--safe-area-inset-top, 0px)' } : undefined}
+    >
       <NavigationMenu className="mx-auto">
         <NavigationMenuList className="container h-20 px-4 w-screen flex justify-center md:justify-between items-center relative">
           <a

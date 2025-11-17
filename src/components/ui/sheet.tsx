@@ -2,7 +2,7 @@ import * as React from "react"
 import * as SheetPrimitive from "@radix-ui/react-dialog"
 import { cva, type VariantProps } from "class-variance-authority"
 import { X } from "lucide-react"
-import { isNativeApp } from "@/lib/platform"
+import { isIOS, isAndroid } from "@/lib/platform"
 
 import { cn } from "@/lib/utils"
 
@@ -56,7 +56,8 @@ const SheetContent = React.forwardRef<
   React.ElementRef<typeof SheetPrimitive.Content>,
   SheetContentProps
 >(({ side = "right", className, children, ...props }, ref) => {
-  const isMobile = isNativeApp();
+  const isIOSDevice = isIOS();
+  const isAndroidDevice = isAndroid();
   
   return (
     <SheetPortal>
@@ -64,12 +65,17 @@ const SheetContent = React.forwardRef<
       <SheetPrimitive.Content
         ref={ref}
         className={cn(sheetVariants({ side }), className)}
+        style={isAndroidDevice ? { paddingTop: 'var(--safe-area-inset-top, 0px)' } : undefined}
         {...props}
       >
         {children}
         <SheetPrimitive.Close className={cn(
           "absolute right-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary",
-          isMobile ? "top-16" : "top-4"
+          isIOSDevice 
+            ? "top-16" 
+            : isAndroidDevice
+              ? "top-10"
+              : "top-4"
         )}>
           <X className="h-8 w-8" />
           <span className="sr-only">Close</span>

@@ -253,8 +253,8 @@ class GoHighLevelService {
   /**
    * Check if a user is active (has "active" tag) in GoHighLevel
    */
-  async isUserActive(email: string): Promise<{ isActive: boolean; contact?: any }> {
-    console.log(`🔍 Checking if user ${email} has 'active' tag in GoHighLevel...`);
+  async isUserActive(email: string): Promise<{ isActive: boolean; contact?: any; reason?: string }> {
+    console.log(`🔍 Checking if user ${email} has 'active' tag and valid renewal date in GoHighLevel...`);
     
     if (this.developmentMode) {
       console.log(`🚧 DEV MODE: Mock active check for email: ${email}`);
@@ -275,19 +275,126 @@ class GoHighLevelService {
       
       if (!contact) {
         console.log(`❌ No contact found for email: ${email}`);
-        return { isActive: false };
+        return { isActive: false, reason: 'Contact not found' };
       }
+      
       // Check if contact has "active" tag
       const hasActiveTag = contact.tags && contact.tags.includes('active');
+      
+      if (!hasActiveTag) {
+        console.log(`❌ Contact ${email} does not have 'active' tag`);
+        return { 
+          isActive: false, 
+          contact: contact,
+          reason: 'Missing active tag'
+        };
+      }
 
+      // Check renewal date - look in multiple possible locations
+      console.log(`🔍 [RENEWAL CHECK] Starting renewal date validation for ${email}`);
+      let renewDate: Date | null = null;
+      let renewDateSource: string = '';
+      
+      // 1. Check in customFields/customField array by specific ID
+      // GoHighLevel returns customFields (plural) from search API, customField from get API
+      const customFieldsArray = contact.customFields || contact.customField;
+      
+      if (customFieldsArray && Array.isArray(customFieldsArray)) {
+        const fieldName = contact.customFields ? 'customFields' : 'customField';
+        console.log(`🔍 Searching ${fieldName} array for renewal date (ID: J3yL94KqDhUnjurcIG8G)`);
+        console.log(`📋 ${fieldName} array contents:`, JSON.stringify(customFieldsArray, null, 2));
+        
+        const renewDateField = customFieldsArray.find((field: any) => 
+          field.id === 'J3yL94KqDhUnjurcIG8G'
+        );
+        
+        if (renewDateField && renewDateField.value) {
+          renewDate = new Date(renewDateField.value);
+          renewDateSource = `${fieldName} array by ID`;
+          console.log(`✅ Found renewal date in ${fieldName} array by ID: ${renewDateField.value}`);
+          console.log(`📋 Field structure:`, JSON.stringify(renewDateField, null, 2));
+        } else if (renewDateField) {
+          console.log(`⚠️ Found field with ID J3yL94KqDhUnjurcIG8G but no value:`, JSON.stringify(renewDateField, null, 2));
+        } else {
+          console.log(`❌ No field found with ID J3yL94KqDhUnjurcIG8G in ${fieldName} array`);
+        }
+      }
+      
+      // 2. Check if renewal_date is a direct property on contact (fallback)
+      if (!renewDate && (contact.renewal_date || contact.renewalDate)) {
+        const dateValue = contact.renewal_date || contact.renewalDate;
+        renewDate = new Date(dateValue);
+        renewDateSource = 'direct property';
+        console.log(`📅 Found renewal date as direct property: ${dateValue}`);
+      }
+      
+      // 3. Check in customFields object if it's not an array (fallback, format: {field_name: 'field_value'})
+      if (!renewDate && contact.customFields && !Array.isArray(contact.customFields)) {
+        const dateValue = contact.customFields['renewal_date'] || 
+                         contact.customFields['contact.renewal_date'] ||
+                         contact.customFields['J3yL94KqDhUnjurcIG8G'];
+        
+        if (dateValue) {
+          renewDate = new Date(dateValue);
+          renewDateSource = 'customFields object';
+          console.log(`📅 Found renewal date in customFields object: ${dateValue}`);
+        }
+      }
+      
+      // If no renewal date found, deny access
+      if (!renewDate || isNaN(renewDate.getTime())) {
+        console.log(`❌ No valid renewal date found for ${email}`);
+        console.log(`🔍 Checked locations: customField array (ID: J3yL94KqDhUnjurcIG8G), direct properties, customFields object`);
+        console.log(`📋 Contact data structure:`, {
+          hasCustomField: !!contact.customField,
+          customFieldIsArray: Array.isArray(contact.customField),
+          customFieldLength: contact.customField?.length,
+          customFieldArraySample: contact.customField?.slice(0, 3),
+          hasCustomFields: !!contact.customFields,
+          customFieldsKeys: contact.customFields ? Object.keys(contact.customFields) : [],
+          directProperties: Object.keys(contact).filter(k => k.toLowerCase().includes('renew'))
+        });
+        return { 
+          isActive: false, 
+          contact: contact,
+          reason: 'No renewal date found'
+        };
+      }
+
+      // Check if renewal date is within 13 months (393 days) from now
+      const now = new Date();
+      const thirteenMonthsAgo = new Date();
+      thirteenMonthsAgo.setMonth(thirteenMonthsAgo.getMonth() - 13);
+      
+      const isRenewalValid = renewDate >= thirteenMonthsAgo;
+      
+      console.log(`📊 Renewal check for ${email}:`, {
+        renewDate: renewDate.toISOString(),
+        renewDateSource: renewDateSource,
+        thirteenMonthsAgo: thirteenMonthsAgo.toISOString(),
+        now: now.toISOString(),
+        isValid: isRenewalValid,
+        monthsSinceRenewal: Math.round((now.getTime() - renewDate.getTime()) / (1000 * 60 * 60 * 24 * 30))
+      });
+
+      if (!isRenewalValid) {
+        console.log(`❌ Renewal date for ${email} is more than 13 months old`);
+        return { 
+          isActive: false, 
+          contact: contact,
+          reason: 'membership_expired'
+        };
+      }
+
+      console.log(`✅ User ${email} is active with valid renewal date`);
       return {
-        isActive: hasActiveTag,
+        isActive: true,
         contact: contact
       };
 
     } catch (error: any) {
       console.error('❌ Failed to check user active status:', error);
-      return { isActive: false };
+      return { isActive: false, reason: 'Error checking status' };
     }
   }
 

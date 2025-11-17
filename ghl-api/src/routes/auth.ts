@@ -69,15 +69,17 @@ router.post('/authorize', async (req, res) => {
       });
     }
 
-    // Check if user has "active" tag in GoHighLevel
-    const { isActive, contact } = await ghlService.isUserActive(email);
+    // Check if user has "active" tag and valid renewal date in GoHighLevel
+    const { isActive, contact, reason } = await ghlService.isUserActive(email);
     
     if (!isActive) {
+      const errorMessage = reason || 'Account not active. Please contact support to ensure your membership is current.';
       return res.status(403).json({
         error: 'access_denied',
-        error_description: 'Account not active. Please contact support to ensure your membership is current.',
+        error_description: errorMessage,
         userStatus: 'inactive',
-        requiresActivation: true
+        requiresActivation: true,
+        reason: reason
       });
     }
 
@@ -275,15 +277,17 @@ router.post('/session', async (req, res) => {
         });
       }
 
-      // Check if user has "active" tag in GoHighLevel
-      const { isActive, contact } = await ghlService.isUserActive(email);
+      // Check if user has "active" tag and valid renewal date in GoHighLevel
+      const { isActive, contact, reason } = await ghlService.isUserActive(email);
       
       if (!isActive) {
+        const errorMessage = reason || 'Account not active. Please contact support to ensure your membership is current.';
         return res.status(403).json({
           error: 'access_denied',
-          error_description: 'Account not active. Please contact support to ensure your membership is current.',
+          error_description: errorMessage,
           userStatus: 'inactive',
-          requiresActivation: true
+          requiresActivation: true,
+          reason: reason
         });
       }
 
@@ -1119,6 +1123,18 @@ router.post('/verify-contact', async (req, res) => {
       });
     }
 
+    // If contact exists, check if they have active membership and valid renewal date
+    if (contact) {
+      const { isActive, reason } = await ghlService.isUserActive(email);
+      
+      if (!isActive) {
+        return res.status(403).json({
+          error: 'access_denied',
+          error_description: reason || 'Account is not active'
+        });
+      }
+    }
+
     const result = {
       exists: !!contact,
       contact: contact ? {
@@ -1330,6 +1346,18 @@ router.post('/register-existing', async (req, res) => {
         error: 'User already exists',
         message: 'An account with this email address already exists'
       });
+    }
+
+    // If registering with an existing contact, verify they have active membership
+    if (isExistingContact && existingContactId) {
+      const { isActive, reason } = await ghlService.isUserActive(email);
+      
+      if (!isActive) {
+        return res.status(403).json({
+          error: 'access_denied',
+          error_description: reason || 'Account is not active'
+        });
+      }
     }
 
     let ghlContactId = existingContactId;

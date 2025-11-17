@@ -2,7 +2,7 @@ import AppRoutes from "@/routes";
 import { useEffect } from 'react';
 import { useAuthStore } from '@/stores/authStore';
 import { useLocationStore } from '@/stores/locationStore';
-// import { SafeArea } from 'capacitor-plugin-safe-area';
+import { SafeArea } from 'capacitor-plugin-safe-area';
 import { StatusBar } from '@capacitor/status-bar';
 import { isNativeApp } from '@/lib/platform';
 import { Toaster } from '@/components/ui/sonner';
@@ -31,14 +31,14 @@ function App() {
 
   useEffect(() => {
     (async function(){
-        // const safeAreaData = await SafeArea.getSafeAreaInsets();
-        // const {insets} = safeAreaData;
-        // for (const [key, value] of Object.entries(insets)) {
-        //     document.documentElement.style.setProperty(
-        //         `--safe-area-inset-${key}`,
-        //         `${value}px`,
-        //     );
-        // }
+        const safeAreaData = await SafeArea.getSafeAreaInsets();
+        const {insets} = safeAreaData;
+        for (const [key, value] of Object.entries(insets)) {
+            document.documentElement.style.setProperty(
+                `--safe-area-inset-${key}`,
+                `${value}px`,
+            );
+        }
         
         if (isNativeApp()) {
           await StatusBar.show();
