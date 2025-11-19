@@ -23,6 +23,7 @@ interface EventFormDialogProps {
   onEventCreated?: (event: CalendarEvent) => void;
   onEventUpdated?: (event: CalendarEvent) => void;
   onEventDeleted?: () => void;
+  source?: 'calendar' | 'event-details'; // Track where dialog was opened from
 }
 
 interface CustomFields {
@@ -57,7 +58,8 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
   setSelectedEvent,
   onEventCreated,
   onEventUpdated,
-  onEventDeleted
+  onEventDeleted,
+  source = 'calendar' // Default to 'calendar' for backward compatibility
 }) => {
   const { user } = useAuthStore();
   const { saveDraft, getDraft, clearDraft } = useEventDraftStore();
@@ -77,6 +79,9 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
   
   // Track previous open state to detect close transition
   const prevOpenRef = React.useRef(open);
+  
+  // Track if dialog was closed after successful save (don't clear selectedEvent in this case)
+  const savedSuccessfullyRef = React.useRef(false);
   
   const isEditing = !!event;
   
@@ -99,6 +104,9 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
   // Initialize form data when dialog opens
   useEffect(() => {
     if (open) {
+      // Reset the saved successfully flag when dialog opens
+      savedSuccessfullyRef.current = false;
+      
       if (isEditing && event) {
         console.log('EventFormDialog: Editing event', {
           id: event.id,
@@ -599,6 +607,9 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
       // Clear draft after successful submission
       clearDraft();
       
+      // Mark as saved successfully so we don't clear selectedEvent
+      savedSuccessfullyRef.current = true;
+      
       // Close dialog after callbacks complete
       onOpenChange(false);
     } catch (err: any) {
@@ -644,15 +655,22 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
   useEffect(() => {
     // Only clear when transitioning from open to closed (not on initial mount)
     if (prevOpenRef.current && !open) {
-      setSelectedEvent(null);
+      // On event-details page: never clear selectedEvent (user is viewing that specific event)
+      // On calendar page: clear selectedEvent unless it was a successful save
+      // if (source === 'calendar' && !savedSuccessfullyRef.current) {
+      if (source === 'calendar') {
+        setSelectedEvent(null);
+      }
+      // Reset the flag for next time
+      savedSuccessfullyRef.current = false;
     }
     prevOpenRef.current = open;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]); // Only depend on 'open', not setSelectedEvent
+  }, [open, source]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-hidden flex flex-col p-0 gap-0">
+      <DialogContent id="event-edit-dialog" className="sm:max-w-[600px] max-h-[90vh] overflow-hidden flex flex-col p-0 gap-0">
         <div className="px-6 pt-6 pb-2 shadow-sm border-b">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">

@@ -94,8 +94,19 @@ const CalendarPage: React.FC = () => {
   // Refetch events when user returns to this page (e.g., from EventDetail)
   // This ensures the calendar shows updated data after events are edited elsewhere
   useEffect(() => {
+    let lastFetchTime = Date.now();
+    
     const handleVisibilityChange = () => {
-      if (!document.hidden) {
+      // Only refetch if:
+      // 1. Page becomes visible (not hidden)
+      // 2. No dialogs are currently open
+      // 3. At least 5 seconds have passed since last fetch (debounce)
+      if (!document.hidden && 
+          !dialogOpen && 
+          !createEventDialogOpen && 
+          !dayEventsDialogOpen &&
+          Date.now() - lastFetchTime > 5000) {
+        lastFetchTime = Date.now();
         fetchEvents();
       }
     };
@@ -103,7 +114,7 @@ const CalendarPage: React.FC = () => {
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Only set up listener once on mount
+  }, [dialogOpen, createEventDialogOpen, dayEventsDialogOpen]); // Re-setup listener when dialog states change
 
   // Fetch custom fields for visible upcoming events
   useEffect(() => {
@@ -596,6 +607,7 @@ const CalendarPage: React.FC = () => {
         onOpenChange={(open) => {
           setDialogOpen(open);
           if (!open) { 
+            setSelectedEvent(null);
             setEventCoverImageUrl('');
             // Don't clear selectedEvent here - the EventFormDialog will handle it
           }
@@ -832,6 +844,7 @@ const CalendarPage: React.FC = () => {
         onEventCreated={handleEventCreated}
         onEventUpdated={handleEventUpdated}
         onEventDeleted={handleEventDeleted}
+        source="calendar"
       />
     </>
   );

@@ -612,7 +612,9 @@ const EventDetailPage: React.FC = () => {
           calendarId={GHL_CALENDAR_ID}
           locationId={GHL_LOCATION_ID}
           event={event}
+          setSelectedEvent={setEvent}
           onEventUpdated={handleEventUpdated}
+          source="event-details"
         />
       )}
 
