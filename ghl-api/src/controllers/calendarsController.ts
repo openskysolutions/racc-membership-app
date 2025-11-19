@@ -115,9 +115,7 @@ async function createAppointment(req, res, next) {
       locationId: process.env.LOCATION_ID
     };
     
-    console.log('📅 Creating appointment with data:', payloadWithLocation);
-    console.log('📝 Custom fields to save:', { pageUrl, coverImageUrl, downloadFileUrl, internalNote });
-    console.log('🚫 Removed non-standard fields:', { source, channel, meetingLocationType });
+
     
     // Create the appointment first (without custom fields)
     // NOTE: SDK's createAppointment expects data directly, NOT wrapped in { payload: ... }
@@ -127,7 +125,6 @@ async function createAppointment(req, res, next) {
     if (pageUrl || coverImageUrl || downloadFileUrl || internalNote) {
       try {
         const appointmentId = result.id;
-        console.log(`💾 Saving custom fields for appointment: ${appointmentId}`);
         
         await ghlService.upsertAppointmentCustomObject(
           appointmentId,
@@ -138,8 +135,6 @@ async function createAppointment(req, res, next) {
             internalNote
           }
         );
-        
-        console.log('✅ Custom fields saved successfully');
       } catch (customFieldError) {
         console.error('⚠️ Warning: Failed to save custom fields:', customFieldError);
         // Don't fail the entire request if custom fields fail
@@ -168,7 +163,6 @@ async function getAppointment(req, res, next) {
 async function getAppointmentCustomFields(req, res, next) {
   try {
     const appointmentId = req.params.id;
-    console.log(`📝 Fetching custom fields for appointment: ${appointmentId}`);
     
     const customFields = await ghlService.getAppointmentCustomFields(appointmentId);
     
@@ -396,9 +390,6 @@ async function updateAppointmentCustomFields(req, res, next) {
     const appointmentId = req.params.id;
     const { customFields, recordId } = req.body;
     
-    console.log(`📝 Updating custom fields for appointment: ${appointmentId}`);
-    console.log(`Custom fields data:`, customFields);
-    
     if (!customFields) {
       return res.status(400).json({ 
         error: { message: 'customFields object is required' }
@@ -435,8 +426,9 @@ async function updateRecurringSeriesCustomFields(req, res, next) {
     const { id: appointmentId } = req.params;
     const { calendarId, customFields } = req.body;
     
-    console.log(`📝 Updating custom fields for recurring series starting from appointment: ${appointmentId}`);
-    console.log(`Custom fields:`, customFields);
+    const { customFields } = req.body;
+    
+    // Fetch the specific event and all future events in the series
     
     // Get all events from the calendar
     const now = new Date();
@@ -464,8 +456,6 @@ async function updateRecurringSeriesCustomFields(req, res, next) {
     const seriesId = currentEvent.masterEventId || currentEvent.originalRecurringEventId || currentBaseId;
     const currentEventDate = new Date(currentEvent.startTime);
     
-    console.log(`🔍 Filtering events - seriesId: ${seriesId}, currentBaseId: ${currentBaseId}`);
-    
     // Find all future events in the same recurring series
     const futureEvents = allEvents.filter(event => {
       const eventDate = new Date(event.startTime);
@@ -481,9 +471,7 @@ async function updateRecurringSeriesCustomFields(req, res, next) {
       return isSameSeries && isFutureOrCurrent;
     });
     
-    console.log(`📊 Found ${futureEvents.length} events in recurring series to update`);
-    
-    // Update custom fields for each event
+    // Update custom fields for each future event
     // Note: All events in a recurring series share the same custom object record (using base ID)
     // So we only need to update once, but we'll update each to ensure consistency
     let successCount = 0;
@@ -491,8 +479,6 @@ async function updateRecurringSeriesCustomFields(req, res, next) {
     
     for (const event of futureEvents) {
       try {
-        console.log(`Updating custom fields for event ${event.id}`);
-        
         await ghlService.upsertAppointmentCustomObject(
           event.id,
           {
@@ -504,14 +490,11 @@ async function updateRecurringSeriesCustomFields(req, res, next) {
         );
         
         successCount++;
-        console.log(`✅ Updated event ${event.id}`);
       } catch (error: any) {
         console.error(`❌ Failed to update event ${event.id}:`, error.message);
         errors.push({ eventId: event.id, error: error.message });
       }
     }
-    
-    console.log(`✓ Successfully updated ${successCount} out of ${futureEvents.length} events`);
     
     // Set cache control headers
     res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
