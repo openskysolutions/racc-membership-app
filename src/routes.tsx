@@ -32,7 +32,7 @@ import AboutPage from '@/pages/About';
 import ContactPage from '@/pages/Contact';
 import Privacy from '@/pages/docs/Privacy';
 import Terms from '@/pages/docs/Terms';
-import EventsList from '@/pages/EventsList';
+// import EventsList from '@/pages/EventsList';
 import EventPage from '@/pages/EventPage';
 
 import { ReactNode } from 'react';

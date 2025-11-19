@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { getWordPressPageBySlug, WordPressPost } from '@/services/wordpress';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Calendar, User, ArrowLeft, Tag } from 'lucide-react';
+import { ArrowLeft, Tag } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useIframeAutoResize } from '@/hooks/useIframeAutoResize';
 
@@ -43,25 +43,25 @@ export default function EventPage() {
     return tmp.textContent || tmp.innerText || '';
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-  };
+  // const formatDate = (dateString: string) => {
+  //   return new Date(dateString).toLocaleDateString('en-US', {
+  //     year: 'numeric',
+  //     month: 'long',
+  //     day: 'numeric',
+  //   });
+  // };
 
   const getFeaturedImage = (post: WordPressPost) => {
     return post._embedded?.['wp:featuredmedia']?.[0]?.source_url || null;
   };
 
-  const getAuthorName = (post: WordPressPost) => {
-    return post._embedded?.author?.[0]?.name || 'Unknown Author';
-  };
+  // const getAuthorName = (post: WordPressPost) => {
+  //   return post._embedded?.author?.[0]?.name || 'Unknown Author';
+  // };
 
-  const getAuthorAvatar = (post: WordPressPost) => {
-    return post._embedded?.author?.[0]?.avatar_urls?.['96'] || null;
-  };
+  // const getAuthorAvatar = (post: WordPressPost) => {
+  //   return post._embedded?.author?.[0]?.avatar_urls?.['96'] || null;
+  // };
 
   const getCategories = (post: WordPressPost) => {
     return post._embedded?.['wp:term']?.[0] || [];
@@ -102,8 +102,8 @@ export default function EventPage() {
   }
 
   const featuredImage = getFeaturedImage(post);
-  const authorName = getAuthorName(post);
-  const authorAvatar = getAuthorAvatar(post);
+  // const authorName = getAuthorName(post);
+  // const authorAvatar = getAuthorAvatar(post);
   const categories = getCategories(post);
   const tags = getTags(post);
 
