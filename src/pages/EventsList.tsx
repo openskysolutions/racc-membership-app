@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { getWordPressEventPages, WordPressPost } from '@/services/wordpress';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Search, Grid3x3, List } from 'lucide-react';
 
@@ -51,21 +51,21 @@ export default function EventsPage() {
     return tmp.textContent || tmp.innerText || '';
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-  };
+  // const formatDate = (dateString: string) => {
+  //   return new Date(dateString).toLocaleDateString('en-US', {
+  //     year: 'numeric',
+  //     month: 'long',
+  //     day: 'numeric',
+  //   });
+  // };
 
-  const getFeaturedImage = (post: WordPressPost) => {
-    return post._embedded?.['wp:featuredmedia']?.[0]?.source_url || null;
-  };
+  // const getFeaturedImage = (post: WordPressPost) => {
+  //   return post._embedded?.['wp:featuredmedia']?.[0]?.source_url || null;
+  // };
 
-  const getAuthorName = (post: WordPressPost) => {
-    return post._embedded?.author?.[0]?.name || 'Unknown Author';
-  };
+  // const getAuthorName = (post: WordPressPost) => {
+  //   return post._embedded?.author?.[0]?.name || 'Unknown Author';
+  // };
 
   return (
     <div className="container mx-auto px-4 py-8">
