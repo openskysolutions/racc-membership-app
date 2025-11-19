@@ -4,6 +4,7 @@
  */
 
 import nodemailer from 'nodemailer';
+import sgMail from '@sendgrid/mail';
 import { generateConfirmationEmail, generateConfirmationEmailText } from '@/templates/emails';
 
 interface EmailConfig {
@@ -29,6 +30,7 @@ class EmailService {
   private transporter: nodemailer.Transporter | null = null;
   private fromEmail: string;
   private fromName: string;
+  private useSendGridAPI: boolean = false;
 
   constructor() {
     this.fromEmail = process.env.EMAIL_FROM || 'noreply@racc.com';
@@ -70,18 +72,11 @@ class EmailService {
             this.transporter = null;
             return;
           }
-          this.transporter = nodemailer.createTransport({
-            host: 'smtp.sendgrid.net',
-            port: 587,
-            secure: false,
-            auth: {
-              user: 'apikey',
-              pass: process.env.SENDGRID_API_KEY,
-            },
-            connectionTimeout: 10000,
-            greetingTimeout: 10000,
-            socketTimeout: 15000,
-          });
+          // Use SendGrid's HTTP API instead of SMTP (avoids port blocking)
+          sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+          this.useSendGridAPI = true;
+          this.transporter = null; // We won't use nodemailer for SendGrid
+          console.log('✅ SendGrid HTTP API configured');
           break;
 
         case 'mailgun':
@@ -143,6 +138,31 @@ class EmailService {
   }
 
   async sendEmail(emailData: EmailData): Promise<boolean> {
+    // Use SendGrid HTTP API if configured
+    if (this.useSendGridAPI) {
+      try {
+        const msg = {
+          to: emailData.to,
+          from: {
+            email: this.fromEmail,
+            name: this.fromName
+          },
+          subject: emailData.subject,
+          text: emailData.text || this.stripHtml(emailData.html),
+          html: emailData.html,
+        };
+
+        await sgMail.send(msg);
+        console.log(`✅ Email sent successfully to ${emailData.to} via SendGrid API`);
+        return true;
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+        console.error(`❌ Failed to send email to ${emailData.to} via SendGrid:`, errorMsg);
+        return false;
+      }
+    }
+
+    // Fall back to nodemailer for other providers
     if (!this.transporter) {
       console.error('❌ Email transporter not initialized');
       return false;
@@ -191,6 +211,12 @@ class EmailService {
   }
 
   async testConnection(): Promise<boolean> {
+    // SendGrid API doesn't need connection testing
+    if (this.useSendGridAPI) {
+      console.log('✅ SendGrid HTTP API is configured (no connection test needed)');
+      return true;
+    }
+
     if (!this.transporter) {
       return false;
     }
