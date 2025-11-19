@@ -48,6 +48,9 @@ class EmailService {
               user: process.env.EMAIL_USER,
               pass: process.env.EMAIL_PASS, // Use App Password for Gmail
             },
+            connectionTimeout: 10000,
+            greetingTimeout: 10000,
+            socketTimeout: 15000,
           });
           break;
 
@@ -60,6 +63,9 @@ class EmailService {
               user: 'apikey',
               pass: process.env.SENDGRID_API_KEY,
             },
+            connectionTimeout: 10000,
+            greetingTimeout: 10000,
+            socketTimeout: 15000,
           });
           break;
 
@@ -72,6 +78,9 @@ class EmailService {
               user: process.env.MAILGUN_USER,
               pass: process.env.MAILGUN_PASS,
             },
+            connectionTimeout: 10000,
+            greetingTimeout: 10000,
+            socketTimeout: 15000,
           });
           break;
 
@@ -85,6 +94,14 @@ class EmailService {
               user: process.env.SMTP_USER,
               pass: process.env.SMTP_PASS,
             },
+            connectionTimeout: 10000, // 10 seconds
+            greetingTimeout: 10000,   // 10 seconds
+            socketTimeout: 15000,      // 15 seconds
+            pool: true,                // Use connection pooling
+            maxConnections: 5,         // Max 5 concurrent connections
+            maxMessages: 100,          // Max 100 messages per connection
+            rateDelta: 1000,          // Rate limiting window (1 second)
+            rateLimit: 10,             // Max 10 emails per rateDelta
           });
           break;
       }
@@ -111,11 +128,18 @@ class EmailService {
         text: emailData.text || this.stripHtml(emailData.html),
       };
 
-      const result = await this.transporter.sendMail(mailOptions);
+      // Add timeout wrapper at the sendMail level as well
+      const sendPromise = this.transporter.sendMail(mailOptions);
+      const timeoutPromise = new Promise<never>((_, reject) => 
+        setTimeout(() => reject(new Error('sendMail timeout after 12 seconds')), 12000)
+      );
+      
+      const result = await Promise.race([sendPromise, timeoutPromise]);
       console.log(`✅ Email sent successfully to ${emailData.to}:`, result.messageId);
       return true;
     } catch (error) {
-      console.error(`❌ Failed to send email to ${emailData.to}:`, error);
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      console.error(`❌ Failed to send email to ${emailData.to}:`, errorMsg);
       return false;
     }
   }
