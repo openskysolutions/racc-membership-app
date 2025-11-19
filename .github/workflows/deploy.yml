@@ -100,6 +100,17 @@ jobs:
           TEMP_GHL_TOKEN: ${{ secrets.TEMP_GHL_TOKEN }}
         run: |
           ssh -o StrictHostKeyChecking=no root@members.richfieldareachamber.com << ENDSSH
+          # Add swap space if not already present (helps prevent OOM during builds)
+          if [ ! -f /swapfile ]; then
+            echo "Creating 1GB swap file..."
+            dd if=/dev/zero of=/swapfile bs=1M count=1024
+            chmod 600 /swapfile
+            mkswap /swapfile
+            swapon /swapfile
+            echo "/swapfile none swap sw 0 0" >> /etc/fstab
+            echo "Swap created and enabled"
+          fi
+          
           cd /root/racc-membership-app || git clone https://github.com/openskysolutions/racc-membership-app.git && cd racc-membership-app
           
           # Handle potential conflicts by resetting any local changes
@@ -229,17 +240,30 @@ jobs:
           cat .env
           echo "=== End Debug ==="
           
-          echo "Frontend is pre-built in GitHub Actions - skipping server build"
+          # Build frontend on server with conservative memory limit
+          # Server has ~950MB RAM, so we use 512MB to leave room for system
+          echo "Building frontend with 512MB memory limit..."
           
-          # Verify build output exists (already built in previous job)
+          # Only install production dependencies to save memory
+          npm ci --production=false --legacy-peer-deps
+          
+          # Build with memory limit suitable for 1GB server
+          if ! NODE_OPTIONS="--max-old-space-size=512" VITE_API_BASE_URL="\$VITE_API_BASE_URL" TEMP_GHL_TOKEN="\$TEMP_GHL_TOKEN" npm run build; then
+            echo "ERROR: Frontend build failed"
+            echo "Attempting with even lower memory (384MB)..."
+            if ! NODE_OPTIONS="--max-old-space-size=384" VITE_API_BASE_URL="\$VITE_API_BASE_URL" TEMP_GHL_TOKEN="\$TEMP_GHL_TOKEN" npm run build; then
+              echo "ERROR: Frontend build failed even with reduced memory"
+              exit 1
+            fi
+          fi
+          
+          # Verify build output exists
           if [ ! -f "dist/index.html" ]; then
-            echo "ERROR: Frontend build not found - dist/index.html missing"
-            echo "This should have been built in the build-and-test job"
+            echo "ERROR: Frontend build failed - dist/index.html not found"
             exit 1
           fi
           
-          # Frontend build successful, now set up the serving
-          echo "Using pre-built frontend from GitHub Actions"
+          echo "Frontend build successful"
           
           # Verify the build used the correct API URL
           echo "=== Checking built files for API URL ==="
