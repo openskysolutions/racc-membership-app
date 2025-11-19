@@ -67,7 +67,7 @@ export async function apiFetch(endpoint: string, init?: RequestInit, retries: nu
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
       
-      console.log(`[API] Request attempt ${attempt + 1}/${retries + 1} to:`, url);
+      // console.log(`[API] Request attempt ${attempt + 1}/${retries + 1} to:`, url);
       
       const response = await fetch(url, {
         ...init,
@@ -77,8 +77,6 @@ export async function apiFetch(endpoint: string, init?: RequestInit, retries: nu
       });
       
       clearTimeout(timeoutId);
-      
-      console.log(`[API] Response:`, response.status, response.statusText);
       
       // Handle authentication errors
       if (response.status === 401) {
@@ -100,7 +98,6 @@ export async function apiFetch(endpoint: string, init?: RequestInit, retries: nu
       
       // Wait before retrying (exponential backoff)
       const delay = Math.pow(2, attempt) * 1000; // 1s, 2s, 4s...
-      console.log(`[API] Retrying in ${delay}ms...`);
       await new Promise(resolve => setTimeout(resolve, delay));
     }
   }

@@ -595,14 +595,17 @@ const CalendarPage: React.FC = () => {
         open={dialogOpen}
         onOpenChange={(open) => {
           setDialogOpen(open);
-          if (!open) { setEventCoverImageUrl(''); }
+          if (!open) { 
+            setEventCoverImageUrl('');
+            // Don't clear selectedEvent here - the EventFormDialog will handle it
+          }
         }}
       >
-        <DialogContent className={`border-0 outline-0 max-w-2xl overflow-hidden ${eventCoverImageUrl ? '[&>button]:bg-white/90 [&>button]:text-black [&>button]:hover:bg-white [&>button]:z-20' : ''}  p-0`}>
+        <DialogContent className={`border-0 outline-0 max-w-2xl overflow-hidden [&>button]:bg-white/90 [&>button]:text-black [&>button]:hover:bg-white [&>button]:z-20 p-0`}>
           <DialogHeader
             className="relative min-h-80 bg-cover bg-center rounded-t-lg p-12 pb-5 gap-4 flex flex-col items-center justify-end"
             style={{
-              backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.6)), url(${eventCoverImageUrl})`
+              backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.6)), url(${eventCoverImageUrl || EventBg})`
             }}
           >
             {selectedEvent?.isAllDay && (
@@ -610,20 +613,20 @@ const CalendarPage: React.FC = () => {
                 All Day
               </Badge>
             )}
-            <p className={`mb-2 text-center text-lg font-medium ${eventCoverImageUrl ? 'text-white' : ''}`}>
+            <p className="mb-2 text-center text-lg font-medium text-white">
               {selectedEvent && formatEventDate(selectedEvent.startTime)}
               <br className='sm:hidden' />
               <span className='hidden sm:inline px-4'>|</span>
               {selectedEvent && formatEventTime(selectedEvent.startTime)} -
               {selectedEvent?.endTime && formatEventTime(selectedEvent.endTime)}
             </p>
-            <DialogTitle className={`flex items-center justify-center text-center text-3xl sm:text-4xl gap-2 ${eventCoverImageUrl ? 'text-white drop-shadow-lg' : ''}`}>
+            <DialogTitle className="flex items-center justify-center text-center text-3xl sm:text-4xl gap-2 text-white drop-shadow-lg">
               {selectedEvent?.title}
             </DialogTitle>
-            <p className={`text-lg font-medium text-center ${eventCoverImageUrl ? 'text-white' : ''}`}>
+            <p className="text-lg font-medium text-center text-white">
               {selectedEvent?.location && formatLocation(selectedEvent.location)}
             </p>
-            <DialogDescription className={`text-center max-w-2xl ${eventCoverImageUrl ? 'text-gray-100' : ''}`}>
+            <DialogDescription className="text-center max-w-2xl text-gray-100">
               {selectedEvent?.description && (
                 <p className="text-sm sm:text-md leading-snug">
                   {selectedEvent.description}
@@ -825,6 +828,7 @@ const CalendarPage: React.FC = () => {
         locationId={GHL_LOCATION_ID}
         event={selectedEvent}
         selectedDate={selectedDate}
+        setSelectedEvent={setSelectedEvent}
         onEventCreated={handleEventCreated}
         onEventUpdated={handleEventUpdated}
         onEventDeleted={handleEventDeleted}

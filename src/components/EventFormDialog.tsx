@@ -19,6 +19,7 @@ interface EventFormDialogProps {
   locationId: string;
   event?: CalendarEvent | null; // If provided, we're editing
   selectedDate?: Date | null; // Pre-fill date when creating
+  setSelectedEvent: (event: CalendarEvent | null) => void;
   onEventCreated?: (event: CalendarEvent) => void;
   onEventUpdated?: (event: CalendarEvent) => void;
   onEventDeleted?: () => void;
@@ -53,6 +54,7 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
   calendarId,
   event,
   selectedDate,
+  setSelectedEvent,
   onEventCreated,
   onEventUpdated,
   onEventDeleted
@@ -73,10 +75,10 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
   const [downloadUploading, setDownloadUploading] = useState(false);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
   
-  const isEditing = !!event;
+  // Track previous open state to detect close transition
+  const prevOpenRef = React.useRef(open);
   
-  // Draft key for Zustand store
-  const draftKey = isEditing ? `edit-${event?.id}` : 'new';
+  const isEditing = !!event;
   
   const [formData, setFormData] = useState<FormData>({
     title: '',
@@ -151,7 +153,7 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
         });
       } else {
         // Creating new event - check for draft first
-        const savedDraft = getDraft(draftKey);
+        const savedDraft = getDraft();
         
         if (savedDraft) {
           // Restore from draft
@@ -210,22 +212,25 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
       // When dialog closes, reset states and clear draft
       setPendingFormSubmit(false);
       setShouldUpdateRecurringSeries(true);
-      clearDraft(draftKey);
+      // Don't clear selectedEvent here - handled by separate useEffect
+      clearDraft();
     }
-  }, [open, isEditing, event, selectedDate, getDraft, draftKey, clearDraft]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, isEditing, event, selectedDate]);
 
-  // Auto-save draft as user types (only for new events or when editing)
+  // Auto-save draft as user types (only for new events)
   useEffect(() => {
-    if (open && formData.title) {
-      // Only save if there's meaningful content
+    if (open && !isEditing && formData.title) {
+      // Only save if there's meaningful content and we're creating a new event
       const draft = {
         ...formData,
         isMultiDay,
         lastUpdated: Date.now()
       };
-      saveDraft(draftKey, draft);
+      saveDraft(draft);
     }
-  }, [formData, isMultiDay, open, draftKey, saveDraft]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData, isMultiDay, open, isEditing]);
 
   // Smart date/time change handlers
   const handleStartDateChange = (newStartDate: string) => {
@@ -592,7 +597,7 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
       }
       
       // Clear draft after successful submission
-      clearDraft(draftKey);
+      clearDraft();
       
       // Close dialog after callbacks complete
       onOpenChange(false);
@@ -617,7 +622,7 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
       console.log('Event deleted successfully');
       
       // Clear draft
-      clearDraft(draftKey);
+      clearDraft();
       
       // Call callback if provided
       if (onEventDeleted) {
@@ -634,6 +639,16 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
       setDeleting(false);
     }
   };
+
+  // Handle dialog close to reset selected event
+  useEffect(() => {
+    // Only clear when transitioning from open to closed (not on initial mount)
+    if (prevOpenRef.current && !open) {
+      setSelectedEvent(null);
+    }
+    prevOpenRef.current = open;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]); // Only depend on 'open', not setSelectedEvent
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -688,19 +703,6 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
               rows={3}
             />
           </div>
-
-          {/* Internal Note */}
-          {/* <div className="space-y-2">
-            <Label htmlFor="internalNote">Internal Note (Staff Only)</Label>
-            <Textarea
-              id="internalNote"
-              value={formData.internalNote}
-              onChange={(e) => handleInputChange('internalNote', e.target.value)}
-              placeholder="Add internal notes visible only to staff..."
-              rows={2}
-              disabled
-            />
-          </div> */}
           
           {/* Page URL */}
           <div className="space-y-2">

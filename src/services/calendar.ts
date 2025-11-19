@@ -128,11 +128,8 @@ export async function getCalendarEvents(
 
     const queryString = params.toString();
     const url = `/calendars/${calendarId}/events${queryString ? `?${queryString}` : ''}`;
-    
-    console.log('[Calendar] Fetching events from:', url);
+
     const response = await api.get(url);
-    
-    console.log('[Calendar] Response status:', response.status, response.statusText);
     
     if (!response.ok) {
       const errorText = await response.text();
@@ -141,7 +138,6 @@ export async function getCalendarEvents(
     }
     
     const data = await response.json();
-    console.log('[Calendar] Received data, event count:', Array.isArray(data) ? data.length : (data?.events?.length || 0));
     
     // Handle different response structures from GoHighLevel
     const events = data?.events || data || [];

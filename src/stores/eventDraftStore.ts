@@ -20,57 +20,45 @@ interface EventDraft {
 }
 
 interface EventDraftStore {
-  drafts: Record<string, EventDraft>; // Key: 'new' or event ID
+  draft: EventDraft | null;
   
-  saveDraft: (key: string, draft: EventDraft) => void;
-  getDraft: (key: string) => EventDraft | null;
-  clearDraft: (key: string) => void;
-  clearAllDrafts: () => void;
+  saveDraft: (draft: EventDraft) => void;
+  getDraft: () => EventDraft | null;
+  clearDraft: () => void;
 }
 
 export const useEventDraftStore = create<EventDraftStore>()(
   persist(
     (set, get) => ({
-      drafts: {},
+      draft: null,
       
-      saveDraft: (key, draft) => {
-        set((state) => ({
-          drafts: {
-            ...state.drafts,
-            [key]: {
-              ...draft,
-              lastUpdated: Date.now()
-            }
+      saveDraft: (draft) => {
+        set({
+          draft: {
+            ...draft,
+            lastUpdated: Date.now()
           }
-        }));
-      },
-      
-      getDraft: (key) => {
-        const draft = get().drafts[key];
-        
-        // Auto-expire drafts older than 24 hours
-        if (draft && Date.now() - draft.lastUpdated > 24 * 60 * 60 * 1000) {
-          get().clearDraft(key);
-          return null;
-        }
-        
-        return draft || null;
-      },
-      
-      clearDraft: (key) => {
-        set((state) => {
-          const newDrafts = { ...state.drafts };
-          delete newDrafts[key];
-          return { drafts: newDrafts };
         });
       },
       
-      clearAllDrafts: () => {
-        set({ drafts: {} });
+      getDraft: () => {
+        const draft = get().draft;
+        
+        // Auto-expire drafts older than 24 hours
+        if (draft && Date.now() - draft.lastUpdated > 24 * 60 * 60 * 1000) {
+          get().clearDraft();
+          return null;
+        }
+        
+        return draft;
+      },
+      
+      clearDraft: () => {
+        set({ draft: null });
       }
     }),
     {
-      name: 'event-drafts-storage',
+      name: 'event-draft-storage',
     }
   )
 );
