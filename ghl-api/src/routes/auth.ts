@@ -1199,36 +1199,55 @@ router.post('/send-confirmation', async (req, res) => {
     global.confirmationCodes.set(email, confirmationData);
 
     // Send confirmation email with timeout
+    let emailSent = false;
     try {
+      console.log(`📤 Attempting to send confirmation email to ${email}...`);
+      
       // Add a timeout wrapper to prevent hanging (reduced to 15 seconds)
       const emailPromise = emailService.sendConfirmationCode(email, confirmationCode);
       const timeoutPromise = new Promise<boolean>((_, reject) => 
         setTimeout(() => reject(new Error('Email timeout after 15 seconds')), 15000)
       );
       
-      const emailSent = await Promise.race([emailPromise, timeoutPromise]);
+      emailSent = await Promise.race([emailPromise, timeoutPromise]);
       
       if (!emailSent) {
-        // Email sending failed, but we'll still return success to prevent information leakage
-        console.error(`⚠️ Failed to send confirmation email to ${email}`);
+        console.error(`❌ Email service returned false for ${email}`);
+        console.error('   This usually means:');
+        console.error('   - Email transporter not initialized (check EMAIL_* env vars)');
+        console.error('   - SMTP connection failed');
+        console.error('   - Invalid credentials');
       } else {
         console.log(`✅ Confirmation email sent successfully to ${email}`);
       }
     } catch (emailError) {
       const errorMessage = emailError instanceof Error ? emailError.message : 'Unknown error';
-      console.error(`⚠️ Email sending error for ${email}:`, errorMessage);
-      // Continue anyway - don't fail the request due to email issues
+      console.error(`❌ Email sending error for ${email}:`, errorMessage);
+      if (errorMessage.includes('timeout')) {
+        console.error('   SMTP server not responding - check SMTP_HOST and firewall');
+      }
     }
     
     // In development mode, also log the code for testing
     const isDevelopment = process.env.NODE_ENV === 'development';
     if (isDevelopment) {
       console.log(`📧 [DEV] Confirmation code for ${email}: ${confirmationCode}`);
+      console.log(`📧 [DEV] Email sent status: ${emailSent}`);
     }
     
+    // Always return success to prevent email enumeration attacks
+    // But in development, include debug info
     res.json({
       message: 'Confirmation code sent successfully',
-      ...(isDevelopment && { code: confirmationCode }) // Only include in development
+      ...(isDevelopment && { 
+        code: confirmationCode,
+        emailSent: emailSent,
+        debug: {
+          provider: process.env.EMAIL_PROVIDER || 'smtp',
+          host: process.env.SMTP_HOST || 'not set',
+          hasCredentials: !!(process.env.SMTP_USER && process.env.SMTP_PASS)
+        }
+      })
     });
 
   } catch (error) {
@@ -1506,26 +1525,57 @@ router.post('/register-existing', async (req, res) => {
  */
 router.get('/test-email', async (req, res) => {
   try {
+    console.log('🔍 Testing email service configuration...');
+    
+    // Check environment variables
+    const envCheck = {
+      EMAIL_PROVIDER: !!process.env.EMAIL_PROVIDER,
+      EMAIL_FROM: !!process.env.EMAIL_FROM,
+      SMTP_HOST: !!process.env.SMTP_HOST,
+      SMTP_PORT: !!process.env.SMTP_PORT,
+      SMTP_USER: !!process.env.SMTP_USER,
+      SMTP_PASS: !!process.env.SMTP_PASS,
+      SENDGRID_API_KEY: !!process.env.SENDGRID_API_KEY,
+      EMAIL_USER: !!process.env.EMAIL_USER,
+      EMAIL_PASS: !!process.env.EMAIL_PASS,
+    };
+    
+    console.log('Environment variables status:', envCheck);
+    
     const connectionTest = await emailService.testConnection();
     
     if (!connectionTest) {
+      console.error('❌ Email connection test failed');
       return res.status(500).json({
         error: 'Email service not configured',
-        message: 'Please check your email environment variables'
+        message: 'Please check your email environment variables',
+        debug: {
+          provider: process.env.EMAIL_PROVIDER || 'not set',
+          envVariables: envCheck,
+          suggestion: 'Check that SMTP_HOST, SMTP_USER, and SMTP_PASS are set correctly'
+        }
       });
     }
 
+    console.log('✅ Email connection test passed');
     res.json({
       message: 'Email service is configured correctly',
       provider: process.env.EMAIL_PROVIDER || 'smtp',
-      fromEmail: process.env.EMAIL_FROM || 'noreply@racc.com'
+      fromEmail: process.env.EMAIL_FROM || 'noreply@racc.com',
+      config: {
+        host: process.env.SMTP_HOST || 'not set',
+        port: process.env.SMTP_PORT || 'not set',
+        hasCredentials: !!(process.env.SMTP_USER && process.env.SMTP_PASS)
+      }
     });
 
   } catch (error) {
-    console.error('Email test error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('❌ Email test error:', errorMessage);
     res.status(500).json({
       error: 'Email service test failed',
-      message: error.message
+      message: errorMessage,
+      hint: 'Check server logs for detailed error information'
     });
   }
 });

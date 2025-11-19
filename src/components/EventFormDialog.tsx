@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuthStore } from '@/stores/authStore';
-import { createCalendarEvent, updateCalendarEvent, CalendarEvent, CreateEventPayload, UpdateEventPayload } from '@/services/calendar';
+import { createCalendarEvent, updateCalendarEvent, getEventCustomFields, CalendarEvent, CreateEventPayload, UpdateEventPayload } from '@/services/calendar';
 import { uploadAvatar, validateAvatarFile, createImagePreview, revokeImagePreview, uploadEventCoverImage } from '@/services/avatarUpload';
 
 interface EventFormDialogProps {
@@ -127,20 +127,18 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
           downloadFileUrl: ''
         });
         
-        // Lazy-load custom fields in the background
-        import('../services/calendar').then(({ getEventCustomFields }) => {
-          getEventCustomFields(event.id).then(customFields => {
-            console.log('Loaded custom fields for event:', customFields);
-            setFormData(prev => ({
-              ...prev,
-              internalNote: customFields.internalNote || '',
-              pageUrl: customFields.pageUrl || '',
-              coverImageUrl: customFields.coverImageUrl || '',
-              downloadFileUrl: customFields.downloadFileUrl || ''
-            }));
-          }).catch(error => {
-            console.error('Failed to load custom fields:', error);
-          });
+        // Load custom fields in the background
+        getEventCustomFields(event.id).then(customFields => {
+          console.log('Loaded custom fields for event:', customFields);
+          setFormData(prev => ({
+            ...prev,
+            internalNote: customFields.internalNote || '',
+            pageUrl: customFields.pageUrl || '',
+            coverImageUrl: customFields.coverImageUrl || '',
+            downloadFileUrl: customFields.downloadFileUrl || ''
+          }));
+        }).catch(error => {
+          console.error('Failed to load custom fields:', error);
         });
       } else {
         // Creating new event

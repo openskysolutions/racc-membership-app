@@ -125,22 +125,21 @@ jobs:
           
           # Create backend .env file
           cd ghl-api
-          cat > .env << EOF
-          PORT=\$PORT
-          NODE_ENV=\$NODE_ENV
-          DATABASE_URL=\$DATABASE_URL
-          PRIVATE_INTEGRATION_TOKEN=\$PRIVATE_INTEGRATION_TOKEN
-          LOCATION_ID=\$LOCATION_ID
-          CALENDAR_ID=\$CALENDAR_ID
-          TEST_CONTACT_ID=\$TEST_CONTACT_ID
-          GHL_API_BASE_URL=\$GHL_API_BASE_URL
-          FRONTEND_URL=\$FRONTEND_URL
-          EMAIL_PROVIDER=\$EMAIL_PROVIDER
-          EMAIL_USER=\$EMAIL_USER
-          EMAIL_PASS=\$EMAIL_PASS
-          EMAIL_FROM=\$EMAIL_FROM
-          EMAIL_FROM_NAME=\$EMAIL_FROM_NAME
-          EOF
+          # Use echo statements to avoid heredoc indentation issues
+          echo "PORT=\$PORT" > .env
+          echo "NODE_ENV=\$NODE_ENV" >> .env
+          echo "DATABASE_URL=\$DATABASE_URL" >> .env
+          echo "PRIVATE_INTEGRATION_TOKEN=\$PRIVATE_INTEGRATION_TOKEN" >> .env
+          echo "LOCATION_ID=\$LOCATION_ID" >> .env
+          echo "CALENDAR_ID=\$CALENDAR_ID" >> .env
+          echo "TEST_CONTACT_ID=\$TEST_CONTACT_ID" >> .env
+          echo "GHL_API_BASE_URL=\$GHL_API_BASE_URL" >> .env
+          echo "FRONTEND_URL=\$FRONTEND_URL" >> .env
+          echo "EMAIL_PROVIDER=\$EMAIL_PROVIDER" >> .env
+          echo "EMAIL_USER=\$EMAIL_USER" >> .env
+          echo "EMAIL_PASS=\$EMAIL_PASS" >> .env
+          echo "EMAIL_FROM=\$EMAIL_FROM" >> .env
+          echo "EMAIL_FROM_NAME=\$EMAIL_FROM_NAME" >> .env
           
           # Install all dependencies (including devDependencies for build tools)
           npm install
