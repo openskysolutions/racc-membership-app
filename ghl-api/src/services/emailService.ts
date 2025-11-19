@@ -39,9 +39,19 @@ class EmailService {
   private initializeTransporter() {
     const provider = process.env.EMAIL_PROVIDER as EmailConfig['provider'] || 'smtp';
     
+    // Log configuration status (without exposing credentials)
+    console.log('🔧 Initializing email service...');
+    console.log(`   Provider: ${provider}`);
+    console.log(`   From: ${this.fromEmail}`);
+    
     try {
       switch (provider) {
         case 'gmail':
+          if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+            console.error('❌ Gmail provider selected but EMAIL_USER or EMAIL_PASS not set');
+            this.transporter = null;
+            return;
+          }
           this.transporter = nodemailer.createTransport({
             service: 'gmail',
             auth: {
@@ -55,6 +65,11 @@ class EmailService {
           break;
 
         case 'sendgrid':
+          if (!process.env.SENDGRID_API_KEY) {
+            console.error('❌ SendGrid provider selected but SENDGRID_API_KEY not set');
+            this.transporter = null;
+            return;
+          }
           this.transporter = nodemailer.createTransport({
             host: 'smtp.sendgrid.net',
             port: 587,
@@ -70,6 +85,11 @@ class EmailService {
           break;
 
         case 'mailgun':
+          if (!process.env.MAILGUN_USER || !process.env.MAILGUN_PASS) {
+            console.error('❌ Mailgun provider selected but MAILGUN_USER or MAILGUN_PASS not set');
+            this.transporter = null;
+            return;
+          }
           this.transporter = nodemailer.createTransport({
             host: 'smtp.mailgun.org',
             port: 587,
@@ -86,8 +106,17 @@ class EmailService {
 
         case 'smtp':
         default:
+          if (!process.env.SMTP_HOST) {
+            console.error('❌ SMTP provider selected but SMTP_HOST not set');
+            this.transporter = null;
+            return;
+          }
+          if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+            console.warn('⚠️  SMTP_USER or SMTP_PASS not set - authentication may fail');
+          }
+          console.log(`   SMTP Host: ${process.env.SMTP_HOST}:${process.env.SMTP_PORT || '587'}`);
           this.transporter = nodemailer.createTransport({
-            host: process.env.SMTP_HOST || 'localhost',
+            host: process.env.SMTP_HOST,
             port: parseInt(process.env.SMTP_PORT || '587'),
             secure: process.env.SMTP_SECURE === 'true',
             auth: {
