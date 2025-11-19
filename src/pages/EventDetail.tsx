@@ -283,15 +283,6 @@ const EventDetailPage: React.FC = () => {
               >
                 <Edit className="h-5 w-5" />
               </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShowDeleteDialog(true)}
-                className="bg-destructive/80 backdrop-blur-sm hover:bg-destructive text-destructive-foreground"
-                title="Delete Event"
-              >
-                <Trash2 className="h-5 w-5" />
-              </Button>
             </>
           )}
           <Button
