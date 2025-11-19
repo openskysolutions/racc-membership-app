@@ -104,12 +104,13 @@ export function validateCoverImageFile(file: File): { valid: boolean; error?: st
     };
   }
   
-  // Check file size (5MB limit)
-  const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+  // Check file size (3.5MB limit to account for base64 encoding overhead)
+  // Base64 encoding adds ~33% overhead, so 3.5MB becomes ~4.6MB encoded
+  const maxSize = 3.5 * 1024 * 1024; // 3.5MB in bytes
   if (file.size > maxSize) {
     return {
       valid: false,
-      error: 'File size must be less than 5MB'
+      error: 'File size must be less than 3.5MB. Please compress your image before uploading.'
     };
   }
   

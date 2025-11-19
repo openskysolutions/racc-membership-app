@@ -316,6 +316,9 @@ jobs:
               listen 80;
               server_name members.richfieldareachamber.com;
           
+              # Allow larger request bodies for image uploads (base64 encoded adds ~33% overhead)
+              client_max_body_size 15M;
+          
               # API routes - proxy to backend service
               location /api {
                   proxy_pass http://localhost:3000;

@@ -763,7 +763,7 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
                   id="cover-upload"
                 />
                 <span className="text-[11px] text-muted-foreground">
-                  JPEG or PNG format. Maximum file size: 5MB
+                  JPEG or PNG format. Maximum file size: 3.5MB
                 </span>
               </div>
             </div>

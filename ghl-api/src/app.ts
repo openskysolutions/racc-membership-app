@@ -31,8 +31,9 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Increase body parser limit for avatar uploads (base64 encoded images)
-app.use(express.json({ limit: '10mb' }));
+// Increase body parser limit for uploads (base64 encoded images add ~33% overhead)
+// So a 5MB image becomes ~6.6MB when base64 encoded
+app.use(express.json({ limit: '15mb' }));
 
 // Request logging middleware
 app.use(requestLogger);

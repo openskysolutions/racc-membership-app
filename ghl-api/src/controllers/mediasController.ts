@@ -284,14 +284,16 @@ async function uploadEventCoverImage(req, res, next) {
       fileBuffer = Buffer.from(fileData, 'base64');
     }
 
-    console.log(`Processing event cover image upload, file size: ${fileBuffer.length} bytes`);
+    const fileSizeMB = fileBuffer.length / (1024 * 1024);
+    console.log(`Processing event cover image upload, decoded file size: ${fileSizeMB.toFixed(2)}MB`);
 
-    // Validate file size (5MB limit)
+    // Validate file size (5MB limit for the decoded/actual file)
+    // Note: Base64 encoding adds ~33% overhead, so we check the decoded size
     const maxSize = 5 * 1024 * 1024; // 5MB in bytes
     if (fileBuffer.length > maxSize) {
       return res.status(413).json({ 
         error: 'Image file is too large. Please choose an image smaller than 5MB.',
-        details: `File size: ${(fileBuffer.length / (1024 * 1024)).toFixed(2)}MB, Maximum: 5MB`
+        details: `File size: ${fileSizeMB.toFixed(2)}MB, Maximum: 5MB`
       });
     }
 
