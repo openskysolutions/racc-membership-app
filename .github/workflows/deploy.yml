@@ -229,41 +229,17 @@ jobs:
           cat .env
           echo "=== End Debug ==="
           
-          # Clean any existing build and node_modules cache
-          rm -rf dist/ node_modules/.vite/
+          echo "Frontend is pre-built in GitHub Actions - skipping server build"
           
-          # Install dependencies including devDependencies for build tools
-          # This ensures all build tools like @vitejs/plugin-react are available
-          NODE_ENV=development npm install
-          
-          # Verify critical build dependencies are installed
-          if [ ! -d "node_modules/@vitejs/plugin-react" ]; then
-            echo "ERROR: @vitejs/plugin-react not found in node_modules"
-            exit 1
-          fi
-          
-          if [ ! -d "node_modules/vite" ]; then
-            echo "ERROR: vite not found in node_modules"
-            exit 1
-          fi
-          
-          echo "Build dependencies verified successfully"
-          
-          # Build frontend with environment variables and increased memory limit
-          echo "Building frontend..."
-          if ! NODE_OPTIONS="--max-old-space-size=4096" VITE_API_BASE_URL="\$VITE_API_BASE_URL" TEMP_GHL_TOKEN="\$TEMP_GHL_TOKEN" npm run build; then
-            echo "ERROR: Frontend build failed"
-            exit 1
-          fi
-          
-          # Verify build output exists
+          # Verify build output exists (already built in previous job)
           if [ ! -f "dist/index.html" ]; then
-            echo "ERROR: Frontend build failed - dist/index.html not found"
+            echo "ERROR: Frontend build not found - dist/index.html missing"
+            echo "This should have been built in the build-and-test job"
             exit 1
           fi
           
           # Frontend build successful, now set up the serving
-          echo "Frontend build successful"
+          echo "Using pre-built frontend from GitHub Actions"
           
           # Verify the build used the correct API URL
           echo "=== Checking built files for API URL ==="
