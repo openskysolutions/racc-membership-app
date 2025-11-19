@@ -197,10 +197,18 @@ const CalendarPage: React.FC = () => {
     setCreateEventDialogOpen(true);
   };
 
-  const handleEventCreated = (newEvent: CalendarEvent) => {
-    setEvents(prev => [...prev, newEvent]);
-    // Optionally refresh events from server
-    // fetchEvents();
+  const handleEventCreated = async (newEvent: CalendarEvent) => {
+    // Refresh all events from server with cache busting
+    try {
+      const ghlEventsData = await getCurrentYearEvents(GHL_CALENDAR_ID, true); // bustCache = true
+      setEvents(ghlEventsData);
+      // Trigger a refresh of custom fields for visible events
+      setRefreshTrigger(prev => prev + 1);
+    } catch (error) {
+      console.error('Error refreshing events after creation:', error);
+      // Fallback: just add the new event to state
+      setEvents(prev => [...prev, newEvent]);
+    }
   };
 
   const handleEventUpdated = async (updatedEvent: CalendarEvent) => {
@@ -217,6 +225,19 @@ const CalendarPage: React.FC = () => {
       setEvents(prev => prev.map(event =>
         event.id === updatedEvent.id ? updatedEvent : event
       ));
+    }
+    setSelectedEvent(null);
+  };
+
+  const handleEventDeleted = async () => {
+    // Refresh all events after deletion
+    try {
+      const ghlEventsData = await getCurrentYearEvents(GHL_CALENDAR_ID, true); // bustCache = true
+      setEvents(ghlEventsData);
+      // Trigger a refresh of custom fields for visible events
+      setRefreshTrigger(prev => prev + 1);
+    } catch (error) {
+      console.error('Error refreshing events:', error);
     }
     setSelectedEvent(null);
   };
@@ -806,6 +827,7 @@ const CalendarPage: React.FC = () => {
         selectedDate={selectedDate}
         onEventCreated={handleEventCreated}
         onEventUpdated={handleEventUpdated}
+        onEventDeleted={handleEventDeleted}
       />
     </>
   );

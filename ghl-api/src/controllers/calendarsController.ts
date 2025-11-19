@@ -87,9 +87,70 @@ async function disableGroup(req, res, next) {
 // Appointments
 async function createAppointment(req, res, next) {
   try {
-    const result = await svc.createAppointment({ payload: req.body }, { headers: req.headers });
+    // Extract custom fields and non-standard fields from the payload
+    // These fields are not part of the GoHighLevel appointment schema
+    const { 
+      pageUrl, 
+      coverImageUrl, 
+      downloadFileUrl, 
+      internalNote,
+      source,
+      channel, 
+      meetingLocationType,
+      ...appointmentData 
+    } = req.body;
+    
+    // Clean up empty string fields - GoHighLevel may not handle them well
+    const cleanedData = Object.entries(appointmentData).reduce((acc, [key, value]) => {
+      // Only include non-empty values or explicitly false/0 values
+      if (value !== '' && value !== null && value !== undefined) {
+        acc[key] = value;
+      }
+      return acc;
+    }, {} as any);
+    
+    // Add locationId to the payload (required by GHL API)
+    const payloadWithLocation = {
+      ...cleanedData,
+      locationId: process.env.LOCATION_ID
+    };
+    
+    console.log('📅 Creating appointment with data:', payloadWithLocation);
+    console.log('📝 Custom fields to save:', { pageUrl, coverImageUrl, downloadFileUrl, internalNote });
+    console.log('🚫 Removed non-standard fields:', { source, channel, meetingLocationType });
+    
+    // Create the appointment first (without custom fields)
+    // NOTE: SDK's createAppointment expects data directly, NOT wrapped in { payload: ... }
+    const result = await svc.createAppointment(payloadWithLocation);
+    
+    // If custom fields were provided, save them separately
+    if (pageUrl || coverImageUrl || downloadFileUrl || internalNote) {
+      try {
+        const appointmentId = result.id;
+        console.log(`💾 Saving custom fields for appointment: ${appointmentId}`);
+        
+        await ghlService.upsertAppointmentCustomObject(
+          appointmentId,
+          {
+            pageUrl,
+            coverImageUrl,
+            downloadFileUrl,
+            internalNote
+          }
+        );
+        
+        console.log('✅ Custom fields saved successfully');
+      } catch (customFieldError) {
+        console.error('⚠️ Warning: Failed to save custom fields:', customFieldError);
+        // Don't fail the entire request if custom fields fail
+      }
+    }
+    
     res.status(201).json(result);
-  } catch (err) { next(err); }
+  } catch (err) { 
+    console.error('❌ Error creating appointment:', err);
+    next(err); 
+  }
 }
 
 async function getAppointment(req, res, next) {
@@ -193,7 +254,7 @@ async function getAllLocationEvents(req, res, next) {
 
 async function deleteEvent(req, res, next) {
   try {
-    await svc.deleteEvent({ eventId: req.params.id }, { headers: req.headers });
+    await svc.deleteEvent({ eventId: req.params.id });
     res.status(204).end();
   } catch (err) { next(err); }
 }

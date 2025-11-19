@@ -58,6 +58,12 @@ export async function uploadAvatar(file: File, contactId: string): Promise<Uploa
  */
 export async function uploadEventCoverImage(file: File): Promise<UploadAvatarResponse> {
   try {
+    // Validate file size (5MB limit)
+    const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+    if (file.size > maxSize) {
+      throw new Error('Image file size must be less than 5MB. Please choose a smaller image.');
+    }
+
     // Convert file to base64
     const fileData = await fileToBase64(file);
     
@@ -74,6 +80,12 @@ export async function uploadEventCoverImage(file: File): Promise<UploadAvatarRes
     
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
+      
+      // Handle 413 Request Entity Too Large
+      if (response.status === 413) {
+        throw new Error('Image file is too large. Please choose an image smaller than 5MB.');
+      }
+      
       throw new Error(`Failed to upload event cover image: ${response.statusText} - ${errorData.message || ''}`);
     }
     

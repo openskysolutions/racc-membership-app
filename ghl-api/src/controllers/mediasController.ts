@@ -286,6 +286,15 @@ async function uploadEventCoverImage(req, res, next) {
 
     console.log(`Processing event cover image upload, file size: ${fileBuffer.length} bytes`);
 
+    // Validate file size (5MB limit)
+    const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+    if (fileBuffer.length > maxSize) {
+      return res.status(413).json({ 
+        error: 'Image file is too large. Please choose an image smaller than 5MB.',
+        details: `File size: ${(fileBuffer.length / (1024 * 1024)).toFixed(2)}MB, Maximum: 5MB`
+      });
+    }
+
     // Use GoHighLevel's media storage API
     const axios = require('axios');
     const FormData = require('form-data');
@@ -343,7 +352,10 @@ async function uploadEventCoverImage(req, res, next) {
       statusCode = err.response.status;
       console.error('GoHighLevel API response:', err.response.data);
 
-      if (err.response.data?.message) {
+      // Handle 413 Request Entity Too Large
+      if (statusCode === 413) {
+        errorMessage = 'Image file is too large. Please choose an image smaller than 5MB.';
+      } else if (err.response.data?.message) {
         if (Array.isArray(err.response.data.message)) {
           errorMessage = `GoHighLevel API error: ${err.response.data.message.join(', ')}`;
         } else {

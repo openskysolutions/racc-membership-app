@@ -11,11 +11,11 @@ import {
   User,
   ArrowLeft,
   Bookmark,
-
+  Trash2,
   Edit
 } from 'lucide-react';
 import EventCoverImage from '@/assets/explosive-event-cover.jpg';
-import { CalendarEvent, getEventById, getEventCustomFields } from '@/services/calendar';
+import { CalendarEvent, getEventById, getEventCustomFields, deleteCalendarEvent } from '@/services/calendar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -53,6 +53,8 @@ const EventDetailPage: React.FC = () => {
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     const fetchEventDetails = async () => {
@@ -101,20 +103,24 @@ const EventDetailPage: React.FC = () => {
   //   return `${hours} ${hours === 1 ? 'hour' : 'hours'} ${minutes} minutes`;
   // };
 
-  const handleShare = async () => {
-    const shareUrl = getShareableUrl();
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: event?.title,
-          text: event?.description,
-          url: shareUrl
-        });
-      } catch (err) {
-        console.log('Share cancelled or failed');
-      }
-    } else {
-      setShowShareDialog(true);
+  const handleShare = () => {
+    setShowShareDialog(true);
+  };
+
+  const handleDelete = async () => {
+    if (!event || !id) return;
+    
+    setDeleting(true);
+    try {
+      await deleteCalendarEvent(id);
+      console.log('Event deleted successfully');
+      navigate('/calendar', { replace: true });
+    } catch (err: any) {
+      console.error('Failed to delete event:', err);
+      setError(err.message || 'Failed to delete event');
+    } finally {
+      setDeleting(false);
+      setShowDeleteDialog(false);
     }
   };
 
@@ -267,15 +273,26 @@ const EventDetailPage: React.FC = () => {
         {/* Quick Actions */}
         <div className="absolute top-4 right-4 flex gap-2">
           {isAuthenticated && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setShowEditDialog(true)}
-              className="bg-background/80 backdrop-blur-sm hover:bg-background/90"
-              title="Edit Event"
-            >
-              <Edit className="h-5 w-5" />
-            </Button>
+            <>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowEditDialog(true)}
+                className="bg-background/80 backdrop-blur-sm hover:bg-background/90"
+                title="Edit Event"
+              >
+                <Edit className="h-5 w-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowDeleteDialog(true)}
+                className="bg-destructive/80 backdrop-blur-sm hover:bg-destructive text-destructive-foreground"
+                title="Delete Event"
+              >
+                <Trash2 className="h-5 w-5" />
+              </Button>
+            </>
           )}
           <Button
             variant="ghost"
@@ -598,6 +615,34 @@ const EventDetailPage: React.FC = () => {
           onEventUpdated={handleEventUpdated}
         />
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Delete Event</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this event? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-3 mt-4">
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteDialog(false)}
+              disabled={deleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={deleting}
+            >
+              {deleting ? 'Deleting...' : 'Delete Event'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

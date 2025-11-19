@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, MapPin, User, Save, X, AlertCircle, Link, Image, Download } from 'lucide-react';
+import { Calendar, Clock, MapPin, User, Save, X, AlertCircle, Link, Image, Download, Trash2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,7 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuthStore } from '@/stores/authStore';
-import { createCalendarEvent, updateCalendarEvent, getEventCustomFields, CalendarEvent, CreateEventPayload, UpdateEventPayload } from '@/services/calendar';
+import { useEventDraftStore } from '@/stores/eventDraftStore';
+import { createCalendarEvent, updateCalendarEvent, getEventCustomFields, deleteCalendarEvent, CalendarEvent, CreateEventPayload, UpdateEventPayload } from '@/services/calendar';
 import { uploadAvatar, validateAvatarFile, createImagePreview, revokeImagePreview, uploadEventCoverImage } from '@/services/avatarUpload';
 
 interface EventFormDialogProps {
@@ -20,6 +21,7 @@ interface EventFormDialogProps {
   selectedDate?: Date | null; // Pre-fill date when creating
   onEventCreated?: (event: CalendarEvent) => void;
   onEventUpdated?: (event: CalendarEvent) => void;
+  onEventDeleted?: () => void;
 }
 
 interface CustomFields {
@@ -52,15 +54,19 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
   event,
   selectedDate,
   onEventCreated,
-  onEventUpdated
+  onEventUpdated,
+  onEventDeleted
 }) => {
   const { user } = useAuthStore();
+  const { saveDraft, getDraft, clearDraft } = useEventDraftStore();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isMultiDay, setIsMultiDay] = useState(false);
   const [shouldUpdateRecurringSeries, setShouldUpdateRecurringSeries] = useState(true); // Default to updating all
   const [showRecurringConfirmDialog, setShowRecurringConfirmDialog] = useState(false);
   const [pendingFormSubmit, setPendingFormSubmit] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   
   // File upload states
   const [coverUploading, setCoverUploading] = useState(false);
@@ -68,6 +74,9 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
   
   const isEditing = !!event;
+  
+  // Draft key for Zustand store
+  const draftKey = isEditing ? `edit-${event?.id}` : 'new';
   
   const [formData, setFormData] = useState<FormData>({
     title: '',
@@ -141,45 +150,82 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
           console.error('Failed to load custom fields:', error);
         });
       } else {
-        // Creating new event
-        const now = new Date();
-        const baseDate = selectedDate || now;
+        // Creating new event - check for draft first
+        const savedDraft = getDraft(draftKey);
         
-        // Default to next available hour
-        const startTime = new Date(baseDate);
-        startTime.setHours(Math.max(9, now.getHours() + 1), 0, 0, 0);
-        
-        const endTime = new Date(startTime);
-        endTime.setHours(startTime.getHours() + 1);
-        
-        setIsMultiDay(false);
-        
-        setFormData({
-          title: '',
-          description: '',
-          startDate: startTime.toISOString().split('T')[0],
-          startTime: startTime.toTimeString().slice(0, 5),
-          endDate: endTime.toISOString().split('T')[0],
-          endTime: endTime.toTimeString().slice(0, 5),
-          location: '',
-          appointmentStatus: 'new',
-          toNotify: false,
-          internalNote: '',
-          pageUrl: '',
-          coverImageUrl: '',
-          downloadFileUrl: ''
-        });
+        if (savedDraft) {
+          // Restore from draft
+          setFormData({
+            title: savedDraft.title,
+            description: savedDraft.description,
+            startDate: savedDraft.startDate,
+            startTime: savedDraft.startTime,
+            endDate: savedDraft.endDate,
+            endTime: savedDraft.endTime,
+            location: savedDraft.location,
+            appointmentStatus: savedDraft.appointmentStatus,
+            toNotify: savedDraft.toNotify,
+            internalNote: savedDraft.internalNote,
+            pageUrl: savedDraft.pageUrl,
+            coverImageUrl: savedDraft.coverImageUrl,
+            downloadFileUrl: savedDraft.downloadFileUrl
+          });
+          setIsMultiDay(savedDraft.isMultiDay);
+        } else {
+          // No draft - use defaults
+          const now = new Date();
+          const baseDate = selectedDate || now;
+          
+          // Default to next available hour
+          const startTime = new Date(baseDate);
+          startTime.setHours(Math.max(9, now.getHours() + 1), 0, 0, 0);
+          
+          const endTime = new Date(startTime);
+          endTime.setHours(startTime.getHours() + 1);
+          
+          setIsMultiDay(false);
+          
+          setFormData({
+            title: '',
+            description: '',
+            startDate: startTime.toISOString().split('T')[0],
+            startTime: startTime.toTimeString().slice(0, 5),
+            endDate: endTime.toISOString().split('T')[0],
+            endTime: endTime.toTimeString().slice(0, 5),
+            location: '',
+            appointmentStatus: 'new',
+            toNotify: false,
+            internalNote: '',
+            pageUrl: '',
+            coverImageUrl: '',
+            downloadFileUrl: ''
+          });
+        }
       }
       setError(null);
       // Reset dialog states
       setPendingFormSubmit(false);
       setShouldUpdateRecurringSeries(true); // Reset to default
     } else {
-      // When dialog closes, reset states
+      // When dialog closes, reset states and clear draft
       setPendingFormSubmit(false);
       setShouldUpdateRecurringSeries(true);
+      clearDraft(draftKey);
     }
-  }, [open, isEditing, event, selectedDate]);
+  }, [open, isEditing, event, selectedDate, getDraft, draftKey, clearDraft]);
+
+  // Auto-save draft as user types (only for new events or when editing)
+  useEffect(() => {
+    if (open && formData.title) {
+      // Only save if there's meaningful content
+      const draft = {
+        ...formData,
+        isMultiDay,
+        lastUpdated: Date.now()
+      };
+      saveDraft(draftKey, draft);
+    }
+  }, [formData, isMultiDay, open, draftKey, saveDraft]);
 
   // Smart date/time change handlers
   const handleStartDateChange = (newStartDate: string) => {
@@ -545,6 +591,9 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
         }
       }
       
+      // Clear draft after successful submission
+      clearDraft(draftKey);
+      
       // Close dialog after callbacks complete
       onOpenChange(false);
     } catch (err: any) {
@@ -557,6 +606,33 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
 
   const handleCancel = () => {
     onOpenChange(false);
+  };
+
+  const handleDelete = async () => {
+    if (!event?.id) return;
+    
+    setDeleting(true);
+    try {
+      await deleteCalendarEvent(event.id);
+      console.log('Event deleted successfully');
+      
+      // Clear draft
+      clearDraft(draftKey);
+      
+      // Call callback if provided
+      if (onEventDeleted) {
+        onEventDeleted();
+      }
+      
+      // Close dialogs
+      setShowDeleteConfirm(false);
+      onOpenChange(false);
+    } catch (err: any) {
+      console.error('Failed to delete event:', err);
+      setError(err.message || 'Failed to delete event');
+    } finally {
+      setDeleting(false);
+    }
   };
 
   return (
@@ -614,7 +690,7 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
           </div>
 
           {/* Internal Note */}
-          <div className="space-y-2">
+          {/* <div className="space-y-2">
             <Label htmlFor="internalNote">Internal Note (Staff Only)</Label>
             <Textarea
               id="internalNote"
@@ -624,7 +700,7 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
               rows={2}
               disabled
             />
-          </div>
+          </div> */}
           
           {/* Page URL */}
           <div className="space-y-2">
@@ -643,28 +719,11 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
 
           {/* Cover Image */}
           <div className="space-y-2">
-            <Label className="flex items-center gap-2">
-              <Image className="h-4 w-4" />
-              Cover Image
-            </Label>
-            <div className="flex flex-col gap-2">
-              <Input
-                value={formData.coverImageUrl}
-                onChange={(e) => handleInputChange('coverImageUrl', e.target.value)}
-                placeholder="Or paste image URL..."
-                type="url"
-              />
-              <div className="flex items-center gap-2">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) handleCoverImageUpload(file);
-                  }}
-                  className="hidden"
-                  id="cover-upload"
-                />
+            <div className="flex justify-between gap-2">
+              <Label className="flex items-end pb-1 gap-2">
+                <Image className="h-4 w-4" />
+                Cover Image
+              </Label>
                 <Button
                   type="button"
                   variant="outline"
@@ -684,6 +743,28 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
                     Preview
                   </Button>
                 )}
+              </div>
+            <div className="flex flex-col gap-2">
+              <Input
+                value={formData.coverImageUrl}
+                onChange={(e) => handleInputChange('coverImageUrl', e.target.value)}
+                placeholder="Or paste image URL..."
+                type="url"
+              />
+              <div className="flex justify-between gap-2">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleCoverImageUpload(file);
+                  }}
+                  className="hidden"
+                  id="cover-upload"
+                />
+                <span className="text-[11px] text-muted-foreground">
+                  JPEG or PNG format. Maximum file size: 5MB
+                </span>
               </div>
             </div>
           </div>
@@ -864,21 +945,32 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
           <div className="sticky bottom-0 bg-background border-t px-6 py-4 flex gap-3">
             <Button 
               type="submit" 
-              disabled={loading}
+              disabled={loading || deleting}
               className="flex-1"
             >
-              <Save className="h-4 w-4 mr-2" />
+              <Save className="h-4 w-4 mr-0" />
               {loading ? 'Saving...' : (isEditing ? 'Update Event' : 'Create Event')}
             </Button>
             <Button 
               type="button" 
               variant="outline" 
               onClick={handleCancel}
-              disabled={loading}
+              disabled={loading || deleting}
             >
-              <X className="h-4 w-4 mr-2" />
+              <X className="h-4 w-4 mr-0" />
               Cancel
             </Button>
+            {isEditing && (
+              <Button 
+                type="button" 
+                variant="outline"
+                onClick={() => setShowDeleteConfirm(true)}
+                disabled={loading || deleting}
+                className='border-destructive text-destructive hover:text-destructive hover:bg-destructive/10'
+              >
+                <Trash2 className="h-4 w-4 mr-0" />
+              </Button>
+            )}
           </div>
         </form>
       </DialogContent>
@@ -935,6 +1027,34 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
               onClick={() => setShowRecurringConfirmDialog(false)}
             >
               Cancel
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Delete Event</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this event? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-3 mt-4">
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteConfirm(false)}
+              disabled={deleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={deleting}
+            >
+              {deleting ? 'Deleting...' : 'Delete Event'}
             </Button>
           </div>
         </DialogContent>

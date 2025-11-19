@@ -31,6 +31,7 @@ router.delete('/events/:eventId', deleteEvent);
 router.post('/appointments', requireAuth, createAppointment);
 router.get('/appointments/:id', getAppointment);
 router.put('/appointments/:id', requireAuth, editAppointment);
+router.delete('/appointments/:id', requireAuth, deleteEvent); // Delete appointment (same as deleteEvent)
 router.get('/appointments/:id/custom-fields', getAppointmentCustomFields); // Lazy load custom fields
 router.post('/appointments/:id/custom-fields', requireAuth, updateAppointmentCustomFields); // Update only custom fields
 router.post('/appointments/:id/recurring-series-custom-fields', requireAuth, updateRecurringSeriesCustomFields); // Update custom fields for entire recurring series

@@ -1355,6 +1355,35 @@ class GoHighLevelService {
   }
 
   /**
+   * Create a new appointment using direct HTTP call
+   * @param payload - The appointment data
+   */
+  async createAppointment(payload: any): Promise<any> {
+    if (!this.client) {
+      throw new Error('GoHighLevel client not initialized');
+    }
+
+    try {
+      console.log('📅 Creating appointment via direct HTTP call');
+      console.log('📝 Payload:', JSON.stringify(payload, null, 2));
+      
+      // Use Version 2021-07-28 for appointments API (different from custom objects API)
+      const response = await this.client.post('/calendars/events/appointments', payload, {
+        headers: {
+          'Version': '2021-07-28'
+        }
+      });
+      
+      console.log('✅ Appointment created successfully:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Failed to create appointment:', error);
+      console.error('Error response:', error.response?.data);
+      throw new Error(`Failed to create appointment: ${error.message}`);
+    }
+  }
+
+  /**
    * Update/edit an appointment using direct HTTP call
    * @param appointmentId - The appointment ID to update
    * @param payload - The appointment data to update
@@ -1652,7 +1681,7 @@ class GoHighLevelService {
               ...recordData
             }
           );
-          recordId = response.data.id || response.data.recordId;
+          recordId = response.data.record?.id || response.data.id || response.data.recordId;
           console.log(`✅ Successfully created custom object record: ${recordId}`);
         } catch (createError: any) {
           console.error('❌ Failed to create custom object record');
