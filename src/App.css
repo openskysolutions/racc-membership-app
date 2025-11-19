@@ -110,3 +110,275 @@
     margin-top: 0 !important;
     padding: 0 !important;
 }
+
+/* WordPress/Divi Content Styling */
+.wp-content {
+  @apply text-foreground;
+}
+
+.wp-content h1,
+.wp-content h2,
+.wp-content h3,
+.wp-content h4,
+.wp-content h5,
+.wp-content h6 {
+  @apply text-foreground font-bold mt-8 mb-4 leading-tight;
+}
+
+.wp-content h1 { @apply text-4xl md:text-5xl; }
+.wp-content h2 { @apply text-3xl md:text-4xl; }
+.wp-content h3 { @apply text-2xl md:text-3xl; }
+.wp-content h4 { @apply text-xl md:text-2xl; }
+.wp-content h5 { @apply text-lg md:text-xl; }
+.wp-content h6 { @apply text-base md:text-lg; }
+
+.wp-content p {
+  @apply mb-4 leading-relaxed text-muted-foreground md:text-lg;
+}
+
+.wp-content a {
+  @apply text-primary hover:underline transition-colors;
+}
+
+.wp-content ul,
+.wp-content ol {
+  @apply mb-4 ml-6 space-y-2;
+}
+
+.wp-content ul {
+  @apply list-disc;
+}
+
+.wp-content ol {
+  @apply list-decimal;
+}
+
+.wp-content li {
+  @apply leading-relaxed;
+}
+
+.wp-content img {
+  @apply rounded-lg max-w-full h-auto my-6;
+}
+
+.wp-content blockquote {
+  @apply border-l-4 border-primary pl-4 italic my-6 text-muted-foreground;
+}
+
+.wp-content code {
+  @apply bg-muted px-2 py-1 rounded text-sm font-mono;
+}
+
+.wp-content pre {
+  @apply bg-muted p-4 rounded-lg overflow-x-auto my-6;
+}
+
+.wp-content pre code {
+  @apply bg-transparent p-0;
+}
+
+.wp-content table {
+  @apply w-full border-collapse my-6;
+}
+
+.wp-content th,
+.wp-content td {
+  @apply border border-border px-4 py-2 text-left;
+}
+
+.wp-content th {
+  @apply bg-muted font-semibold;
+}
+
+.wp-content hr {
+  @apply border-border my-8;
+}
+
+/* Divi Builder Specific Elements */
+.wp-content .et_pb_section {
+  @apply mb-8;
+}
+
+.wp-content .et_pb_row {
+  @apply mb-6;
+}
+
+.wp-content .et_pb_column {
+  @apply mb-4;
+}
+
+.wp-content .et_pb_text {
+  @apply mb-4;
+}
+
+.wp-content .et_pb_button {
+  @apply inline-flex items-center justify-center rounded-md text-sm font-medium 
+         ring-offset-background transition-colors focus-visible:outline-none 
+         focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 
+         disabled:pointer-events-none disabled:opacity-50;
+  @apply bg-primary text-primary-foreground hover:bg-primary/90;
+  @apply h-10 px-4 py-2;
+}
+
+/* Override any Divi inline styles that might conflict */
+.wp-content [style*="color"] {
+  color: inherit !important;
+}
+
+.wp-content [style*="background"] {
+  background: inherit !important;
+}
+
+/* Allow specific background colors for sections */
+.wp-content .et_pb_section[style*="background"] {
+  @apply rounded-lg p-6 my-6;
+}
+
+/* Responsive images */
+.wp-content .et_pb_image,
+.wp-content .et_pb_image_wrap {
+  @apply w-full;
+}
+
+.wp-content .et_pb_image img {
+  @apply w-full h-auto;
+}
+
+/* iFrames - Make them fully visible and responsive */
+.wp-content iframe {
+  @apply w-full rounded-lg my-6;
+  border: 1px solid hsl(var(--border));
+  display: block;
+  /* No fixed height - will be set dynamically by JavaScript */
+}
+
+/* Common iframe aspect ratios */
+.wp-content .et_pb_video iframe,
+.wp-content .et_pb_video_box iframe {
+  @apply aspect-video;
+  min-height: auto;
+  height: auto;
+}
+
+/* For Divi code modules with iframes */
+.wp-content .et_pb_code iframe {
+  @apply w-full;
+}
+
+/* Ensure iframe containers don't constrain height */
+.wp-content .et_pb_code,
+.wp-content .et_pb_video,
+.wp-content .et_pb_video_box {
+  @apply w-full;
+}
+
+.wp-content .et_pb_code > div,
+.wp-content .et_pb_video > div {
+  @apply w-full;
+}
+
+/* For iframes - let JavaScript control height */
+.wp-content iframe {
+  /* Start with reasonable min-height, JavaScript will adjust */
+  min-height: 500px;
+}
+
+/* GoHighLevel iframes - will be resized by JavaScript to 2800px */
+.wp-content iframe[src*="gohighlevel"],
+.wp-content iframe[src*="msgsndr"],
+.wp-content iframe[src*="leadconnectorhq"],
+.wp-content iframe[src*="survey"] {
+  /* Placeholder - JavaScript will set final height */
+}
+
+/* Mobile responsive iframes */
+@media (max-width: 768px) {
+  .wp-content iframe {
+    min-height: 400px;
+  }
+  
+  .wp-content iframe[src*="form"],
+  .wp-content iframe[src*="calendar"] {
+    min-height: 600px;
+  }
+}
+
+/* Divi Gallery Grid Styling */
+.wp-content .et_pb_gallery {
+  @apply my-8;
+}
+
+.wp-content .et_pb_gallery_items {
+  @apply grid gap-4;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+}
+
+/* Gallery item wrapper */
+.wp-content .et_pb_gallery_item {
+  @apply relative overflow-hidden rounded-lg;
+  aspect-ratio: 4 / 6;
+}
+
+/* Gallery image container */
+.wp-content .et_pb_gallery_image {
+  @apply relative w-full h-full;
+}
+
+.wp-content .et_pb_gallery_image a {
+  @apply block w-full h-full;
+}
+
+.wp-content .et_pb_gallery_image img {
+  @apply w-full h-full object-cover rounded-lg transition-transform duration-300;
+}
+
+/* Hover effect */
+.wp-content .et_pb_gallery_item:hover img {
+  @apply scale-110;
+}
+
+/* Overlay effect on hover */
+.wp-content .et_pb_gallery_image .et_overlay {
+  @apply absolute inset-0 bg-black opacity-0 transition-opacity duration-300 rounded-lg;
+  pointer-events: none;
+}
+
+.wp-content .et_pb_gallery_item:hover .et_overlay {
+  @apply opacity-20;
+}
+
+/* Portrait orientation handling */
+.wp-content .et_pb_gallery_image.portrait {
+  @apply relative;
+}
+
+.wp-content .et_pb_gallery_image.portrait img {
+  @apply object-cover;
+}
+
+/* Responsive breakpoints for gallery grid */
+@media (min-width: 640px) {
+  .wp-content .et_pb_gallery_items {
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  }
+}
+
+@media (min-width: 768px) {
+  .wp-content .et_pb_gallery_items {
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .wp-content .et_pb_gallery_items {
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    @apply gap-6;
+  }
+}
+
+/* Clearfix for older browsers */
+.wp-content .et_pb_gallery_items.clearfix::after {
+  content: "";
+  display: table;
+  clear: both;
+}

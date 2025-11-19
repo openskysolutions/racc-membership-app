@@ -32,6 +32,8 @@ import AboutPage from '@/pages/About';
 import ContactPage from '@/pages/Contact';
 import Privacy from '@/pages/docs/Privacy';
 import Terms from '@/pages/docs/Terms';
+import EventsList from '@/pages/EventsList';
+import EventPage from '@/pages/EventPage';
 
 import { ReactNode } from 'react';
 
@@ -121,6 +123,8 @@ export default function AppRoutes() {
         <Route path="contact" element={<ContactPage />} />
         <Route path="privacy" element={<Privacy />} />
         <Route path="terms" element={<Terms />} />
+        {/* <Route path="event-pages" element={<EventsList />} /> */}
+        <Route path="event-pages/:slug" element={<EventPage />} />
       </Route>
 
       {/* fallback */}

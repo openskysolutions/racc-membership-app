@@ -1200,22 +1200,23 @@ router.post('/send-confirmation', async (req, res) => {
 
     // Send confirmation email with timeout
     try {
-      // Add a timeout wrapper to prevent hanging
+      // Add a timeout wrapper to prevent hanging (reduced to 15 seconds)
       const emailPromise = emailService.sendConfirmationCode(email, confirmationCode);
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Email timeout')), 30000)
+      const timeoutPromise = new Promise<boolean>((_, reject) => 
+        setTimeout(() => reject(new Error('Email timeout after 15 seconds')), 15000)
       );
       
       const emailSent = await Promise.race([emailPromise, timeoutPromise]);
       
       if (!emailSent) {
         // Email sending failed, but we'll still return success to prevent information leakage
-        console.error(`Failed to send confirmation email to ${email}`);
+        console.error(`⚠️ Failed to send confirmation email to ${email}`);
       } else {
         console.log(`✅ Confirmation email sent successfully to ${email}`);
       }
     } catch (emailError) {
-      console.error('Email sending error:', emailError);
+      const errorMessage = emailError instanceof Error ? emailError.message : 'Unknown error';
+      console.error(`⚠️ Email sending error for ${email}:`, errorMessage);
       // Continue anyway - don't fail the request due to email issues
     }
     
