@@ -426,8 +426,6 @@ async function updateRecurringSeriesCustomFields(req, res, next) {
     const { id: appointmentId } = req.params;
     const { calendarId, customFields } = req.body;
     
-    const { customFields } = req.body;
-    
     // Fetch the specific event and all future events in the series
     
     // Get all events from the calendar
