@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // WordPress REST API base URL - update this to your WordPress site
-const WP_API_BASE = import.meta.env.VITE_WORDPRESS_API_URL || 'https://your-wordpress-site.com/wp-json/wp/v2';
+const WP_API_BASE = import.meta.env.VITE_WORDPRESS_API_URL || 'https://richfieldareachamber.com/wp-json/wp/v2';
 
 export type WordPressPostType = 'posts' | 'pages' | string; // Can be any custom post type
 
