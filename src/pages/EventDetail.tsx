@@ -81,15 +81,26 @@ const EventDetailPage: React.FC = () => {
     return customFields.basicEmbedCode;
   };
 
-  // Extract height from iframe data-height attribute
-  const getIframeHeight = (embedCode: string | null | undefined): string => {
-    if (!embedCode) return '600px'; // Default height
+  // Process embed code to ensure iframe uses data-height attribute
+  const processEmbedCode = (embedCode: string | null | undefined): string => {
+    if (!embedCode) return '';
     
+    // Extract the data-height value
     const heightMatch = embedCode.match(/data-height="(\d+)"/);
-    if (heightMatch && heightMatch[1]) {
-      return `${Number(heightMatch[1]) - 250}px`;
-    }
-    return '600px'; // Default fallback
+    if (!heightMatch || !heightMatch[1]) return embedCode;
+    
+    const height = heightMatch[1];
+    
+    // Replace the inline style height with the data-height value in the iframe
+    // This regex captures the entire style attribute and replaces the height value
+    const processedCode = embedCode.replace(
+      /(<iframe[^>]*style=["'])([^"']*)(["'][^>]*>)/i,
+      (_match, before, styleContent, after) => {
+        return `${before}${styleContent}; height: ${Number(height)+150}px${after}`;
+      }
+    );
+    
+    return processedCode;
   };
 
   useEffect(() => {
@@ -547,7 +558,7 @@ const EventDetailPage: React.FC = () => {
           {/* Right Column - Registration & Actions */}
           <div className="md:col-span-3 space-y-6">
             {/* Registration Card */}
-            <Card className="sticky top-4">
+            <Card className="top-4">
               <CardContent className="p-6 space-y-4">
                 {(
                   customFields.pageUrl || 
@@ -570,9 +581,8 @@ const EventDetailPage: React.FC = () => {
                   )
                 : null}
                 {getEmbedCode() && (
-                  <div 
-                    style={{ height: getIframeHeight(getEmbedCode()), minHeight: '400px' }}
-                    dangerouslySetInnerHTML={{ __html: getEmbedCode()! }} 
+                  <div className="w-full overflow-auto"
+                    dangerouslySetInnerHTML={{ __html: processEmbedCode(getEmbedCode()) }} 
                   />
                 )}
                 
