@@ -223,13 +223,13 @@ const MembersPage: React.FC = () => {
   }, [filteredMembers, searchTerm]);
 
   // Get unique specialties for filter dropdown
-  const allSpecialties = useMemo(() => {
-    const specialties = new Set<string>();
-    members.forEach(member => {
-      member.specialties?.forEach(specialty => specialties.add(specialty));
-    });
-    return Array.from(specialties).sort();
-  }, [members]);
+  // const allSpecialties = useMemo(() => {
+  //   const specialties = new Set<string>();
+  //   members.forEach(member => {
+  //     member.specialties?.forEach(specialty => specialties.add(specialty));
+  //   });
+  //   return Array.from(specialties).sort();
+  // }, [members]);
 
   const handleMemberClick = (memberId: string) => {
     navigate(`/members/${memberId}`);

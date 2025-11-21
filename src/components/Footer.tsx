@@ -1,7 +1,6 @@
 import LogoDark from "@/assets/racc-logo-dark.png";
 import AppleAppStoreButton from "@/assets/apple-app-store-buttom.svg";
 import { useTheme } from "@/providers/theme-provider";
-import { isNativeApp } from '@/lib/platform';
 
 export const Footer = () => {
   const { theme } = useTheme();
