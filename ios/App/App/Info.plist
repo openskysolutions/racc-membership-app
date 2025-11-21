@@ -45,5 +45,11 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>This app needs access to your calendar to add events you're interested in attending.</string>
+	<key>NSCalendarsWriteOnlyAccessUsageDescription</key>
+	<string>This app needs access to write events to your calendar so you can save events you want to attend.</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>This app needs access to your calendar to add events you're interested in attending.</string>
 </dict>
 </plist>

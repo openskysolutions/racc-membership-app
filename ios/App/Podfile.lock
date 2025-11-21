@@ -12,6 +12,8 @@ PODS:
     - Capacitor
   - CapgoCapacitorNavigationBar (7.3.11):
     - Capacitor
+  - EbarooniCapacitorCalendar (7.2.0):
+    - Capacitor
 
 DEPENDENCIES:
   - "Capacitor (from `../../node_modules/@capacitor/ios`)"
@@ -21,6 +23,7 @@ DEPENDENCIES:
   - "CapacitorSplashScreen (from `../../node_modules/@capacitor/splash-screen`)"
   - "CapacitorStatusBar (from `../../node_modules/@capacitor/status-bar`)"
   - "CapgoCapacitorNavigationBar (from `../../node_modules/@capgo/capacitor-navigation-bar`)"
+  - "EbarooniCapacitorCalendar (from `../../node_modules/@ebarooni/capacitor-calendar`)"
 
 EXTERNAL SOURCES:
   Capacitor:
@@ -37,6 +40,8 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/@capacitor/status-bar"
   CapgoCapacitorNavigationBar:
     :path: "../../node_modules/@capgo/capacitor-navigation-bar"
+  EbarooniCapacitorCalendar:
+    :path: "../../node_modules/@ebarooni/capacitor-calendar"
 
 SPEC CHECKSUMS:
   Capacitor: 09d9ff8e9618e8c4b3cab2bbee34a17215dd2fef
@@ -46,7 +51,8 @@ SPEC CHECKSUMS:
   CapacitorSplashScreen: d06ae8804808e9f649a08e7bb7f283c77b688084
   CapacitorStatusBar: 7d8fcbd6768db014bd721d75e246590b014928e8
   CapgoCapacitorNavigationBar: 7906d7ddd78a318c183b009d1f4fccdb6ce36ba2
+  EbarooniCapacitorCalendar: 85a986287f9e82e06f0faf438fec4142526f36e9
 
-PODFILE CHECKSUM: bea928e94d4338e31567494671b86f0376f16624
+PODFILE CHECKSUM: ead70077490ec722a4f03de7ca57fab42b884ece
 
 COCOAPODS: 1.9.3

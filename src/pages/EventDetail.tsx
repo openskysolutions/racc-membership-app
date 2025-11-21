@@ -28,6 +28,8 @@ import EventFormDialog from '@/components/EventFormDialog';
 import { useAuthStore } from '@/stores/authStore';
 import { openExternalUrl } from '@/lib/externalBrowser';
 import { isNativeApp } from '@/lib/platform';
+import { CapacitorCalendar } from '@ebarooni/capacitor-calendar';
+import { toast } from 'sonner';
 
 // GoHighLevel Calendar ID - RACC Events
 const GHL_CALENDAR_ID = '9XpDcFHv3SmCUuHeuOOg';
@@ -219,37 +221,78 @@ const EventDetailPage: React.FC = () => {
     // after this callback completes
   };
 
-  const handleAddToCalendar = () => {
+  const handleAddToCalendar = async () => {
     if (!event) return;
     
-    // Create .ics file content
-    const startDate = new Date(event.startTime).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-    const endDate = new Date(event.endTime).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-    
-    const icsContent = 
-     `BEGIN:VCALENDAR
-      VERSION:2.0
-      PRODID:-//RACC//Event//EN
-      BEGIN:VEVENT
-      UID:${event.id}@racc
-      DTSTART:${startDate}
-      DTEND:${endDate}
-      SUMMARY:${event.title}
-      DESCRIPTION:${event.description || ''}
-      LOCATION:${event.location || ''}
-      STATUS:CONFIRMED
-      END:VEVENT
-      END:VCALENDAR`;
+    // Use native calendar API for mobile apps
+    if (isNativeApp()) {
+      try {
+        // Request full calendar access (read & write)
+        const permissionResult = await CapacitorCalendar.requestFullCalendarAccess();
+        
+        if (permissionResult.result !== 'granted') {
+          toast.error('Calendar permission denied. Please enable calendar access in your device settings.');
+          return;
+        }
 
-    const blob = new Blob([icsContent], { type: 'text/calendar' });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${event.title}.ics`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
+        // Get the default calendar
+        const calendars = await CapacitorCalendar.listCalendars();
+        const defaultCalendar = calendars.result?.[0];
+        
+        if (!defaultCalendar) {
+          toast.error('No calendar found on your device.');
+          return;
+        }
+
+        // Create the calendar event
+        const result = await CapacitorCalendar.createEvent({
+          title: event.title,
+          calendarId: defaultCalendar.id,
+          startDate: new Date(event.startTime).getTime(),
+          endDate: new Date(event.endTime).getTime(),
+          location: event.location || undefined,
+          description: event.description || undefined,
+          isAllDay: event.isAllDay || false,
+        });
+
+        console.log('Event created with ID:', result.id);
+        toast.success('Event added to your calendar!');
+      } catch (error) {
+        console.error('Error adding event to calendar:', error);
+        toast.error('Failed to add event to calendar. Please try again.');
+      }
+    } else {
+      // Web browser: download .ics file
+      const startDate = new Date(event.startTime).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+      const endDate = new Date(event.endTime).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+      
+      const icsContent = 
+       `BEGIN:VCALENDAR
+        VERSION:2.0
+        PRODID:-//RACC//Event//EN
+        BEGIN:VEVENT
+        UID:${event.id}@racc
+        DTSTART:${startDate}
+        DTEND:${endDate}
+        SUMMARY:${event.title}
+        DESCRIPTION:${event.description || ''}
+        LOCATION:${event.location || ''}
+        STATUS:CONFIRMED
+        END:VEVENT
+        END:VCALENDAR`;
+
+      const blob = new Blob([icsContent], { type: 'text/calendar' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${event.title}.ics`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      toast.success('Calendar file downloaded!');
+    }
   };
 
   if (loading) {
