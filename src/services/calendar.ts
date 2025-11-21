@@ -34,6 +34,9 @@ export interface CalendarEvent {
   pageUrl?: string;
   coverImageUrl?: string;
   downloadFileUrl?: string;
+  basicEmbedCode?: string;
+  enhancedEmbedCode?: string;
+  eliteEmbedCode?: string;
 }
 
 export interface CreateEventPayload {
@@ -59,6 +62,9 @@ export interface CreateEventPayload {
   pageUrl?: string;
   coverImageUrl?: string;
   downloadFileUrl?: string;
+  basicEmbedCode?: string;
+  enhancedEmbedCode?: string;
+  eliteEmbedCode?: string;
   customFieldsRecordId?: string;
 }
 
@@ -77,6 +83,9 @@ export interface UpdateEventPayload {
   pageUrl?: string;
   coverImageUrl?: string;
   downloadFileUrl?: string;
+  basicEmbedCode?: string;
+  enhancedEmbedCode?: string;
+  eliteEmbedCode?: string;
   customFieldsRecordId?: string;
   // Recurring event fields
   isCustomRecurring?: boolean;
@@ -511,6 +520,9 @@ export async function getEventCustomFields(eventId: string): Promise<{
   coverImageUrl: string;
   downloadFileUrl: string;
   internalNote: string;
+  basicEmbedCode: string;
+  enhancedEmbedCode: string;
+  eliteEmbedCode: string;
   recordId?: string;
 }> {
   try {
@@ -534,7 +546,10 @@ export async function getEventCustomFields(eventId: string): Promise<{
       pageUrl: '',
       coverImageUrl: '',
       downloadFileUrl: '',
-      internalNote: ''
+      internalNote: '',
+      basicEmbedCode: '',
+      enhancedEmbedCode: '',
+      eliteEmbedCode: ''
     };
   }
 }

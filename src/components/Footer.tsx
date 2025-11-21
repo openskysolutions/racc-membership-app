@@ -1,5 +1,7 @@
 import LogoDark from "@/assets/racc-logo-dark.png";
+import AppleAppStoreButton from "@/assets/apple-app-store-buttom.svg";
 import { useTheme } from "@/providers/theme-provider";
+import { isNativeApp } from '@/lib/platform';
 
 export const Footer = () => {
   const { theme } = useTheme();
@@ -50,24 +52,15 @@ export const Footer = () => {
         <div className="hidden flex-col md:col-span-2" />
 
         <div className="flex flex-col col-span-1 text-sm">
-          <h3 className="font-medium text-md">Platforms</h3>
+          <h3 className="font-medium text-md mb-1">Mobile Apps</h3>
           <div>
             <a
               rel="noreferrer noopener"
-              href="#"
+              href="https://apps.apple.com/us/app/richfield-area-chambe/id6754964106"
+              target="_blank"
               className="opacity-60 hover:opacity-100"
             >
-              Web
-            </a>
-          </div>
-
-          <div>
-            <a
-              rel="noreferrer noopener"
-              href="#"
-              className="opacity-60 hover:opacity-100"
-            >
-              Mobile
+              <img src={AppleAppStoreButton} alt="Download on the App Store" className="h-10" />
             </a>
           </div>
         </div>
@@ -77,7 +70,7 @@ export const Footer = () => {
           <div>
             <a
               rel="noreferrer noopener"
-              href="#"
+              href="/about"
               className="opacity-60 hover:opacity-100"
             >
               Benefits
@@ -87,14 +80,14 @@ export const Footer = () => {
           <div>
             <a
               rel="noreferrer noopener"
-              href="#"
+              href="/join"
               className="opacity-60 hover:opacity-100"
             >
               Pricing
             </a>
           </div>
 
-          <div>
+          {/* <div>
             <a
               rel="noreferrer noopener"
               href="#"
@@ -102,7 +95,7 @@ export const Footer = () => {
             >
               FAQ
             </a>
-          </div>
+          </div> */}
         </div>
 
         <div className="flex flex-col col-span-1 text-sm">

@@ -94,6 +94,9 @@ async function createAppointment(req, res, next) {
       coverImageUrl, 
       downloadFileUrl, 
       internalNote,
+      basicEmbedCode,
+      enhancedEmbedCode,
+      eliteEmbedCode,
       source,
       channel, 
       meetingLocationType,
@@ -122,7 +125,7 @@ async function createAppointment(req, res, next) {
     const result = await svc.createAppointment(payloadWithLocation);
     
     // If custom fields were provided, save them separately
-    if (pageUrl || coverImageUrl || downloadFileUrl || internalNote) {
+    if (pageUrl || coverImageUrl || downloadFileUrl || internalNote || basicEmbedCode || enhancedEmbedCode || eliteEmbedCode) {
       try {
         const appointmentId = result.id;
         
@@ -132,7 +135,10 @@ async function createAppointment(req, res, next) {
             pageUrl,
             coverImageUrl,
             downloadFileUrl,
-            internalNote
+            internalNote,
+            basicEmbedCode,
+            enhancedEmbedCode,
+            eliteEmbedCode
           }
         );
       } catch (customFieldError) {
@@ -177,7 +183,10 @@ async function getAppointmentCustomFields(req, res, next) {
         pageUrl: '',
         coverImageUrl: '',
         downloadFileUrl: '',
-        internalNote: ''
+        internalNote: '',
+        basicEmbedCode: '',
+        enhancedEmbedCode: '',
+        eliteEmbedCode: ''
       });
     }
     

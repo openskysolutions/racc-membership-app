@@ -11,7 +11,6 @@ import {
   User,
   ArrowLeft,
   Bookmark,
-  Trash2,
   Edit
 } from 'lucide-react';
 import EventCoverImage from '@/assets/explosive-event-cover.jpg';
@@ -40,7 +39,7 @@ const PRODUCTION_URL = 'https://members.richfieldareachamber.com';
 const EventDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
   
   const [event, setEvent] = useState<CalendarEvent | null>(null);
   const [loading, setLoading] = useState(true);
@@ -49,12 +48,47 @@ const EventDetailPage: React.FC = () => {
     pageUrl?: string;
     coverImageUrl?: string;
     downloadFileUrl?: string;
+    basicEmbedCode?: string;
+    enhancedEmbedCode?: string;
+    eliteEmbedCode?: string;
   }>({});
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  // Determine user's membership tier from tags
+  const userTags = (user?.tags || []) as string[];
+  const isEliteUser = userTags.includes('elite membership package');
+  const isEnhancedUser = userTags.includes('enhanced membership package');
+  const isBasicUser = userTags.includes('basic membership package');
+
+  // Get the appropriate embed code based on membership tier (with fallback)
+  const getEmbedCode = () => {
+    if (isEliteUser) {
+      return customFields.eliteEmbedCode || customFields.enhancedEmbedCode || customFields.basicEmbedCode;
+    }
+    if (isEnhancedUser) {
+      return customFields.enhancedEmbedCode || customFields.basicEmbedCode;
+    }
+    if (isBasicUser) {
+      return customFields.basicEmbedCode;
+    }
+    // Default: Show basic embed code for all users (even without membership tags)
+    return customFields.basicEmbedCode;
+  };
+
+  // Extract height from iframe data-height attribute
+  const getIframeHeight = (embedCode: string | null | undefined): string => {
+    if (!embedCode) return '600px'; // Default height
+    
+    const heightMatch = embedCode.match(/data-height="(\d+)"/);
+    if (heightMatch && heightMatch[1]) {
+      return `${Number(heightMatch[1]) - 250}px`;
+    }
+    return '600px'; // Default fallback
+  };
 
   useEffect(() => {
     const fetchEventDetails = async () => {
@@ -329,15 +363,17 @@ const EventDetailPage: React.FC = () => {
             {/* <p className='text-md text-card dark:text-neutral-50 font-normal leading-6 mt-6 max-w-3xl'>{event.description}</p> */}
             
             {/* Register Button */}
-            {customFields.pageUrl && (
-              <Button 
-                size="lg" 
-                className="mt-6 bg-highlight hover:bg-primary text-card font-medium px-8 py-6 text-md"
-                onClick={handleRegister}
-              >
-                Register Now
-              </Button>
-            )}
+            {customFields.pageUrl && !getEmbedCode() 
+              ? (
+                <Button 
+                  size="lg" 
+                  className="mt-6 bg-highlight hover:bg-primary text-card font-medium px-8 py-6 text-md"
+                  onClick={handleRegister}
+                >
+                  Register Now
+                </Button>
+              )
+              : null}
           </div>
         </div>
         
@@ -347,9 +383,9 @@ const EventDetailPage: React.FC = () => {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-8 md:py-12">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
           {/* Left Column - Event Details */}
-          <div className="md:col-span-2 space-y-6">
+          <div className="md:col-span-3 space-y-6">
             {/* Event Info Card */}
             <Card>
               <CardContent className="p-6">
@@ -466,24 +502,37 @@ const EventDetailPage: React.FC = () => {
           </div>
 
           {/* Right Column - Registration & Actions */}
-          <div className="md:col-span-1 space-y-6">
+          <div className="md:col-span-3 space-y-6">
             {/* Registration Card */}
             <Card className="sticky top-4">
               <CardContent className="p-6 space-y-4">
-                <h3 className="text-xl font-bold">Register for Event</h3>
-                <p className="text-sm text-muted-foreground">
-                  Secure your spot for this amazing event
-                </p>
+                {(
+                  customFields.pageUrl || 
+                  customFields.eliteEmbedCode || 
+                  customFields.enhancedEmbedCode || 
+                  customFields.basicEmbedCode
+                ) && <>
+                  <h3 className="text-xl font-bold">Register for the {event.title} here</h3>
+                </>}
                 
-                {customFields.pageUrl && (
-                  <Button 
-                    className="w-full" 
-                    size="lg"
-                    onClick={handleRegister}
-                  >
-                    Register Now
-                  </Button>
+                {customFields.pageUrl && !getEmbedCode() 
+                  ? (
+                    <Button 
+                      size="lg" 
+                      className="mt-6 bg-highlight hover:bg-primary text-card font-medium px-8 py-6 text-md"
+                      onClick={handleRegister}
+                    >
+                      Register Now
+                    </Button>
+                  )
+                : null}
+                {getEmbedCode() && (
+                  <div 
+                    style={{ height: getIframeHeight(getEmbedCode()), minHeight: '400px' }}
+                    dangerouslySetInnerHTML={{ __html: getEmbedCode()! }} 
+                  />
                 )}
+                
 
                 <Button
                   variant="outline"
@@ -520,7 +569,7 @@ const EventDetailPage: React.FC = () => {
                 </div>
 
                 {/* External Link */}
-                {customFields.pageUrl && (
+                {customFields.pageUrl && !getEmbedCode()  && (
                   <>
                     <Separator />
                     <Button variant="outline" className="w-full" asChild>

@@ -30,6 +30,9 @@ interface CustomFields {
   pageUrl?: string;
   coverImageUrl?: string;
   downloadFileUrl?: string;
+  basicEmbedCode?: string;
+  enhancedEmbedCode?: string;
+  eliteEmbedCode?: string;
 }
 
 interface FormData {
@@ -47,6 +50,9 @@ interface FormData {
   pageUrl: string;
   coverImageUrl: string;
   downloadFileUrl: string;
+  basicEmbedCode: string;
+  enhancedEmbedCode: string;
+  eliteEmbedCode: string;
 }
 
 const EventFormDialog: React.FC<EventFormDialogProps> = ({
@@ -98,7 +104,10 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
     internalNote: '',
     pageUrl: '',
     coverImageUrl: '',
-    downloadFileUrl: ''
+    downloadFileUrl: '',
+    basicEmbedCode: '',
+    enhancedEmbedCode: '',
+    eliteEmbedCode: ''
   });
 
   // Initialize form data when dialog opens
@@ -143,7 +152,10 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
           internalNote: '',
           pageUrl: '',
           coverImageUrl: '',
-          downloadFileUrl: ''
+          downloadFileUrl: '',
+          basicEmbedCode: '',
+          enhancedEmbedCode: '',
+          eliteEmbedCode: ''
         });
         
         // Load custom fields in the background
@@ -154,7 +166,10 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
             internalNote: customFields.internalNote || '',
             pageUrl: customFields.pageUrl || '',
             coverImageUrl: customFields.coverImageUrl || '',
-            downloadFileUrl: customFields.downloadFileUrl || ''
+            downloadFileUrl: customFields.downloadFileUrl || '',
+            basicEmbedCode: customFields.basicEmbedCode || '',
+            enhancedEmbedCode: customFields.enhancedEmbedCode || '',
+            eliteEmbedCode: customFields.eliteEmbedCode || ''
           }));
         }).catch(error => {
           console.error('Failed to load custom fields:', error);
@@ -178,7 +193,10 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
             internalNote: savedDraft.internalNote,
             pageUrl: savedDraft.pageUrl,
             coverImageUrl: savedDraft.coverImageUrl,
-            downloadFileUrl: savedDraft.downloadFileUrl
+            downloadFileUrl: savedDraft.downloadFileUrl,
+            basicEmbedCode: savedDraft.basicEmbedCode || '',
+            enhancedEmbedCode: savedDraft.enhancedEmbedCode || '',
+            eliteEmbedCode: savedDraft.eliteEmbedCode || ''
           });
           setIsMultiDay(savedDraft.isMultiDay);
         } else {
@@ -208,7 +226,10 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
             internalNote: '',
             pageUrl: '',
             coverImageUrl: '',
-            downloadFileUrl: ''
+            downloadFileUrl: '',
+            basicEmbedCode: '',
+            enhancedEmbedCode: '',
+            eliteEmbedCode: ''
           });
         }
       }
@@ -439,7 +460,10 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
       const customFields: CustomFields = {
         pageUrl: formData.pageUrl || undefined,
         coverImageUrl: formData.coverImageUrl || undefined,
-        downloadFileUrl: formData.downloadFileUrl || undefined
+        downloadFileUrl: formData.downloadFileUrl || undefined,
+        basicEmbedCode: formData.basicEmbedCode || undefined,
+        enhancedEmbedCode: formData.enhancedEmbedCode || undefined,
+        eliteEmbedCode: formData.eliteEmbedCode || undefined
       };
       
       if (isEditing && event) {
@@ -465,6 +489,9 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
             formData.pageUrl !== (event.pageUrl || '') ||
             formData.coverImageUrl !== (event.coverImageUrl || '') ||
             formData.downloadFileUrl !== (event.downloadFileUrl || '') ||
+            formData.basicEmbedCode !== (event.basicEmbedCode || '') ||
+            formData.enhancedEmbedCode !== (event.enhancedEmbedCode || '') ||
+            formData.eliteEmbedCode !== (event.eliteEmbedCode || '') ||
             formData.internalNote !== (event.internalNote || '');
           
           try {
@@ -495,6 +522,9 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
                 pageUrl: customFields.pageUrl,
                 coverImageUrl: customFields.coverImageUrl,
                 downloadFileUrl: customFields.downloadFileUrl,
+                basicEmbedCode: customFields.basicEmbedCode,
+                enhancedEmbedCode: customFields.enhancedEmbedCode,
+                eliteEmbedCode: customFields.eliteEmbedCode,
                 internalNote: formData.internalNote,
               };
               
@@ -544,6 +574,9 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
             pageUrl: customFields.pageUrl,
             coverImageUrl: customFields.coverImageUrl,
             downloadFileUrl: customFields.downloadFileUrl,
+            basicEmbedCode: customFields.basicEmbedCode,
+            enhancedEmbedCode: customFields.enhancedEmbedCode,
+            eliteEmbedCode: customFields.eliteEmbedCode,
             // For recurring events updating single instance, preserve the recurrence pattern
             ...(event.isRecurring && {
               isCustomRecurring: true,
@@ -591,6 +624,9 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
           pageUrl: customFields.pageUrl,
           coverImageUrl: customFields.coverImageUrl,
           downloadFileUrl: customFields.downloadFileUrl,
+          basicEmbedCode: customFields.basicEmbedCode,
+          enhancedEmbedCode: customFields.enhancedEmbedCode,
+          eliteEmbedCode: customFields.eliteEmbedCode,
           source: 'calendar_page',
           channel: 'web_app',
           meetingLocationType: 'custom'
@@ -833,6 +869,40 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
                 )}
               </div>
             </div>
+          </div>
+
+          {/* Embed Codes */}
+          <div className="space-y-2">
+            <Label htmlFor="basicEmbedCode">Basic Embed Code</Label>
+            <Textarea
+              id="basicEmbedCode"
+              value={formData.basicEmbedCode}
+              onChange={(e) => handleInputChange('basicEmbedCode', e.target.value)}
+              placeholder="Paste basic membership embed code here..."
+              rows={4}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="enhancedEmbedCode">Enhanced Embed Code</Label>
+            <Textarea
+              id="enhancedEmbedCode"
+              value={formData.enhancedEmbedCode}
+              onChange={(e) => handleInputChange('enhancedEmbedCode', e.target.value)}
+              placeholder="Paste enhanced membership embed code here..."
+              rows={4}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="eliteEmbedCode">Elite Embed Code</Label>
+            <Textarea
+              id="eliteEmbedCode"
+              value={formData.eliteEmbedCode}
+              onChange={(e) => handleInputChange('eliteEmbedCode', e.target.value)}
+              placeholder="Paste elite membership embed code here..."
+              rows={4}
+            />
           </div>
 
           {/* Date and Time */}

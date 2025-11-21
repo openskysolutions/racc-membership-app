@@ -15,6 +15,9 @@ interface EventDraft {
   pageUrl: string;
   coverImageUrl: string;
   downloadFileUrl: string;
+  basicEmbedCode?: string;
+  enhancedEmbedCode?: string;
+  eliteEmbedCode?: string;
   isMultiDay: boolean;
   lastUpdated: number;
 }

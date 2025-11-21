@@ -1398,7 +1398,19 @@ class GoHighLevelService {
       console.log(`⏱️  [UPDATE] Starting appointment update for ${appointmentId}`);
       
       // Extract custom fields and internal note from payload
-      const { internalNote, pageUrl, coverImageUrl, downloadFileUrl, customFieldsRecordId, description, location, ...rest } = payload;
+      const { 
+        internalNote, 
+        pageUrl, 
+        coverImageUrl, 
+        downloadFileUrl, 
+        basicEmbedCode, 
+        enhancedEmbedCode, 
+        eliteEmbedCode, 
+        customFieldsRecordId, 
+        description, 
+        location, 
+        ...rest 
+      } = payload;
       
       // For recurring events, GoHighLevel expects the base event ID (without timestamp)
       // Event IDs come in format: baseId_timestamp_duration
@@ -1432,16 +1444,16 @@ class GoHighLevelService {
       
       // Save custom fields to custom object (if any custom fields provided)
       // Use the base appointment ID for custom objects (same as we use for the appointment update)
-      if (internalNote || pageUrl || coverImageUrl || downloadFileUrl) {
+      if (internalNote || pageUrl || coverImageUrl || downloadFileUrl || basicEmbedCode || enhancedEmbedCode || eliteEmbedCode) {
         const customFieldsStart = Date.now();
         const upsertResult = await this.upsertAppointmentCustomObject(
           baseAppointmentId,
-          { pageUrl, coverImageUrl, downloadFileUrl, internalNote },
+          { pageUrl, coverImageUrl, downloadFileUrl, internalNote, basicEmbedCode, enhancedEmbedCode, eliteEmbedCode },
           customFieldsRecordId // Pass existing record ID if available
         );
         const customFieldsDuration = Date.now() - customFieldsStart;
         console.log(`⏱️  [UPDATE] Custom fields upsert completed in ${customFieldsDuration}ms`);
-        console.log(`📋 [UPDATE] Upserted custom fields:`, { pageUrl, coverImageUrl, downloadFileUrl, internalNote });
+        console.log(`📋 [UPDATE] Upserted custom fields:`, { pageUrl, coverImageUrl, downloadFileUrl, internalNote, basicEmbedCode, enhancedEmbedCode, eliteEmbedCode });
         console.log(`📋 [UPDATE] Record ID: ${upsertResult.recordId}`);
         
         // Wait a moment for GoHighLevel to propagate the changes
@@ -1593,6 +1605,9 @@ class GoHighLevelService {
       coverImageUrl?: string;
       downloadFileUrl?: string;
       internalNote?: string;
+      basicEmbedCode?: string;
+      enhancedEmbedCode?: string;
+      eliteEmbedCode?: string;
     },
     existingRecordId?: string
   ): Promise<{ recordId: string; associationId?: string }> {
@@ -1648,6 +1663,10 @@ class GoHighLevelService {
           coverimageurl: customFields.coverImageUrl || '',  // lowercase to match fieldKey
           downloadfileurl: customFields.downloadFileUrl || '',  // lowercase to match fieldKey
           internalnote: customFields.internalNote || '',  // lowercase to match fieldKey
+          // Embed codes use underscores to match GHL field keys
+          ...(customFields.basicEmbedCode && { basic_embed_code: customFields.basicEmbedCode }),
+          ...(customFields.enhancedEmbedCode && { enhanced_embed_code: customFields.enhancedEmbedCode }),
+          ...(customFields.eliteEmbedCode && { elite_embed_code: customFields.eliteEmbedCode }),
           ...(uniqueId && { id: uniqueId })  // Only include id when creating new record
         }
       };
@@ -1772,6 +1791,9 @@ class GoHighLevelService {
     coverImageUrl: string;
     downloadFileUrl: string;
     internalNote: string;
+    basicEmbedCode: string;
+    enhancedEmbedCode: string;
+    eliteEmbedCode: string;
     recordId?: string;
   } | null> {
     if (!this.client) {
@@ -1888,6 +1910,9 @@ class GoHighLevelService {
         coverImageUrl: props.coverimageurl || '',
         downloadFileUrl: props.downloadfileurl || '',
         internalNote: props.internalnote || '',
+        basicEmbedCode: props.basic_embed_code || '',
+        enhancedEmbedCode: props.enhanced_embed_code || '',
+        eliteEmbedCode: props.elite_embed_code || '',
         recordId: record.id || record._id
       };
       
@@ -1947,6 +1972,9 @@ class GoHighLevelService {
               coverImageUrl: props.coverimageurl || '',
               downloadFileUrl: props.downloadfileurl || '',
               internalNote: props.internalnote || '',
+              basicEmbedCode: props.basic_embed_code || '',
+              enhancedEmbedCode: props.enhanced_embed_code || '',
+              eliteEmbedCode: props.elite_embed_code || '',
               recordId: record.id || record._id,
               dateUpdated: record.dateUpdated || record.updatedAt || record.dateAdded || record.createdAt
             });
@@ -1962,6 +1990,9 @@ class GoHighLevelService {
                 coverImageUrl: props.coverimageurl || '',
                 downloadFileUrl: props.downloadfileurl || '',
                 internalNote: props.internalnote || '',
+                basicEmbedCode: props.basic_embed_code || '',
+                enhancedEmbedCode: props.enhanced_embed_code || '',
+                eliteEmbedCode: props.elite_embed_code || '',
                 recordId: record.id || record._id,
                 dateUpdated: record.dateUpdated || record.updatedAt || record.dateAdded || record.createdAt
               });

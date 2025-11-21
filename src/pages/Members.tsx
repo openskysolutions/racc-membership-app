@@ -358,7 +358,7 @@ const MembersPage: React.FC = () => {
               )}
 
               {/* Specialty Filter */}
-              <Select value={specialtyFilter} onValueChange={setSpecialtyFilter}>
+              {/* <Select value={specialtyFilter} onValueChange={setSpecialtyFilter}>
                 <SelectTrigger className="w-full h-9 lg:w-48 min-w-36">
                   <SelectValue placeholder="Specialty" />
                 </SelectTrigger>
@@ -370,7 +370,7 @@ const MembersPage: React.FC = () => {
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </Select> */}
 
               {/* Sort Filter */}
               <Select value={sortBy} onValueChange={(value: 'businessName' | 'memberSince' | 'membershipTier') => setSortBy(value)}>

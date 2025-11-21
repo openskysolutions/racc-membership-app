@@ -588,6 +588,7 @@ router.get('/profile', async (req, res) => {
       emailVerified: user.emailVerified,
       ghlContactId: user.ghlContactId,
       avatarUrl: user.avatarUrl,
+      tags: user.tags || [], // Include tags from GoHighLevel
       createdAt: user.createdAt,
       updatedAt: user.updatedAt
     });
