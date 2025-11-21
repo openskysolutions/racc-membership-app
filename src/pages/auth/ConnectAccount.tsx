@@ -365,7 +365,9 @@ export const ConnectAccountPage = () => {
                 <Label htmlFor="email">Email Address</Label>
                 <Input
                   id="email"
+                  name="email"
                   type="email"
+                  autoComplete="email"
                   value={email}
                   onChange={(e) => {
                     setEmail(e.target.value);
@@ -527,7 +529,9 @@ export const ConnectAccountPage = () => {
                   <Label htmlFor="email-retry">Email Address</Label>
                   <Input
                     id="email-retry"
+                    name="email"
                     type="email"
+                    autoComplete="email"
                     value={email}
                     onChange={(e) => {
                       setEmail(e.target.value);
@@ -597,6 +601,7 @@ export const ConnectAccountPage = () => {
                     id="email"
                     name="email"
                     type="email"
+                    autoComplete="email username"
                     value={formData.email}
                     disabled={true}
                     className="bg-gray-50 dark:bg-gray-800"
@@ -608,6 +613,7 @@ export const ConnectAccountPage = () => {
                   <PasswordInput
                     id="password"
                     name="password"
+                    autoComplete="new-password"
                     value={formData.password}
                     onChange={handleFormChange}
                     placeholder="Create a password"
@@ -621,6 +627,7 @@ export const ConnectAccountPage = () => {
                   <PasswordInput
                     id="confirmPassword"
                     name="confirmPassword"
+                    autoComplete="new-password"
                     value={formData.confirmPassword}
                     onChange={handleFormChange}
                     placeholder="Confirm your password"

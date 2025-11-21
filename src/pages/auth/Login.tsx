@@ -82,7 +82,9 @@ export const AuthPage = () => {
               </label>
               <Input
                 id="email"
+                name="email"
                 type="email"
+                autoComplete="email username"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 placeholder="you@example.com"
@@ -94,6 +96,8 @@ export const AuthPage = () => {
               </label>
               <PasswordInput
                 id="password"
+                name="password"
+                autoComplete="current-password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 placeholder="••••••••"
