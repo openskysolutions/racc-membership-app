@@ -341,7 +341,12 @@ class GoHighLevelService {
         }
       }
       
-      // If no renewal date found, deny access
+      // Check if renewal date is within 13 months (393 days) from now
+      const now = new Date();
+      const thirteenMonthsAgo = new Date();
+      thirteenMonthsAgo.setMonth(thirteenMonthsAgo.getMonth() - 13);
+      
+      // If no renewal date found or date is invalid/expired, return membership_expired
       if (!renewDate || isNaN(renewDate.getTime())) {
         console.log(`❌ No valid renewal date found for ${email}`);
         console.log(`🔍 Checked locations: customField array (ID: J3yL94KqDhUnjurcIG8G), direct properties, customFields object`);
@@ -357,14 +362,9 @@ class GoHighLevelService {
         return { 
           isActive: false, 
           contact: contact,
-          reason: 'No renewal date found'
+          reason: 'membership_expired'
         };
       }
-
-      // Check if renewal date is within 13 months (393 days) from now
-      const now = new Date();
-      const thirteenMonthsAgo = new Date();
-      thirteenMonthsAgo.setMonth(thirteenMonthsAgo.getMonth() - 13);
       
       const isRenewalValid = renewDate >= thirteenMonthsAgo;
       
