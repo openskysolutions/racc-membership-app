@@ -224,68 +224,76 @@ const VotingPage: React.FC = () => {
   }) => {
     const selectedId = category === 'business_of_month' ? selectedBusiness : selectedSuperstar;
 
-    if (hasVoted && votedInfo) {
-      return (
-        <div className="space-y-4">
-          <h2 className="text-2xl font-bold">{title}</h2>
-          <Alert className="bg-green-50 dark:bg-green-950 border-green-500">
-            <CheckCircle2 className="h-4 w-4 text-green-600" />
-            <AlertDescription className="text-green-800 dark:text-green-200">
-              <strong>Thank you for the vote you've submitted for: {formatMonth(votingStatus?.targetMonth)} - {title}</strong>
-              <div className="mt-2">
-                You voted for: <strong>{votedInfo.businessName}</strong>
-                {votedInfo.name && ` (${votedInfo.name})`}
-                <br />
-                <span className="text-sm">Voted on: {formatDate(votedInfo.votedAt)}</span>
-              </div>
-            </AlertDescription>
-          </Alert>
-        </div>
-      );
-    }
-
     return (
       <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <p className="text-muted-foreground text-center sm:text-left">
-            Select one nomination to vote for {formatMonth(votingStatus?.targetMonth)} winner
-          </p>
-          {!hasVoted && nominations.length > 0 && (
-            <Button
-              onClick={() => selectedId && handleVote(selectedId)}
-              disabled={!selectedId || submitting}
-              className="sm:w-auto"
-            >
-              {submitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Submitting...
-                </>
-              ) : (
-                'Submit Vote'
-              )}
-            </Button>
-          )}
-        </div>
-
-        {nominations.length === 0 ? (
-          <Alert>
-            <AlertDescription>
-              No approved nominations available for this category.
-            </AlertDescription>
-          </Alert>
+        {hasVoted ? (
+          <>
+            {votedInfo ? (
+              <Alert className="bg-green-50 dark:bg-green-950 border-green-500">
+                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                <AlertDescription className="text-green-800 dark:text-green-200">
+                  <strong>Thank you for the vote you've submitted for: {formatMonth(votingStatus?.targetMonth)} - {title}</strong>
+                  <div className="mt-2">
+                    You voted for: <strong>{votedInfo.businessName}</strong>
+                    {votedInfo.name && ` (${votedInfo.name})`}
+                    <br />
+                    <span className="text-sm">Voted on: {formatDate(votedInfo.votedAt)}</span>
+                  </div>
+                </AlertDescription>
+              </Alert>
+            ) : (
+              <Alert className="bg-green-50 dark:bg-green-950 border-green-500">
+                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                <AlertDescription className="text-green-800 dark:text-green-200">
+                  <strong>Thank you for voting! You have already submitted your vote for: {formatMonth(votingStatus?.targetMonth)} - {title}</strong>
+                </AlertDescription>
+              </Alert>
+            )}
+          </>
         ) : (
-          <div className="space-y-3">
-            {nominations.map(nomination => (
-              <NominationCard
-                key={nomination.id}
-                nomination={nomination}
-                category={category}
-                hasVoted={hasVoted}
-                votedNominationId={votedInfo?.nominationId}
-              />
-            ))}
-          </div>
+          <>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <p className="text-muted-foreground text-center sm:text-left">
+                Select one nomination to vote for {formatMonth(votingStatus?.targetMonth)} winner
+              </p>
+              {nominations.length > 0 && (
+                <Button
+                  onClick={() => selectedId && handleVote(selectedId)}
+                  disabled={!selectedId || submitting}
+                  className="sm:w-auto"
+                >
+                  {submitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    'Submit Vote'
+                  )}
+                </Button>
+              )}
+            </div>
+
+            {nominations.length === 0 ? (
+              <Alert>
+                <AlertDescription>
+                  No approved nominations available for this category.
+                </AlertDescription>
+              </Alert>
+            ) : (
+              <div className="space-y-3">
+                {nominations.map(nomination => (
+                  <NominationCard
+                    key={nomination.id}
+                    nomination={nomination}
+                    category={category}
+                    hasVoted={hasVoted}
+                    votedNominationId={votedInfo?.nominationId}
+                  />
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
     );

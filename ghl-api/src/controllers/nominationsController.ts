@@ -1,6 +1,14 @@
 /**
  * Nominations Controller
  * Handles nominations for Business of the Month and Customer Service Superstar awards
+ * 
+ * YEARLY VOTING CONFIGURATION:
+ * - Change YEARLY_VOTING_MONTH constant below to set when yearly voting opens
+ * - Value is 0-11 (0=January, 9=October, 11=December)
+ * - System automatically includes 11 months of monthly winners
+ * - Examples:
+ *   - December (11): Includes Feb-Dec winners (11 months)
+ *   - October (9): Includes Dec-Oct winners (11 months)
  */
 
 import { Request, Response } from 'express';
@@ -8,6 +16,9 @@ import { PrismaClient } from '@prisma/client';
 import { ghlService } from '@/services/gohighlevel';
 
 const prisma = new PrismaClient();
+
+// Configuration: Month when yearly voting opens (0-11, where 0=January, 11=December)
+const YEARLY_VOTING_MONTH = 11; // December (change this to 9 for October)
 
 interface NominationRequest {
   type: 'business' | 'individual';
@@ -600,11 +611,14 @@ export class NominationsController {
         });
       }
 
+      const userId = parseInt(String(user.id));
+
       // Check if user has voted for each category
       const votes = await prisma.vote.findMany({
         where: {
-          userId: user.id,
-          votingMonth: votingPeriod.votingMonth!
+          userId: Number(userId),
+          votingMonth: votingPeriod.votingMonth!,
+          voteType: 'monthly'
         },
         include: {
           nomination: {
@@ -655,35 +669,42 @@ export class NominationsController {
 
   /**
    * Helper: Get yearly voting period details
-   * Yearly voting is only available October 1-20
+   * Yearly voting is only available during the configured voting month
    */
   private getYearlyVotingPeriodDetails(now: Date = new Date()) {
-    const currentMonth = now.getMonth(); // 0-11 (December = 11)
+    const currentMonth = now.getMonth(); // 0-11
     const currentYear = now.getFullYear();
     const currentDay = now.getDate();
     
-    // Only allow voting in December (month 11)
-    if (currentMonth !== 11) {
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                       'July', 'August', 'September', 'October', 'November', 'December'];
+    const votingMonthName = monthNames[YEARLY_VOTING_MONTH];
+    
+    // Only allow voting in the configured month
+    if (currentMonth !== YEARLY_VOTING_MONTH) {
       return {
         canVote: false,
         votingYear: null,
-        error: 'Yearly voting is only available in December'
+        error: `Yearly voting is only available in ${votingMonthName}`
       };
     }
     
-    // Check if within voting window (1st-31st - end of month)
-    if (currentDay < 1 || currentDay > 31) {
+    // Get the last day of the voting month
+    const lastDayOfMonth = new Date(currentYear, YEARLY_VOTING_MONTH + 1, 0).getDate();
+    
+    // Check if within voting window (1st through last day of month)
+    if (currentDay < 1 || currentDay > lastDayOfMonth) {
       return {
         canVote: false,
         votingYear: null,
-        error: 'Yearly voting is only available December 1-31'
+        error: `Yearly voting is only available ${votingMonthName} 1-${lastDayOfMonth}`
       };
     }
     
     return {
       canVote: true,
       votingYear: currentYear,
-      deadline: new Date(currentYear, 11, 31, 23, 59, 59, 999) // December 31st at 11:59:59 PM
+      deadline: new Date(currentYear, YEARLY_VOTING_MONTH, lastDayOfMonth, 23, 59, 59, 999)
     };
   }
 
@@ -715,27 +736,45 @@ export class NominationsController {
 
       const currentYear = votingPeriod.votingYear!;
       
-      // Get monthly winners from Jan-Dec
-      // Remember: January winners were voted in December of previous year
-      // February winners voted in January, ..., December winners voted in November
+      // Calculate which months to include:
+      // We want 11 months of winners ENDING with the voting month
+      // If voting month is December (11): Feb-Dec (months 2-12) = 11 months
+      // If voting month is October (9): Dec-Oct (months 12, 1-10) = 11 months
+      // Winners are from the voting month of the previous month (Jan winners voted in Dec)
       const monthlyWinners: any = {
         business_of_month: [],
         customer_service_superstar: []
       };
 
-      // For each month Jan-Dec (voting months Dec of prev year through Nov of current year)
-      for (let targetMonth = 1; targetMonth <= 12; targetMonth++) {
-        // Calculate the voting month (previous month)
+      // Calculate the 11 months to include
+      // Start month = (voting month + 1) - 11 = voting month - 10
+      // But we need to convert from 0-indexed (YEARLY_VOTING_MONTH) to 1-indexed (target month)
+      const startMonth = (YEARLY_VOTING_MONTH + 1) - 10; // Convert to 1-12 range and subtract 10
+      
+      for (let i = 0; i < 11; i++) {
+        // Calculate target month (1-12) wrapping around the year
+        let targetMonth = startMonth + i;
+        let targetYear = currentYear;
+        
+        // Handle month wrapping
+        if (targetMonth <= 0) {
+          targetMonth += 12;
+          targetYear = currentYear - 1;
+        } else if (targetMonth > 12) {
+          targetMonth -= 12;
+          targetYear = currentYear + 1;
+        }
+        
+        // Calculate the voting month (previous month from target)
         let votingMonth: number;
         let votingYear: number;
         
         if (targetMonth === 1) {
-          // January winners were voted in December of previous year
           votingMonth = 12;
-          votingYear = currentYear - 1;
+          votingYear = targetYear - 1;
         } else {
           votingMonth = targetMonth - 1;
-          votingYear = currentYear;
+          votingYear = targetYear;
         }
         
         const votingMonthStr = `${votingYear}-${String(votingMonth).padStart(2, '0')}`;
