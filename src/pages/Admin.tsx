@@ -31,6 +31,8 @@ interface Nomination {
   status: string;
   createdAt: string;
   voteCount?: number;
+  monthlyVoteCount?: number;
+  yearlyVoteCount?: number;
   averageScore?: number;
   userVote?: number; // The current user's vote value (1-5) if they've voted
 }
@@ -265,10 +267,15 @@ export default function AdminPage() {
                 <span className="hidden sm:inline">Nominations</span>
                 <span className="sm:hidden ml-1">Nominations</span>
               </TabsTrigger>
-              <TabsTrigger value="voting-results" className="flex-1 sm:flex-none">
+              <TabsTrigger value="monthly-results" className="flex-1 sm:flex-none">
                 <Star className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Voting Results</span>
-                <span className="sm:hidden ml-1">Results</span>
+                <span className="hidden sm:inline">Monthly Results</span>
+                <span className="sm:hidden ml-1">Monthly</span>
+              </TabsTrigger>
+              <TabsTrigger value="yearly-results" className="flex-1 sm:flex-none">
+                <Star className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Yearly Results</span>
+                <span className="sm:hidden ml-1">Yearly</span>
               </TabsTrigger>
             </TabsList>
           </div>
@@ -627,16 +634,16 @@ export default function AdminPage() {
             )}
           </TabsContent>
 
-          {/* Voting Results Tab */}
-          <TabsContent value="voting-results" className="space-y-6">
+          {/* Monthly Voting Results Tab */}
+          <TabsContent value="monthly-results" className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Star className="h-5 w-5" />
-                  Voting Results & Analytics
+                  Monthly Voting Results & Analytics
                 </CardTitle>
                 <CardDescription>
-                  View voting statistics and results by category and month
+                  View monthly voting statistics and results by category
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -670,17 +677,17 @@ export default function AdminPage() {
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      {/* Filter nominations with at least 1 vote and sort by vote count */}
+                      {/* Filter nominations with at least 1 monthly vote and sort by monthly vote count */}
                       {(() => {
                         const votedNominations = [...nominations]
-                          .filter(n => (n.voteCount || 0) > 0)
-                          .sort((a, b) => (b.voteCount || 0) - (a.voteCount || 0));
+                          .filter(n => (n.monthlyVoteCount || 0) > 0)
+                          .sort((a, b) => (b.monthlyVoteCount || 0) - (a.monthlyVoteCount || 0));
                         
                         if (votedNominations.length === 0) {
                           return (
                             <div className="text-center py-8 text-muted-foreground">
                               <Award className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                              <p>No nominations with votes yet for this category.</p>
+                              <p>No nominations with monthly votes yet for this category.</p>
                             </div>
                           );
                         }
@@ -723,10 +730,134 @@ export default function AdminPage() {
                                     )}
                                     <div className="flex items-center gap-2">
                                       <div className="text-sm text-muted-foreground">
-                                        votes:
+                                        monthly votes:
                                       </div>
                                       <div className="text-lg font-semibold text-card bg-highlight h-7 w-7 rounded-full flex items-center justify-center">
-                                        {nomination.voteCount || 0}
+                                        {nomination.monthlyVoteCount || 0}
+                                      </div>
+                                    </div>
+                                    </div>
+                                </div>
+                                
+                                {/* Right side: Nomination reason */}
+                                <div className="w-full min-w-0 flex flex-col md:self-stretch md:border-l md:pl-4 flex-shrink">
+                                  <p className="text-sm font-medium mb-1">Nomination Reason:</p>
+                                  <p className="text-sm italic text-muted-foreground">
+                                    "{nomination.reason}"
+                                  </p>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ));
+                      })()}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Yearly Voting Results Tab */}
+          <TabsContent value="yearly-results" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Star className="h-5 w-5" />
+                  Yearly Voting Results & Analytics
+                </CardTitle>
+                <CardDescription>
+                  View yearly voting statistics and results by category
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  {/* Month and Category Filters */}
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <Select value={nominationCategory} onValueChange={(value: any) => setNominationCategory(value)}>
+                      <SelectTrigger className="w-full sm:w-[250px]">
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="business_of_month">Business of the Year</SelectItem>
+                        <SelectItem value="customer_service_superstar">Customer Service Superstar of the Year</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button onClick={loadNominations} variant="outline">
+                      <LucideRefreshCcw className="h-4 w-4 mr-2" />
+                      Refresh
+                    </Button>
+                  </div>
+
+                  {/* Voting Results */}
+                  {nominationsLoading ? (
+                    <div className="flex justify-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    </div>
+                  ) : nominations.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Award className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>No nominations found for this category.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {/* Filter nominations with at least 1 yearly vote and sort by yearly vote count */}
+                      {(() => {
+                        const votedNominations = [...nominations]
+                          .filter(n => (n.yearlyVoteCount || 0) > 0)
+                          .sort((a, b) => (b.yearlyVoteCount || 0) - (a.yearlyVoteCount || 0));
+                        
+                        if (votedNominations.length === 0) {
+                          return (
+                            <div className="text-center py-8 text-muted-foreground">
+                              <Award className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                              <p>No nominations with yearly votes yet for this category.</p>
+                            </div>
+                          );
+                        }
+                        
+                        return votedNominations.map((nomination, index) => (
+                          <Card key={nomination.id} className={index === 0 ? 'border-yellow-500 bg-yellow-50 dark:bg-yellow-950' : ''}>
+                            <CardContent className="p-3 pt-3">
+                              <div className="flex flex-col md:flex-row items-start justify-between gap-4">
+                                {/* Left side: Name and metadata */}
+                                <div className="flex flex-col w-full sm:w-1/2 ">
+                                  <div className="flex items-center gap-3 flex-wrap">
+                                    <h3 className="text-lg font-semibold text-nowrap">
+                                      {nominationCategory === 'customer_service_superstar' && nomination.name
+                                        ? nomination.name
+                                        : nomination.businessName}
+                                    </h3>
+                                  </div>
+                                  {nominationCategory === 'customer_service_superstar' && nomination.name ? (
+                                    <p className="text-sm text-muted-foreground">
+                                      Company: {nomination.businessName}
+                                    </p>
+                                  ) : nomination.name && (
+                                    <p className="text-sm text-muted-foreground">
+                                      Employee: {nomination.name}
+                                    </p>
+                                  )}
+                                  <p className="mt-2 mb-1 text-xs text-muted-foreground">
+                                    Nominated: {new Date(nomination.createdAt).toLocaleDateString('en-US', { 
+                                      month: 'long', 
+                                      day: 'numeric', 
+                                      year: 'numeric' 
+                                    })}
+                                  </p>
+                                  <div className="flex items-center gap-4">
+                                    {index === 0 && (
+                                      <Badge variant="default" className="bg-yellow-500">
+                                        <Star className="h-3 w-3 mr-1 max-w-1/2" />
+                                        Leading
+                                      </Badge>
+                                    )}
+                                    <div className="flex items-center gap-2">
+                                      <div className="text-sm text-muted-foreground">
+                                        yearly votes:
+                                      </div>
+                                      <div className="text-lg font-semibold text-card bg-highlight h-7 w-7 rounded-full flex items-center justify-center">
+                                        {nomination.yearlyVoteCount || 0}
                                       </div>
                                     </div>
                                     </div>

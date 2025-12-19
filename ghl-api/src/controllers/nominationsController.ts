@@ -128,11 +128,18 @@ export class NominationsController {
         prisma.nomination.count({ where })
       ]);
 
-      // Calculate vote statistics for each nomination
-      const nominationsWithStats = nominations.map(nom => ({
-        ...nom,
-        voteCount: nom.votes.filter(v => v.voteValue).length // Count only true votes
-      }));
+      // Calculate vote statistics for each nomination, separated by vote type
+      const nominationsWithStats = nominations.map(nom => {
+        const monthlyVotes = nom.votes.filter(v => v.voteValue && v.voteType === 'monthly');
+        const yearlyVotes = nom.votes.filter(v => v.voteValue && v.voteType === 'yearly');
+        
+        return {
+          ...nom,
+          voteCount: nom.votes.filter(v => v.voteValue).length, // Total votes
+          monthlyVoteCount: monthlyVotes.length,
+          yearlyVoteCount: yearlyVotes.length
+        };
+      });
 
       return res.json({
         nominations: nominationsWithStats,
@@ -200,7 +207,6 @@ export class NominationsController {
   private getVotingPeriodDetails(now: Date = new Date()) {
     const currentMonth = now.getMonth(); // 0-11
     const currentYear = now.getFullYear();
-    const currentDay = now.getDate();
     
     // November (month 10) - no voting allowed
     if (currentMonth === 10) {
@@ -213,27 +219,19 @@ export class NominationsController {
       };
     }
     
-    // Check if past voting deadline (20th)
-    if (currentDay > 20) {
-      return {
-        canVote: false,
-        votingMonth: null,
-        targetMonth: null,
-        deadline: new Date(currentYear, currentMonth, 20),
-        error: 'Voting deadline (20th) has passed for this month'
-      };
-    }
-    
     // Calculate voting month (current) and target month (next)
     const votingMonth = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
     const targetMonthDate = new Date(currentYear, currentMonth + 1, 1);
     const targetMonth = `${targetMonthDate.getFullYear()}-${String(targetMonthDate.getMonth() + 1).padStart(2, '0')}`;
     
+    // Deadline is last day of current month at 11:59 PM
+    const deadline = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59, 999);
+    
     return {
       canVote: true,
       votingMonth,
       targetMonth,
-      deadline: new Date(currentYear, currentMonth, 20),
+      deadline,
       currentMonth: currentMonth + 1 // 1-12
     };
   }
@@ -302,10 +300,13 @@ export class NominationsController {
         return res.status(400).json({ error: 'Can only vote on approved nominations' });
       }
 
+      // Parse userId to integer (it comes as string from JWT)
+      const userId = parseInt(String(user.id));
+
       // Check if user already voted for this category in this voting month
       const existingVote = await prisma.vote.findFirst({
         where: {
-          userId: user.id,
+          userId: userId,
           votingCategory: nomination.category,
           votingMonth: votingPeriod.votingMonth!
         }
@@ -322,9 +323,10 @@ export class NominationsController {
       const vote = await prisma.vote.create({
         data: {
           nominationId: parseInt(id),
-          userId: user.id,
+          userId: userId,
           votingMonth: votingPeriod.votingMonth!,
           votingCategory: nomination.category,
+          voteType: 'monthly',
           voteValue: true,
           comment
         }
@@ -656,32 +658,32 @@ export class NominationsController {
    * Yearly voting is only available October 1-20
    */
   private getYearlyVotingPeriodDetails(now: Date = new Date()) {
-    const currentMonth = now.getMonth(); // 0-11 (October = 9)
+    const currentMonth = now.getMonth(); // 0-11 (December = 11)
     const currentYear = now.getFullYear();
     const currentDay = now.getDate();
     
-    // Only allow voting in October (month 9)
-    if (currentMonth !== 9) {
+    // Only allow voting in December (month 11)
+    if (currentMonth !== 11) {
       return {
         canVote: false,
         votingYear: null,
-        error: 'Yearly voting is only available in October'
+        error: 'Yearly voting is only available in December'
       };
     }
     
-    // Check if within voting window (1st-20th)
-    if (currentDay < 1 || currentDay > 20) {
+    // Check if within voting window (1st-31st - end of month)
+    if (currentDay < 1 || currentDay > 31) {
       return {
         canVote: false,
         votingYear: null,
-        error: 'Yearly voting is only available October 1-20'
+        error: 'Yearly voting is only available December 1-31'
       };
     }
     
     return {
       canVote: true,
       votingYear: currentYear,
-      deadline: new Date(currentYear, 9, 20) // October 20th
+      deadline: new Date(currentYear, 11, 31, 23, 59, 59, 999) // December 31st at 11:59:59 PM
     };
   }
 
@@ -713,16 +715,16 @@ export class NominationsController {
 
       const currentYear = votingPeriod.votingYear!;
       
-      // Get monthly winners from Jan-Oct
+      // Get monthly winners from Jan-Dec
       // Remember: January winners were voted in December of previous year
-      // February winners voted in January, ..., October winners voted in September
+      // February winners voted in January, ..., December winners voted in November
       const monthlyWinners: any = {
         business_of_month: [],
         customer_service_superstar: []
       };
 
-      // For each month Jan-Oct (voting months Dec-Sep of current year)
-      for (let targetMonth = 1; targetMonth <= 10; targetMonth++) {
+      // For each month Jan-Dec (voting months Dec of prev year through Nov of current year)
+      for (let targetMonth = 1; targetMonth <= 12; targetMonth++) {
         // Calculate the voting month (previous month)
         let votingMonth: number;
         let votingYear: number;
