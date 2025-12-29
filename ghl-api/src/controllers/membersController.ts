@@ -324,10 +324,42 @@ class MembersController {
         return res.status(404).json({ error: 'Member not found' });
       }
       
-      // Check if contact has active tag
+      // Check if contact has active tag (board members need active tag too for profile access)
       const hasActiveTag = contact.tags?.includes('active');
+      
       if (!hasActiveTag) {
-        return res.status(404).json({ error: 'Member not found' });
+        return res.status(403).json({ 
+          error: 'membership_expired',
+          message: 'Your membership is past its expiration'
+        });
+      }
+
+      // Check renewal date - even with active tag, renewal date must be valid
+      // Get renewal date from custom fields
+      const customFieldsArray = contact.customFields || contact.customField;
+      let renewDate: Date | null = null;
+      
+      if (customFieldsArray && Array.isArray(customFieldsArray)) {
+        const renewDateField = customFieldsArray.find((field: any) => 
+          field.id === 'J3yL94KqDhUnjurcIG8G'
+        );
+        if (renewDateField && renewDateField.value) {
+          renewDate = new Date(renewDateField.value);
+        }
+      }
+      
+      // Check if renewal date is within 13 months from now
+      if (renewDate && !isNaN(renewDate.getTime())) {
+        const now = new Date();
+        const thirteenMonthsAgo = new Date();
+        thirteenMonthsAgo.setMonth(thirteenMonthsAgo.getMonth() - 13);
+        
+        if (renewDate < thirteenMonthsAgo) {
+          return res.status(403).json({ 
+            error: 'membership_expired',
+            message: 'Your membership is past its expiration'
+          });
+        }
       }
       
       // Transform to member format

@@ -171,18 +171,18 @@ export const Navbar = () => {
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => navigate('/profile')}>Profile</DropdownMenuItem>
                     {(user?.role === 'admin' || user?.role === 'moderator' || user?.role === 'board_member') && (
-                      <>
-                        <DropdownMenuItem onClick={() => navigate('/voting')}>
-                          <span className="flex items-center gap-2">
-                            Monthly Voting
-                          </span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => navigate('/yearly-voting')}>
-                          <span className="flex items-center gap-2">
-                            Yearly Voting
-                          </span>
-                        </DropdownMenuItem>
-                      </>
+                      <DropdownMenuItem onClick={() => navigate('/voting')}>
+                        <span className="flex items-center gap-2">
+                          Monthly Voting
+                        </span>
+                      </DropdownMenuItem>
+                    )}
+                    {user?.status === 'active' && (
+                      <DropdownMenuItem onClick={() => navigate('/yearly-voting')}>
+                        <span className="flex items-center gap-2">
+                          Yearly Voting
+                        </span>
+                      </DropdownMenuItem>
                     )}
                     {user?.role === 'admin' && (
                       <DropdownMenuItem onClick={() => navigate('/admin')}>
@@ -312,30 +312,30 @@ export const Navbar = () => {
                   Nominations
                 </Button>
                 {(user?.role === 'admin' || user?.role === 'moderator' || user?.role === 'board_member') && (
-                  <>
-                    <Button
-                      size="lg"
-                      variant={"outline"}
-                      onClick={() => {
-                        setIsOpen(false);
-                        navigate('/voting');
-                      }}
-                      className="text-lg"
-                    >
-                      Monthly Voting
-                    </Button>
-                    <Button
-                      size="lg"
-                      variant={"outline"}
-                      onClick={() => {
-                        setIsOpen(false);
-                        navigate('/yearly-voting');
-                      }}
-                      className="text-lg"
-                    >
-                      Yearly Voting
-                    </Button>
-                  </>
+                  <Button
+                    size="lg"
+                    variant={"outline"}
+                    onClick={() => {
+                      setIsOpen(false);
+                      navigate('/voting');
+                    }}
+                    className="text-lg"
+                  >
+                    Monthly Voting
+                  </Button>
+                )}
+                {user?.status === 'active' && (
+                  <Button
+                    size="lg"
+                    variant={"outline"}
+                    onClick={() => {
+                      setIsOpen(false);
+                      navigate('/yearly-voting');
+                    }}
+                    className="text-lg"
+                  >
+                    Yearly Voting
+                  </Button>
                 )}
                 {isAuthenticated 
                   ? <Button

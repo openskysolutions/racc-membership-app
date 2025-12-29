@@ -720,9 +720,10 @@ export class NominationsController {
         return res.status(401).json({ error: 'Authentication required' });
       }
 
-      // Check if user is a board member, moderator, or admin
-      if (user.role !== 'admin' && user.role !== 'moderator' && user.role !== 'board_member') {
-        return res.status(403).json({ error: 'Only board members can access yearly voting' });
+      // Check if user has active membership (active tag and membership tier)
+      // This is verified during authentication, so we just need to check the status
+      if (user.status !== 'active') {
+        return res.status(403).json({ error: 'Active membership with a membership tier is required to access yearly voting' });
       }
 
       // Check yearly voting period
@@ -846,9 +847,10 @@ export class NominationsController {
         return res.status(401).json({ error: 'Authentication required' });
       }
 
-      // Check if user is a board member, moderator, or admin
-      if (user.role !== 'admin' && user.role !== 'moderator' && user.role !== 'board_member') {
-        return res.status(403).json({ error: 'Only board members can access yearly voting' });
+      // Check if user has active membership (active tag and membership tier)
+      // This is verified during authentication, so we just need to check the status
+      if (user.status !== 'active') {
+        return res.status(403).json({ error: 'Active membership with a membership tier is required to access yearly voting' });
       }
 
       // Check yearly voting period
@@ -923,9 +925,10 @@ export class NominationsController {
         return res.status(401).json({ error: 'Authentication required' });
       }
 
-      // Check if user is a board member, moderator, or admin
-      if (user.role !== 'admin' && user.role !== 'moderator' && user.role !== 'board_member') {
-        return res.status(403).json({ error: 'Only board members can vote on yearly winners' });
+      // Check if user has active membership (active tag and membership tier)
+      // This is verified during authentication, so we just need to check the status
+      if (user.status !== 'active') {
+        return res.status(403).json({ error: 'Active membership with a membership tier is required to vote on yearly winners' });
       }
 
       // Check yearly voting period

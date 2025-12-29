@@ -60,6 +60,7 @@ const ProfilePage: React.FC = () => {
   });
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const [membershipExpired, setMembershipExpired] = useState(false);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -73,6 +74,15 @@ const ProfilePage: React.FC = () => {
         const response = await api.get(`/members/${user.ghlContactId}`);
         
         if (!response.ok) {
+          // Check if it's a membership expired error
+          if (response.status === 403) {
+            const errorData = await response.json();
+            if (errorData.error === 'membership_expired') {
+              setMembershipExpired(true);
+              setLoading(false);
+              return;
+            }
+          }
           throw new Error(`Failed to fetch profile: ${response.statusText}`);
         }
         
@@ -226,6 +236,63 @@ const ProfilePage: React.FC = () => {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-lg">Please log in to view your profile.</div>
+      </div>
+    );
+  }
+
+  // Show membership expired message
+  if (membershipExpired) {
+    return (
+      <div className="container py-8 px-3 md:px-6">
+        <div className="flex flex-col items-center justify-center min-h-[60vh] max-w-2xl mx-auto">
+          <Card className="w-full">
+            <CardHeader>
+              <CardTitle className="text-2xl">Profile Unavailable</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="p-4 border border-highlight-foreground/30 dark:border-highlight-foreground/30 rounded-md">
+                <p className="text-sm text-highlight-foreground dark:text-highlight-foreground mb-3 font-medium">
+                  Your Richfield Area Chamber of Commerce membership is past its expiration.
+                </p>
+                <div className="flex flex-col justify-between gap-2">
+                  <Button 
+                    onClick={() => window.location.href = '/join'}
+                    className="bg-highlight-foreground hover:bg-highlight-foreground/90"
+                  >
+                    Renew Now
+                  </Button>
+                  <Button 
+                    onClick={() => window.location.href = '/contact'}
+                    variant="ghost"
+                    className="text-highlight-foreground hover:text-highlight-foreground dark:text-highlight-foreground hover:bg-highlight-foreground/10 dark:hover:bg-highlight-foreground/10"
+                  >
+                    or Contact us here to renew your membership
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // If no profile data after loading, show error
+  if (!profile) {
+    return (
+      <div className="container py-8 px-3 md:px-6">
+        <div className="flex flex-col items-center justify-center min-h-[60vh] max-w-2xl mx-auto">
+          <Card className="w-full">
+            <CardHeader>
+              <CardTitle className="text-2xl">Profile Not Found</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Unable to load profile information. Please try again later.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }

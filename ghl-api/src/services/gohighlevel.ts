@@ -278,6 +278,17 @@ class GoHighLevelService {
         return { isActive: false, reason: 'Contact not found' };
       }
       
+      // Check if contact has "board member" tag - board members are always active
+      const isBoardMember = contact.tags && contact.tags.includes('board member');
+      
+      if (isBoardMember) {
+        console.log(`✅ Contact ${email} has 'board member' tag - bypassing active tag and renewal date checks`);
+        return {
+          isActive: true,
+          contact: contact
+        };
+      }
+      
       // Check if contact has "active" tag
       const hasActiveTag = contact.tags && contact.tags.includes('active');
       
