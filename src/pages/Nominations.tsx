@@ -7,8 +7,8 @@ import { getVotingStatus } from '@/services/nominations';
 import { getYearlyVotingStatus } from '@/services/yearlyVoting';
 import BusinessOfMonthBadge from '@/assets/business-of-month.png';
 import CustomerServiceSuperstarBadge from '@/assets/customer-service-superstar.png';
-import BusinessOfYear2024 from '@/assets/business-of-year-2024.jpg';
-import CustomerServiceSuperstar2024 from '@/assets/customer-service-superstar-2024.jpg';
+import BusinessOfYear2025 from '@/assets/business-of-year-2025.jpg';
+import CustomerServiceSuperstar2025 from '@/assets/customer-service-superstar-2025.jpg';
 import NominationForm from '@/components/nominations/NominationForm';
 
 const NominationsPage: React.FC = () => {
@@ -81,12 +81,12 @@ const NominationsPage: React.FC = () => {
           {/* Business of the Year 2024 */}
           <div className="bg-white rounded-lg shadow-lg overflow-hidden border-2 border-slate-400">
             <div 
-              className="relative h-64 bg-cover bg-[29%_30%] md:-[0%_30%] bg-no-repeat filter saturate-150 brightness-110"
-              style={{ backgroundImage: `url(${BusinessOfYear2024})` }}
+              className="relative h-64 bg-cover bg-[29%_65%] sm:bg-[29%_45%] md:-[0%_30%] bg-no-repeat filter saturate-150 brightness-110"
+              style={{ backgroundImage: `url(${BusinessOfYear2025})` }}
             >
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
               <div className="absolute bottom-4 left-4 text-white">
-                <h3 className="text-xl font-bold">Business of the Year 2024</h3>
+                <h3 className="text-xl font-bold">Business of the Year 2025</h3>
                 <p className="text-sm opacity-90">Excellence in Business Leadership</p>
               </div>
             </div>
@@ -95,12 +95,12 @@ const NominationsPage: React.FC = () => {
           {/* Customer Service Superstar of the Year 2024 */}
           <div className="bg-white rounded-lg shadow-lg overflow-hidden border-2 border-slate-400">
             <div 
-              className="relative h-64 bg-cover bg-[0%_0%] bg-no-repeat filter saturate-150 brightness-110"
-              style={{ backgroundImage: `url(${CustomerServiceSuperstar2024})` }}
+              className="relative h-64 bg-cover bg-[0%_65%] sm:bg-[0%_42%] bg-no-repeat filter saturate-150 brightness-110"
+              style={{ backgroundImage: `url(${CustomerServiceSuperstar2025})` }}
             >
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
               <div className="absolute bottom-4 left-4 text-white">
-                <h3 className="text-xl font-bold">Customer Service Superstar 2024</h3>
+                <h3 className="text-xl font-bold">Customer Service Superstar 2025</h3>
                 <p className="text-sm opacity-90">Excellence in Customer Care</p>
               </div>
             </div>
