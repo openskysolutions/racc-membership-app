@@ -132,9 +132,13 @@ export default function AdminPage() {
   const loadNominations = async () => {
     setNominationsLoading(true);
     try {
+      // Get nominations from the past 3 months
+      const threeMonthsAgo = new Date();
+      threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+      
       const params = new URLSearchParams({
         category: nominationCategory,
-        year: new Date().getFullYear().toString(),
+        startDate: threeMonthsAgo.toISOString(),
       });
 
       const response = await api.get(`/nominations?${params.toString()}`);
