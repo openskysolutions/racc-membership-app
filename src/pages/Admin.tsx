@@ -696,8 +696,13 @@ export default function AdminPage() {
                           );
                         }
                         
-                        return votedNominations.map((nomination, index) => (
-                          <Card key={nomination.id} className={index === 0 ? 'border-yellow-500 bg-yellow-50 dark:bg-yellow-950' : ''}>
+                        // Find the highest vote count to handle ties
+                        const highestVoteCount = votedNominations[0]?.monthlyVoteCount || 0;
+                        
+                        return votedNominations.map((nomination) => {
+                          const isLeading = (nomination.monthlyVoteCount || 0) === highestVoteCount;
+                          return (
+                          <Card key={nomination.id} className={isLeading ? 'border-yellow-500 bg-yellow-50 dark:bg-yellow-950' : ''}>
                             <CardContent className="p-3 pt-3">
                               <div className="flex flex-col md:flex-row items-start justify-between gap-4">
                                 {/* Left side: Name and metadata */}
@@ -726,7 +731,7 @@ export default function AdminPage() {
                                     })}
                                   </p>
                                   <div className="flex items-center gap-4">
-                                    {index === 0 && (
+                                    {isLeading && (
                                       <Badge variant="default" className="bg-yellow-500">
                                         <Star className="h-3 w-3 mr-1 max-w-1/2" />
                                         Leading
@@ -753,7 +758,8 @@ export default function AdminPage() {
                               </div>
                             </CardContent>
                           </Card>
-                        ));
+                        );
+                        });
                       })()}
                     </div>
                   )}
@@ -820,8 +826,13 @@ export default function AdminPage() {
                           );
                         }
                         
-                        return votedNominations.map((nomination, index) => (
-                          <Card key={nomination.id} className={index === 0 ? 'border-yellow-500 bg-yellow-50 dark:bg-yellow-950' : ''}>
+                        // Find the highest vote count to handle ties
+                        const highestVoteCount = votedNominations[0]?.yearlyVoteCount || 0;
+                        
+                        return votedNominations.map((nomination) => {
+                          const isLeading = (nomination.yearlyVoteCount || 0) === highestVoteCount;
+                          return (
+                          <Card key={nomination.id} className={isLeading ? 'border-yellow-500 bg-yellow-50 dark:bg-yellow-950' : ''}>
                             <CardContent className="p-3 pt-3">
                               <div className="flex flex-col md:flex-row items-start justify-between gap-4">
                                 {/* Left side: Name and metadata */}
@@ -850,7 +861,7 @@ export default function AdminPage() {
                                     })}
                                   </p>
                                   <div className="flex items-center gap-4">
-                                    {index === 0 && (
+                                    {isLeading && (
                                       <Badge variant="default" className="bg-yellow-500">
                                         <Star className="h-3 w-3 mr-1 max-w-1/2" />
                                         Leading
@@ -877,7 +888,8 @@ export default function AdminPage() {
                               </div>
                             </CardContent>
                           </Card>
-                        ));
+                        );
+                        });
                       })()}
                     </div>
                   )}

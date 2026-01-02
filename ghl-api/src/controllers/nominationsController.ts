@@ -18,7 +18,7 @@ import { ghlService } from '@/services/gohighlevel';
 const prisma = new PrismaClient();
 
 // Configuration: Month when yearly voting opens (0-11, where 0=January, 11=December)
-const YEARLY_VOTING_MONTH = 11; // December (change this to 9 for October)
+const YEARLY_VOTING_MONTH = 10; // November (change this to 9 for October)
 
 interface NominationRequest {
   type: 'business' | 'individual';
@@ -235,8 +235,8 @@ export class NominationsController {
     const targetMonthDate = new Date(currentYear, currentMonth + 1, 1);
     const targetMonth = `${targetMonthDate.getFullYear()}-${String(targetMonthDate.getMonth() + 1).padStart(2, '0')}`;
     
-    // Deadline is last day of current month at 11:59 PM
-    const deadline = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59, 999);
+    // Deadline is the 20th of current month at 11:59 PM
+    const deadline = new Date(currentYear, currentMonth, 20, 23, 59, 59, 999);
     
     return {
       canVote: true,
@@ -679,6 +679,8 @@ export class NominationsController {
     const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
                        'July', 'August', 'September', 'October', 'November', 'December'];
     const votingMonthName = monthNames[YEARLY_VOTING_MONTH];
+
+    console.log('votingMonthName:', votingMonthName);
     
     // Only allow voting in the configured month
     if (currentMonth !== YEARLY_VOTING_MONTH) {
