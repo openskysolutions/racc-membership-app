@@ -66,6 +66,9 @@ export interface CreateEventPayload {
   enhancedEmbedCode?: string;
   eliteEmbedCode?: string;
   customFieldsRecordId?: string;
+  // Recurrence fields
+  isRecurring?: boolean;
+  rrule?: string;
 }
 
 export interface UpdateEventPayload {
@@ -492,12 +495,18 @@ export async function updateRecurringSeriesCustomFields(
 /**
  * Delete a calendar event/appointment in GoHighLevel
  * @param eventId - The event ID to delete
+ * @param deleteType - For recurring events: 'single' (this instance only) or 'series' (all instances)
  */
-export async function deleteCalendarEvent(eventId: string): Promise<void> {
+export async function deleteCalendarEvent(eventId: string, deleteType?: 'single' | 'series'): Promise<void> {
   try {
-    console.log('Deleting calendar event:', eventId);
+    console.log('Deleting calendar event:', eventId, deleteType ? `(${deleteType})` : '');
     
-    const response = await api.delete(`/calendars/appointments/${eventId}`);
+    // Add query parameter for recurring event deletion type
+    const url = deleteType 
+      ? `/calendars/appointments/${eventId}?deleteType=${deleteType}`
+      : `/calendars/appointments/${eventId}`;
+    
+    const response = await api.delete(url);
     
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));

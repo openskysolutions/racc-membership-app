@@ -1510,6 +1510,57 @@ class GoHighLevelService {
   }
 
   /**
+   * Delete an appointment using direct HTTP call
+   * @param appointmentId - The appointment ID to delete
+   * @param deleteType - For recurring events: 'single' or 'series'
+   */
+  async deleteAppointment(appointmentId: string, deleteType?: 'single' | 'series'): Promise<void> {
+    if (!this.client) {
+      throw new Error('GoHighLevel client not initialized');
+    }
+
+    try {
+      console.log(`🗑️  Deleting appointment: ${appointmentId}${deleteType ? ` (${deleteType})` : ''}`);
+      
+      // For recurring events:
+      // - Individual instances have IDs like: baseId_timestamp_duration
+      // - The master/base event has just: baseId
+      const baseAppointmentId = appointmentId.includes('_') ? appointmentId.split('_')[0] : appointmentId;
+      console.log(`📋 Base appointment ID: ${baseAppointmentId}`);
+      console.log(`📋 Full appointment ID: ${appointmentId}`);
+      
+      if (deleteType === 'series') {
+        // GoHighLevel API limitation: Cannot delete recurring series via API
+        // The master event endpoint returns 401 "not yet supported by IAM Service"
+        // We need to inform the user to delete the series manually in GoHighLevel
+        throw new Error(
+          'GoHighLevel API does not support deleting entire recurring series programmatically. ' +
+          'To delete all instances, please go to GoHighLevel calendar and delete the series there, ' +
+          'or delete each instance individually from this app.'
+        );
+      }
+      
+      // Delete single instance or non-recurring event
+      const url = `/calendars/events/appointments/${appointmentId}`;
+      console.log(`📤 DELETE request to: ${url}`);
+      
+      const response = await this.client.delete(url);
+      console.log(`✅ Appointment deleted successfully. Status: ${response.status}`);
+      
+    } catch (error: any) {
+      // If it's our custom error about series deletion, pass it through
+      if (error.message?.includes('GoHighLevel API does not support')) {
+        throw error;
+      }
+      
+      console.error('❌ Failed to delete appointment:', error.message);
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      throw new Error(`Failed to delete appointment: ${error.message}`);
+    }
+  }
+
+  /**
    * Search for notes related to an appointment
    * @param appointmentId - The appointment ID to search notes for
    */

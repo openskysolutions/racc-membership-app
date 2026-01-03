@@ -20,6 +20,17 @@ interface EventDraft {
   eliteEmbedCode?: string;
   isMultiDay: boolean;
   lastUpdated: number;
+  // Recurrence fields
+  isRecurring?: boolean;
+  recurrencePattern?: 'daily' | 'weekly' | 'monthly' | 'yearly';
+  recurrenceInterval?: number;
+  recurrenceDaysOfWeek?: string[];
+  recurrenceMonthlyType?: 'dayOfMonth' | 'dayOfWeek';
+  recurrenceMonthlyWeekPosition?: number;
+  recurrenceMonthlyWeekDay?: string;
+  recurrenceEndType?: 'never' | 'on' | 'after';
+  recurrenceEndDate?: string;
+  recurrenceEndCount?: number;
 }
 
 interface EventDraftStore {

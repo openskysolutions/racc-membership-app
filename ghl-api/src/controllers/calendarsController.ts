@@ -257,9 +257,23 @@ async function getAllLocationEvents(req, res, next) {
 
 async function deleteEvent(req, res, next) {
   try {
-    await svc.deleteEvent({ eventId: req.params.id });
+    const { deleteType } = req.query; // 'single' or 'series'
+    
+    console.log(`[deleteEvent] Deleting event ${req.params.id}, deleteType: ${deleteType || 'default'}`);
+    
+    // Use our custom delete method that handles recurring events properly
+    if (deleteType === 'single' || deleteType === 'series') {
+      await ghlService.deleteAppointment(req.params.id, deleteType);
+    } else {
+      // For non-recurring or no type specified, use either method
+      await ghlService.deleteAppointment(req.params.id);
+    }
+    
     res.status(204).end();
-  } catch (err) { next(err); }
+  } catch (err) { 
+    console.error('[deleteEvent] Error:', err);
+    next(err); 
+  }
 }
 
 // Blocked Slots

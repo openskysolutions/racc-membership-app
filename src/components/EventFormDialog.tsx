@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, MapPin, User, Save, X, AlertCircle, Link, Image, Download, Trash2 } from 'lucide-react';
+import { Calendar, Clock, MapPin, User, Save, X, AlertCircle, Link, Image, Download, Trash2, Repeat } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,47 @@ import { useAuthStore } from '@/stores/authStore';
 import { useEventDraftStore } from '@/stores/eventDraftStore';
 import { createCalendarEvent, updateCalendarEvent, getEventCustomFields, deleteCalendarEvent, CalendarEvent, CreateEventPayload, UpdateEventPayload } from '@/services/calendar';
 import { uploadAvatar, validateAvatarFile, createImagePreview, revokeImagePreview, uploadEventCoverImage } from '@/services/avatarUpload';
+
+/**
+ * Generate RRULE string from recurrence options
+ * iCalendar RRULE format: https://icalendar.org/iCalendar-RFC-5545/3-8-5-3-recurrence-rule.html
+ */
+function generateRRule(formData: FormData): string {
+  const { recurrencePattern, recurrenceInterval, recurrenceDaysOfWeek, recurrenceMonthlyType, recurrenceMonthlyWeekPosition, recurrenceMonthlyWeekDay, recurrenceEndType, recurrenceEndDate, recurrenceEndCount } = formData;
+  
+  const parts: string[] = [];
+  
+  // Frequency
+  parts.push(`FREQ=${recurrencePattern.toUpperCase()}`);
+  
+  // Interval (every X days/weeks/months/years)
+  if (recurrenceInterval > 1) {
+    parts.push(`INTERVAL=${recurrenceInterval}`);
+  }
+  
+  // Days of week (for weekly recurrence)
+  if (recurrencePattern === 'weekly' && recurrenceDaysOfWeek.length > 0) {
+    parts.push(`BYDAY=${recurrenceDaysOfWeek.join(',')}`);
+  }
+  
+  // Monthly by day of week (e.g., 2nd Wednesday, last Friday)
+  if (recurrencePattern === 'monthly' && recurrenceMonthlyType === 'dayOfWeek' && recurrenceMonthlyWeekDay) {
+    parts.push(`BYDAY=${recurrenceMonthlyWeekPosition}${recurrenceMonthlyWeekDay}`);
+  }
+  
+  // End condition
+  if (recurrenceEndType === 'on' && recurrenceEndDate) {
+    // Convert to RRULE date format (YYYYMMDD)
+    const endDate = new Date(recurrenceEndDate);
+    const rruleDate = `${endDate.getFullYear()}${String(endDate.getMonth() + 1).padStart(2, '0')}${String(endDate.getDate()).padStart(2, '0')}`;
+    parts.push(`UNTIL=${rruleDate}T235959Z`);
+  } else if (recurrenceEndType === 'after') {
+    parts.push(`COUNT=${recurrenceEndCount}`);
+  }
+  // If 'never', no end condition is added
+  
+  return parts.join(';');
+}
 
 interface EventFormDialogProps {
   open: boolean;
@@ -53,6 +94,17 @@ interface FormData {
   basicEmbedCode: string;
   enhancedEmbedCode: string;
   eliteEmbedCode: string;
+  // Recurrence fields
+  isRecurring: boolean;
+  recurrencePattern: 'daily' | 'weekly' | 'monthly' | 'yearly';
+  recurrenceInterval: number; // Every X days/weeks/months/years
+  recurrenceDaysOfWeek: string[]; // For weekly: ['MO', 'WE', 'FR']
+  recurrenceMonthlyType: 'dayOfMonth' | 'dayOfWeek'; // Monthly: day of month (15th) or day of week (2nd Wed)
+  recurrenceMonthlyWeekPosition: number; // 1=first, 2=second, 3=third, 4=fourth, -1=last
+  recurrenceMonthlyWeekDay: string; // 'MO', 'TU', 'WE', etc.
+  recurrenceEndType: 'never' | 'on' | 'after';
+  recurrenceEndDate: string; // For 'on' type
+  recurrenceEndCount: number; // For 'after' type
 }
 
 const EventFormDialog: React.FC<EventFormDialogProps> = ({
@@ -77,6 +129,7 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
   const [pendingFormSubmit, setPendingFormSubmit] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [deleteRecurringType, setDeleteRecurringType] = useState<'single' | 'series'>('single');
   
   // File upload states
   const [coverUploading, setCoverUploading] = useState(false);
@@ -107,7 +160,18 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
     downloadFileUrl: '',
     basicEmbedCode: '',
     enhancedEmbedCode: '',
-    eliteEmbedCode: ''
+    eliteEmbedCode: '',
+    // Recurrence defaults
+    isRecurring: false,
+    recurrencePattern: 'weekly',
+    recurrenceInterval: 1,
+    recurrenceDaysOfWeek: [],
+    recurrenceMonthlyType: 'dayOfMonth',
+    recurrenceMonthlyWeekPosition: 1,
+    recurrenceMonthlyWeekDay: 'MO',
+    recurrenceEndType: 'never',
+    recurrenceEndDate: '',
+    recurrenceEndCount: 10
   });
 
   // Initialize form data when dialog opens
@@ -155,7 +219,18 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
           downloadFileUrl: '',
           basicEmbedCode: '',
           enhancedEmbedCode: '',
-          eliteEmbedCode: ''
+          eliteEmbedCode: '',
+          // Recurrence defaults (editing doesn't support recurrence changes)
+          isRecurring: false,
+          recurrencePattern: 'weekly',
+          recurrenceInterval: 1,
+          recurrenceDaysOfWeek: [],
+          recurrenceMonthlyType: 'dayOfMonth',
+          recurrenceMonthlyWeekPosition: 1,
+          recurrenceMonthlyWeekDay: 'MO',
+          recurrenceEndType: 'never',
+          recurrenceEndDate: '',
+          recurrenceEndCount: 10
         });
         
         // Load custom fields in the background
@@ -196,7 +271,18 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
             downloadFileUrl: savedDraft.downloadFileUrl,
             basicEmbedCode: savedDraft.basicEmbedCode || '',
             enhancedEmbedCode: savedDraft.enhancedEmbedCode || '',
-            eliteEmbedCode: savedDraft.eliteEmbedCode || ''
+            eliteEmbedCode: savedDraft.eliteEmbedCode || '',
+            // Recurrence fields from draft or defaults
+            isRecurring: savedDraft.isRecurring || false,
+            recurrencePattern: savedDraft.recurrencePattern || 'weekly',
+            recurrenceInterval: savedDraft.recurrenceInterval || 1,
+            recurrenceDaysOfWeek: savedDraft.recurrenceDaysOfWeek || [],
+            recurrenceMonthlyType: savedDraft.recurrenceMonthlyType || 'dayOfMonth',
+            recurrenceMonthlyWeekPosition: savedDraft.recurrenceMonthlyWeekPosition || 1,
+            recurrenceMonthlyWeekDay: savedDraft.recurrenceMonthlyWeekDay || 'MO',
+            recurrenceEndType: savedDraft.recurrenceEndType || 'never',
+            recurrenceEndDate: savedDraft.recurrenceEndDate || '',
+            recurrenceEndCount: savedDraft.recurrenceEndCount || 10
           });
           setIsMultiDay(savedDraft.isMultiDay);
         } else {
@@ -229,7 +315,18 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
             downloadFileUrl: '',
             basicEmbedCode: '',
             enhancedEmbedCode: '',
-            eliteEmbedCode: ''
+            eliteEmbedCode: '',
+            // Recurrence defaults
+            isRecurring: false,
+            recurrencePattern: 'weekly',
+            recurrenceInterval: 1,
+            recurrenceDaysOfWeek: [],
+            recurrenceMonthlyType: 'dayOfMonth',
+            recurrenceMonthlyWeekPosition: 1,
+            recurrenceMonthlyWeekDay: 'MO',
+            recurrenceEndType: 'never',
+            recurrenceEndDate: '',
+            recurrenceEndCount: 10
           });
         }
       }
@@ -322,7 +419,7 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
     }
   };
 
-  const handleInputChange = (field: keyof FormData, value: string | boolean) => {
+  const handleInputChange = (field: keyof FormData, value: string | boolean | number | string[]) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -629,7 +726,12 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
           eliteEmbedCode: customFields.eliteEmbedCode,
           source: 'calendar_page',
           channel: 'web_app',
-          meetingLocationType: 'custom'
+          meetingLocationType: 'custom',
+          // Recurrence fields
+          ...(formData.isRecurring && {
+            isRecurring: true,
+            rrule: generateRRule(formData)
+          })
         };
         
         const newEvent = await createCalendarEvent(createPayload);
@@ -665,8 +767,14 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
     
     setDeleting(true);
     try {
-      await deleteCalendarEvent(event.id);
-      console.log('Event deleted successfully');
+      // For recurring events, pass the delete type
+      if (event.isRecurring) {
+        await deleteCalendarEvent(event.id, deleteRecurringType);
+        console.log(`Event ${deleteRecurringType === 'series' ? 'series' : 'instance'} deleted successfully`);
+      } else {
+        await deleteCalendarEvent(event.id);
+        console.log('Event deleted successfully');
+      }
       
       // Clear draft
       clearDraft();
@@ -921,6 +1029,301 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
               </Label>
             </div>
 
+            {/* Recurring event checkbox - only show when creating */}
+            {!isEditing && (
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="isRecurring"
+                  checked={formData.isRecurring}
+                  onChange={(e) => handleInputChange('isRecurring', e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300"
+                />
+                <Label htmlFor="isRecurring" className="text-sm font-normal cursor-pointer flex items-center gap-2">
+                  <Repeat className="h-4 w-4" />
+                  Recurring event
+                </Label>
+              </div>
+            )}
+
+            {/* Recurrence configuration - only show when recurring is enabled */}
+            {!isEditing && formData.isRecurring && (
+              <div className="p-4 border rounded-lg space-y-4 bg-muted/30">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="recurrencePattern">Repeat Pattern</Label>
+                    <Select 
+                      value={formData.recurrencePattern} 
+                      onValueChange={(value: any) => handleInputChange('recurrencePattern', value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="daily">Daily</SelectItem>
+                        <SelectItem value="weekly">Weekly</SelectItem>
+                        <SelectItem value="monthly">Monthly</SelectItem>
+                        <SelectItem value="yearly">Yearly</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="recurrenceInterval">Every</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="recurrenceInterval"
+                        type="number"
+                        min="1"
+                        max="999"
+                        value={formData.recurrenceInterval}
+                        onChange={(e) => handleInputChange('recurrenceInterval', parseInt(e.target.value) || 1)}
+                        className="w-20"
+                      />
+                      <span className="text-sm text-muted-foreground">
+                        {formData.recurrencePattern === 'daily' && `day${formData.recurrenceInterval > 1 ? 's' : ''}`}
+                        {formData.recurrencePattern === 'weekly' && `week${formData.recurrenceInterval > 1 ? 's' : ''}`}
+                        {formData.recurrencePattern === 'monthly' && `month${formData.recurrenceInterval > 1 ? 's' : ''}`}
+                        {formData.recurrencePattern === 'yearly' && `year${formData.recurrenceInterval > 1 ? 's' : ''}`}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Days of week selector (only for weekly) */}
+                {formData.recurrencePattern === 'weekly' && (
+                  <div className="space-y-2">
+                    <Label>Repeat On</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { label: 'Sun', value: 'SU' },
+                        { label: 'Mon', value: 'MO' },
+                        { label: 'Tue', value: 'TU' },
+                        { label: 'Wed', value: 'WE' },
+                        { label: 'Thu', value: 'TH' },
+                        { label: 'Fri', value: 'FR' },
+                        { label: 'Sat', value: 'SA' }
+                      ].map(day => (
+                        <button
+                          key={day.value}
+                          type="button"
+                          onClick={() => {
+                            const days = formData.recurrenceDaysOfWeek.includes(day.value)
+                              ? formData.recurrenceDaysOfWeek.filter(d => d !== day.value)
+                              : [...formData.recurrenceDaysOfWeek, day.value];
+                            handleInputChange('recurrenceDaysOfWeek', days);
+                          }}
+                          className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                            formData.recurrenceDaysOfWeek.includes(day.value)
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-muted hover:bg-muted/70'
+                          }`}
+                        >
+                          {day.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Monthly pattern selector */}
+                {formData.recurrencePattern === 'monthly' && (
+                  <div className="space-y-3">
+                    <Label>Monthly Repeat Pattern</Label>
+                    
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="radio"
+                          id="monthlyDayOfMonth"
+                          name="recurrenceMonthlyType"
+                          value="dayOfMonth"
+                          checked={formData.recurrenceMonthlyType === 'dayOfMonth'}
+                          onChange={() => handleInputChange('recurrenceMonthlyType', 'dayOfMonth')}
+                          className="h-4 w-4"
+                        />
+                        <Label htmlFor="monthlyDayOfMonth" className="text-sm font-normal cursor-pointer">
+                          Day of month (e.g., 15th of every month)
+                        </Label>
+                      </div>
+
+                      <div className="flex items-start space-x-2">
+                        <input
+                          type="radio"
+                          id="monthlyDayOfWeek"
+                          name="recurrenceMonthlyType"
+                          value="dayOfWeek"
+                          checked={formData.recurrenceMonthlyType === 'dayOfWeek'}
+                          onChange={() => handleInputChange('recurrenceMonthlyType', 'dayOfWeek')}
+                          className="h-4 w-4 mt-0.5"
+                        />
+                        <div className="flex-1 space-y-2">
+                          <Label htmlFor="monthlyDayOfWeek" className="text-sm font-normal cursor-pointer">
+                            Day of week (e.g., second Wednesday)
+                          </Label>
+                          
+                          {formData.recurrenceMonthlyType === 'dayOfWeek' && (
+                            <div className="grid grid-cols-2 gap-2 pl-6">
+                              <Select 
+                                value={formData.recurrenceMonthlyWeekPosition.toString()} 
+                                onValueChange={(value) => handleInputChange('recurrenceMonthlyWeekPosition', parseInt(value))}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="1">First</SelectItem>
+                                  <SelectItem value="2">Second</SelectItem>
+                                  <SelectItem value="3">Third</SelectItem>
+                                  <SelectItem value="4">Fourth</SelectItem>
+                                  <SelectItem value="-1">Last</SelectItem>
+                                </SelectContent>
+                              </Select>
+
+                              <Select 
+                                value={formData.recurrenceMonthlyWeekDay} 
+                                onValueChange={(value) => handleInputChange('recurrenceMonthlyWeekDay', value)}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="SU">Sunday</SelectItem>
+                                  <SelectItem value="MO">Monday</SelectItem>
+                                  <SelectItem value="TU">Tuesday</SelectItem>
+                                  <SelectItem value="WE">Wednesday</SelectItem>
+                                  <SelectItem value="TH">Thursday</SelectItem>
+                                  <SelectItem value="FR">Friday</SelectItem>
+                                  <SelectItem value="SA">Saturday</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* End condition */}
+                <div className="space-y-3">
+                  <Label>Ends</Label>
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        id="endNever"
+                        name="recurrenceEndType"
+                        value="never"
+                        checked={formData.recurrenceEndType === 'never'}
+                        onChange={() => handleInputChange('recurrenceEndType', 'never')}
+                        className="h-4 w-4"
+                      />
+                      <Label htmlFor="endNever" className="text-sm font-normal cursor-pointer">
+                        Never
+                      </Label>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        id="endOn"
+                        name="recurrenceEndType"
+                        value="on"
+                        checked={formData.recurrenceEndType === 'on'}
+                        onChange={() => handleInputChange('recurrenceEndType', 'on')}
+                        className="h-4 w-4"
+                      />
+                      <Label htmlFor="endOn" className="text-sm font-normal cursor-pointer">
+                        On
+                      </Label>
+                      <Input
+                        type="date"
+                        value={formData.recurrenceEndDate}
+                        onChange={(e) => handleInputChange('recurrenceEndDate', e.target.value)}
+                        disabled={formData.recurrenceEndType !== 'on'}
+                        className="flex-1"
+                      />
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        id="endAfter"
+                        name="recurrenceEndType"
+                        value="after"
+                        checked={formData.recurrenceEndType === 'after'}
+                        onChange={() => handleInputChange('recurrenceEndType', 'after')}
+                        className="h-4 w-4"
+                      />
+                      <Label htmlFor="endAfter" className="text-sm font-normal cursor-pointer">
+                        After
+                      </Label>
+                      <Input
+                        type="number"
+                        min="1"
+                        max="999"
+                        value={formData.recurrenceEndCount}
+                        onChange={(e) => handleInputChange('recurrenceEndCount', parseInt(e.target.value) || 1)}
+                        disabled={formData.recurrenceEndType !== 'after'}
+                        className="w-20"
+                      />
+                      <span className="text-sm text-muted-foreground">occurrences</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Recurrence summary preview */}
+                <div className="p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-md">
+                  <p className="text-sm text-blue-900 dark:text-blue-100">
+                    <strong>Preview:</strong> {(() => {
+                      let summary = '';
+                      
+                      // Pattern and interval
+                      if (formData.recurrencePattern === 'daily') {
+                        summary = formData.recurrenceInterval === 1 ? 'Every day' : `Every ${formData.recurrenceInterval} days`;
+                      } else if (formData.recurrencePattern === 'weekly') {
+                        if (formData.recurrenceDaysOfWeek.length === 0) {
+                          summary = formData.recurrenceInterval === 1 ? 'Every week' : `Every ${formData.recurrenceInterval} weeks`;
+                        } else {
+                          const dayNames: Record<string, string> = { SU: 'Sun', MO: 'Mon', TU: 'Tue', WE: 'Wed', TH: 'Thu', FR: 'Fri', SA: 'Sat' };
+                          const days = formData.recurrenceDaysOfWeek.map(d => dayNames[d]).join(', ');
+                          summary = formData.recurrenceInterval === 1 
+                            ? `Every week on ${days}`
+                            : `Every ${formData.recurrenceInterval} weeks on ${days}`;
+                        }
+                      } else if (formData.recurrencePattern === 'monthly') {
+                        if (formData.recurrenceMonthlyType === 'dayOfMonth') {
+                          summary = formData.recurrenceInterval === 1 
+                            ? 'Monthly on the same day' 
+                            : `Every ${formData.recurrenceInterval} months on the same day`;
+                        } else {
+                          const positions: Record<number, string> = { 1: 'first', 2: 'second', 3: 'third', 4: 'fourth', '-1': 'last' };
+                          const dayNames: Record<string, string> = { SU: 'Sunday', MO: 'Monday', TU: 'Tuesday', WE: 'Wednesday', TH: 'Thursday', FR: 'Friday', SA: 'Saturday' };
+                          const position = positions[formData.recurrenceMonthlyWeekPosition];
+                          const day = dayNames[formData.recurrenceMonthlyWeekDay];
+                          summary = formData.recurrenceInterval === 1
+                            ? `Monthly on the ${position} ${day}`
+                            : `Every ${formData.recurrenceInterval} months on the ${position} ${day}`;
+                        }
+                      } else if (formData.recurrencePattern === 'yearly') {
+                        summary = formData.recurrenceInterval === 1 ? 'Every year' : `Every ${formData.recurrenceInterval} years`;
+                      }
+                      
+                      // End condition
+                      if (formData.recurrenceEndType === 'on' && formData.recurrenceEndDate) {
+                        summary += `, until ${new Date(formData.recurrenceEndDate).toLocaleDateString()}`;
+                      } else if (formData.recurrenceEndType === 'after') {
+                        summary += `, ${formData.recurrenceEndCount} times`;
+                      }
+                      
+                      return summary;
+                    })()}
+                  </p>
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="startDate" className="flex items-center gap-2">
@@ -1128,9 +1531,59 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
           <DialogHeader>
             <DialogTitle>Delete Event</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this event? This action cannot be undone.
+              {event?.isRecurring ? (
+                'This is a recurring event. What would you like to delete?'
+              ) : (
+                'Are you sure you want to delete this event? This action cannot be undone.'
+              )}
             </DialogDescription>
           </DialogHeader>
+          
+          {event?.isRecurring && (
+            <div className="space-y-3 py-4">
+              <div className="flex items-start space-x-3">
+                <input
+                  type="radio"
+                  id="deleteSingle"
+                  name="deleteType"
+                  value="single"
+                  checked={deleteRecurringType === 'single'}
+                  onChange={() => setDeleteRecurringType('single')}
+                  className="h-4 w-4 mt-0.5"
+                />
+                <div className="flex-1">
+                  <Label htmlFor="deleteSingle" className="cursor-pointer font-medium">
+                    This event only
+                  </Label>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Delete only this occurrence. Other events in the series will remain.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex items-start space-x-3">
+                <input
+                  type="radio"
+                  id="deleteSeries"
+                  name="deleteType"
+                  value="series"
+                  checked={deleteRecurringType === 'series'}
+                  onChange={() => setDeleteRecurringType('series')}
+                  className="h-4 w-4 mt-0.5"
+                  disabled
+                />
+                <div className="flex-1 opacity-50">
+                  <Label htmlFor="deleteSeries" className="cursor-not-allowed font-medium">
+                    All events in the series (Not Available)
+                  </Label>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    GoHighLevel API limitation: To delete an entire recurring series, please open GoHighLevel calendar and delete the series there.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+          
           <div className="flex justify-end gap-3 mt-4">
             <Button
               variant="outline"
@@ -1144,7 +1597,7 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
               onClick={handleDelete}
               disabled={deleting}
             >
-              {deleting ? 'Deleting...' : 'Delete Event'}
+              {deleting ? 'Deleting...' : (event?.isRecurring && deleteRecurringType === 'series' ? 'Delete Series' : 'Delete Event')}
             </Button>
           </div>
         </DialogContent>
