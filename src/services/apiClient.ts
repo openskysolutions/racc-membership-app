@@ -5,26 +5,58 @@
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
 
+// Track if we're currently redirecting to avoid multiple redirects
+let isRedirecting = false;
+
 /**
  * Handle 401 Unauthorized response by redirecting to sign-in
  * Clears all auth tokens and preserves the current URL to return after login
  */
 export function handle401Redirect(): void {
+  // Prevent multiple simultaneous redirects
+  if (isRedirecting) {
+    return;
+  }
+  isRedirecting = true;
+  
   // Clear invalid session and tokens
   sessionStorage.removeItem('racc_auth_session');
   sessionStorage.removeItem('token');
+  sessionStorage.removeItem('pkce_code_verifier');
   localStorage.removeItem('token');
   
-  // Get current path to return to after login
+  // Clear auth store state
+  localStorage.removeItem('auth-storage');
+  
+  // Get current path to return to after login (exclude auth routes)
   const currentPath = window.location.pathname + window.location.search + window.location.hash;
-  const returnUrl = encodeURIComponent(currentPath);
+  const isAuthRoute = currentPath.startsWith('/login') || currentPath.startsWith('/connect-account');
+  const returnUrl = !isAuthRoute ? encodeURIComponent(currentPath) : '';
+  
+  // Trigger custom event for any listeners (before redirect)
+  window.dispatchEvent(new CustomEvent('auth:unauthorized', { 
+    detail: { returnUrl: currentPath }
+  }));
   
   // Redirect to sign-in page with return URL
-  console.log('[Auth] 401 Unauthorized - Redirecting to sign-in with return URL:', currentPath);
-  window.location.href = `/auth/login?returnUrl=${returnUrl}`;
+  console.log('[Auth] 401 Unauthorized - Session expired. Redirecting to sign-in...', 
+    returnUrl ? `Return URL: ${currentPath}` : '');
   
-  // Also trigger custom event for any listeners
-  window.dispatchEvent(new CustomEvent('auth:unauthorized'));
+  // Small delay to ensure event listeners can process
+  setTimeout(() => {
+    window.location.href = returnUrl 
+      ? `/login?returnUrl=${returnUrl}` 
+      : '/login';
+  }, 100);
+}
+
+/**
+ * Check if user is authenticated (has valid token)
+ * This is a synchronous check - doesn't validate with server
+ */
+export function hasAuthToken(): boolean {
+  const token = getAuthToken();
+  return !!token;
 }
 
 /**
@@ -78,13 +110,21 @@ export async function apiFetch(endpoint: string, init?: RequestInit, retries: nu
       
       clearTimeout(timeoutId);
       
-      // Handle authentication errors
+      // Handle authentication errors - throw special error that prevents retry
       if (response.status === 401) {
+        console.warn('[Auth] Received 401 Unauthorized response');
         handle401Redirect();
+        // Throw a special error to break out of retry loop
+        throw new Error('UNAUTHORIZED_SESSION_EXPIRED');
       }
       
       return response;
     } catch (error) {
+      // If it's our special auth error, don't retry - just rethrow
+      if (error instanceof Error && error.message === 'UNAUTHORIZED_SESSION_EXPIRED') {
+        throw error;
+      }
+      
       console.error(`[API] Request failed (attempt ${attempt + 1}/${retries + 1}):`, {
         url,
         error: error instanceof Error ? error.message : 'Unknown error',

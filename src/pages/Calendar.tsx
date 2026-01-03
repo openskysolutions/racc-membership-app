@@ -9,6 +9,7 @@ import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, Di
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import EventFormDialog from '@/components/EventFormDialog';
 import { useAuthStore } from '@/stores/authStore';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { formatEventDate, formatEventTime, formatLocation } from '@/lib/eventUtils';
 import { EventCountdown } from '@/components/EventCountdown';
 
@@ -39,6 +40,11 @@ const CalendarPage: React.FC = () => {
   const [refreshTrigger, setRefreshTrigger] = useState(0); // Trigger to force refresh
   const [visibleEventsCount, setVisibleEventsCount] = useState(5); // How many events to show in the list
   const [loadedCustomFieldsIds, setLoadedCustomFieldsIds] = useState<Set<string>>(new Set()); // Track which events have loaded custom fields
+
+  // Auth check hook - validates session before edit/create actions
+  const { checkAuthBeforeAction } = useRequireAuth({
+    skipInitialValidation: true // Only check when user tries to edit/create
+  });
 
   // Check for URL parameters to trigger create event dialog
   useEffect(() => {
@@ -198,12 +204,24 @@ const CalendarPage: React.FC = () => {
   }, [events, visibleEventsCount]);
 
   // Event handlers
-  const handleCreateEvent = (date?: Date) => {
+  const handleCreateEvent = async (date?: Date) => {
+    // Check authentication before allowing event creation
+    const isAuthorized = await checkAuthBeforeAction();
+    if (!isAuthorized) {
+      return; // User will be redirected to login
+    }
+    
     setSelectedDate(date || null);
     setCreateEventDialogOpen(true);
   };
 
-  const handleEditEvent = (event: CalendarEvent) => {
+  const handleEditEvent = async (event: CalendarEvent) => {
+    // Check authentication before allowing event edit
+    const isAuthorized = await checkAuthBeforeAction();
+    if (!isAuthorized) {
+      return; // User will be redirected to login
+    }
+    
     setSelectedEvent(event);
     setCreateEventDialogOpen(true);
   };

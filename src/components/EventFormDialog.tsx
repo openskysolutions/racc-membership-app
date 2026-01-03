@@ -1101,7 +1101,7 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
                   // Trigger the actual update
                   setTimeout(() => performUpdate(), 0);
                 }}
-                className="w-full p-4 text-left border-2 border-border rounded-lg hover:bg-accent transition-colors"
+                className="w-full p-4 text-left border-2 border-border rounded-lg hover:bg-gray-200 transition-colors"
               >
                 <div className="font-semibold">Update only this event</div>
                 <div className="text-sm text-muted-foreground mt-1">

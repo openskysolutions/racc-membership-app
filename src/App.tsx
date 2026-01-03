@@ -6,6 +6,7 @@ import { SafeArea } from 'capacitor-plugin-safe-area';
 import { StatusBar } from '@capacitor/status-bar';
 import { isNativeApp } from '@/lib/platform';
 import { Toaster } from '@/components/ui/sonner';
+import { SessionMonitor } from '@/components/SessionMonitor';
 
 import "@/App.css";
 
@@ -49,6 +50,7 @@ function App() {
 
   return (
     <>
+      <SessionMonitor />
       <AppRoutes />
       <Toaster />
     </>
