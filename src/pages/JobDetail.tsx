@@ -129,7 +129,7 @@ const JobDetailPage: React.FC = () => {
             <h3 className="text-lg font-semibold mb-2">Job not found</h3>
             <Button asChild variant="outline">
               <Link to="/jobs">
-                <ArrowLeft className="mr-2 h-4 w-4" />
+                <ArrowLeft className="mr-0 h-4 w-4" />
                 Back to Jobs
               </Link>
             </Button>
@@ -142,10 +142,10 @@ const JobDetailPage: React.FC = () => {
   const requirements = job.requirements ? JSON.parse(job.requirements) : [];
 
   return (
-    <section className="container py-8 max-w-4xl mx-auto">
-      <Button asChild variant="ghost" className="mb-6">
+    <section className="container py-8 max-w-4xl mx-auto px-4">
+      <Button asChild variant="ghost" className="mb-6 pl-0">
         <Link to="/jobs">
-          <ArrowLeft className="mr-2 h-4 w-4" />
+          <ArrowLeft className="mr-0 h-4 w-4" />
           Back to Jobs
         </Link>
       </Button>

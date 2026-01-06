@@ -83,7 +83,7 @@ const JobPostingsPage: React.FC = () => {
   };
 
   return (
-    <section className="container py-8 max-w-7xl mx-auto">
+    <section className="container py-8 max-w-7xl mx-auto px-4">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold mb-2">Job Board</h1>

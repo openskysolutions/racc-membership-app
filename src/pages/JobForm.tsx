@@ -144,9 +144,15 @@ const JobFormPage: React.FC = () => {
 
   const addRequirement = () => {
     if (requirementInput.trim()) {
+      // Split by comma and filter out empty strings
+      const newRequirements = requirementInput
+        .split(',')
+        .map(req => req.trim())
+        .filter(req => req.length > 0);
+      
       setFormData({
         ...formData,
-        requirements: [...(formData.requirements || []), requirementInput.trim()],
+        requirements: [...(formData.requirements || []), ...newRequirements],
       });
       setRequirementInput('');
     }
@@ -170,10 +176,10 @@ const JobFormPage: React.FC = () => {
   }
 
   return (
-    <section className="container py-8 max-w-3xl mx-auto">
-      <Button asChild variant="ghost" className="mb-6">
+    <section className="container py-8 max-w-3xl mx-auto px-4">
+      <Button asChild variant="ghost" className="mb-6 pl-0">
         <Link to="/jobs">
-          <ArrowLeft className="mr-2 h-4 w-4" />
+          <ArrowLeft className="mr-0 h-4 w-4" />
           Back to Jobs
         </Link>
       </Button>
@@ -291,7 +297,7 @@ const JobFormPage: React.FC = () => {
                   id="requirements"
                   value={requirementInput}
                   onChange={(e) => setRequirementInput(e.target.value)}
-                  placeholder="Add a requirement"
+                  placeholder="Add requirements (comma-separated for multiple)"
                   onKeyPress={(e) => {
                     if (e.key === 'Enter') {
                       e.preventDefault();
@@ -303,6 +309,9 @@ const JobFormPage: React.FC = () => {
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
+              <p className="text-xs text-muted-foreground">
+                Enter multiple requirements separated by commas, or add them one at a time
+              </p>
               {formData.requirements && formData.requirements.length > 0 && (
                 <ul className="mt-2 space-y-2">
                   {formData.requirements.map((req, index) => (
