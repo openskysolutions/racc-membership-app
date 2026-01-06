@@ -356,6 +356,15 @@ jobs:
           ln -sf /etc/nginx/sites-available/racc-membership-app /etc/nginx/sites-enabled/
           nginx -t && systemctl reload nginx
           
+          # Ensure HTTPS is configured (certbot adds the SSL config to the nginx file)
+          echo "Ensuring HTTPS configuration..."
+          if ! grep -q "listen 443" /etc/nginx/sites-available/racc-membership-app; then
+            echo "HTTPS not configured, running certbot..."
+            certbot --nginx -d members.richfieldareachamber.com --non-interactive --agree-tos --email admin@richfieldareachamber.com
+          else
+            echo "HTTPS already configured"
+          fi
+          
           echo "Nginx configuration updated and reloaded"
           
           echo "Frontend service is running successfully"
