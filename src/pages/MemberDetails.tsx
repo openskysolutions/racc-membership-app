@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Mail, Phone, Globe, Calendar, Shield, Edit, Save, X, ExternalLink } from 'lucide-react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { ArrowLeft, Mail, Phone, Globe, Calendar, Shield, Edit, Save, X, ExternalLink, Briefcase, Plus } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,6 +15,7 @@ import { useAuthStore } from '@/stores/authStore';
 import type { Member } from '@/types/member';
 import AvatarUpload from '@/components/AvatarUpload';
 import CoverImageUpload from '@/components/CoverImageUpload';
+import { getJobs, Job } from '@/services/jobs';
 
 interface MemberFormData {
   firstName: string;
@@ -46,6 +47,8 @@ const MemberDetailsPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [updating, setUpdating] = useState(false);
+  const [companyJobs, setCompanyJobs] = useState<Job[]>([]);
+  const [loadingJobs, setLoadingJobs] = useState(false);
   const [formData, setFormData] = useState<MemberFormData>({
     firstName: '',
     lastName: '',
@@ -135,6 +138,29 @@ const MemberDetailsPage: React.FC = () => {
       fetchingRef.current = false;
     };
   }, [id]);
+
+  // Load jobs for the member's company
+  useEffect(() => {
+    const loadCompanyJobs = async () => {
+      if (!member) return;
+      
+      const companyName = member.businessName || member.companyName;
+      if (!companyName) return;
+
+      setLoadingJobs(true);
+      try {
+        const response = await getJobs({ company: companyName });
+        setCompanyJobs(response.jobs);
+      } catch (error) {
+        console.error('Failed to load company jobs:', error);
+        setCompanyJobs([]);
+      } finally {
+        setLoadingJobs(false);
+      }
+    };
+
+    loadCompanyJobs();
+  }, [member]);
 
   const formatMemberName = (member: Member) => {
     const fullName = `${member.firstName || ''} ${member.lastName || ''}`.trim();
@@ -790,6 +816,54 @@ const MemberDetailsPage: React.FC = () => {
                 )}
               </CardContent>
             </Card>
+                          {/* Company Job Listings */}
+              <Card className="mt-6">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Briefcase className="h-5 w-5" />
+                      Job Openings
+                    </CardTitle>
+                    {user && (user.role === 'admin' || user.status === 'active') && (
+                      <Button asChild size="sm">
+                        <Link to="/jobs/new">
+                          <Plus className="h-4 w-4 mr-0" />
+                          Add Job Listing
+                        </Link>
+                      </Button>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {loadingJobs ? (
+                    <p className="text-sm text-muted-foreground">Loading jobs...</p>
+                  ) : companyJobs.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No current job openings.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {companyJobs.map((job) => (
+                        <Link
+                          key={job.id}
+                          to={`/jobs/${job.id}`}
+                          className="block p-3 rounded-lg border hover:bg-slate-200 transition-colors"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-medium text-sm mb-1 truncate">{job.title}</h4>
+                              <p className="text-xs text-muted-foreground">
+                                <span className="capitalize">{job.type}</span> • {job.location}
+                              </p>
+                            </div>
+                            <span className="text-xs text-muted-foreground whitespace-nowrap">
+                              {new Date(job.createdAt).toLocaleDateString()}
+                            </span>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
           </div>
         </div>
       </div>

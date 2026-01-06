@@ -24,6 +24,10 @@ import EliteMembershipPage from '@/pages/MembershipElite';
 import MembersPage from '@/pages/Members';
 import MemberDetailsPage from '@/pages/MemberDetails';
 import JobPostingsPage from '@/pages/JobPostings';
+import JobDetailPage from '@/pages/JobDetail';
+import JobFormPage from '@/pages/JobForm';
+import JobApplicationPage from '@/pages/JobApplication';
+import JobApplicationsListPage from '@/pages/JobApplicationsList';
 import CalendarPage from '@/pages/Calendar';
 import EventDetailPage from '@/pages/EventDetail';
 import CoursesPage from '@/pages/Courses';
@@ -116,6 +120,12 @@ export default function AppRoutes() {
         <Route path="events/:id" element={<EventDetailPage />} />
         <Route path="members" element={<MembersPage />} />
         <Route path="members/:id" element={<MemberDetailsPage />} />
+        <Route path="jobs" element={<JobPostingsPage />} />
+        <Route path="jobs/new" element={<ProtectedRoute><JobFormPage /></ProtectedRoute>} />
+        <Route path="jobs/:id" element={<JobDetailPage />} />
+        <Route path="jobs/:id/edit" element={<ProtectedRoute><JobFormPage /></ProtectedRoute>} />
+        <Route path="jobs/:id/apply" element={<JobApplicationPage />} />
+        <Route path="jobs/:id/applications" element={<ProtectedRoute><JobApplicationsListPage /></ProtectedRoute>} />
         <Route path="job-postings" element={<JobPostingsPage />} />
         <Route path="courses" element={<ProtectedRoute><CoursesPage /></ProtectedRoute>} />
 

@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
 import { swaggerUi, swaggerSpec } from '@/swagger';
 import { requestLogger, errorLogger } from '@/middleware/logging';
 import { errorHandler, notFoundHandler } from '@/middleware/errors';
@@ -34,6 +35,9 @@ app.use(cors({
 // Increase body parser limit for uploads (base64 encoded images add ~33% overhead)
 // So a 5MB image becomes ~6.6MB when base64 encoded
 app.use(express.json({ limit: '15mb' }));
+
+// Serve static files from public directory (for resume uploads, etc.)
+app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
 
 // Request logging middleware
 app.use(requestLogger);

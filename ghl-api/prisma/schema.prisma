@@ -24,6 +24,7 @@ model User {
   // Relations
   sessions Session[]
   votes    Vote[]
+  jobs     Job[]
 
   @@index([email])
   @@index([ghlContactId])
@@ -90,4 +91,58 @@ model Vote {
   @@index([votingMonth])
   @@index([voteType])
   @@map("votes")
+}
+
+// Job postings table - chamber members can post job opportunities
+model Job {
+  id                     Int              @id @default(autoincrement())
+  title                  String
+  company                String
+  location               String
+  type                   String           // full-time, part-time, contract, internship
+  salary                 String?
+  description            String           @db.Text
+  requirements           String?          @db.Text // JSON array stored as text
+  postedById             Int              // Member who posted the job
+  expiresAt              DateTime?
+  status                 String           @default("active") // active, closed, expired
+  externalApplicationUrl String?          // Optional: redirect to external site for application
+  viewCount              Int              @default(0) // Track how many times job has been viewed
+  createdAt              DateTime         @default(now())
+  updatedAt              DateTime         @updatedAt
+  
+  // Relations
+  postedBy               User             @relation(fields: [postedById], references: [id], onDelete: Cascade)
+  applications           JobApplication[]
+  
+  @@index([postedById])
+  @@index([status])
+  @@index([type])
+  @@index([createdAt])
+  @@map("jobs")
+}
+
+// Job applications table - anyone can apply for jobs
+model JobApplication {
+  id                     Int      @id @default(autoincrement())
+  jobId                  Int
+  applicantName          String
+  applicantEmail         String
+  applicantPhone         String?
+  coverLetter            String?  @db.Text
+  resumeFileUrl          String?  // URL to uploaded resume file
+  resumeFileName         String?  // Original filename
+  resumeGoogleDocLink    String?  // Optional Google Doc link
+  status                 String   @default("pending") // pending, reviewed, shortlisted, rejected
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+  
+  // Relations
+  job                    Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  
+  @@index([jobId])
+  @@index([applicantEmail])
+  @@index([status])
+  @@index([createdAt])
+  @@map("job_applications")
 }
