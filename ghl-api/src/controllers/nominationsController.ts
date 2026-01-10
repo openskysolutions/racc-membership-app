@@ -88,7 +88,7 @@ export class NominationsController {
    */
   async listNominations(req: Request, res: Response): Promise<Response> {
     try {
-      const { type, category, status, year, month, limit, offset } = req.query;
+      const { type, category, status, year, month, limit, offset, votingMonth } = req.query;
 
       const where: any = {};
       if (type) where.type = type;
@@ -140,9 +140,19 @@ export class NominationsController {
       ]);
 
       // Calculate vote statistics for each nomination, separated by vote type
+      // If votingMonth filter is provided, only count votes from that voting month
       const nominationsWithStats = nominations.map(nom => {
-        const monthlyVotes = nom.votes.filter(v => v.voteValue && v.voteType === 'monthly');
+        let monthlyVotes = nom.votes.filter(v => v.voteValue && v.voteType === 'monthly');
         const yearlyVotes = nom.votes.filter(v => v.voteValue && v.voteType === 'yearly');
+        
+        // Filter monthly votes by votingMonth if provided
+        if (votingMonth) {
+          console.log(`Filtering votes for votingMonth: ${votingMonth}`);
+          monthlyVotes = monthlyVotes.filter(v => {
+            console.log(`Vote votingMonth: ${v.votingMonth}, matches: ${v.votingMonth === votingMonth}`);
+            return v.votingMonth === votingMonth;
+          });
+        }
         
         return {
           ...nom,

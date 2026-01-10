@@ -55,10 +55,40 @@ export default function AdminPage() {
     hasMore: false
   });
 
-  // Nominations state
+  // Nominations state - separate for management tab
   const [nominations, setNominations] = useState<Nomination[]>([]);
   const [nominationsLoading, setNominationsLoading] = useState(false);
   const [nominationCategory, setNominationCategory] = useState<'business_of_month' | 'customer_service_superstar'>('business_of_month');
+  
+  // Monthly results viewing - separate state for each category
+  const [businessNominations, setBusinessNominations] = useState<Nomination[]>([]);
+  const [businessLoading, setBusinessLoading] = useState(false);
+  const [businessMonthSelected, setBusinessMonthSelected] = useState<string>(() => {
+    const now = new Date();
+    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    return `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, '0')}`;
+  });
+  
+  const [superstarNominations, setSuperstarNominations] = useState<Nomination[]>([]);
+  const [superstarLoading, setSuperstarLoading] = useState(false);
+  const [superstarMonthSelected, setSuperstarMonthSelected] = useState<string>(() => {
+    const now = new Date();
+    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    return `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, '0')}`;
+  });
+  
+  // Yearly results viewing - separate state for each category
+  const [businessYearlyNominations, setBusinessYearlyNominations] = useState<Nomination[]>([]);
+  const [businessYearlyLoading, setBusinessYearlyLoading] = useState(false);
+  const [businessYearSelected, setBusinessYearSelected] = useState<string>(() => {
+    return new Date().getFullYear().toString();
+  });
+  
+  const [superstarYearlyNominations, setSuperstarYearlyNominations] = useState<Nomination[]>([]);
+  const [superstarYearlyLoading, setSuperstarYearlyLoading] = useState(false);
+  const [superstarYearSelected, setSuperstarYearSelected] = useState<string>(() => {
+    return new Date().getFullYear().toString();
+  });
 
   // Check if user has admin or board member access
   const hasAccess = currentUser && (currentUser.role === 'admin' || currentUser.role === 'moderator' || currentUser.role === 'board_member');
@@ -92,9 +122,49 @@ export default function AdminPage() {
   }, []);
 
   useEffect(() => {
-    // Load nominations when category changes
-    loadNominations();
-  }, [nominationCategory]);
+    loadBusinessNominations();
+  }, [businessMonthSelected]);
+
+  useEffect(() => {
+    loadSuperstarNominations();
+  }, [superstarMonthSelected]);
+
+  useEffect(() => {
+    loadBusinessYearlyNominations();
+  }, [businessYearSelected]);
+
+  useEffect(() => {
+    loadSuperstarYearlyNominations();
+  }, [superstarYearSelected]);
+
+  // Generate months for dropdown: next month (current voting round) + last 11 months
+  const getLast12Months = () => {
+    const months = [];
+    const now = new Date();
+    
+    // Start with next month (current voting round)
+    for (let i = 1; i >= -11; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() + i, 1);
+      const value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      const label = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+      months.push({ value, label });
+    }
+    
+    return months;
+  };
+
+  // Generate years for dropdown: current year + last 9 years
+  const getLast10Years = () => {
+    const years = [];
+    const currentYear = new Date().getFullYear();
+    
+    for (let i = 0; i < 10; i++) {
+      const year = currentYear - i;
+      years.push({ value: year.toString(), label: year.toString() });
+    }
+    
+    return years;
+  };
 
   const loadData = async () => {
     try {
@@ -129,16 +199,120 @@ export default function AdminPage() {
     }
   };
 
+  // Load business nominations for monthly results
+  const loadBusinessNominations = async () => {
+    setBusinessLoading(true);
+    try {
+      const [year, month] = businessMonthSelected.split('-').map(Number);
+      const votingDate = new Date(year, month - 2);
+      const votingMonth = `${votingDate.getFullYear()}-${String(votingDate.getMonth() + 1).padStart(2, '0')}`;
+      
+      const params = new URLSearchParams({
+        category: 'business_of_month',
+        votingMonth: votingMonth,
+      });
+
+      const response = await api.get(`/nominations?${params.toString()}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        setBusinessNominations(data.nominations || []);
+      } else {
+        throw new Error('Failed to load business nominations');
+      }
+    } catch (error: any) {
+      console.error('Error loading business nominations:', error);
+      toast.error('Failed to load business nominations');
+    } finally {
+      setBusinessLoading(false);
+    }
+  };
+
+  // Load superstar nominations for monthly results
+  const loadSuperstarNominations = async () => {
+    setSuperstarLoading(true);
+    try {
+      const [year, month] = superstarMonthSelected.split('-').map(Number);
+      const votingDate = new Date(year, month - 2);
+      const votingMonth = `${votingDate.getFullYear()}-${String(votingDate.getMonth() + 1).padStart(2, '0')}`;
+      
+      const params = new URLSearchParams({
+        category: 'customer_service_superstar',
+        votingMonth: votingMonth,
+      });
+
+      const response = await api.get(`/nominations?${params.toString()}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        setSuperstarNominations(data.nominations || []);
+      } else {
+        throw new Error('Failed to load superstar nominations');
+      }
+    } catch (error: any) {
+      console.error('Error loading superstar nominations:', error);
+      toast.error('Failed to load superstar nominations');
+    } finally {
+      setSuperstarLoading(false);
+    }
+  };
+
+  // Load business yearly nominations
+  const loadBusinessYearlyNominations = async () => {
+    setBusinessYearlyLoading(true);
+    try {
+      const params = new URLSearchParams({
+        category: 'business_of_month',
+        year: businessYearSelected,
+      });
+
+      const response = await api.get(`/nominations?${params.toString()}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        setBusinessYearlyNominations(data.nominations || []);
+      } else {
+        throw new Error('Failed to load business yearly nominations');
+      }
+    } catch (error: any) {
+      console.error('Error loading business yearly nominations:', error);
+      toast.error('Failed to load business yearly nominations');
+    } finally {
+      setBusinessYearlyLoading(false);
+    }
+  };
+
+  // Load superstar yearly nominations
+  const loadSuperstarYearlyNominations = async () => {
+    setSuperstarYearlyLoading(true);
+    try {
+      const params = new URLSearchParams({
+        category: 'customer_service_superstar',
+        year: superstarYearSelected,
+      });
+
+      const response = await api.get(`/nominations?${params.toString()}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        setSuperstarYearlyNominations(data.nominations || []);
+      } else {
+        throw new Error('Failed to load superstar yearly nominations');
+      }
+    } catch (error: any) {
+      console.error('Error loading superstar yearly nominations:', error);
+      toast.error('Failed to load superstar yearly nominations');
+    } finally {
+      setSuperstarYearlyLoading(false);
+    }
+  };
+
+  // Load nominations for management tab (doesn't filter by month, shows all recent)
   const loadNominations = async () => {
     setNominationsLoading(true);
     try {
-      // Get nominations from the past 3 months
-      const threeMonthsAgo = new Date();
-      threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-      
       const params = new URLSearchParams({
         category: nominationCategory,
-        startDate: threeMonthsAgo.toISOString(),
       });
 
       const response = await api.get(`/nominations?${params.toString()}`);
@@ -651,119 +825,178 @@ export default function AdminPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-6">
-                  {/* Month and Category Filters */}
-                  <div className="flex flex-col sm:flex-row gap-4">
-                    <Select value={nominationCategory} onValueChange={(value: any) => setNominationCategory(value)}>
-                      <SelectTrigger className="w-full sm:w-[250px]">
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="business_of_month">Business of the Month</SelectItem>
-                        <SelectItem value="customer_service_superstar">Customer Service Superstar</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Button onClick={loadNominations} variant="outline">
-                      <LucideRefreshCcw className="h-4 w-4 mr-2" />
-                      Refresh
-                    </Button>
-                  </div>
+                <Tabs defaultValue="business" className="space-y-4">
+                  <TabsList className="grid w-full h-20 sm:h-10 grid-cols-1 sm:grid-cols-2 gap-0">
+                    <TabsTrigger value="business" className="data-[state=active]:bg-white rounded-md">Business of the Month</TabsTrigger>
+                    <TabsTrigger value="superstar" className="data-[state=active]:bg-white rounded-md">Customer Service Superstar</TabsTrigger>
+                  </TabsList>
+                  
+                  {/* Business of the Month Tab */}
+                  <TabsContent value="business" className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <Select value={businessMonthSelected} onValueChange={setBusinessMonthSelected}>
+                        <SelectTrigger className="w-[280px]">
+                          <SelectValue placeholder="Select month" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {getLast12Months().map(month => (
+                            <SelectItem key={`business-${month.value}`} value={month.value}>
+                              Votes for <span className="font-semibold">{month.label}</span> winners.
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button onClick={loadBusinessNominations} variant="outline" size="icon">
+                        <LucideRefreshCcw className="h-4 w-4" />
+                      </Button>
+                    </div>
 
-                  {/* Voting Results */}
-                  {nominationsLoading ? (
-                    <div className="flex justify-center py-8">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                    </div>
-                  ) : nominations.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <Award className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>No nominations found for this category.</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {/* Filter nominations with at least 1 monthly vote and sort by monthly vote count */}
-                      {(() => {
-                        const votedNominations = [...nominations]
-                          .filter(n => (n.monthlyVoteCount || 0) > 0)
-                          .sort((a, b) => (b.monthlyVoteCount || 0) - (a.monthlyVoteCount || 0));
-                        
-                        if (votedNominations.length === 0) {
-                          return (
-                            <div className="text-center py-8 text-muted-foreground">
-                              <Award className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                              <p>No nominations with monthly votes yet for this category.</p>
-                            </div>
-                          );
-                        }
-                        
-                        // Find the highest vote count to handle ties
-                        const highestVoteCount = votedNominations[0]?.monthlyVoteCount || 0;
-                        
-                        return votedNominations.map((nomination) => {
-                          const isLeading = (nomination.monthlyVoteCount || 0) === highestVoteCount;
-                          return (
-                          <Card key={nomination.id} className={isLeading ? 'border-yellow-500 bg-yellow-50 dark:bg-yellow-950' : ''}>
-                            <CardContent className="p-3 pt-3">
-                              <div className="flex flex-col md:flex-row items-start justify-between gap-4">
-                                {/* Left side: Name and metadata */}
-                                <div className="flex flex-col w-full sm:w-1/2 ">
-                                  <div className="flex items-center gap-3 flex-wrap">
-                                    <h3 className="text-lg font-semibold text-nowrap">
-                                      {nominationCategory === 'customer_service_superstar' && nomination.name
-                                        ? nomination.name
-                                        : nomination.businessName}
-                                    </h3>
-                                  </div>
-                                  {nominationCategory === 'customer_service_superstar' && nomination.name ? (
-                                    <p className="text-sm text-muted-foreground">
-                                      Company: {nomination.businessName}
-                                    </p>
-                                  ) : nomination.name && (
-                                    <p className="text-sm text-muted-foreground">
-                                      Employee: {nomination.name}
-                                    </p>
-                                  )}
-                                  <p className="mt-2 mb-1 text-xs text-muted-foreground">
-                                    Nominated: {new Date(nomination.createdAt).toLocaleDateString('en-US', { 
-                                      month: 'long', 
-                                      day: 'numeric', 
-                                      year: 'numeric' 
-                                    })}
-                                  </p>
-                                  <div className="flex items-center gap-4">
-                                    {isLeading && (
-                                      <Badge variant="default" className="bg-yellow-500">
-                                        <Star className="h-3 w-3 mr-1 max-w-1/2" />
-                                        Leading
-                                      </Badge>
-                                    )}
-                                    <div className="flex items-center gap-2">
-                                      <div className="text-sm text-muted-foreground">
-                                        monthly votes:
-                                      </div>
-                                      <div className="text-lg font-semibold text-card bg-highlight h-7 w-7 rounded-full flex items-center justify-center">
-                                        {nomination.monthlyVoteCount || 0}
-                                      </div>
-                                    </div>
-                                    </div>
-                                </div>
-                                
-                                {/* Right side: Nomination reason */}
-                                <div className="w-full min-w-0 flex flex-col md:self-stretch md:border-l md:pl-4 flex-shrink">
-                                  <p className="text-sm font-medium mb-1">Nomination Reason:</p>
-                                  <p className="text-sm italic text-muted-foreground">
-                                    "{nomination.reason}"
-                                  </p>
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
+                    {businessLoading ? (
+                      <div className="flex justify-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                      </div>
+                    ) : (() => {
+                      const votedNominations = [...businessNominations]
+                        .filter(n => (n.monthlyVoteCount || 0) > 0)
+                        .sort((a, b) => (b.monthlyVoteCount || 0) - (a.monthlyVoteCount || 0));
+                      
+                      if (votedNominations.length === 0) {
+                        return (
+                          <div className="text-center py-8 text-muted-foreground">
+                            <Award className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                            <p>No votes yet for this month.</p>
+                          </div>
                         );
-                        });
-                      })()}
+                      }
+                      
+                      const highestVoteCount = votedNominations[0]?.monthlyVoteCount || 0;
+                      
+                      return (
+                        <div className="space-y-3">
+                          {votedNominations.map((nomination) => {
+                            const isLeading = (nomination.monthlyVoteCount || 0) === highestVoteCount;
+                            return (
+                              <Card key={nomination.id} className={isLeading ? 'border-yellow-500 bg-yellow-50 dark:bg-yellow-950' : ''}>
+                                <CardContent className="p-3">
+                                  <div className="flex flex-col md:flex-row items-start justify-between gap-4">
+                                    <div className="flex flex-col w-full sm:w-1/2">
+                                      <h4 className="text-lg font-semibold">{nomination.businessName}</h4>
+                                      {nomination.name && (
+                                        <p className="text-sm text-muted-foreground">Employee: {nomination.name}</p>
+                                      )}
+                                      <p className="mt-2 text-xs text-muted-foreground">
+                                        Nominated: {new Date(nomination.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                                      </p>
+                                      <div className="flex items-center gap-4 mt-1">
+                                        {isLeading && (
+                                          <Badge variant="default" className="bg-yellow-500">
+                                            <Star className="h-3 w-3 mr-1" />
+                                            Leading
+                                          </Badge>
+                                        )}
+                                        <div className="flex items-center gap-2">
+                                          <span className="text-sm text-muted-foreground">votes:</span>
+                                          <span className="text-lg font-semibold">{nomination.monthlyVoteCount || 0}</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div className="w-full min-w-0 flex flex-col md:border-l md:pl-4">
+                                      <p className="text-sm font-medium mb-1">Nomination Reason:</p>
+                                      <p className="text-sm italic text-muted-foreground">"{nomination.reason}"</p>
+                                    </div>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            );
+                          })}
+                        </div>
+                      );
+                    })()}
+                  </TabsContent>
+                  
+                  {/* Customer Service Superstar Tab */}
+                  <TabsContent value="superstar" className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <Select value={superstarMonthSelected} onValueChange={setSuperstarMonthSelected}>
+                        <SelectTrigger className="w-[280px]">
+                          <SelectValue placeholder="Select month" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {getLast12Months().map(month => (
+                            <SelectItem key={`superstar-${month.value}`} value={month.value}>
+                              Votes for <span className="font-semibold">{month.label}</span> winners.
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button onClick={loadSuperstarNominations} variant="outline" size="icon">
+                        <LucideRefreshCcw className="h-4 w-4" />
+                      </Button>
                     </div>
-                  )}
-                </div>
+
+                    {superstarLoading ? (
+                      <div className="flex justify-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                      </div>
+                    ) : (() => {
+                      const votedNominations = [...superstarNominations]
+                        .filter(n => (n.monthlyVoteCount || 0) > 0)
+                        .sort((a, b) => (b.monthlyVoteCount || 0) - (a.monthlyVoteCount || 0));
+                      
+                      if (votedNominations.length === 0) {
+                        return (
+                          <div className="text-center py-8 text-muted-foreground">
+                            <Award className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                            <p>No votes yet for this month.</p>
+                          </div>
+                        );
+                      }
+                      
+                      const highestVoteCount = votedNominations[0]?.monthlyVoteCount || 0;
+                      
+                      return (
+                        <div className="space-y-3">
+                          {votedNominations.map((nomination) => {
+                            const isLeading = (nomination.monthlyVoteCount || 0) === highestVoteCount;
+                            return (
+                              <Card key={nomination.id} className={isLeading ? 'border-yellow-500 bg-yellow-50 dark:bg-yellow-950' : ''}>
+                                <CardContent className="p-3">
+                                  <div className="flex flex-col md:flex-row items-start justify-between gap-4">
+                                    <div className="flex flex-col w-full sm:w-1/2">
+                                      <h4 className="text-lg font-semibold">{nomination.name || nomination.businessName}</h4>
+                                      {nomination.name && (
+                                        <p className="text-sm text-muted-foreground">Company: {nomination.businessName}</p>
+                                      )}
+                                      <p className="mt-2 text-xs text-muted-foreground">
+                                        Nominated: {new Date(nomination.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                                      </p>
+                                      <div className="flex items-center gap-4 mt-1">
+                                        {isLeading && (
+                                          <Badge variant="default" className="bg-yellow-500">
+                                            <Star className="h-3 w-3 mr-1" />
+                                            Leading
+                                          </Badge>
+                                        )}
+                                        <div className="flex items-center gap-2">
+                                          <span className="text-sm text-muted-foreground">votes:</span>
+                                          <span className="text-lg font-semibold">{nomination.monthlyVoteCount || 0}</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div className="w-full min-w-0 flex flex-col md:border-l md:pl-4">
+                                      <p className="text-sm font-medium mb-1">Nomination Reason:</p>
+                                      <p className="text-sm italic text-muted-foreground">"{nomination.reason}"</p>
+                                    </div>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            );
+                          })}
+                        </div>
+                      );
+                    })()}
+                  </TabsContent>
+                </Tabs>
               </CardContent>
             </Card>
           </TabsContent>
@@ -782,118 +1015,198 @@ export default function AdminPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
-                  {/* Month and Category Filters */}
-                  <div className="flex flex-col sm:flex-row gap-4">
-                    <Select value={nominationCategory} onValueChange={(value: any) => setNominationCategory(value)}>
-                      <SelectTrigger className="w-full sm:w-[250px]">
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="business_of_month">Business of the Year</SelectItem>
-                        <SelectItem value="customer_service_superstar">Customer Service Superstar of the Year</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Button onClick={loadNominations} variant="outline">
-                      <LucideRefreshCcw className="h-4 w-4 mr-2" />
-                      Refresh
-                    </Button>
-                  </div>
-
-                  {/* Voting Results */}
-                  {nominationsLoading ? (
-                    <div className="flex justify-center py-8">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                    </div>
-                  ) : nominations.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <Award className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>No nominations found for this category.</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {/* Filter nominations with at least 1 yearly vote and sort by yearly vote count */}
-                      {(() => {
-                        const votedNominations = [...nominations]
-                          .filter(n => (n.yearlyVoteCount || 0) > 0)
-                          .sort((a, b) => (b.yearlyVoteCount || 0) - (a.yearlyVoteCount || 0));
-                        
-                        if (votedNominations.length === 0) {
-                          return (
-                            <div className="text-center py-8 text-muted-foreground">
-                              <Award className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                              <p>No nominations with yearly votes yet for this category.</p>
-                            </div>
-                          );
-                        }
-                        
-                        // Find the highest vote count to handle ties
-                        const highestVoteCount = votedNominations[0]?.yearlyVoteCount || 0;
-                        
-                        return votedNominations.map((nomination) => {
-                          const isLeading = (nomination.yearlyVoteCount || 0) === highestVoteCount;
-                          return (
-                          <Card key={nomination.id} className={isLeading ? 'border-yellow-500 bg-yellow-50 dark:bg-yellow-950' : ''}>
-                            <CardContent className="p-3 pt-3">
-                              <div className="flex flex-col md:flex-row items-start justify-between gap-4">
-                                {/* Left side: Name and metadata */}
-                                <div className="flex flex-col w-full sm:w-1/2 ">
-                                  <div className="flex items-center gap-3 flex-wrap">
-                                    <h3 className="text-lg font-semibold text-nowrap">
-                                      {nominationCategory === 'customer_service_superstar' && nomination.name
-                                        ? nomination.name
-                                        : nomination.businessName}
-                                    </h3>
-                                  </div>
-                                  {nominationCategory === 'customer_service_superstar' && nomination.name ? (
-                                    <p className="text-sm text-muted-foreground">
-                                      Company: {nomination.businessName}
-                                    </p>
-                                  ) : nomination.name && (
-                                    <p className="text-sm text-muted-foreground">
-                                      Employee: {nomination.name}
-                                    </p>
-                                  )}
-                                  <p className="mt-2 mb-1 text-xs text-muted-foreground">
-                                    Nominated: {new Date(nomination.createdAt).toLocaleDateString('en-US', { 
-                                      month: 'long', 
-                                      day: 'numeric', 
-                                      year: 'numeric' 
-                                    })}
-                                  </p>
-                                  <div className="flex items-center gap-4">
-                                    {isLeading && (
-                                      <Badge variant="default" className="bg-yellow-500">
-                                        <Star className="h-3 w-3 mr-1 max-w-1/2" />
-                                        Leading
-                                      </Badge>
-                                    )}
-                                    <div className="flex items-center gap-2">
-                                      <div className="text-sm text-muted-foreground">
-                                        yearly votes:
-                                      </div>
-                                      <div className="text-lg font-semibold text-card bg-highlight h-7 w-7 rounded-full flex items-center justify-center">
-                                        {nomination.yearlyVoteCount || 0}
-                                      </div>
-                                    </div>
-                                    </div>
-                                </div>
-                                
-                                {/* Right side: Nomination reason */}
-                                <div className="w-full min-w-0 flex flex-col md:self-stretch md:border-l md:pl-4 flex-shrink">
-                                  <p className="text-sm font-medium mb-1">Nomination Reason:</p>
-                                  <p className="text-sm italic text-muted-foreground">
-                                    "{nomination.reason}"
-                                  </p>
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        );
-                        });
-                      })()}
-                    </div>
-                  )}
+                  {/* This section still uses old approach - we can update it later if needed */}
+                  <p className="text-muted-foreground">Yearly voting results will appear here during voting period.</p>
                 </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Yearly Voting Results Tab */}
+          <TabsContent value="yearly-results" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Star className="h-5 w-5" />
+                  Yearly Voting Results & Analytics
+                </CardTitle>
+                <CardDescription>
+                  View yearly voting statistics and results by category
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Tabs defaultValue="business" className="space-y-4">
+                  <TabsList className="grid w-full h-20 sm:h-10 grid-cols-1 sm:grid-cols-2 gap-0">
+                    <TabsTrigger value="business" className="data-[state=active]:bg-white rounded-md">Business of the Year</TabsTrigger>
+                    <TabsTrigger value="superstar" className="data-[state=active]:bg-white rounded-md">Customer Service Superstar</TabsTrigger>
+                  </TabsList>
+                  
+                  {/* Business of the Year Tab */}
+                  <TabsContent value="business" className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <Select value={businessYearSelected} onValueChange={setBusinessYearSelected}>
+                        <SelectTrigger className="w-[280px]">
+                          <SelectValue placeholder="Select year" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {getLast10Years().map(year => (
+                            <SelectItem key={`business-year-${year.value}`} value={year.value}>
+                              Votes for {year.label} winners
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button onClick={loadBusinessYearlyNominations} variant="outline" size="icon">
+                        <LucideRefreshCcw className="h-4 w-4" />
+                      </Button>
+                    </div>
+
+                    {businessYearlyLoading ? (
+                      <div className="flex justify-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                      </div>
+                    ) : (() => {
+                      const votedNominations = [...businessYearlyNominations]
+                        .filter(n => (n.yearlyVoteCount || 0) > 0)
+                        .sort((a, b) => (b.yearlyVoteCount || 0) - (a.yearlyVoteCount || 0));
+                      
+                      if (votedNominations.length === 0) {
+                        return (
+                          <div className="text-center py-8 text-muted-foreground">
+                            <Award className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                            <p>No votes yet for this year.</p>
+                          </div>
+                        );
+                      }
+                      
+                      const highestVoteCount = votedNominations[0]?.yearlyVoteCount || 0;
+                      
+                      return (
+                        <div className="space-y-3">
+                          {votedNominations.map((nomination) => {
+                            const isLeading = (nomination.yearlyVoteCount || 0) === highestVoteCount;
+                            return (
+                              <Card key={nomination.id} className={isLeading ? 'border-yellow-500 bg-yellow-50 dark:bg-yellow-950' : ''}>
+                                <CardContent className="p-3">
+                                  <div className="flex flex-col md:flex-row items-start justify-between gap-4">
+                                    <div className="flex flex-col w-full sm:w-1/2">
+                                      <h4 className="text-lg font-semibold">{nomination.businessName}</h4>
+                                      {nomination.name && (
+                                        <p className="text-sm text-muted-foreground">Employee: {nomination.name}</p>
+                                      )}
+                                      <p className="mt-2 text-xs text-muted-foreground">
+                                        Nominated: {new Date(nomination.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                                      </p>
+                                      <div className="flex items-center gap-4 mt-1">
+                                        {isLeading && (
+                                          <Badge variant="default" className="bg-yellow-500">
+                                            <Star className="h-3 w-3 mr-1" />
+                                            Leading
+                                          </Badge>
+                                        )}
+                                        <div className="flex items-center gap-2">
+                                          <span className="text-sm text-muted-foreground">votes:</span>
+                                          <span className="text-lg font-semibold">{nomination.yearlyVoteCount || 0}</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div className="w-full min-w-0 flex flex-col md:border-l md:pl-4">
+                                      <p className="text-sm font-medium mb-1">Nomination Reason:</p>
+                                      <p className="text-sm italic text-muted-foreground">"{nomination.reason}"</p>
+                                    </div>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            );
+                          })}
+                        </div>
+                      );
+                    })()}
+                  </TabsContent>
+                  
+                  {/* Customer Service Superstar of the Year Tab */}
+                  <TabsContent value="superstar" className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <Select value={superstarYearSelected} onValueChange={setSuperstarYearSelected}>
+                        <SelectTrigger className="w-[280px]">
+                          <SelectValue placeholder="Select year" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {getLast10Years().map(year => (
+                            <SelectItem key={`superstar-year-${year.value}`} value={year.value}>
+                              Votes for {year.label} winners
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button onClick={loadSuperstarYearlyNominations} variant="outline" size="icon">
+                        <LucideRefreshCcw className="h-4 w-4" />
+                      </Button>
+                    </div>
+
+                    {superstarYearlyLoading ? (
+                      <div className="flex justify-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                      </div>
+                    ) : (() => {
+                      const votedNominations = [...superstarYearlyNominations]
+                        .filter(n => (n.yearlyVoteCount || 0) > 0)
+                        .sort((a, b) => (b.yearlyVoteCount || 0) - (a.yearlyVoteCount || 0));
+                      
+                      if (votedNominations.length === 0) {
+                        return (
+                          <div className="text-center py-8 text-muted-foreground">
+                            <Award className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                            <p>No votes yet for this year.</p>
+                          </div>
+                        );
+                      }
+                      
+                      const highestVoteCount = votedNominations[0]?.yearlyVoteCount || 0;
+                      
+                      return (
+                        <div className="space-y-3">
+                          {votedNominations.map((nomination) => {
+                            const isLeading = (nomination.yearlyVoteCount || 0) === highestVoteCount;
+                            return (
+                              <Card key={nomination.id} className={isLeading ? 'border-yellow-500 bg-yellow-50 dark:bg-yellow-950' : ''}>
+                                <CardContent className="p-3">
+                                  <div className="flex flex-col md:flex-row items-start justify-between gap-4">
+                                    <div className="flex flex-col w-full sm:w-1/2">
+                                      <h4 className="text-lg font-semibold">{nomination.name || nomination.businessName}</h4>
+                                      {nomination.name && (
+                                        <p className="text-sm text-muted-foreground">Company: {nomination.businessName}</p>
+                                      )}
+                                      <p className="mt-2 text-xs text-muted-foreground">
+                                        Nominated: {new Date(nomination.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                                      </p>
+                                      <div className="flex items-center gap-4 mt-1">
+                                        {isLeading && (
+                                          <Badge variant="default" className="bg-yellow-500">
+                                            <Star className="h-3 w-3 mr-1" />
+                                            Leading
+                                          </Badge>
+                                        )}
+                                        <div className="flex items-center gap-2">
+                                          <span className="text-sm text-muted-foreground">votes:</span>
+                                          <span className="text-lg font-semibold">{nomination.yearlyVoteCount || 0}</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div className="w-full min-w-0 flex flex-col md:border-l md:pl-4">
+                                      <p className="text-sm font-medium mb-1">Nomination Reason:</p>
+                                      <p className="text-sm italic text-muted-foreground">"{nomination.reason}"</p>
+                                    </div>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            );
+                          })}
+                        </div>
+                      );
+                    })()}
+                  </TabsContent>
+                </Tabs>
               </CardContent>
             </Card>
           </TabsContent>

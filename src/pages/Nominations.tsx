@@ -17,6 +17,10 @@ const NominationsPage: React.FC = () => {
   const [yearlyVotingOpen, setYearlyVotingOpen] = useState(false);
   const { user } = useAuthStore();
   const navigate = useNavigate();
+  
+  // Calculate current and last year dynamically
+  const currentYear = new Date().getFullYear();
+  const lastYear = currentYear - 1;
 
   // Check if user is board member
   const isBoardMember = user && (user.role === 'admin' || user.role === 'moderator' || user.role === 'board_member');
@@ -52,7 +56,7 @@ const NominationsPage: React.FC = () => {
         <div className={`flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 mb-6 mx-8`}>
 
           <h2 className="text-2xl font-bold text-gray-800 text-center">
-            Congratulations to Our 2024 Award Winners!
+            Congratulations to Our {lastYear} Award Winners!
           </h2>      {/* Voting Navigation - Only show if voting is open */}
           {showVotingButtons && (
             <div className="flex gap-2">
@@ -86,7 +90,7 @@ const NominationsPage: React.FC = () => {
             >
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
               <div className="absolute bottom-4 left-4 text-white">
-                <h3 className="text-xl font-bold">Business of the Year 2025</h3>
+                <h3 className="text-xl font-bold">Business of the Year {lastYear}</h3>
                 <p className="text-sm opacity-90">Excellence in Business Leadership</p>
               </div>
             </div>
@@ -100,7 +104,7 @@ const NominationsPage: React.FC = () => {
             >
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
               <div className="absolute bottom-4 left-4 text-white">
-                <h3 className="text-xl font-bold">Customer Service Superstar 2025</h3>
+                <h3 className="text-xl font-bold">Customer Service Superstar {lastYear}</h3>
                 <p className="text-sm opacity-90">Excellence in Customer Care</p>
               </div>
             </div>

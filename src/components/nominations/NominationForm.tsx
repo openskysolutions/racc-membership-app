@@ -35,6 +35,10 @@ const NominationForm: React.FC<NominationFormProps> = ({
   const [reason, setReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Calculate current and last year dynamically
+  const currentYear = new Date().getFullYear();
+  // const lastYear = currentYear - 1;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -93,7 +97,7 @@ const NominationForm: React.FC<NominationFormProps> = ({
       
       <CardContent className="w-full md:w-1/2 p-6">
         <div className="mb-4 items-center text-center">
-          <h2 className="text-3xl font-bold text-muted-foreground leading-tight">2025</h2>
+          <h2 className="text-3xl font-bold text-muted-foreground leading-tight">{currentYear}</h2>
           <h3 className="text-xl font-semibold text-muted-foreground">
             {category === 'business_of_month' 
               ? 'Business of the Month' 
