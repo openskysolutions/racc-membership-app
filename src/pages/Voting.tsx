@@ -254,7 +254,7 @@ const VotingPage: React.FC = () => {
           <>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <p className="text-muted-foreground text-center sm:text-left">
-                Select one nomination to vote for {formatMonth(votingStatus?.targetMonth)} winner
+                Vote for {category === 'business_of_month' ? 'Business of the Year' : 'Customer Service Superstar of the Year'} {formatMonth(votingStatus?.targetMonth)} winner
               </p>
               {nominations.length > 0 && (
                 <Button
@@ -352,14 +352,14 @@ const VotingPage: React.FC = () => {
       )}
 
       <Tabs defaultValue="business" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-6">
-          <TabsTrigger value="business">
+        <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 mb-6 h-20 sm:h-10">
+          <TabsTrigger value="business" className="data-[state=active]:bg-white rounded-md">
             Business of the Month
             {votingStatus?.hasVoted.business_of_month && (
               <CheckCircle2 className="ml-2 h-4 w-4 text-green-600" />
             )}
           </TabsTrigger>
-          <TabsTrigger value="superstar">
+          <TabsTrigger value="superstar" className="data-[state=active]:bg-white rounded-md">
             Customer Service Superstar
             {votingStatus?.hasVoted.customer_service_superstar && (
               <CheckCircle2 className="ml-2 h-4 w-4 text-green-600" />
