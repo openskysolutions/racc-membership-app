@@ -110,7 +110,6 @@ const benefits: Array<{
 const newMemberBenefits: string[] = [
   "$500 worth of advertising on Mid-Utah Radio for new Chamber members in 2026",
   "Time to share about your business at first Chamber luncheon",
-  "Business announced as new member and 2 minutes to introduce your business at first Chamber luncheon",
   "Ribbon cutting, open house or groundbreaking support for new business",
   "Business announced as new member in Chamber newsletter, in newspaper, radio, and on social media",
 ];
