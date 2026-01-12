@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -35,6 +36,9 @@ interface Nomination {
   yearlyVoteCount?: number;
   averageScore?: number;
   userVote?: number; // The current user's vote value (1-5) if they've voted
+  isWinner?: boolean;
+  winnerMonth?: string;
+  winnerYear?: string;
 }
 
 export default function AdminPage() {
@@ -331,6 +335,32 @@ export default function AdminPage() {
     }
   };
 
+  // Mark nomination as winner
+  const handleMarkAsWinner = async (nominationId: number, isWinner: boolean, period?: string, isYearly?: boolean) => {
+    try {
+      const response = await api.patch(`/nominations/${nominationId}/winner`, {
+        isWinner,
+        winnerMonth: isWinner && !isYearly ? period : undefined,
+        winnerYear: isWinner && isYearly ? period : undefined
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update winner status');
+      }
+
+      toast.success(isWinner ? 'Marked as winner' : 'Unmarked as winner');
+      
+      // Reload all nominations lists
+      loadBusinessNominations();
+      loadSuperstarNominations();
+      loadBusinessYearlyNominations();
+      loadSuperstarYearlyNominations();
+    } catch (error: any) {
+      console.error('Error updating winner status:', error);
+      toast.error('Failed to update winner status');
+    }
+  };
+
   const handleUpdateUser = async (updates: Partial<User>) => {
     if (!editingUser) return;
 
@@ -520,7 +550,7 @@ export default function AdminPage() {
                       <span>Moderators</span>
                       <Badge className={getRoleBadgeColor('moderator')}>{stats.users.byRole.moderator}</Badge>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex justify-between items-center">
                       <span>Board Members</span>
                       <Badge className={getRoleBadgeColor('board_member')}>{stats.users.byRole.board_member}</Badge>
                     </div>
@@ -532,8 +562,8 @@ export default function AdminPage() {
                 </Card>
               )}
 
-              {/* Users by Membership Tier */}
-              {stats && (
+              {/* Users by Membership Tier - calculated from loaded users */}
+              {users.length > 0 && (
                 <Card>
                   <CardHeader>
                     <CardTitle>Users by Membership Tier</CardTitle>
@@ -541,15 +571,21 @@ export default function AdminPage() {
                   <CardContent className="space-y-3">
                     <div className="flex justify-between items-center">
                       <span>Elite</span>
-                      <Badge className={getTierBadgeColor('elite')}>{stats.users.byMembershipTier.elite}</Badge>
+                      <Badge className={getTierBadgeColor('elite')}>
+                        {users.filter(u => u.membershipTier === 'elite').length}
+                      </Badge>
                     </div>
                     <div className="flex justify-between items-center">
                       <span>Enhanced</span>
-                      <Badge className={getTierBadgeColor('enhanced')}>{stats.users.byMembershipTier.enhanced}</Badge>
+                      <Badge className={getTierBadgeColor('enhanced')}>
+                        {users.filter(u => u.membershipTier === 'enhanced').length}
+                      </Badge>
                     </div>
                     <div className="flex justify-between items-center">
                       <span>Standard</span>
-                      <Badge className={getTierBadgeColor('standard')}>{stats.users.byMembershipTier.standard}</Badge>
+                      <Badge className={getTierBadgeColor('standard')}>
+                        {users.filter(u => u.membershipTier === 'standard').length}
+                      </Badge>
                     </div>
                   </CardContent>
                 </Card>
@@ -899,6 +935,28 @@ export default function AdminPage() {
                                           <span className="text-lg font-semibold">{nomination.monthlyVoteCount || 0}</span>
                                         </div>
                                       </div>
+                                      {isFullAdmin && (
+                                        <div className="flex items-center gap-2 mt-3">
+                                          <Checkbox 
+                                            id={`winner-business-${nomination.id}`}
+                                            checked={nomination.isWinner && nomination.winnerMonth === businessMonthSelected}
+                                            onCheckedChange={(checked) => {
+                                              handleMarkAsWinner(
+                                                nomination.id, 
+                                                checked as boolean,
+                                                businessMonthSelected,
+                                                false // monthly
+                                              );
+                                            }}
+                                          />
+                                          <label
+                                            htmlFor={`winner-business-${nomination.id}`}
+                                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                                          >
+                                            Mark as Winner
+                                          </label>
+                                        </div>
+                                      )}
                                     </div>
                                     <div className="w-full min-w-0 flex flex-col md:border-l md:pl-4">
                                       <p className="text-sm font-medium mb-1">Nomination Reason:</p>
@@ -982,6 +1040,28 @@ export default function AdminPage() {
                                           <span className="text-lg font-semibold">{nomination.monthlyVoteCount || 0}</span>
                                         </div>
                                       </div>
+                                      {isFullAdmin && (
+                                        <div className="flex items-center gap-2 mt-3">
+                                          <Checkbox 
+                                            id={`winner-superstar-${nomination.id}`}
+                                            checked={nomination.isWinner && nomination.winnerMonth === superstarMonthSelected}
+                                            onCheckedChange={(checked) => {
+                                              handleMarkAsWinner(
+                                                nomination.id, 
+                                                checked as boolean,
+                                                superstarMonthSelected,
+                                                false // monthly
+                                              );
+                                            }}
+                                          />
+                                          <label
+                                            htmlFor={`winner-superstar-${nomination.id}`}
+                                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                                          >
+                                            Mark as Winner
+                                          </label>
+                                        </div>
+                                      )}
                                     </div>
                                     <div className="w-full min-w-0 flex flex-col md:border-l md:pl-4">
                                       <p className="text-sm font-medium mb-1">Nomination Reason:</p>
@@ -1109,6 +1189,28 @@ export default function AdminPage() {
                                           <span className="text-lg font-semibold">{nomination.yearlyVoteCount || 0}</span>
                                         </div>
                                       </div>
+                                      {isFullAdmin && (
+                                        <div className="flex items-center gap-2 mt-3">
+                                          <Checkbox 
+                                            id={`winner-business-year-${nomination.id}`}
+                                            checked={nomination.isWinner && nomination.winnerYear === businessYearSelected}
+                                            onCheckedChange={(checked) => {
+                                              handleMarkAsWinner(
+                                                nomination.id, 
+                                                checked as boolean,
+                                                businessYearSelected,
+                                                true // yearly
+                                              );
+                                            }}
+                                          />
+                                          <label
+                                            htmlFor={`winner-business-year-${nomination.id}`}
+                                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                                          >
+                                            Mark as Winner
+                                          </label>
+                                        </div>
+                                      )}
                                     </div>
                                     <div className="w-full min-w-0 flex flex-col md:border-l md:pl-4">
                                       <p className="text-sm font-medium mb-1">Nomination Reason:</p>
@@ -1192,6 +1294,28 @@ export default function AdminPage() {
                                           <span className="text-lg font-semibold">{nomination.yearlyVoteCount || 0}</span>
                                         </div>
                                       </div>
+                                      {isFullAdmin && (
+                                        <div className="flex items-center gap-2 mt-3">
+                                          <Checkbox 
+                                            id={`winner-superstar-year-${nomination.id}`}
+                                            checked={nomination.isWinner && nomination.winnerYear === superstarYearSelected}
+                                            onCheckedChange={(checked) => {
+                                              handleMarkAsWinner(
+                                                nomination.id, 
+                                                checked as boolean,
+                                                superstarYearSelected,
+                                                true // yearly
+                                              );
+                                            }}
+                                          />
+                                          <label
+                                            htmlFor={`winner-superstar-year-${nomination.id}`}
+                                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                                          >
+                                            Mark as Winner
+                                          </label>
+                                        </div>
+                                      )}
                                     </div>
                                     <div className="w-full min-w-0 flex flex-col md:border-l md:pl-4">
                                       <p className="text-sm font-medium mb-1">Nomination Reason:</p>

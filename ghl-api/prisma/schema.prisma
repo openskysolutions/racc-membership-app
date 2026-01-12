@@ -56,6 +56,9 @@ model Nomination {
   businessName String   // Business name
   reason       String   @db.Text
   status       String   @default("pending") // pending, approved, rejected
+  isWinner     Boolean  @default(false) // Marked as winner by admin
+  winnerMonth  String?  // Format: YYYY-MM (month for which this nomination won)
+  winnerYear   String?  // Format: YYYY (year for which this nomination won - for yearly awards)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   
@@ -65,6 +68,7 @@ model Nomination {
   @@index([type, category])
   @@index([status])
   @@index([createdAt])
+  @@index([isWinner])
   @@map("nominations")
 }
 

@@ -6,7 +6,7 @@
 import express from 'express';
 import { requireAuth, requireAdmin } from '@/middleware/auth';
 import { databaseService } from '@/services/database';
-import { enrichUsersWithGhlData, enrichUserWithGhlData } from '@/services/userEnrichment';
+import { enrichUsersWithGhlData, enrichUserWithGhlData, getMembershipTierStats } from '@/services/userEnrichment';
 
 const router = express.Router();
 
@@ -94,8 +94,8 @@ router.get('/users', requireAuth, requireAdmin, async (req, res) => {
       parseInt(offset as string)
     );
 
-    // Enrich users with profile data from GoHighLevel
-    const users = await enrichUsersWithGhlData(dbUsers);
+    // Enrich with GHL data to get membership tiers and profile info
+    const users = await enrichUsersWithGhlData(dbUsers, true);
 
     // Filter users based on search criteria
     let filteredUsers = users;
@@ -103,10 +103,7 @@ router.get('/users', requireAuth, requireAdmin, async (req, res) => {
     if (search) {
       const searchTerm = (search as string).toLowerCase();
       filteredUsers = filteredUsers.filter(user => 
-        (user.firstName && user.firstName.toLowerCase().includes(searchTerm)) ||
-        (user.lastName && user.lastName.toLowerCase().includes(searchTerm)) ||
-        user.email.toLowerCase().includes(searchTerm) ||
-        (user.businessName && user.businessName.toLowerCase().includes(searchTerm))
+        user.email.toLowerCase().includes(searchTerm)
       );
     }
 
@@ -481,27 +478,21 @@ router.delete('/users/:id', requireAuth, requireAdmin, async (req, res) => {
 router.get('/stats', requireAuth, requireAdmin, async (req, res) => {
   try {
     // Get all users from database (auth fields only)
-    const dbUsers = await databaseService.getAllUsers(1000, 0); // Get all users
-    
-    // Enrich users with profile data from GoHighLevel for membership tier stats
-    const users = await enrichUsersWithGhlData(dbUsers);
+    const dbUsers = await databaseService.getAllUsers(1000, 0);
 
+    // Calculate stats from database only - fast!
+    // Membership tier stats calculated on frontend from users list
     const stats = {
       users: {
-        total: users.length,
-        active: users.filter(u => u.status === 'active').length,
-        pending: users.filter(u => u.status === 'pending').length,
-        suspended: users.filter(u => u.status === 'suspended').length,
+        total: dbUsers.length,
+        active: dbUsers.filter(u => u.status === 'active').length,
+        pending: dbUsers.filter(u => u.status === 'pending').length,
+        suspended: dbUsers.filter(u => u.status === 'suspended').length,
         byRole: {
-          admin: users.filter(u => u.role === 'admin').length,
-          moderator: users.filter(u => u.role === 'moderator').length,
-          board_member: users.filter(u => u.role === 'board_member').length,
-          member: users.filter(u => u.role === 'member').length
-        },
-        byMembershipTier: {
-          standard: users.filter(u => u.membershipTier === 'standard').length,
-          enhanced: users.filter(u => u.membershipTier === 'enhanced').length,
-          elite: users.filter(u => u.membershipTier === 'elite').length
+          admin: dbUsers.filter(u => u.role === 'admin').length,
+          moderator: dbUsers.filter(u => u.role === 'moderator').length,
+          board_member: dbUsers.filter(u => u.role === 'board_member').length,
+          member: dbUsers.filter(u => u.role === 'member').length
         }
       }
     };

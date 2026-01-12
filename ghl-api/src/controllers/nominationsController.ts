@@ -147,9 +147,7 @@ export class NominationsController {
         
         // Filter monthly votes by votingMonth if provided
         if (votingMonth) {
-          console.log(`Filtering votes for votingMonth: ${votingMonth}`);
           monthlyVotes = monthlyVotes.filter(v => {
-            console.log(`Vote votingMonth: ${v.votingMonth}, matches: ${v.votingMonth === votingMonth}`);
             return v.votingMonth === votingMonth;
           });
         }
@@ -507,6 +505,45 @@ export class NominationsController {
   }
 
   /**
+   * Mark/unmark nomination as winner (admin only)
+   * PATCH /nominations/:id/winner
+   */
+  async updateWinner(req: Request, res: Response): Promise<Response> {
+    try {
+      const { id } = req.params;
+      const { isWinner, winnerMonth, winnerYear } = req.body;
+      const user = (req as any).user;
+
+      // Check if user is admin
+      if (!user || user.role !== 'admin') {
+        return res.status(403).json({ error: 'Admin access required' });
+      }
+
+      // Validate isWinner
+      if (typeof isWinner !== 'boolean') {
+        return res.status(400).json({ error: 'isWinner must be a boolean' });
+      }
+
+      const nomination = await prisma.nomination.update({
+        where: { id: parseInt(id) },
+        data: { 
+          isWinner,
+          winnerMonth: isWinner ? winnerMonth || null : null,
+          winnerYear: isWinner ? winnerYear || null : null
+        }
+      });
+
+      return res.json({ success: true, nomination });
+    } catch (error: any) {
+      console.error('❌ Error updating nomination winner status:', error);
+      return res.status(500).json({
+        error: 'Failed to update nomination winner status',
+        details: error.message
+      });
+    }
+  }
+
+  /**
    * Get nominations available for voting in the current period
    * GET /nominations/voting
    */
@@ -537,12 +574,19 @@ export class NominationsController {
       const { startDate, endDate } = this.getNominationDateRange();
 
       // Get approved nominations in the date range
+      // Exclude nominations that have already won a monthly award
       const nominations = await prisma.nomination.findMany({
         where: {
           status: 'approved',
           createdAt: {
             gte: startDate,
             lte: endDate
+          },
+          NOT: {
+            AND: [
+              { isWinner: true },
+              { winnerMonth: { not: null } }
+            ]
           }
         },
         include: {

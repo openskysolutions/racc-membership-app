@@ -220,7 +220,7 @@ export default function ChamberMembershipBenefits() {
       <div className="grid md:grid-cols-5 gap-8 mb-16">
         <Card className="md:col-span-5 shadow-sm">
           <CardHeader>
-            <CardTitle>New Member Benefits</CardTitle>
+            <CardTitle>New Member Benefits - for all membership levels</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             <ul className="list-disc pl-5 text-sm text-muted-foreground">

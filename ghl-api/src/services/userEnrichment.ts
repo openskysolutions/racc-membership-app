@@ -6,6 +6,66 @@
 import { ghlService } from './gohighlevel';
 
 /**
+ * Extract membership tier from tags (lightweight)
+ */
+function getMembershipTierFromTags(tags: string[]): string {
+  const tierTags = tags.filter(tag => 
+    tag.toLowerCase().includes('elite') ||
+    tag.toLowerCase().includes('enhanced') ||
+    tag.toLowerCase().includes('standard')
+  );
+
+  if (tierTags.some(tag => tag.toLowerCase().includes('elite'))) return 'elite';
+  if (tierTags.some(tag => tag.toLowerCase().includes('enhanced'))) return 'enhanced';
+  if (tierTags.some(tag => tag.toLowerCase().includes('standard'))) return 'standard';
+  
+  return 'standard'; // Default
+}
+
+/**
+ * Get membership tier stats (lightweight - only fetches tags)
+ * Processes in batches to avoid rate limits
+ */
+export async function getMembershipTierStats(dbUsers: DatabaseUser[]): Promise<{
+  elite: number;
+  enhanced: number;
+  standard: number;
+}> {
+  const stats = { elite: 0, enhanced: 0, standard: 0 };
+  
+  // Process in batches of 10 to avoid rate limits
+  const BATCH_SIZE = 10;
+  const allTiers: string[] = [];
+  
+  for (let i = 0; i < dbUsers.length; i += BATCH_SIZE) {
+    const batch = dbUsers.slice(i, i + BATCH_SIZE);
+    
+    const tierPromises = batch.map(async (user) => {
+      if (!user.ghlContactId) return 'standard';
+      
+      try {
+        const tags = await ghlService.getContactTags(user.ghlContactId);
+        return getMembershipTierFromTags(tags);
+      } catch (error) {
+        console.error(`Failed to get tier for user ${user.id}:`, error);
+        return 'standard';
+      }
+    });
+
+    const batchTiers = await Promise.all(tierPromises);
+    allTiers.push(...batchTiers);
+  }
+  
+  allTiers.forEach(tier => {
+    if (tier === 'elite') stats.elite++;
+    else if (tier === 'enhanced') stats.enhanced++;
+    else stats.standard++;
+  });
+  
+  return stats;
+}
+
+/**
  * Minimal user data from database (authentication only)
  */
 interface DatabaseUser {

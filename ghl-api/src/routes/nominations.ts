@@ -67,6 +67,13 @@ router.get('/:id', (req, res) => controller.getNomination(req, res));
 router.patch('/:id/status', requireAuth, (req, res) => controller.updateStatus(req, res));
 
 /**
+ * PATCH /nominations/:id/winner
+ * Mark/unmark nomination as winner (REQUIRES AUTH - admin only)
+ * Body: { isWinner: boolean, winnerMonth?: string }
+ */
+router.patch('/:id/winner', requireAuth, (req, res) => controller.updateWinner(req, res));
+
+/**
  * POST /nominations/:id/vote
  * Vote on a nomination (REQUIRES AUTH)
  * Body: { voteValue: 1-5, comment?: string }

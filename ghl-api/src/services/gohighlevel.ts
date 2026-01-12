@@ -6,6 +6,37 @@
 import axios, { AxiosInstance } from 'axios';
 import { randomBytes } from 'crypto';
 
+/**
+ * Retry utility for handling rate limits
+ */
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  maxRetries: number = 3,
+  initialDelay: number = 1000
+): Promise<T> {
+  let lastError: any;
+  
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await fn();
+    } catch (error: any) {
+      lastError = error;
+      
+      // Only retry on rate limit errors (429)
+      if (error.response?.status === 429) {
+        const delay = initialDelay * Math.pow(2, i); // Exponential backoff
+        console.log(`⏳ Rate limited. Retrying in ${delay}ms... (attempt ${i + 1}/${maxRetries})`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      } else {
+        // Don't retry other errors
+        throw error;
+      }
+    }
+  }
+  
+  throw lastError;
+}
+
 interface ContactData {
   firstName?: string;
   lastName?: string;
@@ -744,6 +775,31 @@ class GoHighLevelService {
   }
 
   /**
+   * Get only contact tags (lightweight - for stats)
+   */
+  async getContactTags(contactId: string): Promise<string[]> {
+    if (this.developmentMode) {
+      return ['active', 'member', 'elite'];
+    }
+
+    try {
+      return await retryWithBackoff(async () => {
+        const result = await this.client.get(`/contacts/${contactId}`, {
+          headers: {
+            'Version': '2021-07-28'
+          }
+        });
+        
+        const contactData = result.data.contact || result.data;
+        return contactData.tags || [];
+      }, 3, 2000);
+    } catch (error: any) {
+      console.error(`Failed to get tags for contact ${contactId}:`, error.message);
+      return []; // Return empty array on error
+    }
+  }
+
+  /**
    * Get contact details
    */
   async getContact(contactId: string): Promise<any> {
@@ -760,21 +816,17 @@ class GoHighLevelService {
     }
 
     try {
-      const result = await this.client.get(`/contacts/${contactId}`, {
-        headers: {
-          'Version': '2021-07-28'
-        }
-      });
-      
-      console.log('🔍 getContact - Raw response from GoHighLevel:', JSON.stringify(result.data, null, 2));
-      console.log('🔍 getContact - result.data.contact exists:', !!result.data.contact);
-      console.log('🔍 getContact - result.data exists:', !!result.data);
-      
-      const contactData = result.data.contact || result.data;
-      console.log('🔍 getContact - Final contact data address1:', contactData?.address1);
-      console.log('🔍 getContact - Final contact data city:', contactData?.city);
-      
-      return contactData;
+      return await retryWithBackoff(async () => {
+        const result = await this.client.get(`/contacts/${contactId}`, {
+          headers: {
+            'Version': '2021-07-28'
+          }
+        });
+        
+        const contactData = result.data.contact || result.data;
+        
+        return contactData;
+      }, 3, 2000); // 3 retries with 2 second initial delay
     } catch (error: any) {
       console.error('Failed to get contact:', error);
       throw new Error(`Failed to get contact: ${error.message}`);

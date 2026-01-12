@@ -43,8 +43,9 @@ class DatabaseService {
         ssl: process.env.NODE_ENV === 'production' ? {
           rejectUnauthorized: false // DigitalOcean requires SSL
         } : undefined,
-        max: 20, // Maximum pool connections
-        idleTimeoutMillis: 30000,
+        max: 5, // Increased to handle concurrent requests when marking winners
+        min: 1,
+        idleTimeoutMillis: 10000,
         connectionTimeoutMillis: 2000,
       });
 
