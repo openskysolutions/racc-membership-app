@@ -246,7 +246,11 @@ class MembersController {
       console.log(`🖼️  Avatar debug for ${contact.firstName} ${contact.lastName}:`, {
         businessName: contact.businessName,
         avatarUrlField,
-        customFieldIds: contact.customFields?.map(f => ({ id: f.id, key: f.key, value: f.value?.substring(0, 50) }))
+        customFieldIds: contact.customFields?.map(f => ({ 
+          id: f.id, 
+          key: f.key, 
+          value: typeof f.value === 'string' ? f.value.substring(0, 50) : String(f.value).substring(0, 50)
+        }))
       });
     }
     
@@ -324,43 +328,11 @@ class MembersController {
         return res.status(404).json({ error: 'Member not found' });
       }
       
-      // Check if contact has active tag (board members need active tag too for profile access)
-      const hasActiveTag = contact.tags?.includes('active');
-      
-      if (!hasActiveTag) {
-        return res.status(403).json({ 
-          error: 'membership_expired',
-          message: 'Your membership is past its expiration'
-        });
-      }
-
-      // Check renewal date - even with active tag, renewal date must be valid
-      // Get renewal date from custom fields
-      const customFieldsArray = contact.customFields || contact.customField;
-      let renewDate: Date | null = null;
-      
-      if (customFieldsArray && Array.isArray(customFieldsArray)) {
-        const renewDateField = customFieldsArray.find((field: any) => 
-          field.id === 'J3yL94KqDhUnjurcIG8G'
-        );
-        if (renewDateField && renewDateField.value) {
-          renewDate = new Date(renewDateField.value);
-        }
-      }
-      
-      // Check if renewal date is within 13 months from now
-      if (renewDate && !isNaN(renewDate.getTime())) {
-        const now = new Date();
-        const thirteenMonthsAgo = new Date();
-        thirteenMonthsAgo.setMonth(thirteenMonthsAgo.getMonth() - 13);
-        
-        if (renewDate < thirteenMonthsAgo) {
-          return res.status(403).json({ 
-            error: 'membership_expired',
-            message: 'Your membership is past its expiration'
-          });
-        }
-      }
+      // NOTE: We don't check for active tag here because:
+      // 1. The listing endpoint already filters for active members
+      // 2. This is a PUBLIC endpoint for viewing member profiles
+      // 3. If they appear in the directory, they should be viewable
+      // The main filtering happens at the list level via getContactsWithMembershipTags()
       
       // Transform to member format
       const member = this.transformContactToMember(contact);
