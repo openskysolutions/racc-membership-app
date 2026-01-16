@@ -14,11 +14,12 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { capitalizeFirst } from '@/lib/utils';
-import { Mail, Phone, Globe, Calendar, Shield, User, Edit, Save, X, AlertTriangle } from 'lucide-react';
+import { Mail, Phone, Globe, Calendar, Shield, User, Edit, Save, X, AlertTriangle, Lock } from 'lucide-react';
 import { api } from '@/services/apiClient';
 import type { Member } from '@/types/member';
 import AvatarUpload from '@/components/AvatarUpload';
 import { CouponCodesInput } from '@/components/ui/coupon-codes-input';
+import { PasswordInput } from '@/components/ui/password-input';
 import { toast } from 'sonner';
 import DeleteAccountDialog from '@/components/DeleteAccountDialog';
 
@@ -61,6 +62,12 @@ const ProfilePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [membershipExpired, setMembershipExpired] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -179,6 +186,46 @@ const ProfilePage: React.FC = () => {
       });
     }
     setIsEditing(false);
+  };
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast.error('New passwords do not match');
+      return;
+    }
+
+    if (passwordData.newPassword.length < 8) {
+      toast.error('Password must be at least 8 characters long');
+      return;
+    }
+
+    setChangingPassword(true);
+
+    try {
+      const response = await api.post('/auth/change-password', {
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to change password');
+      }
+
+      toast.success('Password changed successfully!');
+      setPasswordData({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      });
+    } catch (error: any) {
+      console.error('Failed to change password:', error);
+      toast.error(error.message || 'Failed to change password');
+    } finally {
+      setChangingPassword(false);
+    }
   };
 
   const formatMemberName = (profile: Member) => {
@@ -688,6 +735,79 @@ const ProfilePage: React.FC = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Security Settings - Change Password */}
+      {isEditing && (
+        <Card className="max-w-4xl mx-auto mt-4">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Lock className="h-5 w-5" />
+              Security
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handlePasswordChange} className="space-y-4">
+              <div>
+                <h3 className="font-semibold mb-4">Change Password</h3>
+                <div className="space-y-4 max-w-md">
+                  <div>
+                    <label htmlFor="currentPassword" className="block text-sm font-medium mb-2">
+                      Current Password
+                    </label>
+                    <PasswordInput
+                      id="currentPassword"
+                      value={passwordData.currentPassword}
+                      onChange={(e) => setPasswordData(prev => ({ ...prev, currentPassword: e.target.value }))}
+                      placeholder="Enter current password"
+                      required
+                      disabled={changingPassword}
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="newPassword" className="block text-sm font-medium mb-2">
+                      New Password
+                    </label>
+                    <PasswordInput
+                      id="newPassword"
+                      value={passwordData.newPassword}
+                      onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
+                      placeholder="Enter new password"
+                      required
+                      disabled={changingPassword}
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Must be at least 8 characters
+                    </p>
+                  </div>
+
+                  <div>
+                    <label htmlFor="confirmPassword" className="block text-sm font-medium mb-2">
+                      Confirm New Password
+                    </label>
+                    <PasswordInput
+                      id="confirmPassword"
+                      value={passwordData.confirmPassword}
+                      onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                      placeholder="Confirm new password"
+                      required
+                      disabled={changingPassword}
+                    />
+                  </div>
+
+                  <Button 
+                    type="submit" 
+                    disabled={changingPassword || !passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword}
+                    className="bg-highlight-foreground hover:bg-highlight-foreground/90"
+                  >
+                    {changingPassword ? 'Changing Password...' : 'Change Password'}
+                  </Button>
+                </div>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Danger Zone - Delete Account */}
       {isEditing && (

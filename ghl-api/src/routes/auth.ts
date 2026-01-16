@@ -1581,4 +1581,264 @@ router.get('/test-email', async (req, res) => {
   }
 });
 
+/**
+ * POST /auth/forgot-password
+ * Send password reset email
+ */
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        error: 'Missing required field',
+        message: 'Email is required'
+      });
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        error: 'Invalid email format'
+      });
+    }
+
+    // Check if user exists
+    const user = await databaseService.getUserByEmail(email);
+    
+    // For security, always return success even if user doesn't exist
+    // This prevents email enumeration attacks
+    if (!user) {
+      console.log(`Password reset requested for non-existent email: ${email}`);
+      return res.json({
+        message: 'If an account exists with that email, a password reset link has been sent'
+      });
+    }
+
+    // Generate reset token (cryptographically secure random string)
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenExpiry = new Date(Date.now() + 3600000); // 1 hour from now
+
+    // Store reset token in database
+    await databaseService.updateUser(user.id!, {
+      passwordResetToken: resetToken,
+      passwordResetTokenExpiry: resetTokenExpiry
+    });
+
+    // Send password reset email
+    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${resetToken}`;
+    
+    const emailHtml = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #333;">Reset Your Password</h2>
+        <p>Hi ${user.firstName || 'there'},</p>
+        <p>We received a request to reset your password for your Richfield Area Chamber of Commerce account.</p>
+        <p>Click the button below to reset your password:</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${resetUrl}" 
+             style="background-color: #0066cc; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">
+            Reset Password
+          </a>
+        </div>
+        <p>Or copy and paste this link into your browser:</p>
+        <p style="word-break: break-all; color: #0066cc;">${resetUrl}</p>
+        <p style="color: #666; font-size: 14px; margin-top: 30px;">
+          This link will expire in 1 hour. If you didn't request a password reset, you can safely ignore this email.
+        </p>
+        <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
+        <p style="color: #999; font-size: 12px;">
+          Richfield Area Chamber of Commerce<br>
+          This is an automated email, please do not reply.
+        </p>
+      </div>
+    `;
+
+    const emailText = `
+Reset Your Password
+
+Hi ${user.firstName || 'there'},
+
+We received a request to reset your password for your Richfield Area Chamber of Commerce account.
+
+Click the link below to reset your password:
+${resetUrl}
+
+This link will expire in 1 hour. If you didn't request a password reset, you can safely ignore this email.
+
+Richfield Area Chamber of Commerce
+This is an automated email, please do not reply.
+    `;
+
+    const emailSent = await emailService.sendEmail({
+      to: email,
+      subject: 'Reset Your Password - RACC',
+      html: emailHtml,
+      text: emailText
+    });
+
+    if (!emailSent) {
+      console.error('Failed to send password reset email');
+      return res.status(500).json({
+        error: 'Failed to send email',
+        message: 'Unable to send password reset email. Please try again later.'
+      });
+    }
+
+    console.log(`Password reset email sent to: ${email}`);
+    res.json({
+      message: 'If an account exists with that email, a password reset link has been sent'
+    });
+
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({
+      error: 'Internal server error',
+      message: 'An unexpected error occurred. Please try again later.'
+    });
+  }
+});
+
+/**
+ * POST /auth/reset-password
+ * Reset password using token
+ */
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { token, password } = req.body;
+
+    if (!token || !password) {
+      return res.status(400).json({
+        error: 'Missing required fields',
+        message: 'Token and password are required'
+      });
+    }
+
+    // Validate password strength
+    if (password.length < 8) {
+      return res.status(400).json({
+        error: 'Invalid password',
+        message: 'Password must be at least 8 characters long'
+      });
+    }
+
+    // Find user by reset token
+    const user = await databaseService.getUserByResetToken(token);
+    
+    if (!user) {
+      return res.status(400).json({
+        error: 'Invalid token',
+        message: 'Password reset token is invalid or has expired'
+      });
+    }
+
+    // Check if token has expired
+    if (user.passwordResetTokenExpiry && new Date() > user.passwordResetTokenExpiry) {
+      return res.status(400).json({
+        error: 'Token expired',
+        message: 'Password reset token has expired. Please request a new one.'
+      });
+    }
+
+    // Update password and clear reset token
+    await databaseService.updateUserPassword(user.id!, password);
+    await databaseService.updateUser(user.id!, {
+      passwordResetToken: null,
+      passwordResetTokenExpiry: null
+    });
+
+    console.log(`Password reset successful for user: ${user.email}`);
+    
+    res.json({
+      message: 'Password has been reset successfully'
+    });
+
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({
+      error: 'Internal server error',
+      message: 'An unexpected error occurred. Please try again later.'
+    });
+  }
+});
+
+/**
+ * POST /auth/change-password
+ * Change password for authenticated user
+ */
+router.post('/change-password', async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        error: 'Missing required fields',
+        message: 'Current password and new password are required'
+      });
+    }
+
+    // Validate new password strength
+    if (newPassword.length < 8) {
+      return res.status(400).json({
+        error: 'Invalid password',
+        message: 'New password must be at least 8 characters long'
+      });
+    }
+
+    // Get user from session
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({
+        error: 'Unauthorized',
+        message: 'Please sign in to change your password'
+      });
+    }
+
+    const token = authHeader.substring(7);
+    const session = await authSessionService.getSessionByToken(token);
+
+    if (!session || new Date() > new Date(session.expiresAt)) {
+      return res.status(401).json({
+        error: 'Unauthorized',
+        message: 'Session expired. Please sign in again.'
+      });
+    }
+
+    // Use memberId from session (not userId)
+    const userId = session.memberId || session.userId;
+    const user = await databaseService.getUserById(userId);
+    if (!user) {
+      return res.status(404).json({
+        error: 'User not found',
+        message: 'Unable to find your account'
+      });
+    }
+
+    // Verify current password
+    const isValid = await databaseService.verifyPassword(user.email, currentPassword);
+    if (!isValid) {
+      return res.status(401).json({
+        error: 'Invalid credentials',
+        message: 'Current password is incorrect'
+      });
+    }
+
+    // Update to new password
+    await databaseService.updateUserPassword(user.id!, newPassword);
+
+    console.log(`Password changed successfully for user: ${user.email}`);
+    
+    res.json({
+      message: 'Password has been changed successfully'
+    });
+
+  } catch (error) {
+    console.error('Change password error:', error);
+    res.status(500).json({
+      error: 'Internal server error',
+      message: 'An unexpected error occurred. Please try again later.'
+    });
+  }
+});
+
 export default router;

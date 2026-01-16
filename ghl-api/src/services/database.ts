@@ -21,6 +21,10 @@ interface User {
   emailVerified: boolean;
   ghlContactId?: string | null;
   lastLoginAt?: Date | string | null;
+  passwordResetToken?: string | null;
+  passwordResetTokenExpiry?: Date | string | null;
+  firstName?: string;
+  lastName?: string;
   createdAt?: Date | string;
   updatedAt?: Date | string;
 }
@@ -108,11 +112,11 @@ class DatabaseService {
    */
   async updateUser(id: number, updates: Partial<User>): Promise<User> {
     // Filter allowed fields
-    const allowedFields = ['email', 'passwordHash', 'role', 'status', 'emailVerified', 'ghlContactId', 'lastLoginAt'];
+    const allowedFields = ['email', 'passwordHash', 'role', 'status', 'emailVerified', 'ghlContactId', 'lastLoginAt', 'passwordResetToken', 'passwordResetTokenExpiry'];
     const data: any = {};
 
     Object.entries(updates).forEach(([key, value]) => {
-      if (allowedFields.includes(key) && value !== undefined) {
+      if (allowedFields.includes(key)) {
         // Hash password if it's being updated
         if (key === 'passwordHash' && typeof value === 'string') {
           // We'll handle this separately
@@ -228,6 +232,35 @@ class DatabaseService {
    */
   async hashPassword(password: string): Promise<string> {
     return bcrypt.hash(password, 12);
+  }
+
+  /**
+   * Update user password
+   */
+  async updateUserPassword(userId: number, password: string): Promise<void> {
+    const passwordHash = await bcrypt.hash(password, 12);
+    await prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash },
+    });
+  }
+
+  /**
+   * Find user by password reset token
+   */
+  async getUserByResetToken(token: string): Promise<User & { passwordResetTokenExpiry?: Date | null } | null> {
+    const user = await prisma.user.findFirst({
+      where: { 
+        passwordResetToken: token,
+      },
+    });
+
+    if (!user) return null;
+
+    return {
+      ...this.mapUser(user),
+      passwordResetTokenExpiry: user.passwordResetTokenExpiry,
+    };
   }
 
   /**

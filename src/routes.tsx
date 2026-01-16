@@ -10,6 +10,8 @@ import AdminPage from '@/pages/Admin';
 
 import LoginPage from "@/pages/auth/Login";
 import ConnectAccountPage from "@/pages/auth/ConnectAccount";
+import ForgotPasswordPage from "@/pages/auth/ForgotPassword";
+import ResetPasswordPage from "@/pages/auth/ResetPassword";
 import ProfilePage from '@/pages/Profile';
 
 import JoinPage from '@/pages/Join';
@@ -104,6 +106,8 @@ export default function AppRoutes() {
         <Route path="admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
 
         <Route path="login" element={<LoginPage />} />
+        <Route path="forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="reset-password" element={<ResetPasswordPage />} />
         <Route path="connect-account" element={<ConnectAccountPage />} />
         <Route path="profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
 
