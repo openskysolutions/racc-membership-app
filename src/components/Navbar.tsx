@@ -341,6 +341,19 @@ export const Navbar = () => {
                     Yearly Voting
                   </Button>
                 )}
+                {user?.role === 'admin' && (
+                  <Button
+                    size="lg"
+                    variant={"outline"}
+                    onClick={() => {
+                      setIsOpen(false);
+                      navigate('/admin');
+                    }}
+                    className="text-lg"
+                  >
+                    Admin Dashboard
+                  </Button>
+                )}
                 {isAuthenticated 
                   ? <Button
                       size="lg"

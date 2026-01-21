@@ -455,38 +455,32 @@ export default function AdminPage() {
             loadNominations();
           }
         }}>
-          <div className="overflow-x-auto -mx-6 px-6 pb-2">
-            <TabsList className="w-full sm:w-auto inline-flex">
-              {isFullAdmin && (
-                <>
-                  <TabsTrigger value="overview" className="flex-1 sm:flex-none">
-                    <span className="hidden sm:inline">Overview</span>
-                    <span className="sm:hidden">Overview</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="users" className="flex-1 sm:flex-none">
-                    <Users className="h-4 w-4 sm:mr-2" />
-                    <span className="hidden sm:inline">User Management</span>
-                    <span className="sm:hidden ml-1">Users</span>
-                  </TabsTrigger>
-                </>
-              )}
-              <TabsTrigger value="nominations" className="flex-1 sm:flex-none">
-                <Award className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Nominations</span>
-                <span className="sm:hidden ml-1">Nominations</span>
-              </TabsTrigger>
-              <TabsTrigger value="monthly-results" className="flex-1 sm:flex-none">
-                <Star className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Monthly Results</span>
-                <span className="sm:hidden ml-1">Monthly</span>
-              </TabsTrigger>
-              <TabsTrigger value="yearly-results" className="flex-1 sm:flex-none">
-                <Star className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Yearly Results</span>
-                <span className="sm:hidden ml-1">Yearly</span>
-              </TabsTrigger>
-            </TabsList>
-          </div>
+          <TabsList className={`w-full grid gap-1 ${isFullAdmin ? 'grid-cols-3 sm:grid-cols-5 h-auto sm:h-10' : 'grid-cols-3 sm:inline-flex sm:w-auto'}`}>
+            {isFullAdmin && (
+              <>
+                <TabsTrigger value="overview" className="flex-col sm:flex-row bg-white sm:bg-transparent border sm:border-0 border-gray-300 py-2 sm:py-0 gap-1 sm:gap-2">
+                  <Users className="h-4 w-4" />
+                  <span className="text-xs sm:text-sm">Overview</span>
+                </TabsTrigger>
+                <TabsTrigger value="users" className="flex-col sm:flex-row bg-white sm:bg-transparent border sm:border-0 border-gray-300 py-2 sm:py-0 gap-1 sm:gap-2">
+                  <Users className="h-4 w-4" />
+                  <span className="text-xs sm:text-sm">Users</span>
+                </TabsTrigger>
+              </>
+            )}
+            <TabsTrigger value="nominations" className="flex-col sm:flex-row bg-white sm:bg-transparent border sm:border-0 border-gray-300 py-2 sm:py-0 gap-1 sm:gap-2">
+              <Award className="h-4 w-4" />
+              <span className="text-xs sm:text-sm">Nominations</span>
+            </TabsTrigger>
+            <TabsTrigger value="monthly-results" className="flex-col sm:flex-row bg-white sm:bg-transparent border sm:border-0 border-gray-300 py-2 sm:py-0 gap-1 sm:gap-2">
+              <Star className="h-4 w-4" />
+              <span className="text-xs sm:text-sm">Monthly Results</span>
+            </TabsTrigger>
+            <TabsTrigger value="yearly-results" className="flex-col sm:flex-row bg-white sm:bg-transparent border sm:border-0 border-gray-300 py-2 sm:py-0 gap-1 sm:gap-2">
+              <Star className="h-4 w-4" />
+              <span className="text-xs sm:text-sm">Yearly Results</span>
+            </TabsTrigger>
+          </TabsList>
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
