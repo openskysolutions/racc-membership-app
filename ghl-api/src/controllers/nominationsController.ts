@@ -17,9 +17,12 @@ import { ghlService } from '@/services/gohighlevel';
 
 const prisma = new PrismaClient();
 
-// Configuration: Month when yearly voting opens (0-11, where 0=January, 11=December)
-// Yearly voting runs October 1-31 after monthly voting ends September 20
-const YEARLY_VOTING_MONTH = 9; // October
+// Configuration: Yearly voting period
+// Yearly voting runs September 21 - October 31
+const YEARLY_VOTING_START_MONTH = 8; // September (0-indexed)
+const YEARLY_VOTING_START_DAY = 21;
+const YEARLY_VOTING_END_MONTH = 9; // October (0-indexed)
+const YEARLY_VOTING_END_DAY = 31;
 
 interface NominationRequest {
   type: 'business' | 'individual';
@@ -226,33 +229,46 @@ export class NominationsController {
    * Voting period: 21st of one month through 20th of next month
    * Voting is for the month AFTER the voting period ends
    * Example: Jan 21 - Feb 20 = voting for March awards
-   * Monthly voting stops September 20th (last period: Aug 21 - Sep 20 for October)
+   * Monthly voting stops Sep 20 (last period: Aug 21 - Sep 20 for October)
+   * Monthly voting paused: Sep 21 - Nov 20 (yearly voting happens Sep 21 - Oct 31)
+   * Monthly voting resumes: Nov 21 - Dec 20 for January winners
    */
   private getVotingPeriodDetails(now: Date = new Date()) {
     const currentMonth = now.getMonth(); // 0-11
     const currentYear = now.getFullYear();
     const currentDay = now.getDate();
     
-    // After September 20th, monthly voting is closed (yearly voting period)
+    // September 21 - November 20: Monthly voting is closed (yearly voting period)
     if (currentMonth === 8 && currentDay > 20) {
-      // Sep 21 onwards - monthly voting closed
+      // Sep 21-30: Monthly voting closed, yearly voting open
       return {
         canVote: false,
         votingMonth: null,
         targetMonth: null,
         deadline: null,
-        error: 'Monthly voting has ended for the year. Yearly voting opens October 1st.'
+        error: 'Monthly voting is closed. Yearly voting is open September 21 - October 31.'
       };
     }
     
-    if (currentMonth >= 9) {
-      // October, November, December - monthly voting closed
+    if (currentMonth === 9) {
+      // October 1-31: Monthly voting closed, yearly voting open
       return {
         canVote: false,
         votingMonth: null,
         targetMonth: null,
         deadline: null,
-        error: 'Monthly voting has ended for the year. Yearly voting is now open.'
+        error: 'Monthly voting is closed. Yearly voting is open through October 31.'
+      };
+    }
+    
+    if (currentMonth === 10 && currentDay <= 20) {
+      // November 1-20: No voting at all
+      return {
+        canVote: false,
+        votingMonth: null,
+        targetMonth: null,
+        deadline: null,
+        error: 'Monthly voting resumes November 21st.'
       };
     }
     
@@ -776,35 +792,30 @@ export class NominationsController {
 
   /**
    * Helper: Get yearly voting period details
-   * Yearly voting runs October 1-31 and is open to all chamber members
+   * Yearly voting runs September 21 - October 31 and is open to all chamber members
    */
   private getYearlyVotingPeriodDetails(now: Date = new Date()) {
     const currentMonth = now.getMonth(); // 0-11
     const currentYear = now.getFullYear();
     const currentDay = now.getDate();
     
-    // Only allow voting in October
-    if (currentMonth !== 9) {
-      return {
-        canVote: false,
-        votingYear: null,
-        error: 'Yearly voting is only available in October (October 1-31)'
-      };
-    }
+    // Check if we're in the yearly voting window
+    // September 21 - October 31
+    const inSeptember = currentMonth === 8 && currentDay >= 21; // Sep 21-30
+    const inOctober = currentMonth === 9; // Oct 1-31
     
-    // Check if within voting window (October 1-31)
-    if (currentDay < 1 || currentDay > 31) {
+    if (!inSeptember && !inOctober) {
       return {
         canVote: false,
         votingYear: null,
-        error: 'Yearly voting is only available October 1-31'
+        error: 'Yearly voting is only available September 21 - October 31'
       };
     }
     
     return {
       canVote: true,
       votingYear: currentYear,
-      deadline: new Date(currentYear, 9, 31, 23, 59, 59, 999)
+      deadline: new Date(currentYear, 9, 31, 23, 59, 59, 999) // Oct 31
     };
   }
 
@@ -837,40 +848,24 @@ export class NominationsController {
 
       const currentYear = votingPeriod.votingYear!;
       
-      // Calculate which months to include:
-      // We want 11 months of winners ENDING with the voting month
-      // If voting month is December (11): Feb-Dec (months 2-12) = 11 months
-      // If voting month is October (9): Dec-Oct (months 12, 1-10) = 11 months
-      // Winners are from the voting month of the previous month (Jan winners voted in Dec)
+      // Calculate which months to include for yearly voting:
+      // We want 10 months of winners: January through October
+      // (No November awards, and December is being voted on during yearly voting period)
       const monthlyWinners: any = {
         business_of_month: [],
         customer_service_superstar: []
       };
 
-      // Calculate the 11 months to include
-      // Start month = (voting month + 1) - 11 = voting month - 10
-      // But we need to convert from 0-indexed (YEARLY_VOTING_MONTH) to 1-indexed (target month)
-      const startMonth = (YEARLY_VOTING_MONTH + 1) - 10; // Convert to 1-12 range and subtract 10
-      
-      for (let i = 0; i < 11; i++) {
-        // Calculate target month (1-12) wrapping around the year
-        let targetMonth = startMonth + i;
-        let targetYear = currentYear;
-        
-        // Handle month wrapping
-        if (targetMonth <= 0) {
-          targetMonth += 12;
-          targetYear = currentYear - 1;
-        } else if (targetMonth > 12) {
-          targetMonth -= 12;
-          targetYear = currentYear + 1;
-        }
+      // Include winners from January (1) through October (10) of current year
+      for (let targetMonth = 1; targetMonth <= 10; targetMonth++) {
+        const targetYear = currentYear;
         
         // Calculate the voting month (previous month from target)
         let votingMonth: number;
         let votingYear: number;
         
         if (targetMonth === 1) {
+          // January winners were voted on in December of previous year
           votingMonth = 12;
           votingYear = targetYear - 1;
         } else {
