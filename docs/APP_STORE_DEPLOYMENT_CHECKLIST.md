@@ -33,7 +33,7 @@
 ### ✅ 4. App Assets & Media
 
 #### Required Screenshots (generate for these sizes):
-- [ ] 6.9" Display (iPhone 16 Pro Max) - 1320x2868 pixels
+- [ ] 6.9" Display (iPhone 16 Pro Max) - 1320x2868 pixels 
 - [ ] 6.7" Display (iPhone 15 Pro Max) - 1290x2796 pixels  
 - [ ] 6.5" Display (iPhone 11 Pro Max) - 1242x2688 pixels
 - [ ] 5.5" Display (iPhone 8 Plus) - 1242x2208 pixels
