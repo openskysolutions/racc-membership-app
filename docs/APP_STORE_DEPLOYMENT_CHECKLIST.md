@@ -1,7 +1,7 @@
 # App Store Deployment Checklist - RACC Membership App
 
 **Current Status:** Ready for App Store Submission  
-**App Version:** 1.1.5  
+**App Version:** 1.1.6  
 **Bundle ID:** com.racc.membership  
 **App Name:** Richfield Area Chamber of Commerce
 
@@ -25,7 +25,7 @@
 
 ### ✅ 3. Code & Build Preparation
 - [x] Code committed to git (working tree clean)
-- [x] Version updated to 1.1.5
+- [x] Version updated to 1.1.6
 - [ ] Production build tested locally
 - [ ] All features working on physical iOS device
 - [ ] No console errors in Safari Web Inspector

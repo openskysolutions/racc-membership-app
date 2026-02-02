@@ -18,7 +18,8 @@ import { ghlService } from '@/services/gohighlevel';
 const prisma = new PrismaClient();
 
 // Configuration: Month when yearly voting opens (0-11, where 0=January, 11=December)
-const YEARLY_VOTING_MONTH = 10; // November (change this to 9 for October)
+// Yearly voting runs October 1-31 after monthly voting ends September 20
+const YEARLY_VOTING_MONTH = 9; // October
 
 interface NominationRequest {
   type: 'business' | 'individual';
@@ -222,52 +223,71 @@ export class NominationsController {
 
   /**
    * Helper: Get voting period details for current month
-   * Voting period: 21st of previous month through 20th of current month
+   * Voting period: 21st of one month through 20th of next month
+   * Voting is for the month AFTER the voting period ends
+   * Example: Jan 21 - Feb 20 = voting for March awards
+   * Monthly voting stops September 20th (last period: Aug 21 - Sep 20 for October)
    */
   private getVotingPeriodDetails(now: Date = new Date()) {
     const currentMonth = now.getMonth(); // 0-11
     const currentYear = now.getFullYear();
     const currentDay = now.getDate();
     
-    // Determine which voting period we're in
-    let votingMonth: string;
-    let targetMonth: string;
-    let votingStartDate: Date;
-    let votingEndDate: Date;
-    
-    if (currentDay >= 21) {
-      // We're between 21st and end of month
-      // Voting for next month
-      votingMonth = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
-      const targetMonthDate = new Date(currentYear, currentMonth + 1, 1);
-      targetMonth = `${targetMonthDate.getFullYear()}-${String(targetMonthDate.getMonth() + 1).padStart(2, '0')}`;
-      
-      // Voting period: 21st of current month to 20th of next month
-      votingStartDate = new Date(currentYear, currentMonth, 21, 0, 0, 0, 0);
-      votingEndDate = new Date(currentYear, currentMonth + 1, 20, 23, 59, 59, 999);
-    } else if (currentDay <= 20) {
-      // We're between 1st and 20th of month
-      // This is the second half of last month's voting period
-      const prevMonthDate = new Date(currentYear, currentMonth - 1, 1);
-      votingMonth = `${prevMonthDate.getFullYear()}-${String(prevMonthDate.getMonth() + 1).padStart(2, '0')}`;
-      targetMonth = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
-      
-      // Voting period: 21st of previous month to 20th of current month
-      votingStartDate = new Date(currentYear, currentMonth - 1, 21, 0, 0, 0, 0);
-      votingEndDate = new Date(currentYear, currentMonth, 20, 23, 59, 59, 999);
-    } else {
-      // This should never happen, but just in case
+    // After September 20th, monthly voting is closed (yearly voting period)
+    if (currentMonth === 8 && currentDay > 20) {
+      // Sep 21 onwards - monthly voting closed
       return {
         canVote: false,
         votingMonth: null,
         targetMonth: null,
         deadline: null,
-        error: 'Invalid date'
+        error: 'Monthly voting has ended for the year. Yearly voting opens October 1st.'
       };
     }
     
-    // November (month 10) - no voting allowed
-    // Check if the target month is November
+    if (currentMonth >= 9) {
+      // October, November, December - monthly voting closed
+      return {
+        canVote: false,
+        votingMonth: null,
+        targetMonth: null,
+        deadline: null,
+        error: 'Monthly voting has ended for the year. Yearly voting is now open.'
+      };
+    }
+    
+    // Determine which voting period we're in and what we're voting for
+    let votingMonth: string;
+    let targetMonth: string;
+    let targetMonthDate: Date;
+    let votingStartDate: Date;
+    let votingEndDate: Date;
+    
+    if (currentDay >= 21) {
+      // We're between 21st and end of month
+      // Voting period: 21st of current month to 20th of next month
+      // Target: month after the voting period ends (current + 2)
+      votingMonth = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+      targetMonthDate = new Date(currentYear, currentMonth + 2, 1);
+      targetMonth = `${targetMonthDate.getFullYear()}-${String(targetMonthDate.getMonth() + 1).padStart(2, '0')}`;
+      
+      votingStartDate = new Date(currentYear, currentMonth, 21, 0, 0, 0, 0);
+      votingEndDate = new Date(currentYear, currentMonth + 1, 20, 23, 59, 59, 999);
+    } else {
+      // We're between 1st and 20th of month
+      // This is the second half of last month's voting period
+      // Voting period: 21st of previous month to 20th of current month
+      // Target: month after the voting period ends (current + 1)
+      const prevMonthDate = new Date(currentYear, currentMonth - 1, 1);
+      votingMonth = `${prevMonthDate.getFullYear()}-${String(prevMonthDate.getMonth() + 1).padStart(2, '0')}`;
+      targetMonthDate = new Date(currentYear, currentMonth + 1, 1);
+      targetMonth = `${targetMonthDate.getFullYear()}-${String(targetMonthDate.getMonth() + 1).padStart(2, '0')}`;
+      
+      votingStartDate = new Date(currentYear, currentMonth - 1, 21, 0, 0, 0, 0);
+      votingEndDate = new Date(currentYear, currentMonth, 20, 23, 59, 59, 999);
+    }
+    
+    // Check if target month is November (no November awards)
     const targetMonthNum = parseInt(targetMonth.split('-')[1]);
     if (targetMonthNum === 11) {
       return {
@@ -756,44 +776,35 @@ export class NominationsController {
 
   /**
    * Helper: Get yearly voting period details
-   * Yearly voting is only available during the configured voting month
+   * Yearly voting runs October 1-31 and is open to all chamber members
    */
   private getYearlyVotingPeriodDetails(now: Date = new Date()) {
     const currentMonth = now.getMonth(); // 0-11
     const currentYear = now.getFullYear();
     const currentDay = now.getDate();
     
-    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
-                       'July', 'August', 'September', 'October', 'November', 'December'];
-    const votingMonthName = monthNames[YEARLY_VOTING_MONTH];
-
-    console.log('votingMonthName:', votingMonthName);
-    
-    // Only allow voting in the configured month
-    if (currentMonth !== YEARLY_VOTING_MONTH) {
+    // Only allow voting in October
+    if (currentMonth !== 9) {
       return {
         canVote: false,
         votingYear: null,
-        error: `Yearly voting is only available in ${votingMonthName}`
+        error: 'Yearly voting is only available in October (October 1-31)'
       };
     }
     
-    // Get the last day of the voting month
-    const lastDayOfMonth = new Date(currentYear, YEARLY_VOTING_MONTH + 1, 0).getDate();
-    
-    // Check if within voting window (1st through last day of month)
-    if (currentDay < 1 || currentDay > lastDayOfMonth) {
+    // Check if within voting window (October 1-31)
+    if (currentDay < 1 || currentDay > 31) {
       return {
         canVote: false,
         votingYear: null,
-        error: `Yearly voting is only available ${votingMonthName} 1-${lastDayOfMonth}`
+        error: 'Yearly voting is only available October 1-31'
       };
     }
     
     return {
       canVote: true,
       votingYear: currentYear,
-      deadline: new Date(currentYear, YEARLY_VOTING_MONTH, lastDayOfMonth, 23, 59, 59, 999)
+      deadline: new Date(currentYear, 9, 31, 23, 59, 59, 999)
     };
   }
 
