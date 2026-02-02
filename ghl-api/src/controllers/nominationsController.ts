@@ -222,35 +222,68 @@ export class NominationsController {
 
   /**
    * Helper: Get voting period details for current month
+   * Voting period: 21st of previous month through 20th of current month
    */
   private getVotingPeriodDetails(now: Date = new Date()) {
     const currentMonth = now.getMonth(); // 0-11
     const currentYear = now.getFullYear();
+    const currentDay = now.getDate();
     
-    // November (month 10) - no voting allowed
-    if (currentMonth === 10) {
+    // Determine which voting period we're in
+    let votingMonth: string;
+    let targetMonth: string;
+    let votingStartDate: Date;
+    let votingEndDate: Date;
+    
+    if (currentDay >= 21) {
+      // We're between 21st and end of month
+      // Voting for next month
+      votingMonth = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+      const targetMonthDate = new Date(currentYear, currentMonth + 1, 1);
+      targetMonth = `${targetMonthDate.getFullYear()}-${String(targetMonthDate.getMonth() + 1).padStart(2, '0')}`;
+      
+      // Voting period: 21st of current month to 20th of next month
+      votingStartDate = new Date(currentYear, currentMonth, 21, 0, 0, 0, 0);
+      votingEndDate = new Date(currentYear, currentMonth + 1, 20, 23, 59, 59, 999);
+    } else if (currentDay <= 20) {
+      // We're between 1st and 20th of month
+      // This is the second half of last month's voting period
+      const prevMonthDate = new Date(currentYear, currentMonth - 1, 1);
+      votingMonth = `${prevMonthDate.getFullYear()}-${String(prevMonthDate.getMonth() + 1).padStart(2, '0')}`;
+      targetMonth = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+      
+      // Voting period: 21st of previous month to 20th of current month
+      votingStartDate = new Date(currentYear, currentMonth - 1, 21, 0, 0, 0, 0);
+      votingEndDate = new Date(currentYear, currentMonth, 20, 23, 59, 59, 999);
+    } else {
+      // This should never happen, but just in case
       return {
         canVote: false,
         votingMonth: null,
         targetMonth: null,
         deadline: null,
-        error: 'Voting is not available in November'
+        error: 'Invalid date'
       };
     }
     
-    // Calculate voting month (current) and target month (next)
-    const votingMonth = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
-    const targetMonthDate = new Date(currentYear, currentMonth + 1, 1);
-    const targetMonth = `${targetMonthDate.getFullYear()}-${String(targetMonthDate.getMonth() + 1).padStart(2, '0')}`;
-    
-    // Deadline is the 20th of current month at 11:59 PM
-    const deadline = new Date(currentYear, currentMonth, 20, 23, 59, 59, 999);
+    // November (month 10) - no voting allowed
+    // Check if the target month is November
+    const targetMonthNum = parseInt(targetMonth.split('-')[1]);
+    if (targetMonthNum === 11) {
+      return {
+        canVote: false,
+        votingMonth: null,
+        targetMonth: null,
+        deadline: null,
+        error: 'Voting is not available for November awards'
+      };
+    }
     
     return {
       canVote: true,
       votingMonth,
       targetMonth,
-      deadline,
+      deadline: votingEndDate,
       currentMonth: currentMonth + 1 // 1-12
     };
   }

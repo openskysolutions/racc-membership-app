@@ -254,7 +254,7 @@ const VotingPage: React.FC = () => {
           <>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <p className="text-muted-foreground text-center sm:text-left">
-                Vote for {category === 'business_of_month' ? 'Business of the Year' : 'Customer Service Superstar of the Year'} {formatMonth(votingStatus?.targetMonth)} winner
+                Vote for {category === 'business_of_month' ? 'Business of the Month' : 'Customer Service Superstar of the Month'} {formatMonth(votingStatus?.targetMonth)} winner
               </p>
               {nominations.length > 0 && (
                 <Button
