@@ -225,6 +225,22 @@ export class NominationsController {
   }
 
   /**
+   * Helper: Calculate target month from voting month
+   * Given a votingMonth (e.g., "2025-12"), calculate what month the vote was for
+   * Voting month is the month when voting starts (on the 21st)
+   * Target month is 2 months after voting month
+   * Example: votingMonth "2025-12" -> targetMonth "2026-02" (February)
+   */
+  private calculateTargetMonthFromVotingMonth(votingMonth: string): string {
+    const [year, month] = votingMonth.split('-').map(Number);
+    // month is 1-12, convert to 0-11 for Date
+    const votingDate = new Date(year, month - 1, 1);
+    // Target is 2 months after voting month
+    const targetDate = new Date(votingDate.getFullYear(), votingDate.getMonth() + 2, 1);
+    return `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}`;
+  }
+
+  /**
    * Helper: Get voting period details for current month
    * Voting period: 21st of one month through 20th of next month
    * Voting is for the month AFTER the voting period ends
@@ -396,7 +412,8 @@ export class NominationsController {
         where: {
           userId: userId,
           votingCategory: nomination.category,
-          votingMonth: votingPeriod.votingMonth!
+          votingMonth: votingPeriod.votingMonth!,
+          voteType: 'monthly'
         }
       });
 
@@ -771,13 +788,15 @@ export class NominationsController {
           business_of_month: businessVote ? {
             nominationId: businessVote.nominationId,
             businessName: businessVote.nomination.businessName,
-            votedAt: businessVote.createdAt
+            votedAt: businessVote.createdAt,
+            targetMonth: this.calculateTargetMonthFromVotingMonth(businessVote.votingMonth)
           } : null,
           customer_service_superstar: superstarVote ? {
             nominationId: superstarVote.nominationId,
             name: superstarVote.nomination.name,
             businessName: superstarVote.nomination.businessName,
-            votedAt: superstarVote.createdAt
+            votedAt: superstarVote.createdAt,
+            targetMonth: this.calculateTargetMonthFromVotingMonth(superstarVote.votingMonth)
           } : null
         }
       });

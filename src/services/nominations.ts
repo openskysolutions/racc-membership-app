@@ -338,12 +338,14 @@ export interface VotingStatus {
       nominationId: number;
       businessName: string;
       votedAt: string;
+      targetMonth: string;
     } | null;
     customer_service_superstar?: {
       nominationId: number;
       name?: string;
       businessName: string;
       votedAt: string;
+      targetMonth: string;
     } | null;
   };
 }

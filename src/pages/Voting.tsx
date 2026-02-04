@@ -9,6 +9,7 @@ import {
   VotingData, 
   VotingStatus 
 } from '@/services/nominations';
+import { formatDate, formatMonth, formatShortDateWithOrdinal } from '@/lib/dateUtils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -79,19 +80,6 @@ const VotingPage: React.FC = () => {
     }
   };
 
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-  };
-
-  const formatMonth = (monthString?: string) => {
-    if (!monthString) return '';
-    const [year, month] = monthString.split('-');
-    const date = new Date(parseInt(year), parseInt(month) - 1);
-    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-  };
-
   // Check access
   const isBoardMember = user && (user.role === 'admin' || user.role === 'moderator' || user.role === 'board_member');
 
@@ -140,25 +128,30 @@ const VotingPage: React.FC = () => {
     nomination, 
     category,
     hasVoted,
-    votedNominationId
+    votedNominationId,
+    votedNominationDate,
   }: { 
     nomination: VotingNomination; 
     category: 'business_of_month' | 'customer_service_superstar';
     hasVoted: boolean;
     votedNominationId?: number;
+    votedNominationDate?: string;
   }) => {
     const isVotedFor = votedNominationId === nomination.id;
     const selected = category === 'business_of_month' ? selectedBusiness === nomination.id : selectedSuperstar === nomination.id;
 
     return (
-      <Card className={`${isVotedFor ? 'border-green-500 bg-green-50 dark:bg-green-950' : ''}`}>
+      <Card className={`${isVotedFor 
+          ? 'bg-green-50 dark:bg-green-900/20 border-1 border-emerald-300 dark:border-green-700' 
+          : ''
+        }`}>
         <CardContent className="p-3 pt-3">
           <div className="flex flex-col sm:flex-row gap-4">
             {/* Left side: Checkbox and basic info */}
             <div className="flex items-center gap-4 md:flex-1">
               <Checkbox
                 id={`nomination-${nomination.id}`}
-                checked={selected}
+                checked={isVotedFor || selected}
                 onCheckedChange={(checked: boolean) => {
                   if (hasVoted) return;
                   if (category === 'business_of_month') {
@@ -191,9 +184,9 @@ const VotingPage: React.FC = () => {
                   <span>Nominated: {formatDate(nomination.createdAt)}</span>
                 </div>
                 {isVotedFor && (
-                  <div className="mt-3 flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
+                  <div className="mt-3 flex items-center gap-2 text-sm text-green-700 dark:text-green-300 font-medium">
                     <CheckCircle2 className="h-4 w-4" />
-                    <span>You voted for this nomination</span>
+                    <span>You voted for this nomination on: <span className='font-semibold'>{formatShortDateWithOrdinal(votedNominationDate)}</span></span>
                   </div>
                 )}
               </div>
@@ -220,80 +213,64 @@ const VotingPage: React.FC = () => {
     category: 'business_of_month' | 'customer_service_superstar';
     nominations: VotingNomination[];
     hasVoted: boolean;
-    votedInfo?: { nominationId: number; businessName: string; name?: string; votedAt: string } | null;
+    votedInfo?: { nominationId: number; businessName: string; name?: string; votedAt: string; targetMonth?: string } | null;
   }) => {
     const selectedId = category === 'business_of_month' ? selectedBusiness : selectedSuperstar;
 
     return (
       <div className="space-y-4">
-        {hasVoted ? (
-          <>
-            {votedInfo ? (
-              <Alert className="bg-green-50 dark:bg-green-950 border-green-500">
-                <CheckCircle2 className="h-4 w-4 text-green-600" />
-                <AlertDescription className="text-green-800 dark:text-green-200">
-                  <strong>Thank you for the vote you've submitted for: {formatMonth(votingStatus?.targetMonth)} - {title}</strong>
-                  <div className="mt-2">
-                    You voted for: <strong>{votedInfo.businessName}</strong>
-                    {votedInfo.name && ` (${votedInfo.name})`}
-                    <br />
-                    <span className="text-sm">Voted on: {formatDate(votedInfo.votedAt)}</span>
-                  </div>
-                </AlertDescription>
-              </Alert>
-            ) : (
-              <Alert className="bg-green-50 dark:bg-green-950 border-green-500">
-                <CheckCircle2 className="h-4 w-4 text-green-600" />
-                <AlertDescription className="text-green-800 dark:text-green-200">
-                  <strong>Thank you for voting! You have already submitted your vote for: {formatMonth(votingStatus?.targetMonth)} - {title}</strong>
-                </AlertDescription>
-              </Alert>
-            )}
-          </>
-        ) : (
-          <>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <p className="text-muted-foreground text-center sm:text-left">
-                Vote for {category === 'business_of_month' ? 'Business of the Month' : 'Customer Service Superstar of the Month'} {formatMonth(votingStatus?.targetMonth)} winner
-              </p>
-              {nominations.length > 0 && (
-                <Button
-                  onClick={() => selectedId && handleVote(selectedId)}
-                  disabled={!selectedId || submitting}
-                  className="sm:w-auto"
-                >
-                  {submitting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Submitting...
-                    </>
-                  ) : (
-                    'Submit Vote'
-                  )}
-                </Button>
-              )}
-            </div>
-
-            {nominations.length === 0 ? (
-              <Alert>
-                <AlertDescription>
-                  No approved nominations available for this category.
-                </AlertDescription>
-              </Alert>
-            ) : (
-              <div className="space-y-3">
-                {nominations.map(nomination => (
-                  <NominationCard
-                    key={nomination.id}
-                    nomination={nomination}
-                    category={category}
-                    hasVoted={hasVoted}
-                    votedNominationId={votedInfo?.nominationId}
-                  />
-                ))}
+        {hasVoted && votedInfo && (
+          <Alert className="bg-green-50 dark:bg-green-900/20 border-1 border-emerald-300 dark:border-green-700 p-2">
+            <div className="flex flex-row gap-3 items-center">
+              <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0 mt-1" />
+              <div className="text-green-700 dark:text-green-200 leading-tight">
+                <strong>Thank you for the vote you've submitted for: {formatMonth(votedInfo.targetMonth || votingStatus?.targetMonth)} - {title}</strong>
               </div>
-            )}
-          </>
+            </div>
+          </Alert>
+        )}
+
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <p className="text-muted-foreground text-center sm:text-left">
+            {hasVoted ? 'Your vote has been recorded for' : 'Vote for'} {category === 'business_of_month' ? 'Business of the Month' : 'Customer Service Superstar of the Month'} {formatMonth(votingStatus?.targetMonth)} winner
+          </p>
+          {!hasVoted && nominations.length > 0 && (
+            <Button
+              onClick={() => selectedId && handleVote(selectedId)}
+              disabled={!selectedId || submitting}
+              className="sm:w-auto"
+            >
+              {submitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Submitting...
+                </>
+              ) : (
+                'Submit Vote'
+              )}
+            </Button>
+          )}
+        </div>
+
+        {nominations.length === 0 ? (
+          <Alert>
+            <AlertDescription>
+              No approved nominations available for this category.
+            </AlertDescription>
+          </Alert>
+        ) : (
+          <div className="space-y-3">
+            {nominations.map(nomination => (
+              <NominationCard
+                key={nomination.id}
+                nomination={nomination}
+                category={category}
+                hasVoted={hasVoted}
+                votedNominationId={votedInfo?.nominationId}
+                votedNominationDate={votedInfo?.votedAt}
+              />
+            ))}
+          </div>
         )}
       </div>
     );
@@ -326,7 +303,7 @@ const VotingPage: React.FC = () => {
         </p>
         
         {votingData.deadline && (
-          <div className="mt-4 flex items-center gap-2 text-sm bg-blue-50 dark:bg-blue-950 text-blue-800 dark:text-blue-200 p-3 rounded-lg">
+          <div className="mt-4 flex items-center gap-2 text-sm bg-blue-50 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 p-3 rounded-lg">
             <Calendar className="h-4 w-4" />
             <span>
               <strong>Voting Deadline:</strong> {formatDate(votingData.deadline)} at 11:59 PM
@@ -343,7 +320,7 @@ const VotingPage: React.FC = () => {
       )}
 
       {success && (
-        <Alert className="mb-6 bg-green-50 dark:bg-green-950 border-green-500">
+        <Alert className="mb-6 bg-green-50 dark:bg-green-900/20 border-green-500 dark:border-green-700">
           <CheckCircle2 className="h-4 w-4 text-green-600" />
           <AlertDescription className="text-green-800 dark:text-green-200">
             {success}
@@ -352,17 +329,17 @@ const VotingPage: React.FC = () => {
       )}
 
       <Tabs defaultValue="business" className="w-full">
-        <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 mb-6 h-20 sm:h-10">
-          <TabsTrigger value="business" className="data-[state=active]:bg-white rounded-md">
+        <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 mb-6 h-20 sm:h-10 bg-card dark:bg-card">
+          <TabsTrigger value="business" className="data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-500 rounded-md">
             Business of the Month
             {votingStatus?.hasVoted.business_of_month && (
-              <CheckCircle2 className="ml-2 h-4 w-4 text-green-600" />
+              <CheckCircle2 className="ml-2 h-4 w-4 text-green-600 dark:text-green-400" />
             )}
           </TabsTrigger>
-          <TabsTrigger value="superstar" className="data-[state=active]:bg-white rounded-md">
+          <TabsTrigger value="superstar" className="data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-500 rounded-md">
             Customer Service Superstar
             {votingStatus?.hasVoted.customer_service_superstar && (
-              <CheckCircle2 className="ml-2 h-4 w-4 text-green-600" />
+              <CheckCircle2 className="ml-2 h-4 w-4 text-green-600 dark:text-green-400" />
             )}
           </TabsTrigger>
         </TabsList>

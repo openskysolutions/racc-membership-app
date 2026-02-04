@@ -16,6 +16,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, CheckCircle2, AlertCircle, Calendar } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { formatShortDateWithOrdinal } from '@/lib/dateUtils';
 
 const YearlyVotingPage: React.FC = () => {
   const { user } = useAuthStore();
@@ -135,12 +136,14 @@ const YearlyVotingPage: React.FC = () => {
     nomination, 
     category,
     hasVoted,
-    votedNominationId
+    votedNominationId,
+    votedNominationDate,
   }: { 
     nomination: YearlyVotingNomination; 
     category: 'business_of_month' | 'customer_service_superstar';
     hasVoted: boolean;
     votedNominationId?: number;
+    votedNominationDate?: string;
   }) => {
     const isVotedFor = votedNominationId === nomination.id;
     const selected = category === 'business_of_month' ? selectedBusiness === nomination.id : selectedSuperstar === nomination.id;
@@ -193,7 +196,7 @@ const YearlyVotingPage: React.FC = () => {
                 {isVotedFor && (
                   <div className="mt-3 flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
                     <CheckCircle2 className="h-4 w-4" />
-                    <span>You voted for this nomination</span>
+                    <span>You voted for this nomination on: <span className='font-semibold'>{formatShortDateWithOrdinal(votedNominationDate)}</span></span>
                   </div>
                 )}
               </div>
@@ -228,9 +231,9 @@ const YearlyVotingPage: React.FC = () => {
       return (
         <div className="space-y-4">
           <h2 className="text-2xl font-bold">{title}</h2>
-          <Alert className="bg-green-50 dark:bg-green-950 border-green-500">
+          <Alert className="bg-green-50 dark:bg-green-700 border-green-500">
             <CheckCircle2 className="h-4 w-4 text-green-600" />
-            <AlertDescription className="text-green-800 dark:text-green-200">
+            <AlertDescription className="text-green-700 dark:text-green-200">
               <strong>Thank you for the vote you've submitted for: {votingStatus?.votingYear} - {title}</strong>
               <div className="mt-2">
                 You voted for: <strong>{votedInfo.businessName}</strong>
@@ -283,6 +286,7 @@ const YearlyVotingPage: React.FC = () => {
                 category={category}
                 hasVoted={hasVoted}
                 votedNominationId={votedInfo?.nominationId}
+                votedNominationDate={votedInfo?.votedAt.toString()}
               />
             ))}
           </div>
