@@ -458,77 +458,77 @@ export default function AdminPage() {
           <TabsList className={`w-full grid gap-1 ${isFullAdmin ? 'grid-cols-3 sm:grid-cols-5 h-auto sm:h-10' : 'grid-cols-3 sm:inline-flex sm:w-auto'}`}>
             {isFullAdmin && (
               <>
-                <TabsTrigger value="overview" className="flex-col sm:flex-row bg-white sm:bg-transparent border sm:border-0 border-gray-300 h-10 sm:h-8 py-2 sm:py-0 gap-1 sm:gap-2">
+                <TabsTrigger value="overview" className="flex-col sm:flex-row bg-transparent border-0 h-10 sm:h-8 py-2 sm:py-0 gap-1 sm:gap-2">
                   <Users className="h-4 w-4 hidden sm:inline-block" />
                   <span className="text-xs sm:text-sm">Overview</span>
                 </TabsTrigger>
-                <TabsTrigger value="users" className="flex-col sm:flex-row bg-white sm:bg-transparent border sm:border-0 border-gray-300 h-10 sm:h-8 py-2 sm:py-0 gap-1 sm:gap-2">
+                <TabsTrigger value="users" className="flex-col sm:flex-row bg-transparent border-0 h-10 sm:h-8 py-2 sm:py-0 gap-1 sm:gap-2">
                   <Users className="h-4 w-4 hidden sm:inline-block" />
                   <span className="text-xs sm:text-sm">Users</span>
                 </TabsTrigger>
               </>
             )}
-            <TabsTrigger value="nominations" className="flex-col sm:flex-row bg-white sm:bg-transparent border sm:border-0 border-gray-300 h-10 sm:h-8 py-2 sm:py-0 gap-1 sm:gap-2">
+            <TabsTrigger value="nominations" className="flex-col sm:flex-row bg-transparent border-0 h-10 sm:h-8 py-2 sm:py-0 gap-1 sm:gap-2">
               <Award className="h-4 w-4 hidden sm:inline-block" />
               <span className="text-xs sm:text-sm">Nominations</span>
             </TabsTrigger>
-            <TabsTrigger value="monthly-results" className="flex-col sm:flex-row bg-white sm:bg-transparent border sm:border-0 border-gray-300 h-10 sm:h-8 py-2 sm:py-0 gap-1 sm:gap-2">
+            <TabsTrigger value="monthly-results" className="flex-col sm:flex-row bg-transparent border-0 h-10 sm:h-8 py-2 sm:py-0 gap-1 sm:gap-2">
               <Star className="h-4 w-4 hidden sm:inline-block" />
               <span className="text-xs sm:text-sm">Monthly Results</span>
             </TabsTrigger>
-            <TabsTrigger value="yearly-results" className="flex-col sm:flex-row bg-white sm:bg-transparent border sm:border-0 border-gray-300 h-10 sm:h-8 py-2 sm:py-0 gap-1 sm:gap-2">
+            <TabsTrigger value="yearly-results" className="flex-col sm:flex-row bg-transparent border-0 h-10 sm:h-8 py-2 sm:py-0 gap-1 sm:gap-2">
               <Star className="h-4 w-4 hidden sm:inline-block" />
               <span className="text-xs sm:text-sm">Yearly Results</span>
             </TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
-          <TabsContent value="overview" className="space-y-6">
+          <TabsContent value="overview" className="space-y-2 md:space-y-6">
             {stats && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-                    <Users className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 md:gap-6">
+                <Card className='p-0'>
+                  <CardHeader className="flex flex-row items-center justify-between h-full space-y-0 p-4">
+                    <CardTitle className="flex text-sm font-medium gap-3 items-center">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                      Total Users
+                    </CardTitle>
                     <div className="text-2xl font-bold">{stats.users.total}</div>
-                  </CardContent>
+                  </CardHeader>
                 </Card>
                 
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Active Users</CardTitle>
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                  </CardHeader>
-                  <CardContent>
+                <Card className='p-0'>
+                  <CardHeader className="flex flex-row items-center justify-between h-full space-y-0 p-4">
+                    <CardTitle className="flex text-sm font-medium gap-3 items-center">
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                      Active Users
+                    </CardTitle>
                     <div className="text-2xl font-bold text-green-600">{stats.users.active}</div>
-                  </CardContent>
+                  </CardHeader>
                 </Card>
 
                 <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Pending Users</CardTitle>
-                    <Clock className="h-4 w-4 text-yellow-600" />
-                  </CardHeader>
-                  <CardContent>
+                  <CardHeader className="flex flex-row items-center justify-between h-full space-y-0 p-4">
+                    <CardTitle className="flex text-sm font-medium gap-3 items-center">
+                      <Clock className="h-4 w-4 text-yellow-600" />
+                      Pending Users
+                    </CardTitle>
                     <div className="text-2xl font-bold text-yellow-600">{stats.users.pending}</div>
-                  </CardContent>
+                  </CardHeader>
                 </Card>
 
                 <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Suspended Users</CardTitle>
-                    <AlertTriangle className="h-4 w-4 text-red-600" />
-                  </CardHeader>
-                  <CardContent>
+                  <CardHeader className="flex flex-row items-center justify-between h-full space-y-0 p-4">
+                    <CardTitle className="flex text-sm font-medium gap-3 items-center">
+                      <AlertTriangle className="h-4 w-4 text-red-600" />
+                      Suspended Users
+                    </CardTitle>
                     <div className="text-2xl font-bold text-red-600">{stats.users.suspended}</div>
-                  </CardContent>
+                  </CardHeader>
                 </Card>
               </div>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 md:gap-6">
               {/* Users by Role */}
               {stats && (
                 <Card>

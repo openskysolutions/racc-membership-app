@@ -405,7 +405,7 @@ const MemberDetailsPage: React.FC = () => {
                         <div className="flex items-center gap-3">
                           <Globe className="h-4 w-4 text-muted-foreground" />
                           <a
-                            href={member.website}
+                            href={member.website.startsWith('http') ? member.website : `https://${member.website}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-primary hover:underline flex-1 truncate"
