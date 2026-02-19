@@ -41,6 +41,16 @@ import Terms from '@/pages/docs/Terms';
 import EventsList from '@/pages/EventsList';
 import EventPage from '@/pages/EventPage';
 
+import BlogPage from '@/pages/Blog';
+import BlogPostPage from '@/pages/BlogPost';
+import FormPage from '@/pages/FormPage';
+import PostCategoriesPage from '@/pages/admin/PostCategories';
+import PostCategoryFormPage from '@/pages/admin/PostCategoryForm';
+import PostAuthorsPage from '@/pages/admin/PostAuthors';
+import PostAuthorFormPage from '@/pages/admin/PostAuthorForm';
+import PostsPage from '@/pages/admin/Posts';
+import PostFormPage from '@/pages/admin/PostForm';
+
 import { ReactNode } from 'react';
 
 // Scroll to top on route change
@@ -139,6 +149,26 @@ export default function AppRoutes() {
         <Route path="terms" element={<Terms />} />
         <Route path="event-pages" element={<EventsList />} />
         <Route path="event-pages/:slug" element={<EventPage />} />
+
+        {/* Blog routes */}
+        <Route path="blog" element={<BlogPage />} />
+        <Route path="blog/:slug" element={<BlogPostPage />} />
+
+        {/* Form routes */}
+        <Route path="forms/:formId" element={<FormPage />} />
+
+        {/* Admin blog routes */}
+        <Route path="admin/post-categories" element={<AdminRoute><PostCategoriesPage /></AdminRoute>} />
+        <Route path="admin/post-categories/new" element={<AdminRoute><PostCategoryFormPage /></AdminRoute>} />
+        <Route path="admin/post-categories/:id/edit" element={<AdminRoute><PostCategoryFormPage /></AdminRoute>} />
+        
+        <Route path="admin/post-authors" element={<AdminRoute><PostAuthorsPage /></AdminRoute>} />
+        <Route path="admin/post-authors/new" element={<AdminRoute><PostAuthorFormPage /></AdminRoute>} />
+        <Route path="admin/post-authors/:id/edit" element={<AdminRoute><PostAuthorFormPage /></AdminRoute>} />
+        
+        <Route path="admin/posts" element={<AdminRoute><PostsPage /></AdminRoute>} />
+        <Route path="admin/posts/new" element={<AdminRoute><PostFormPage /></AdminRoute>} />
+        <Route path="admin/posts/:id/edit" element={<AdminRoute><PostFormPage /></AdminRoute>} />
       </Route>
 
       {/* fallback */}

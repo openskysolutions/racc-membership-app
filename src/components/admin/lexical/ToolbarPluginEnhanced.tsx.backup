@@ -1,0 +1,669 @@
+import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
+import { useCallback, useEffect, useState } from 'react';
+import {
+  $getSelection,
+  $isRangeSelection,
+  $isRootOrShadowRoot,
+  $isElementNode,
+  CAN_REDO_COMMAND,
+  CAN_UNDO_COMMAND,
+  FORMAT_ELEMENT_COMMAND,
+  FORMAT_TEXT_COMMAND,
+  REDO_COMMAND,
+  SELECTION_CHANGE_COMMAND,
+  UNDO_COMMAND,
+  COMMAND_PRIORITY_CRITICAL,
+} from 'lexical';
+import { $setBlocksType, $patchStyleText, $getSelectionStyleValueForProperty } from '@lexical/selection';
+import {
+  $createHeadingNode,
+  $createQuoteNode,
+  $isHeadingNode,
+  HeadingTagType,
+} from '@lexical/rich-text';
+import {
+  $isListNode,
+  INSERT_ORDERED_LIST_COMMAND,
+  INSERT_UNORDERED_LIST_COMMAND,
+  ListNode,
+} from '@lexical/list';
+import {
+  $createCodeNode,
+  $isCodeNode,
+} from '@lexical/code';
+import { $isLinkNode, TOGGLE_LINK_COMMAND } from '@lexical/link';
+import {
+  $findMatchingParent,
+  $getNearestNodeOfType,
+  mergeRegister,
+} from '@lexical/utils';
+import { $createParagraphNode } from 'lexical';
+import { $createColumnContainerNode } from './ColumnNodes';
+import { $insertNodeToNearestRoot } from '@lexical/utils';
+import { INSERT_TABLE_COMMAND } from '@lexical/table';
+import { INSERT_HORIZONTAL_RULE_COMMAND } from '@lexical/react/LexicalHorizontalRuleNode';
+import { $createTextNode } from 'lexical';
+
+const blockTypeToBlockName = {
+  bullet: 'Bulleted List',
+  check: 'Check List',
+  code: 'Code Block',
+  h1: 'Heading 1',
+  h2: 'Heading 2',
+  h3: 'Heading 3',
+  h4: 'Heading 4',
+  h5: 'Heading 5',
+  h6: 'Heading 6',
+  number: 'Numbered List',
+  paragraph: 'Normal',
+  quote: 'Quote',
+};
+
+function Divider() {
+  return <div className="lexical-toolbar-divider" />;
+}
+
+function getSelectedNode(selection: any) {
+  const anchor = selection.anchor;
+  const focus = selection.focus;
+  const anchorNode = selection.anchor.getNode();
+  const focusNode = selection.focus.getNode();
+  if (anchorNode === focusNode) {
+    return anchorNode;
+  }
+  const isBackward = selection.isBackward();
+  if (isBackward) {
+    return focus.offset === 0 ? anchorNode : focusNode;
+  } else {
+    return anchor.offset === anchorNode.getTextContentSize() ? anchorNode : focusNode;
+  }
+}
+
+function BlockFormatDropDown({
+  editor,
+  blockType,
+}: {
+  editor: any;
+  blockType: keyof typeof blockTypeToBlockName;
+}) {
+  const formatParagraph = () => {
+    editor.update(() => {
+      const selection = $getSelection();
+      if ($isRangeSelection(selection)) {
+        $setBlocksType(selection, () => $createParagraphNode());
+      }
+    });
+  };
+
+  const formatHeading = (headingSize: HeadingTagType) => {
+    if (blockType !== headingSize) {
+      editor.update(() => {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          $setBlocksType(selection, () => $createHeadingNode(headingSize));
+        }
+      });
+    }
+  };
+
+  const formatBulletList = () => {
+    if (blockType !== 'bullet') {
+      editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND, undefined);
+    }
+  };
+
+  const formatNumberedList = () => {
+    if (blockType !== 'number') {
+      editor.dispatchCommand(INSERT_ORDERED_LIST_COMMAND, undefined);
+    }
+  };
+
+  const formatQuote = () => {
+    if (blockType !== 'quote') {
+      editor.update(() => {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          $setBlocksType(selection, () => $createQuoteNode());
+        }
+      });
+    }
+  };
+
+  const formatCode = () => {
+    if (blockType !== 'code') {
+      editor.update(() => {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          $setBlocksType(selection, () => $createCodeNode());
+        }
+      });
+    } else {
+      formatParagraph();
+    }
+  };
+
+  return (
+    <select
+      className="lexical-toolbar-select"
+      onChange={(e) => {
+        const value = e.target.value;
+        if (value === 'paragraph') formatParagraph();
+        else if (value === 'h1') formatHeading('h1');
+        else if (value === 'h2') formatHeading('h2');
+        else if (value === 'h3') formatHeading('h3');
+        else if (value === 'h4') formatHeading('h4');
+        else if (value === 'h5') formatHeading('h5');
+        else if (value === 'h6') formatHeading('h6');
+        else if (value === 'bullet') formatBulletList();
+        else if (value === 'number') formatNumberedList();
+        else if (value === 'quote') formatQuote();
+        else if (value === 'code') formatCode();
+      }}
+      value={blockType}>
+      <option value="paragraph">{blockTypeToBlockName['paragraph']}</option>
+      <option value="h1">{blockTypeToBlockName['h1']}</option>
+      <option value="h2">{blockTypeToBlockName['h2']}</option>
+      <option value="h3">{blockTypeToBlockName['h3']}</option>
+      <option value="h4">{blockTypeToBlockName['h4']}</option>
+      <option value="h5">{blockTypeToBlockName['h5']}</option>
+      <option value="h6">{blockTypeToBlockName['h6']}</option>
+      <option value="bullet">{blockTypeToBlockName['bullet']}</option>
+      <option value="number">{blockTypeToBlockName['number']}</option>
+      <option value="quote">{blockTypeToBlockName['quote']}</option>
+      <option value="code">{blockTypeToBlockName['code']}</option>
+    </select>
+  );
+}
+
+function FontSizeDropDown({ editor, fontSize }: { editor: any; fontSize: string }) {
+  const updateFontSize = (newFontSize: string) => {
+    editor.update(() => {
+      const selection = $getSelection();
+      if ($isRangeSelection(selection)) {
+        $patchStyleText(selection, { 'font-size': newFontSize });
+      }
+    });
+  };
+
+  return (
+    <select
+      className="lexical-toolbar-select lexical-toolbar-select-sm"
+      onChange={(e) => updateFontSize(e.target.value)}
+      value={fontSize}>
+      <option value="10px">10px</option>
+      <option value="11px">11px</option>
+      <option value="12px">12px</option>
+      <option value="13px">13px</option>
+      <option value="14px">14px</option>
+      <option value="15px">15px</option>
+      <option value="16px">16px</option>
+      <option value="17px">17px</option>
+      <option value="18px">18px</option>
+      <option value="19px">19px</option>
+      <option value="20px">20px</option>
+    </select>
+  );
+}
+
+function ColorPicker({ editor, color }: { editor: any; color: string }) {
+  const [showPicker, setShowPicker] = useState(false);
+  const pickerRef = useCallback((node: HTMLDivElement | null) => {
+    if (!node) return;
+    
+    const handleClickOutside = (e: MouseEvent) => {
+      if (!node.contains(e.target as Node)) {
+        setShowPicker(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+  
+  const updateColor = (newColor: string) => {
+    editor.update(() => {
+      const selection = $getSelection();
+      if ($isRangeSelection(selection)) {
+        $patchStyleText(selection, { color: newColor });
+      }
+    });
+  };
+
+  return (
+    <div style={{ position: 'relative' }} ref={pickerRef}>
+      <button
+        type="button"
+        className="lexical-toolbar-item"
+        onClick={() => setShowPicker(!showPicker)}
+        title="Text Color"
+        aria-label="Text Color">
+        <i className="format font-color" />
+        <span style={{ 
+          width: '12px', 
+          height: '2px', 
+          backgroundColor: color,
+          position: 'absolute',
+          bottom: '6px',
+          left: '50%',
+          transform: 'translateX(-50%)'
+        }} />
+      </button>
+      {showPicker && (
+        <div style={{
+          position: 'absolute',
+          top: '100%',
+          left: 0,
+          zIndex: 100,
+          padding: '8px',
+          background: 'white',
+          borderRadius: '8px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+          border: '1px solid #e5e7eb',
+          marginTop: '4px'
+        }}>
+          <input
+            type="color"
+            value={color}
+            onChange={(e) => updateColor(e.target.value)}
+            style={{ width: '100px', height: '30px', border: 'none', cursor: 'pointer' }}
+          />
+          <button
+            type="button"
+            onClick={() => setShowPicker(false)}
+            style={{ 
+              marginTop: '4px', 
+              width: '100%', 
+              padding: '4px',
+              background: '#f3f4f6',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer'
+            }}>
+            Close
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MoreFormattingDropDown({ 
+  editor, 
+  isStrikethrough,
+  isSubscript, 
+  isSuperscript, 
+  isHighlight 
+}: { 
+  editor: any;
+  isStrikethrough: boolean;
+  isSubscript: boolean;
+  isSuperscript: boolean;
+  isHighlight: boolean;
+}) {
+  const clearFormatting = () => {
+    editor.update(() => {
+      const selection = $getSelection();
+      if ($isRangeSelection(selection)) {
+        selection.getNodes().forEach((node: any) => {
+          if (node.__type === 'text') {
+            node.setFormat(0);
+            node.setStyle('');
+          }
+        });
+      }
+    });
+  };
+
+  return (
+    <select
+      className="lexical-toolbar-select"
+      onChange={(e) => {
+        const value = e.target.value;
+        if (value === 'strikethrough' || value === 'subscript' || value === 'superscript' || value === 'highlight') {
+          editor.dispatchCommand(FORMAT_TEXT_COMMAND, value);
+        } else if (value === 'clear') {
+          clearFormatting();
+        }
+        e.target.value = '';
+      }}
+      value="">
+      <option value="" disabled>Aa</option>
+      <option value="strikethrough">{isStrikethrough ? '✓ ' : ''}Strikethrough</option>
+      <option value="subscript">{isSubscript ? '✓ ' : ''}Subscript</option>
+      <option value="superscript">{isSuperscript ? '✓ ' : ''}Superscript</option>
+      <option value="highlight">{isHighlight ? '✓ ' : ''}Highlight</option>
+      <option value="clear">Clear Formatting</option>
+    </select>
+  );
+}
+
+function InsertDropDown({ editor }: { editor: any }) {
+  const insertHorizontalRule = () => {
+    editor.dispatchCommand(INSERT_HORIZONTAL_RULE_COMMAND, undefined);
+  };
+
+  const insertImage = () => {
+    // TODO: Implement image upload dialog
+    console.log('Insert Image - to be implemented');
+  };
+
+  const insertGIF = () => {
+    // TODO: Implement GIF picker
+    console.log('Insert GIF - to be implemented');
+  };
+
+  const insertTable = () => {
+    editor.dispatchCommand(INSERT_TABLE_COMMAND, {
+      columns: '3',
+      rows: '3',
+    });
+  };
+
+  const insertColumnsLayout = () => {
+    // Default to 2 columns
+    const skipNextChange = (editor as any)._skipNextChange;
+    if (skipNextChange) {
+      skipNextChange.current = Date.now() + 500;
+    }
+    editor.update(() => {
+      const columnContainer = $createColumnContainerNode(2);
+      $insertNodeToNearestRoot(columnContainer);
+    });
+  };
+
+  const insertCollapsible = () => {
+    // TODO: Implement collapsible container
+    console.log('Insert Collapsible container - to be implemented');
+  };
+
+  const insertDate = () => {
+    // TODO: Implement date picker
+    const dateText = new Date().toLocaleDateString();
+    editor.update(() => {
+      const selection = $getSelection();
+      if ($isRangeSelection(selection)) {
+        const textNode = $createTextNode(dateText);
+        selection.insertNodes([textNode]);
+      }
+    });
+  };
+
+  const insertYoutubeVideo = () => {
+    // TODO: Implement YouTube video embed dialog
+    console.log('Insert Youtube Video - to be implemented');
+  };
+
+  return (
+    <select
+      className="lexical-toolbar-select"
+      onChange={(e) => {
+        const value = e.target.value;
+        if (value === 'horizontal-rule') insertHorizontalRule();
+        else if (value === 'image') insertImage();
+        else if (value === 'gif') insertGIF();
+        else if (value === 'table') insertTable();
+        else if (value === 'columns-layout') insertColumnsLayout();
+        else if (value === 'collapsible') insertCollapsible();
+        else if (value === 'date') insertDate();
+        else if (value === 'youtube') insertYoutubeVideo();
+        e.target.value = '';
+      }}
+      value="">
+      <option value="" disabled>Insert</option>
+      <option value="horizontal-rule">Horizontal Rule</option>
+      <option value="image">Image</option>
+      <option value="gif">GIF</option>
+      <option value="table">Table</option>
+      <option value="columns-layout">Columns Layout</option>
+      <option value="collapsible">Collapsible container</option>
+      <option value="date">Date</option>
+      <option value="youtube">Youtube Video</option>
+    </select>
+  );
+}
+
+function ElementFormatDropdown({ editor, value }: { editor: any; value: string }) {
+  return (
+    <select
+      className="lexical-toolbar-select lexical-toolbar-select-sm"
+      onChange={(e) => {
+        editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, e.target.value);
+      }}
+      value={value}>
+      <option value="">Align</option>
+      <option value="left">Left Align</option>
+      <option value="center">Center Align</option>
+      <option value="right">Right Align</option>
+      <option value="justify">Justify Align</option>
+    </select>
+  );
+}
+
+export default function ToolbarPlugin() {
+  const [editor] = useLexicalComposerContext();
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
+  const [blockType, setBlockType] =
+    useState<keyof typeof blockTypeToBlockName>('paragraph');
+  const [fontSize, setFontSize] = useState<string>('15px');
+  const [fontColor, setFontColor] = useState<string>('#000000');
+  const [isBold, setIsBold] = useState(false);
+  const [isItalic, setIsItalic] = useState(false);
+  const [isUnderline, setIsUnderline] = useState(false);
+  const [isStrikethrough, setIsStrikethrough] = useState(false);
+  const [isSubscript, setIsSubscript] = useState(false);
+  const [isSuperscript, setIsSuperscript] = useState(false);
+  const [isHighlight, setIsHighlight] = useState(false);
+  const [isCode, setIsCode] = useState(false);
+  const [isLink, setIsLink] = useState(false);
+  const [elementFormat, setElementFormat] = useState<string>('left');
+
+  const $updateToolbar = useCallback(() => {
+    const selection = $getSelection();
+    if ($isRangeSelection(selection)) {
+      const anchorNode = selection.anchor.getNode();
+      let element =
+        anchorNode.getKey() === 'root'
+          ? anchorNode
+          : $findMatchingParent(anchorNode, (e) => {
+              const parent = e.getParent();
+              return parent !== null && $isRootOrShadowRoot(parent);
+            });
+
+      if (element === null) {
+        element = anchorNode.getTopLevelElementOrThrow();
+      }
+
+      const elementKey = element.getKey();
+      const elementDOM = editor.getElementByKey(elementKey);
+
+      // Update block type
+      if (elementDOM !== null) {
+        if ($isListNode(element)) {
+          const parentList = $getNearestNodeOfType(anchorNode, ListNode);
+          const type = parentList
+            ? parentList.getListType()
+            : element.getListType();
+          setBlockType(type);
+        } else {
+          const type = $isHeadingNode(element)
+            ? element.getTag()
+            : element.getType();
+          if (type in blockTypeToBlockName) {
+            setBlockType(type as keyof typeof blockTypeToBlockName);
+          }
+          if ($isCodeNode(element)) {
+            setBlockType('code');
+          }
+        }
+      }
+
+      // Update text format
+      setIsBold(selection.hasFormat('bold'));
+      setIsItalic(selection.hasFormat('italic'));
+      setIsUnderline(selection.hasFormat('underline'));
+      setIsStrikethrough(selection.hasFormat('strikethrough'));
+      setIsSubscript(selection.hasFormat('subscript'));
+      setIsSuperscript(selection.hasFormat('superscript'));
+      setIsHighlight(selection.hasFormat('highlight'));
+      setIsCode(selection.hasFormat('code'));
+
+      // Update font size and color
+      setFontSize(
+        $getSelectionStyleValueForProperty(selection, 'font-size', '15px'),
+      );
+      setFontColor(
+        $getSelectionStyleValueForProperty(selection, 'color', '#000000'),
+      );
+
+      // Update links
+      const node = getSelectedNode(selection);
+      const parent = node.getParent();
+      if ($isLinkNode(parent) || $isLinkNode(node)) {
+        setIsLink(true);
+      } else {
+        setIsLink(false);
+      }
+
+      // Update element format
+      const formatType = $isElementNode(element) ? element.getFormatType() : 'left';
+      setElementFormat(formatType || 'left');
+    }
+  }, [editor]);
+
+  useEffect(() => {
+    return mergeRegister(
+      editor.registerUpdateListener(({ editorState }) => {
+        editorState.read(() => {
+          $updateToolbar();
+        });
+      }),
+      editor.registerCommand(
+        SELECTION_CHANGE_COMMAND,
+        (_payload, _newEditor) => {
+          $updateToolbar();
+          return false;
+        },
+        COMMAND_PRIORITY_CRITICAL,
+      ),
+      editor.registerCommand(
+        CAN_UNDO_COMMAND,
+        (payload) => {
+          setCanUndo(payload);
+          return false;
+        },
+        COMMAND_PRIORITY_CRITICAL,
+      ),
+      editor.registerCommand(
+        CAN_REDO_COMMAND,
+        (payload) => {
+          setCanRedo(payload);
+          return false;
+        },
+        COMMAND_PRIORITY_CRITICAL,
+      ),
+    );
+  }, [editor, $updateToolbar]);
+
+  const insertLink = useCallback(() => {
+    if (!isLink) {
+      editor.dispatchCommand(TOGGLE_LINK_COMMAND, 'https://');
+    } else {
+      editor.dispatchCommand(TOGGLE_LINK_COMMAND, null);
+    }
+  }, [editor, isLink]);
+
+  return (
+    <div className="lexical-toolbar-enhanced">
+      <button
+        type="button"
+        disabled={!canUndo}
+        onClick={() => {
+          editor.dispatchCommand(UNDO_COMMAND, undefined);
+        }}
+        title="Undo (Ctrl+Z)"
+        className="lexical-toolbar-item spaced"
+        aria-label="Undo">
+        <i className="format undo" />
+      </button>
+      <button
+        type="button"
+        disabled={!canRedo}
+        onClick={() => {
+          editor.dispatchCommand(REDO_COMMAND, undefined);
+        }}
+        title="Redo (Ctrl+Y)"
+        className="lexical-toolbar-item"
+        aria-label="Redo">
+        <i className="format redo" />
+      </button>
+      <Divider />
+      <BlockFormatDropDown blockType={blockType} editor={editor} />
+      <Divider />
+      <FontSizeDropDown editor={editor} fontSize={fontSize} />
+      <Divider />
+      <button
+        type="button"
+        onClick={() => {
+          editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold');
+        }}
+        className={'lexical-toolbar-item spaced ' + (isBold ? 'active' : '')}
+        title="Bold (Ctrl+B)"
+        aria-label="Format text as bold">
+        <i className="format bold" />
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'italic');
+        }}
+        className={'lexical-toolbar-item spaced ' + (isItalic ? 'active' : '')}
+        title="Italic (Ctrl+I)"
+        aria-label="Format text as italics">
+        <i className="format italic" />
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'underline');
+        }}
+        className={
+          'lexical-toolbar-item spaced ' + (isUnderline ? 'active' : '')
+        }
+        title="Underline (Ctrl+U)"
+        aria-label="Format text to underlined">
+        <i className="format underline" />
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'code');
+        }}
+        className={'lexical-toolbar-item spaced ' + (isCode ? 'active' : '')}
+        title="Insert code block"
+        aria-label="Insert code block">
+        <i className="format code" />
+      </button>
+      <button
+        type="button"
+        onClick={insertLink}
+        className={'lexical-toolbar-item spaced ' + (isLink ? 'active' : '')}
+        title="Insert link"
+        aria-label="Insert link">
+        <i className="format link" />
+      </button>
+      <ColorPicker editor={editor} color={fontColor} />
+      <MoreFormattingDropDown 
+        editor={editor}
+        isStrikethrough={isStrikethrough}
+        isSubscript={isSubscript}
+        isSuperscript={isSuperscript}
+        isHighlight={isHighlight}
+      />
+      <Divider />
+      <InsertDropDown editor={editor} />
+      <Divider />
+      <ElementFormatDropdown editor={editor} value={elementFormat} />
+    </div>
+  );
+}

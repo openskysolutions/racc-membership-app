@@ -5,13 +5,12 @@
 
 import express, { Request, Response } from 'express';
 import { requireAuth, requireAdmin } from '@/middleware/auth';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 import multer from 'multer';
 import path from 'path';
 import { emailService } from '@/services/emailService';
 import fs from 'fs';
 
-const prisma = new PrismaClient();
 const router = express.Router();
 
 // Configure multer for file uploads
