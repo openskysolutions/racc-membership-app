@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { getAppBaseUrl, getApiBaseUrl } from '@/lib/config';
 
 interface FormSelectorDialogProps {
   open: boolean;
@@ -39,7 +40,8 @@ export default function FormSelectorDialog({
         // Extract form ID from URL and fetch from API
         const formId = extractFormId(initialUrl);
         if (formId) {
-          fetch(`${window.location.origin}/api/forms/embeds/${formId}`)
+          const apiBaseUrl = getApiBaseUrl();
+          fetch(`${apiBaseUrl}/forms/embeds/${formId}`)
             .then(res => res.json())
             .then(data => {
               setFormName(data.name);
@@ -83,9 +85,11 @@ export default function FormSelectorDialog({
 
     try {
       // Save embed code to server or update existing
+      const appBaseUrl = getAppBaseUrl();
+      const apiBaseUrl = getApiBaseUrl();
       const apiUrl = initialUrl 
-        ? `${window.location.origin}/api/forms/embeds/${extractFormId(initialUrl)}`
-        : `${window.location.origin}/api/forms/embeds`;
+        ? `${apiBaseUrl}/forms/embeds/${extractFormId(initialUrl)}`
+        : `${apiBaseUrl}/forms/embeds`;
       
       const method = initialUrl ? 'PUT' : 'POST';
       
@@ -100,7 +104,8 @@ export default function FormSelectorDialog({
       }
 
       const savedEmbed = await response.json();
-      const formUrl = `${window.location.origin}/forms/${savedEmbed.id}`;
+      // Store as relative path to work across all environments
+      const formUrl = `/forms/${savedEmbed.id}`;
       
       if (onSelectForm) {
         onSelectForm(savedEmbed.id, formName, formUrl);

@@ -4,6 +4,7 @@ import { ArrowLeft, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { getApiBaseUrl } from '@/lib/config';
 
 export default function FormPage() {
   const { formId } = useParams<{ formId: string }>();
@@ -23,7 +24,8 @@ export default function FormPage() {
     }
 
     // Fetch form embed from API (secure server-side storage)
-    fetch(`${window.location.origin}/api/forms/embeds/${formId}`)
+    const apiBaseUrl = getApiBaseUrl();
+    fetch(`${apiBaseUrl}/forms/embeds/${formId}`)
       .then(res => {
         if (!res.ok) {
           throw new Error('Form not found');

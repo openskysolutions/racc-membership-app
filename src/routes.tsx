@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useEffect, lazy } from 'react';
 
 import PagesLayout from '@/components/layouts/pagesLayout';
 import { useAuthStore } from '@/stores/authStore';
@@ -44,12 +44,22 @@ import EventPage from '@/pages/EventPage';
 import BlogPage from '@/pages/Blog';
 import BlogPostPage from '@/pages/BlogPost';
 import FormPage from '@/pages/FormPage';
-import PostCategoriesPage from '@/pages/admin/PostCategories';
-import PostCategoryFormPage from '@/pages/admin/PostCategoryForm';
-import PostAuthorsPage from '@/pages/admin/PostAuthors';
-import PostAuthorFormPage from '@/pages/admin/PostAuthorForm';
+
+// Always import Posts list (read-only for mobile)
 import PostsPage from '@/pages/admin/Posts';
-import PostFormPage from '@/pages/admin/PostForm';
+
+// Conditionally lazy-load admin edit pages (excluded from mobile builds)
+const isMobile = import.meta.env.VITE_PLATFORM === 'mobile';
+
+// Stub component for mobile builds
+const MobileStub = () => <Navigate to="/" replace />;
+
+// Conditionally import admin pages - only loaded in web builds
+const PostCategoriesPage = !isMobile ? lazy(() => import('@/pages/admin/PostCategories')) : MobileStub;
+const PostCategoryFormPage = !isMobile ? lazy(() => import('@/pages/admin/PostCategoryForm')) : MobileStub;
+const PostAuthorsPage = !isMobile ? lazy(() => import('@/pages/admin/PostAuthors')) : MobileStub;
+const PostAuthorFormPage = !isMobile ? lazy(() => import('@/pages/admin/PostAuthorForm')) : MobileStub;
+const PostFormPage = !isMobile ? lazy(() => import('@/pages/admin/PostForm')) : MobileStub;
 
 import { ReactNode } from 'react';
 
@@ -157,7 +167,10 @@ export default function AppRoutes() {
         {/* Form routes */}
         <Route path="forms/:formId" element={<FormPage />} />
 
-        {/* Admin blog routes */}
+        {/* Admin blog routes - Posts list available on all platforms (read-only on mobile) */}
+        <Route path="admin/posts" element={<AdminRoute><PostsPage /></AdminRoute>} />
+        
+        {/* Admin edit routes - only available on web builds, excluded from mobile */}
         <Route path="admin/post-categories" element={<AdminRoute><PostCategoriesPage /></AdminRoute>} />
         <Route path="admin/post-categories/new" element={<AdminRoute><PostCategoryFormPage /></AdminRoute>} />
         <Route path="admin/post-categories/:id/edit" element={<AdminRoute><PostCategoryFormPage /></AdminRoute>} />
@@ -166,7 +179,6 @@ export default function AppRoutes() {
         <Route path="admin/post-authors/new" element={<AdminRoute><PostAuthorFormPage /></AdminRoute>} />
         <Route path="admin/post-authors/:id/edit" element={<AdminRoute><PostAuthorFormPage /></AdminRoute>} />
         
-        <Route path="admin/posts" element={<AdminRoute><PostsPage /></AdminRoute>} />
         <Route path="admin/posts/new" element={<AdminRoute><PostFormPage /></AdminRoute>} />
         <Route path="admin/posts/:id/edit" element={<AdminRoute><PostFormPage /></AdminRoute>} />
       </Route>

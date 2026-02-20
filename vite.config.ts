@@ -4,11 +4,13 @@ import { defineConfig, loadEnv } from "vite";
 import Pages from 'vite-plugin-pages';
 import svgr from "vite-plugin-svgr";
 import { fileURLToPath } from 'url';
+import { excludeMobileAdminPlugin } from './vite-plugin-exclude-mobile';
 
 export default defineConfig(({ mode }) => {
   // Load env file based on `mode` in the current working directory.
   // Set the third parameter to '' to load all env regardless of the `VITE_` prefix.
   const env = loadEnv(mode, process.cwd(), '');
+  const isMobileBuild = mode === 'mobile' || mode === 'mobile.production';
   
   return {
     base: '/',  // Changed from './' to '/'
@@ -20,6 +22,8 @@ export default defineConfig(({ mode }) => {
         dirs: 'src/pages', // Directory to scan for route files
         extensions: ['jsx', 'tsx'], // File extensions to consider
       }),
+      // Exclude admin components from mobile builds to reduce bundle size
+      excludeMobileAdminPlugin(),
     ],
     resolve: {
       alias: [

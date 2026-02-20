@@ -9,12 +9,12 @@ class FormsService {
    * Generate a form page URL with embedded code
    */
   getFormPageUrl(formId: string, formName: string, embedCode: string): string {
-    const baseUrl = window.location.origin;
+    // Return relative path to work across all environments
     const params = new URLSearchParams({
       embed: embedCode,
       name: formName,
     });
-    return `${baseUrl}/forms/${formId}?${params.toString()}`;
+    return `/forms/${formId}?${params.toString()}`;
   }
 }
 

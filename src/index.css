@@ -393,3 +393,15 @@ html {
   min-height: 100px;
 }
 
+/* Lightbox close button positioning - move down to avoid toolbar overlap */
+.yarl__toolbar {
+  top: 1rem !important;
+}
+
+/* On mobile, adjust for mobile toolbar */
+@media (max-width: 768px) {
+  .yarl__toolbar {
+    top: 2rem !important;
+  }
+}
+
