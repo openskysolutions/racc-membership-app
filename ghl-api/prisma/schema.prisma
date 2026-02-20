@@ -219,17 +219,19 @@ model Post {
 
 // Gallery for blog posts - each post can have multiple galleries with titles
 model Gallery {
-  id        String   @id @default(cuid())
-  postId    String
-  title     String   // Gallery title (e.g., "Event Photos", "Product Showcase")
-  images    String[] // Array of image URLs
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String   @id @default(cuid())
+  postId       String
+  title        String   // Gallery title (e.g., "Event Photos", "Product Showcase")
+  images       String[] // Array of image URLs
+  displayOrder Int      @default(0) // Order for displaying galleries
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
   
   // Relations
-  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  post         Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
   
   @@index([postId])
+  @@index([postId, displayOrder])
   @@map("galleries")
 }
 

@@ -34,6 +34,7 @@ export interface Gallery {
   postId: string;
   title: string;
   images: string[];
+  displayOrder: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -272,5 +273,9 @@ export const galleryService = {
 
   async delete(id: string): Promise<void> {
     await api.delete(`/posts/galleries/${id}`);
+  },
+
+  async reorder(postId: string, galleryIds: string[]): Promise<void> {
+    await api.put(`/posts/${postId}/galleries/reorder`, { galleryIds });
   },
 };

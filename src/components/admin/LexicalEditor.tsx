@@ -361,6 +361,66 @@ function EditorWrapper({ value, onChange, placeholder, className, skipNextChange
     };
   }, [editor]);
 
+  // Scroll editor into view when it receives focus
+  useEffect(() => {
+    const rootElement = editor.getRootElement();
+    const wrapper = editorWrapperRef.current;
+    if (!rootElement || !wrapper) return;
+
+    let isFocused = false;
+
+    const handleFocusIn = () => {
+      // Only scroll on initial focus, not when already focused
+      if (!isFocused) {
+        isFocused = true;
+        console.log('Editor focused - scrolling into view');
+        
+        // Calculate scroll position with offset from top
+        const rect = wrapper.getBoundingClientRect();
+        const offset = 160; // 100px from the top of the viewport
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        const targetPosition = rect.top + scrollTop - offset;
+        
+        // Smooth scroll to the calculated position
+        window.scrollTo({
+          top: targetPosition,
+          behavior: 'smooth'
+        });
+      }
+    };
+
+    const handleClick = (e: MouseEvent) => {
+      // If clicking inside the editor content, scroll into view
+      if (rootElement.contains(e.target as Node)) {
+        if (!isFocused) {
+          console.log('Editor clicked - scrolling into view');
+          handleFocusIn();
+        }
+      }
+    };
+
+    const handleBlur = () => {
+      // Use a small timeout to avoid rapid focus/blur cycles
+      setTimeout(() => {
+        if (!rootElement.contains(document.activeElement)) {
+          isFocused = false;
+          console.log('Editor blurred');
+        }
+      }, 100);
+    };
+
+    // Listen for both focus and click events
+    rootElement.addEventListener('focusin', handleFocusIn, true);
+    rootElement.addEventListener('click', handleClick);
+    rootElement.addEventListener('blur', handleBlur);
+
+    return () => {
+      rootElement.removeEventListener('focusin', handleFocusIn, true);
+      rootElement.removeEventListener('click', handleClick);
+      rootElement.removeEventListener('blur', handleBlur);
+    };
+  }, [editor]);
+
   return (
     <div 
       ref={editorWrapperRef}

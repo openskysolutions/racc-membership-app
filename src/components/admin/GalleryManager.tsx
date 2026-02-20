@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Plus, Pencil, Trash2, Image as ImageIcon } from 'lucide-react';
+import { Plus, Pencil, Trash2, Image as ImageIcon, GripVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -29,17 +29,22 @@ interface GalleryManagerProps {
   onAdd: (title: string, images: string[]) => Promise<void>;
   onUpdate: (id: string, title: string, images: string[]) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
+  onReorder: (galleries: Gallery[]) => void;
   onUpload: (file: File) => Promise<string>;
 }
 
-export default function GalleryManager({ galleries, onAdd, onUpdate, onDelete, onUpload }: GalleryManagerProps) {
+export default function GalleryManager({ galleries, onAdd, onUpdate, onDelete, onReorder, onUpload }: GalleryManagerProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editingGallery, setEditingGallery] = useState<Gallery | null>(null);
   const [galleryToDelete, setGalleryToDelete] = useState<{ id: string; title: string } | null>(null);
   const [title, setTitle] = useState('');
   const [loading, setLoading] = useState(false);
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const galleryUploadRef = useRef<GalleryUploadRef>(null);
+
+  // Galleries are already ordered by displayOrder from the backend
 
   const handleOpenDialog = (gallery?: Gallery) => {
     if (gallery) {
@@ -96,6 +101,44 @@ export default function GalleryManager({ galleries, onAdd, onUpdate, onDelete, o
     }
   };
 
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === index) return;
+    setDragOverIndex(index);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverIndex(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault();
+    
+    if (draggedIndex === null || draggedIndex === dropIndex) {
+      setDraggedIndex(null);
+      setDragOverIndex(null);
+      return;
+    }
+
+    const newGalleries = [...galleries];
+    const [draggedGallery] = newGalleries.splice(draggedIndex, 1);
+    newGalleries.splice(dropIndex, 0, draggedGallery);
+
+    onReorder(newGalleries);
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -115,11 +158,27 @@ export default function GalleryManager({ galleries, onAdd, onUpdate, onDelete, o
         </Card>
       ) : (
         <div className="grid gap-4">
-          {galleries.map((gallery) => (
-            <Card key={gallery.id}>
+          {galleries.map((gallery, index) => (
+            <Card 
+              key={gallery.id}
+              draggable
+              onDragStart={(e) => handleDragStart(e, index)}
+              onDragOver={(e) => handleDragOver(e, index)}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, index)}
+              onDragEnd={handleDragEnd}
+              className={`transition-all cursor-move ${
+                draggedIndex === index ? 'opacity-50' : ''
+              } ${
+                dragOverIndex === index ? 'border-blue-500 border-2' : ''
+              }`}
+            >
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-base">{gallery.title}</CardTitle>
+                  <div className="flex items-center gap-2">
+                    <GripVertical className="h-4 w-4 text-gray-400" />
+                    <CardTitle className="text-base">{gallery.title}</CardTitle>
+                  </div>
                   <div className="flex gap-2">
                     <Button
                       type="button"

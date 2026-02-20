@@ -42,7 +42,9 @@ export async function listPosts(req: Request, res: Response) {
             slug: true
           }
         },
-        galleries: true
+        galleries: {
+          orderBy: { displayOrder: 'asc' }
+        }
       },
       orderBy: { createdAt: 'desc' },
       ...(limit && { take: parseInt(limit as string) }),
@@ -97,7 +99,7 @@ export async function getPostBySlug(req: Request, res: Response) {
           }
         },
         galleries: {
-          orderBy: { createdAt: 'asc' }
+          orderBy: { displayOrder: 'asc' }
         }
       }
     });
@@ -137,7 +139,7 @@ export async function getPost(req: Request, res: Response) {
         author: true,
         category: true,
         galleries: {
-          orderBy: { createdAt: 'asc' }
+          orderBy: { displayOrder: 'asc' }
         }
       }
     });
@@ -450,11 +452,23 @@ export async function createGallery(req: Request, res: Response) {
       });
     }
 
+    // Get the current max displayOrder and set new gallery to 0 (top)
+    // Increment all other galleries' displayOrder by 1
+    await prisma.gallery.updateMany({
+      where: { postId },
+      data: {
+        displayOrder: {
+          increment: 1
+        }
+      }
+    });
+
     const gallery = await prisma.gallery.create({
       data: {
         postId,
         title,
-        images
+        images,
+        displayOrder: 0
       }
     });
 
@@ -548,6 +562,58 @@ export async function deleteGallery(req: Request, res: Response) {
     res.status(500).json({
       success: false,
       error: 'Failed to delete gallery',
+      details: error.message
+    });
+  }
+}
+
+/**
+ * PUT /posts/:postId/galleries/reorder
+ * Reorder galleries for a post
+ */
+export async function reorderGalleries(req: Request, res: Response) {
+  try {
+    const { postId } = req.params;
+    const { galleryIds } = req.body;
+
+    if (!galleryIds || !Array.isArray(galleryIds)) {
+      return res.status(400).json({
+        success: false,
+        error: 'galleryIds array is required'
+      });
+    }
+
+    // Verify post exists
+    const post = await prisma.post.findUnique({
+      where: { id: postId }
+    });
+
+    if (!post) {
+      return res.status(404).json({
+        success: false,
+        error: 'Post not found'
+      });
+    }
+
+    // Update displayOrder for each gallery
+    const updatePromises = galleryIds.map((galleryId: string, index: number) =>
+      prisma.gallery.update({
+        where: { id: galleryId },
+        data: { displayOrder: index }
+      })
+    );
+
+    await Promise.all(updatePromises);
+
+    res.json({
+      success: true,
+      message: 'Galleries reordered successfully'
+    });
+  } catch (error: any) {
+    console.error('Error reordering galleries:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to reorder galleries',
       details: error.message
     });
   }

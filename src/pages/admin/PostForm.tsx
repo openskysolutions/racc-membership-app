@@ -146,7 +146,22 @@ export default function PostForm() {
       });
     }
   }
-
+  function handleReorderGalleries(reorderedGalleries: Gallery[]) {
+    setGalleries(reorderedGalleries);
+    
+    // Persist the order to the backend
+    if (id) {
+      const galleryIds = reorderedGalleries.map(g => g.id);
+      galleryService.reorder(id, galleryIds).catch((error) => {
+        console.error('Failed to persist gallery order:', error);
+        toast({
+          title: 'Warning',
+          description: 'Gallery reordered locally but failed to save to server',
+          variant: 'destructive',
+        });
+      });
+    }
+  }
   const onSubmit = async (data: FormData) => {
     if (!data.body) {
       toast({
@@ -303,6 +318,7 @@ export default function PostForm() {
                   onAdd={handleAddGallery}
                   onUpdate={handleUpdateGallery}
                   onDelete={handleDeleteGallery}
+                  onReorder={handleReorderGalleries}
                   onUpload={uploadBlogImage}
                 />
               </div>

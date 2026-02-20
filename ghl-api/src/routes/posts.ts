@@ -9,7 +9,8 @@ import {
   deletePost,
   createGallery,
   updateGallery,
-  deleteGallery
+  deleteGallery,
+  reorderGalleries
 } from '@/controllers/postController';
 
 const router = express.Router();
@@ -312,5 +313,40 @@ router.put('/galleries/:id', requireAuth, requireAdmin, updateGallery);
  *         description: Gallery deleted successfully
  */
 router.delete('/galleries/:id', requireAuth, requireAdmin, deleteGallery);
+
+/**
+ * @swagger
+ * /posts/{postId}/galleries/reorder:
+ *   put:
+ *     summary: Reorder galleries for a post
+ *     tags:
+ *       - Blog - Galleries
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: postId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - galleryIds
+ *             properties:
+ *               galleryIds:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: Array of gallery IDs in the desired order
+ *     responses:
+ *       200:
+ *         description: Galleries reordered successfully
+ */
+router.put('/:postId/galleries/reorder', requireAuth, requireAdmin, reorderGalleries);
 
 export default router;
