@@ -9,11 +9,13 @@
   },
   "server": {
     "androidScheme": "https",
-    "iosScheme": "https"
+    "iosScheme": "https",
+    "allowNavigation": ["*"]
   },
   "ios": {
     "contentInset": "never",
     "backgroundColor": "#FFFFFFFF",
+    "webContentsDebuggingEnabled": true,
     "plugins": {
       "SplashScreen": {
         "launchShowDuration": 2000,

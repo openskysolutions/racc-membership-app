@@ -14,6 +14,7 @@ import {
 import Lightbox from 'yet-another-react-lightbox';
 import 'yet-another-react-lightbox/styles.css';
 import '@/components/admin/lexical/lexical-editor.css';
+import { isNativeApp } from '@/lib/platform';
 
 function cleanHtml(html: string): string {
   // Remove empty tags (tags that only contain whitespace, &nbsp;, or <br>)
@@ -21,6 +22,39 @@ function cleanHtml(html: string): string {
     .replace(/<(h[1-6]|p|div|span)[^>]*>(&nbsp;|\s|<br\s*\/?>)*<\/\1>/gi, '')
     .replace(/<(h[1-6]|p|div|span)[^>]*><\/\1>/gi, '')
     .trim();
+}
+
+function makeFormLinksExternal(html: string): string {
+  // On mobile, convert relative form links to full external URLs
+  // This prevents React Router from treating them as internal navigation
+  const isNative = isNativeApp();
+  console.log('[makeFormLinksExternal] Running on native app:', isNative);
+  console.log('[makeFormLinksExternal] Build timestamp:', new Date().toISOString());
+  
+  if (!isNative) {
+    console.log('[makeFormLinksExternal] Not native, returning original HTML');
+    return html;
+  }
+  
+  const baseUrl = 'https://members.richfieldareachamber.com';
+  
+  // Replace relative /forms/ URLs with full external URLs and add target="_blank"
+  let transformedHtml = html.replace(
+    /href=["'](\/forms\/[^"']+)["']/gi,
+    `href="${baseUrl}$1" target="_blank"`
+  );
+  
+  // Log if any transformations occurred
+  const matches = html.match(/href=["']\/forms\/[^"']+["']/gi);
+  console.log('[makeFormLinksExternal] Found form links:', matches?.length || 0);
+  if (matches) {
+    console.log('[makeFormLinksExternal] Original URLs:', matches);
+  }
+  
+  const transformedMatches = transformedHtml.match(/href=["']https:\/\/members\.richfieldareachamber\.com\/forms\/[^"']+["']/gi);
+  console.log('[makeFormLinksExternal] Transformed URLs:', transformedMatches);
+  
+  return transformedHtml;
 }
 
 export default function BlogPost() {
@@ -42,7 +76,10 @@ export default function BlogPost() {
 
   useEffect(() => {
     if (post && contentRef.current) {
-      setupGalleryListeners();
+      // Use setTimeout to ensure DOM is fully rendered after dangerouslySetInnerHTML
+      setTimeout(() => {
+        setupGalleryListeners();
+      }, 100);
     }
   }, [post]);
 
@@ -171,7 +208,7 @@ export default function BlogPost() {
             <div 
               ref={contentRef}
               className="lexical-blog-content max-w-none mb-8"
-              dangerouslySetInnerHTML={{ __html: cleanHtml(post.body) }}
+              dangerouslySetInnerHTML={{ __html: makeFormLinksExternal(cleanHtml(post.body)) }}
             />
 
             {/* Galleries */}
