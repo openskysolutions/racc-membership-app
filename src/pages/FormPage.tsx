@@ -48,12 +48,17 @@ export default function FormPage() {
         // Process the embed code to ensure iframe uses the correct height
         let processed = embedCode;
         
-        // Add style attribute to iframe for guaranteed height
-        processed = processed.replace(/(<iframe[^>]*)(style=["'][^"']*["'])/i, `$1style="height: ${height}px; width: 100%;"`);
+        // Add style attribute to iframe for guaranteed height and disable scrolling
+        processed = processed.replace(/(<iframe[^>]*)(style=["'][^"']*["'])/i, `$1style="height: ${height}px; width: 100%; overflow: hidden;"`);
         
         // If no style attribute, add it
         if (!processed.match(/style=["'][^"']*["']/i)) {
-          processed = processed.replace(/(<iframe[^>]*)(>)/i, `$1 style="height: ${height}px; width: 100%;"$2`);
+          processed = processed.replace(/(<iframe[^>]*)(>)/i, `$1 style="height: ${height}px; width: 100%; overflow: hidden;" scrolling="no"$2`);
+        } else {
+          // Add scrolling="no" attribute
+          if (!processed.match(/scrolling=/i)) {
+            processed = processed.replace(/(<iframe[^>]*)(>)/i, `$1 scrolling="no"$2`);
+          }
         }
         
         console.log('📝 Processed embed code:', processed.substring(0, 200));
@@ -150,7 +155,7 @@ export default function FormPage() {
           {/* Embedded Form - renders raw HTML with forced height */}
           <div 
             className="w-full overflow-hidden max-w-2xl mx-auto"
-            style={{ minHeight: iframeHeight }}
+            style={{ minHeight: iframeHeight, overflow: 'hidden' }}
             dangerouslySetInnerHTML={{ __html: processedEmbedCode }}
           />
         {/* </CardContent>
