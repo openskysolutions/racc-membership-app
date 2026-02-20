@@ -206,7 +206,7 @@ export default function DropDown({
     const button = buttonRef.current;
 
     if (button !== null && showDropDown) {
-      const handle = (event: PointerEvent) => {
+      const handle = (event: MouseEvent) => {
         const target = event.target;
         if (!isDOMNode(target)) {
           return;

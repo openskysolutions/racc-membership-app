@@ -9,7 +9,7 @@ import {
   REDO_COMMAND,
 } from 'lexical';
 import { $setBlocksType } from '@lexical/selection';
-import { $createHeadingNode, $createQuoteNode, HeadingTagType } from '@lexical/rich-text';
+import { $createHeadingNode, HeadingTagType } from '@lexical/rich-text';
 import { INSERT_ORDERED_LIST_COMMAND, INSERT_UNORDERED_LIST_COMMAND } from '@lexical/list';
 import { $createColumnContainerNode } from './ColumnNodes';
 import { $insertNodeToNearestRoot } from '@lexical/utils';
@@ -44,15 +44,6 @@ export default function ToolbarPlugin() {
       const selection = $getSelection();
       if ($isRangeSelection(selection)) {
         $setBlocksType(selection, () => $createHeadingNode(headingSize));
-      }
-    });
-  };
-
-  const formatParagraph = () => {
-    editor.update(() => {
-      const selection = $getSelection();
-      if ($isRangeSelection(selection)) {
-        $setBlocksType(selection, () => $createQuoteNode());
       }
     });
   };

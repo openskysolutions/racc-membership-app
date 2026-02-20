@@ -1,6 +1,5 @@
 import {
   DecoratorNode,
-  EditorConfig,
   LexicalNode,
   NodeKey,
   SerializedLexicalNode,

@@ -28,9 +28,8 @@ import { $getSelectionStyleValueForProperty, $patchStyleText, $isParentElementRT
 import { $isHeadingNode } from '@lexical/rich-text';
 import { $isListNode, ListNode } from '@lexical/list';
 import { $isCodeNode } from '@lexical/code';
-import { $isLinkNode, TOGGLE_LINK_COMMAND, $createLinkNode } from '@lexical/link';
+import { $isLinkNode, TOGGLE_LINK_COMMAND } from '@lexical/link';
 import { $findMatchingParent, $getNearestNodeOfType, mergeRegister, IS_APPLE, $insertNodeToNearestRoot } from '@lexical/utils';
-import { INSERT_HORIZONTAL_RULE_COMMAND } from '@lexical/react/LexicalHorizontalRuleNode';
 import { INSERT_TABLE_COMMAND } from '@lexical/table';
 import { INSERT_IMAGE_COMMAND } from './ImagesPlugin';
 import { $createColumnContainerNode } from './ColumnNodes';
@@ -324,7 +323,6 @@ export default function ToolbarPlugin({
   const [blockType, setBlockType] = useState<keyof typeof blockTypeToBlockName>('paragraph');
   const [fontSize, setFontSize] = useState<string>('15px');
   const [fontColor, setFontColor] = useState<string>('#000');
-  const [bgColor, setBgColor] = useState<string>('#fff');
   const [elementFormat, setElementFormat] = useState<ElementFormatType>('left');
   const [isRTL, setIsRTL] = useState(false);
   const [isBold, setIsBold] = useState(false);
@@ -425,7 +423,6 @@ export default function ToolbarPlugin({
 
       // Update font color
       setFontColor($getSelectionStyleValueForProperty(selection, 'color', '#000'));
-      setBgColor($getSelectionStyleValueForProperty(selection, 'background-color', '#fff'));
       setFontSize($getSelectionStyleValueForProperty(selection, 'font-size', '15px'));
 
       // Update element format
@@ -536,20 +533,6 @@ export default function ToolbarPlugin({
         if (selection !== null) {
           $patchStyleText(selection, {
             color: value,
-          });
-        }
-      });
-    },
-    [editor],
-  );
-
-  const onBgColorSelect = useCallback(
-    (value: string) => {
-      editor.update(() => {
-        const selection = $getSelection();
-        if (selection !== null) {
-          $patchStyleText(selection, {
-            'background-color': value,
           });
         }
       });
