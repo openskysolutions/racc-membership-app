@@ -10,6 +10,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { uploadBlogImage } from '@/services/blogService';
+import { toast } from 'sonner';
 
 interface InsertImageDialogProps {
   isOpen: boolean;
@@ -22,22 +24,39 @@ export default function InsertImageDialog({ isOpen, onClose, onInsert }: InsertI
   const [imageUrl, setImageUrl] = useState('');
   const [altText, setAltText] = useState('');
   const [uploadedImage, setUploadedImage] = useState<string>('');
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string>('');
+  const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && file.type.startsWith('image/')) {
+      // Create preview for display only
       const reader = new FileReader();
       reader.onload = (event) => {
         const result = event.target?.result as string;
         setUploadedImage(result);
       };
       reader.readAsDataURL(file);
+
+      // Upload the actual file to storage
+      setUploading(true);
+      try {
+        const url = await uploadBlogImage(file);
+        setUploadedImageUrl(url);
+        toast.success('Image uploaded successfully');
+      } catch (error) {
+        console.error('Error uploading image:', error);
+        toast.error('Failed to upload image. Please try again.');
+        setUploadedImage('');
+      } finally {
+        setUploading(false);
+      }
     }
   };
 
   const handleInsert = () => {
-    const src = activeTab === 'upload' ? uploadedImage : imageUrl;
+    const src = activeTab === 'upload' ? uploadedImageUrl : imageUrl;
     if (src) {
       onInsert(src, altText || 'Image');
       handleClose();
@@ -48,12 +67,18 @@ export default function InsertImageDialog({ isOpen, onClose, onInsert }: InsertI
     setImageUrl('');
     setAltText('');
     setUploadedImage('');
+    setUploadedImageUrl('');
+    setUploading(false);
     setActiveTab('upload');
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
     onClose();
   };
+
+  const canInsert = activeTab === 'upload' 
+    ? uploadedImageUrl && !uploading
+    : imageUrl;
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -156,9 +181,9 @@ export default function InsertImageDialog({ isOpen, onClose, onInsert }: InsertI
           </Button>
           <Button 
             onClick={handleInsert}
-            disabled={activeTab === 'upload' ? !uploadedImage : !imageUrl}
+            disabled={canInsert ? false : true}
           >
-            Insert Image
+            {uploading ? 'Uploading...' : 'Insert Image'}
           </Button>
         </div>
       </DialogContent>

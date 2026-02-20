@@ -346,7 +346,7 @@ router.post('/login', async (req, res) => {
     }
 
     // Create session
-    const session = await authSessionService.createSession(user.id, 'access_token', 3600);
+    const session = await authSessionService.createSession(user.id, 'access_token', 24 * 3600);
 
     res.json({
       message: 'Login successful',

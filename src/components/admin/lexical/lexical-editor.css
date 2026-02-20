@@ -1,7 +1,11 @@
 /* Lexical Editor Styles */
 
 .lexical-editor-wrapper {
-  @apply bg-white border border-gray-200 rounded-lg h-[calc(100vh-150px)] overflow-y-auto;
+  @apply bg-white border border-gray-200 rounded-lg h-[calc(100vh-170px)] overflow-y-auto;
+  scroll-behavior: auto;
+  overflow-anchor: none;
+  /* Prevent scroll-into-view behavior */
+  contain: layout style;
 }
 
 .lexical-blog-content {
@@ -14,6 +18,9 @@
   @apply relative bg-white;
   border-bottom-left-radius: 10px;
   border-bottom-right-radius: 10px;
+  contain: layout;
+  /* Prevent reflow-triggered scrolling */
+  overflow-anchor: none;
 }
 
 /* Toolbar Styles */
@@ -136,6 +143,11 @@ i.chevron-down {
   line-height: 1.7;
   caret-color: rgb(5, 5, 5);
   tab-size: 1;
+  overflow-anchor: none;
+}
+
+.lexical-content-editable * {
+  overflow-anchor: none;
 }
 
 .lexical-placeholder {

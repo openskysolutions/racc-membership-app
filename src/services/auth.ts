@@ -63,7 +63,7 @@ export async function generateCodeChallenge(verifier: string): Promise<string> {
  */
 export async function exchangeTokenWithCode(code: string, remember: boolean = false): Promise<any> {
   const codeVerifier = sessionStorage.getItem('pkce_code_verifier');
-  if (!codeVerifier) throw new Error('Missing PKCE code verifier');
+  if (!codeVerifier) throw new Error('Something went wrong, please try logging in again.');
   
   const response = await fetch(`${API_BASE_URL}/auth/token`, {
     method: 'POST',

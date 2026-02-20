@@ -221,8 +221,8 @@ router.post('/token', async (req, res) => {
     const user = await enrichUserWithGhlData(dbUser);
 
     // Determine expiration time based on remember preference
-    // Remember me: 30 days, otherwise: 1 hour
-    const expiresIn = authData.remember ? (30 * 24 * 3600) : 3600;
+    // Remember me: 30 days, otherwise: 24 hours
+    const expiresIn = authData.remember ? (30 * 24 * 3600) : (24 * 3600);
 
     // Create session and generate tokens
     const accessToken = authSessionService.generateAccessToken(user.id);
@@ -315,7 +315,7 @@ router.post('/session', async (req, res) => {
       }
 
       // Determine expiration time based on remember preference
-      const expiresIn = remember ? (30 * 24 * 3600) : 3600;
+      const expiresIn = remember ? (30 * 24 * 3600) : (24 * 3600);
 
       // Enrich user with profile data from GoHighLevel
       const user = await enrichUserWithGhlData(dbUser);
@@ -943,7 +943,7 @@ router.post('/login', async (req, res) => {
     const user = await enrichUserWithGhlData(dbUser);
 
     // Create session
-    const session = await authSessionService.createSession(user.id, 'access_token', 3600);
+    const session = await authSessionService.createSession(user.id, 'access_token', 24 * 3600);
 
     res.json({
       message: 'Login successful',

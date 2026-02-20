@@ -3,6 +3,7 @@
  */
 
 import { api } from './apiClient';
+import { compressImage } from '@/lib/imageCompression';
 
 export interface UploadAvatarResponse {
   success: boolean;
@@ -18,16 +19,19 @@ export interface UploadAvatarResponse {
  */
 export async function uploadAvatar(file: File, contactId: string): Promise<UploadAvatarResponse> {
   try {
+    // Compress image before upload
+    const compressedFile = await compressImage(file);
+    
     // Convert file to base64
-    const fileData = await fileToBase64(file);
+    const fileData = await fileToBase64(compressedFile);
     
     // Prepare JSON payload
     const payload = {
       contactId: contactId,
       locationId: '5FAB1z0AhuVlEdqOzjVX', // Your GHL location ID
       fileData: fileData,
-      fileName: file.name,
-      mimeType: file.type
+      fileName: compressedFile.name,
+      mimeType: compressedFile.type
     };
     
     // Upload to GoHighLevel media storage
@@ -58,21 +62,24 @@ export async function uploadAvatar(file: File, contactId: string): Promise<Uploa
  */
 export async function uploadEventCoverImage(file: File): Promise<UploadAvatarResponse> {
   try {
-    // Validate file size (5MB limit)
+    // Compress image before upload (will handle files > 4MB)
+    const compressedFile = await compressImage(file);
+    
+    // Validate file size after compression (5MB limit)
     const maxSize = 5 * 1024 * 1024; // 5MB in bytes
-    if (file.size > maxSize) {
-      throw new Error('Image file size must be less than 5MB. Please choose a smaller image.');
+    if (compressedFile.size > maxSize) {
+      throw new Error('Image file size must be less than 5MB even after compression. Please choose a smaller image.');
     }
 
     // Convert file to base64
-    const fileData = await fileToBase64(file);
+    const fileData = await fileToBase64(compressedFile);
     
     // Prepare JSON payload (no contactId required for event covers)
     const payload = {
       locationId: '5FAB1z0AhuVlEdqOzjVX', // Your GHL location ID
       fileData: fileData,
-      fileName: file.name,
-      mimeType: file.type
+      fileName: compressedFile.name,
+      mimeType: compressedFile.type
     };
     
     // Upload to GoHighLevel media storage using event cover endpoint

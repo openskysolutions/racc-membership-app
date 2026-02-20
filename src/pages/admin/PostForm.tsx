@@ -72,6 +72,7 @@ export default function PostForm() {
   async function loadPost() {
     try {
       const data = await postService.get(id!);
+      console.log('Loaded post data:', { id, title: data.title, bodyLength: data.body?.length, body: data.body?.substring(0, 100) });
       setValue('title', data.title);
       setValue('slug', data.slug);
       setValue('categoryId', data.categoryId);
@@ -80,6 +81,7 @@ export default function PostForm() {
       setValue('metadata', data.metadata || '');
       setValue('body', data.body);
       setValue('published', data.published || false);
+      console.log('Set body value to:', data.body?.substring(0, 100));
       
       // Load galleries if they exist
       if (data.galleries) {

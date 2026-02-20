@@ -1,4 +1,5 @@
 import { api } from './apiClient';
+import { compressImage } from '@/lib/imageCompression';
 
 // Types
 export interface PostCategory {
@@ -231,6 +232,9 @@ export const postService = {
 
 // Media upload for blog images
 export const uploadBlogImage = async (file: File): Promise<string> => {
+  // Compress image before upload
+  const compressedFile = await compressImage(file);
+  
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = async () => {
@@ -238,8 +242,8 @@ export const uploadBlogImage = async (file: File): Promise<string> => {
         const base64Data = reader.result as string;
         const response = await api.post('/medias/upload-blog-image', {
           fileData: base64Data,
-          fileName: file.name,
-          mimeType: file.type,
+          fileName: compressedFile.name,
+          mimeType: compressedFile.type,
         });
         const json = await response.json();
         resolve(json.mediaUrl);
@@ -248,7 +252,7 @@ export const uploadBlogImage = async (file: File): Promise<string> => {
       }
     };
     reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(compressedFile);
   });
 };
 

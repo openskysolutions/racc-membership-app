@@ -41,7 +41,7 @@ interface LexicalEditorProps {
 }
 
 // Component to handle onChange with debouncing
-function OnChangePlugin({ onChange, skipNextChange }: { onChange: (html: string) => void; skipNextChange: React.MutableRefObject<number> }) {
+function OnChangePlugin({ onChange, skipNextChange, isInternalEdit }: { onChange: (html: string) => void; skipNextChange: React.MutableRefObject<number>; isInternalEdit: React.MutableRefObject<boolean> }) {
   const [editor] = useLexicalComposerContext();
   
   useEffect(() => {
@@ -57,6 +57,9 @@ function OnChangePlugin({ onChange, skipNextChange }: { onChange: (html: string)
         return;
       }
       
+      // Mark that we're making an internal edit
+      isInternalEdit.current = true;
+      
       // Debounce changes to prevent rapid firing
       clearTimeout(timeoutId);
       timeoutId = setTimeout(() => {
@@ -65,7 +68,7 @@ function OnChangePlugin({ onChange, skipNextChange }: { onChange: (html: string)
           // Debug: Check what styles are on text nodes
           const root = $getRoot();
           let foundFontSize = false;
-          root.getChildren().forEach((child, i) => {
+          root.getChildren().forEach((child) => {
             if (child instanceof ElementNode) {
               child.getChildren().forEach((textNode: any) => {
                 if (textNode.getStyle) {
@@ -95,24 +98,37 @@ function OnChangePlugin({ onChange, skipNextChange }: { onChange: (html: string)
           }
           
           onChange(html);
+          
+          // Reset the internal edit flag after a short delay
+          setTimeout(() => {
+            isInternalEdit.current = false;
+          }, 100);
         });
-      }, 1000); // 1 second debounce
+      }, 500); // 500ms debounce - reduced from 1000ms
     });
-  }, [editor, onChange, skipNextChange]);
+  }, [editor, onChange, skipNextChange, isInternalEdit]);
   
   return null;
 }
 
 // Component to set initial value
-function InitialValuePlugin({ value }: { value: string }) {
+function InitialValuePlugin({ value, isInternalEdit }: { value: string; isInternalEdit: React.MutableRefObject<boolean> }) {
   const [editor] = useLexicalComposerContext();
-  const hasInitialized = useRef(false);
+  const initializedValue = useRef<string>('');
+  const isFirstLoad = useRef(true);
   
   useEffect(() => {
-    // Only run once when we have a value
-    if (!hasInitialized.current && value) {
+    // Skip if this is an internal edit (from user typing)
+    if (isInternalEdit.current && !isFirstLoad.current) {
+      console.log('InitialValuePlugin: Skipping - internal edit');
+      return;
+    }
+    
+    // Only run when we have a new value that hasn't been initialized yet
+    if (value && initializedValue.current !== value) {
       console.log('InitialValuePlugin: Initializing editor with HTML:', value.substring(0, 200));
-      hasInitialized.current = true;
+      initializedValue.current = value;
+      isFirstLoad.current = false;
       
       editor.update(() => {
         const parser = new DOMParser();
@@ -137,7 +153,18 @@ function InitialValuePlugin({ value }: { value: string }) {
         root.clear();
         
         if (nodes.length > 0) {
-          nodes.forEach(node => root.append(node));
+          // Filter nodes - only append element and decorator nodes to root
+          // Text nodes must be wrapped in a paragraph
+          nodes.forEach(node => {
+            if (node.getType() === 'text') {
+              // Wrap text nodes in a paragraph
+              const paragraph = $createParagraphNode();
+              paragraph.append(node);
+              root.append(paragraph);
+            } else {
+              root.append(node);
+            }
+          });
         } else {
           const paragraph = $createParagraphNode();
           paragraph.append($createTextNode(''));
@@ -163,10 +190,12 @@ function InitialValuePlugin({ value }: { value: string }) {
 
 export default function LexicalEditor({ value, onChange, placeholder, className = '' }: LexicalEditorProps) {
   const skipNextChange = useRef(0); // Timestamp until which to skip onChange
+  const isInternalEdit = useRef(false); // Track if changes are from internal edits
   
   const initialConfig = {
     namespace: 'BlogEditor',
     html: buildHTMLConfig(),
+    editorState: undefined,
     theme: {
       paragraph: 'lexical-paragraph',
       text: {
@@ -228,24 +257,120 @@ export default function LexicalEditor({ value, onChange, placeholder, className 
         placeholder={placeholder} 
         className={className}
         skipNextChange={skipNextChange}
+        isInternalEdit={isInternalEdit}
       />
     </LexicalComposer>
   );
 }
 
 // Separate component inside the composer context
-function EditorWrapper({ value, onChange, placeholder, className, skipNextChange }: LexicalEditorProps & { skipNextChange: React.MutableRefObject<number> }) {
+function EditorWrapper({ value, onChange, placeholder, className, skipNextChange, isInternalEdit }: LexicalEditorProps & { skipNextChange: React.MutableRefObject<number>; isInternalEdit: React.MutableRefObject<boolean> }) {
   const [editor] = useLexicalComposerContext();
   const [activeEditor, setActiveEditor] = useState(editor);
-  const [isLinkEditMode, setIsLinkEditMode] = useState(false);
+  const editorWrapperRef = useRef<HTMLDivElement>(null);
+  const scrollPositionRef = useRef<number>(0);
+  const focusPositionRef = useRef<any>(null);
+
+  // Preserve scroll position during updates
+  useEffect(() => {
+    const wrapper = editorWrapperRef.current;
+    if (!wrapper) return;
+
+    const handleScroll = () => {
+      scrollPositionRef.current = wrapper.scrollTop;
+    };
+
+    wrapper.addEventListener('scroll', handleScroll, { passive: true });
+    return () => wrapper.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Aggressively prevent scroll during content updates
+  useEffect(() => {
+    const wrapper = editorWrapperRef.current;
+    if (!wrapper) return;
+    
+    let scrollLocked = false;
+    let lockTimeout: NodeJS.Timeout;
+    
+    const preventScroll = (e: Event) => {
+      if (scrollLocked) {
+        e.preventDefault();
+        e.stopPropagation();
+        wrapper.scrollTop = scrollPositionRef.current;
+        return false;
+      }
+    };
+    
+    const unregister = editor.registerUpdateListener(({ dirtyElements, dirtyLeaves, editorState }) => {
+      if (dirtyElements.size > 0 || dirtyLeaves.size > 0) {
+        // Save current scroll and focus position
+        const savedScroll = wrapper.scrollTop;
+        scrollPositionRef.current = savedScroll;
+        
+        // Save selection/focus state
+        editorState.read(() => {
+          const selection = editor.getEditorState().read(() => editor._editorState._selection);
+          focusPositionRef.current = selection;
+        });
+        
+        scrollLocked = true;
+        
+        clearTimeout(lockTimeout);
+        
+        // Keep scroll locked for a bit after the update
+        lockTimeout = setTimeout(() => {
+          scrollLocked = false;
+        }, 150); // Increased from 100ms
+        
+        // Restore scroll immediately and after each frame
+        const restore = () => {
+          if (wrapper.scrollTop !== savedScroll) {
+            wrapper.scrollTop = savedScroll;
+          }
+        };
+        
+        restore();
+        requestAnimationFrame(restore);
+        requestAnimationFrame(() => requestAnimationFrame(restore));
+        requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(restore)));
+      }
+    });
+
+    wrapper.addEventListener('scroll', preventScroll, { capture: true });
+    
+    return () => {
+      clearTimeout(lockTimeout);
+      wrapper.removeEventListener('scroll', preventScroll, { capture: true });
+      unregister();
+    };
+  }, [editor]);
+
+  // Prevent Lexical's built-in scroll behavior
+  useEffect(() => {
+    const rootElement = editor.getRootElement();
+    if (!rootElement) return;
+
+    // Override scrollIntoView on the root element
+    const originalScrollIntoView = rootElement.scrollIntoView;
+    rootElement.scrollIntoView = () => {
+      // Do nothing - prevent automatic scrolling
+    };
+
+    return () => {
+      rootElement.scrollIntoView = originalScrollIntoView;
+    };
+  }, [editor]);
 
   return (
-    <div className={`lexical-editor-wrapper ${className}`}>
+    <div 
+      ref={editorWrapperRef}
+      className={`lexical-editor-wrapper ${className}`}
+    >
       <ToolbarPlugin 
         editor={editor}
         activeEditor={activeEditor}
         setActiveEditor={setActiveEditor}
-        setIsLinkEditMode={setIsLinkEditMode}
+        setIsLinkEditMode={() => {}}
       />
       <div className="lexical-editor-container">
         <RichTextPlugin
@@ -267,8 +392,8 @@ function EditorWrapper({ value, onChange, placeholder, className, skipNextChange
         />
         <ColumnsPlugin skipNextChange={skipNextChange} />
         <ImagesPlugin />
-        <OnChangePlugin onChange={onChange} skipNextChange={skipNextChange} />
-        <InitialValuePlugin value={value} />
+        <OnChangePlugin onChange={onChange} skipNextChange={skipNextChange} isInternalEdit={isInternalEdit} />
+        <InitialValuePlugin value={value} isInternalEdit={isInternalEdit} />
       </div>
     </div>
   );
