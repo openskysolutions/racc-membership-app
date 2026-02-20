@@ -472,20 +472,44 @@ export const Navbar = () => {
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
-            {routeList.map(({ href, label }) => (
-              <NavigationMenuItem key={label} className="list-none">
-                <NavigationMenuLink asChild>
-                  <a
-                    href={href}
-                    className={cn(
+            {routeList.map(({ href, label }) => {
+              // Special handling for About menu item with dropdown
+              if (label === 'About') {
+                return (
+                  <DropdownMenu key={label}>
+                    <DropdownMenuTrigger className={cn(
                       buttonVariants({ variant: "ghost", size: 'xs' }),
-                      "px-1 py-1 !h-6 hover:bg-highlight-foreground rounded-md")}
-                  >
-                    {label}
-                  </a>
-                </NavigationMenuLink>
-              </NavigationMenuItem>
-            ))}
+                      "px-1 py-1 !h-6 hover:bg-highlight-foreground rounded-md"
+                    )}>
+                      {label}
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="center" className="w-auto px-2">
+                      <DropdownMenuItem onClick={() => navigate('/about')}>
+                        <span className="text-sm">About Us</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => navigate('/board')}>
+                        <span className="text-sm">Board Members</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                );
+              }
+              
+              return (
+                <NavigationMenuItem key={label} className="list-none">
+                  <NavigationMenuLink asChild>
+                    <a
+                      href={href}
+                      className={cn(
+                        buttonVariants({ variant: "ghost", size: 'xs' }),
+                        "px-1 py-1 !h-6 hover:bg-highlight-foreground rounded-md")}
+                    >
+                      {label}
+                    </a>
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+              );
+            })}
         </NavigationMenuList>
       </NavigationMenu>
     </header>

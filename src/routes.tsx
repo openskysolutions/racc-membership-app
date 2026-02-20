@@ -35,6 +35,7 @@ import EventDetailPage from '@/pages/EventDetail';
 import CoursesPage from '@/pages/Courses';
 
 import AboutPage from '@/pages/About';
+import BoardMembersPage from '@/pages/BoardMembers';
 import ContactPage from '@/pages/Contact';
 import Privacy from '@/pages/docs/Privacy';
 import Terms from '@/pages/docs/Terms';
@@ -154,6 +155,7 @@ export default function AppRoutes() {
         <Route path="courses" element={<ProtectedRoute><CoursesPage /></ProtectedRoute>} />
 
         <Route path="about" element={<AboutPage />} />
+        <Route path="board" element={<BoardMembersPage />} />
         <Route path="contact" element={<ContactPage />} />
         <Route path="privacy" element={<Privacy />} />
         <Route path="terms" element={<Terms />} />

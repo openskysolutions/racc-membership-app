@@ -1,9 +1,11 @@
 import LogoDark from "@/assets/racc-logo-dark.png";
 import AppleAppStoreButton from "@/assets/apple-app-store-buttom.svg";
 import { useTheme } from "@/providers/theme-provider";
+import { isAndroid } from "@/lib/platform";
 
 export const Footer = () => {
   const { theme } = useTheme();
+  const isAndroidDevice = isAndroid();
 
   return (
     <footer id="footer" className="bg-card-foreground dark:bg-accent-foreground text-stone-100 text-sm border-b-0 border-t-border dark:border-b-0 pb-4">
@@ -111,7 +113,10 @@ export const Footer = () => {
         </div>
       </section>
 
-      <section className="container pb-4 dark:text-neutral-350 text-center text-md sm:text-xs px-3">
+      <section 
+        className="container pb-4 dark:text-neutral-350 text-center text-md sm:text-xs px-3"
+        style={isAndroidDevice ? { paddingBottom: 'calc(1rem + var(--safe-area-inset-bottom, 0px))' } : undefined}
+      >
         <h3>
           Copyright &copy; 2025 Richfield Area Chamber of Commerce {" "} | {" "}
             <a
