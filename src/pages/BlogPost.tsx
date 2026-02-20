@@ -23,25 +23,6 @@ function cleanHtml(html: string): string {
     .trim();
 }
 
-function rewriteUrls(html: string): string {
-  // Convert any remaining localhost URLs to relative paths
-  // Relative paths work automatically across all environments
-  
-  // Replace localhost URLs with relative paths
-  let rewritten = html.replace(
-    /href=["'](http:\/\/localhost:\d+)(\/[^"']*)["\']/gi,
-    'href="$2"'
-  );
-  
-  // Also handle localhost URLs without protocol
-  rewritten = rewritten.replace(
-    /href=["'](localhost:\d+)(\/[^"']*)["\']/gi,
-    'href="$2"'
-  );
-  
-  return rewritten;
-}
-
 export default function BlogPost() {
   const { slug } = useParams<{ slug: string }>();
   const [post, setPost] = useState<Post | null>(null);
@@ -190,7 +171,7 @@ export default function BlogPost() {
             <div 
               ref={contentRef}
               className="lexical-blog-content max-w-none mb-8"
-              dangerouslySetInnerHTML={{ __html: rewriteUrls(cleanHtml(post.body)) }}
+              dangerouslySetInnerHTML={{ __html: cleanHtml(post.body) }}
             />
 
             {/* Galleries */}

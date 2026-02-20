@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { getAppBaseUrl, getApiBaseUrl } from '@/lib/config';
+import { getApiBaseUrl } from '@/lib/config';
 
 interface FormSelectorDialogProps {
   open: boolean;
@@ -85,7 +85,6 @@ export default function FormSelectorDialog({
 
     try {
       // Save embed code to server or update existing
-      const appBaseUrl = getAppBaseUrl();
       const apiBaseUrl = getApiBaseUrl();
       const apiUrl = initialUrl 
         ? `${apiBaseUrl}/forms/embeds/${extractFormId(initialUrl)}`
