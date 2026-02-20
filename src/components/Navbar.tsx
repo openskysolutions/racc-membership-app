@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   NavigationMenu,
   NavigationMenuList,
+  NavigationMenuItem,
+  NavigationMenuLink,
 } from "@/components/ui/navigation-menu";
 import {
   Sheet,
@@ -10,6 +12,12 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Menu } from "lucide-react";
@@ -23,6 +31,7 @@ import { useTheme } from "@/providers/theme-provider";
 import { Moon, Sun } from "lucide-react";
 import cn from "classnames";
 import { isAndroid } from "@/lib/platform";
+import { postService, type Post } from "@/services/blogService";
 
 interface RouteProps {
   href: string;
@@ -30,22 +39,6 @@ interface RouteProps {
 }
 
 const routeList: RouteProps[] = [
-  // {
-  //   href: "/discussions",
-  //   label: "Discussions",
-  // },
-  // {
-  //   href: "/courses",
-  //   label: "Courses",
-  // },
-  // {
-  //   href: "/news-events",
-  //   label: "News & Events",
-  // },
-  // {
-  //   href: "/dashboard",
-  //   label: "Dashboard",
-  // },
   {
     href: "/calendar",
     label: "Calendar",
@@ -58,10 +51,7 @@ const routeList: RouteProps[] = [
     href: "/jobs",
     label: "Jobs",
   },
-  // {
-  //   href: "/job-postings",
-  //   label: "Jobs Postings"
-  // },
+
   {
     href: "/contact",
     label: "Contact",
@@ -70,20 +60,38 @@ const routeList: RouteProps[] = [
     href: "/about",
     label: "About",
   },
-  {
-    href: "/profile",
-    label: "Profile",
-  }
 ];
 
 export const Navbar = () => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [blogPosts, setBlogPosts] = useState<Post[]>([]);
   const {isAuthenticated, user, handleLogout } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
 
   const { theme, setTheme } = useTheme();
   const isAndroidDevice = isAndroid();
+
+  useEffect(() => {
+    loadBlogPosts();
+    
+    // Listen for post updates
+    const handlePostUpdate = () => {
+      loadBlogPosts();
+    };
+    
+    window.addEventListener('postsUpdated', handlePostUpdate);
+    return () => window.removeEventListener('postsUpdated', handlePostUpdate);
+  }, []);
+
+  async function loadBlogPosts() {
+    try {
+      const posts = await postService.list({ limit: 10 });
+      setBlogPosts(posts);
+    } catch (error) {
+      console.error('Failed to load blog posts:', error);
+    }
+  }
 
   const logout = () => {
     handleLogout();
@@ -303,6 +311,32 @@ export const Navbar = () => {
                       {label}
                     </button>
                   ))}
+                  
+                  {blogPosts.length > 0 && (
+                    <Accordion type="single" collapsible className="w-full">
+                      <AccordionItem value="news-events" className="border-b-1 border-b-stone-300 dark:border-b-stone-600">
+                        <AccordionTrigger className="text-lg font-semibold py-3 hover:no-underline">
+                          News & Events
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          <div className="flex flex-col">
+                            {blogPosts.map((post) => (
+                              <button
+                                key={post.id}
+                                onClick={() => {
+                                  setIsOpen(false);
+                                  navigate(`/blog/${post.slug}`);
+                                }}
+                                className="border-b-1 border-b-stone-300 dark:border-b-stone-600 text-base rounded-none w-full py-2 pl-4 !justify-start text-left focus:outline-none hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                              >
+                                {post.title}
+                              </button>
+                            ))}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
+                  )}
                 </nav>
                 <div className="flex-grow"/>
                 <Button
@@ -414,16 +448,43 @@ export const Navbar = () => {
       </NavigationMenu>
       <NavigationMenu className="hidden md:flex max-w-full w-full bg-background border-t dark:bg-neutral-800 border-t-border dark:border-t-popover"> 
         <NavigationMenuList className="container h-10 px-0 w-screen flex justify-around items-center">
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger className={cn(
+                buttonVariants({ variant: "ghost", size: 'xs' }),
+                "px-1 py-1 !h-6 hover:bg-highlight-foreground rounded-md"
+              )}>
+                News & Events
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="center" className="w-auto px-2 max-h-[400px] overflow-y-auto">
+                {blogPosts.length > 0 ? (
+                  blogPosts.map((post) => (
+                    <DropdownMenuItem key={post.id} onClick={() => navigate(`/blog/${post.slug}`)}>
+                      <div className="flex flex-col gap-1 py-1">
+                        <div className="text-sm font-medium">{post.title}</div>
+                      </div>
+                    </DropdownMenuItem>
+                  ))
+                ) : (
+                  <DropdownMenuItem disabled>
+                    <span className="text-sm text-muted-foreground">No posts available</span>
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
             {routeList.map(({ href, label }) => (
-              <a
-                key={label}
-                href={href}
-                className={cn(
-                  buttonVariants({ variant: "ghost", size: 'xs' }),
-                  "px-1 py-1 !h-6 hover:bg-highlight-foreground rounded-md")}
-              >
-                {label}
-              </a>
+              <NavigationMenuItem key={label} className="list-none">
+                <NavigationMenuLink asChild>
+                  <a
+                    href={href}
+                    className={cn(
+                      buttonVariants({ variant: "ghost", size: 'xs' }),
+                      "px-1 py-1 !h-6 hover:bg-highlight-foreground rounded-md")}
+                  >
+                    {label}
+                  </a>
+                </NavigationMenuLink>
+              </NavigationMenuItem>
             ))}
         </NavigationMenuList>
       </NavigationMenu>

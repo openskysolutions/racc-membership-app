@@ -8,6 +8,7 @@ const {
   uploadAvatar,
   uploadCoverImage,
   uploadEventCoverImage,
+  uploadBlogImage,
 } = require('@/controllers/mediasController');
 const { requireAuth } = require('@/middleware/auth');
 const router = express.Router();
@@ -229,5 +230,60 @@ router.post('/upload-coverImage', uploadCoverImage);
  *         description: Upload failed
  */
 router.post('/upload-event-cover', uploadEventCoverImage);
+
+/**
+ * @swagger
+ * /medias/upload-blog-image:
+ *   post:
+ *     summary: Upload image for a blog post
+ *     tags:
+ *       - Medias
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               fileData:
+ *                 type: string
+ *                 description: Base64 encoded image data
+ *               fileName:
+ *                 type: string
+ *                 description: Name of the file
+ *               mimeType:
+ *                 type: string
+ *                 description: MIME type of the file
+ *               locationId:
+ *                 type: string
+ *                 description: GoHighLevel location ID (optional)
+ *             required:
+ *               - fileData
+ *     responses:
+ *       201:
+ *         description: Blog image uploaded successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 mediaId:
+ *                   type: string
+ *                 mediaUrl:
+ *                   type: string
+ *                 message:
+ *                   type: string
+ *       400:
+ *         description: Bad request - missing fileData
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Upload failed
+ */
+router.post('/upload-blog-image', uploadBlogImage);
 
 module.exports = router;

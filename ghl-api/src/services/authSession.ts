@@ -295,7 +295,7 @@ class AuthSessionService {
     
     // 5. Create session
     const accessToken = this.generateAccessToken(memberId);
-    const session = await this.createSession(memberId, accessToken, 3600); // 1 hour
+    const session = await this.createSession(memberId, accessToken, 24 * 3600); // 24 hours
     
     // 6. Store user info in session
     session.user = userData;

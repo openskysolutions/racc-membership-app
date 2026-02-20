@@ -12,10 +12,8 @@
  */
 
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
 import { ghlService } from '@/services/gohighlevel';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 // Configuration: Yearly voting period
 // Yearly voting runs September 21 - October 31

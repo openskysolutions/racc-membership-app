@@ -4,13 +4,8 @@
  * Production-ready with type safety and excellent developer experience
  */
 
-import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
-
-// Initialize Prisma Client
-const prisma = new PrismaClient({
-  log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
-});
+import { prisma } from '@/lib/prisma';
 
 interface User {
   id?: number;

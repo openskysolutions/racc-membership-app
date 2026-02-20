@@ -153,3 +153,97 @@ model JobApplication {
   @@index([createdAt])
   @@map("job_applications")
 }
+
+// Blog post categories
+model PostCategory {
+  id          Int      @id @default(autoincrement())
+  title       String   @unique
+  slug        String   @unique
+  img         String?
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  posts       Post[]
+  
+  @@index([slug])
+  @@map("post_categories")
+}
+
+// Blog post authors
+model PostAuthor {
+  id          Int      @id @default(autoincrement())
+  name        String
+  slug        String   @unique
+  image       String
+  bio         String?  @db.Text
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  posts       Post[]
+  
+  @@index([slug])
+  @@map("post_authors")
+}
+
+// Blog posts
+model Post {
+  id         String       @id @default(cuid())
+  title      String
+  metadata   String?      @db.Text // SEO meta description
+  slug       String       @unique
+  authorId   Int
+  categoryId Int
+  tags       String[]     // Array of tags
+  mainImage  String?      // Main post image URL (optional)
+  body       String       @db.Text // Rich text content (HTML)
+  published  Boolean      @default(false) // Whether post is publicly visible
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  
+  // Relations
+  author     PostAuthor   @relation(fields: [authorId], references: [id])
+  category   PostCategory @relation(fields: [categoryId], references: [id])
+  galleries  Gallery[]    // Post can have multiple galleries
+  
+  @@index([slug])
+  @@index([authorId])
+  @@index([categoryId])
+  @@index([createdAt])
+  @@index([published])
+  @@map("posts")
+}
+
+// Gallery for blog posts - each post can have multiple galleries with titles
+model Gallery {
+  id           String   @id @default(cuid())
+  postId       String
+  title        String   // Gallery title (e.g., "Event Photos", "Product Showcase")
+  images       String[] // Array of image URLs
+  displayOrder Int      @default(0) // Order for displaying galleries
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  // Relations
+  post         Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  
+  @@index([postId])
+  @@index([postId, displayOrder])
+  @@map("galleries")
+}
+
+// Form Embeds - Securely store form embed codes
+model FormEmbed {
+  id         String   @id @default(cuid())
+  name       String   // Display name for the form
+  embedCode  String   @db.Text // The actual embed code (iframe, script, etc.)
+  createdBy  Int?     // Optional: User who created it
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  
+  @@index([createdBy])
+  @@map("form_embeds")
+}

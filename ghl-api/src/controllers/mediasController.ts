@@ -377,6 +377,118 @@ async function uploadEventCoverImage(req, res, next) {
   }
 }
 
+// Blog Image Upload
+async function uploadBlogImage(req, res, next) {
+  try {
+    console.log('Blog image upload request received');
+    console.log('Body keys:', Object.keys(req.body));
+    
+    const { locationId = process.env.LOCATION_ID, fileData, fileName, mimeType } = req.body;
+
+    if (!fileData) {
+      return res.status(400).json({ error: 'File data is required' });
+    }
+
+    // Convert base64 to buffer
+    let fileBuffer;
+    if (fileData.startsWith('data:')) {
+      const base64Data = fileData.split(',')[1];
+      fileBuffer = Buffer.from(base64Data, 'base64');
+    } else {
+      fileBuffer = Buffer.from(fileData, 'base64');
+    }
+
+    const fileSizeMB = fileBuffer.length / (1024 * 1024);
+    console.log(`Processing blog image upload, decoded file size: ${fileSizeMB.toFixed(2)}MB`);
+
+    // Validate file size (5MB limit)
+    const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+    if (fileBuffer.length > maxSize) {
+      return res.status(413).json({ 
+        error: 'Image file is too large. Please choose an image smaller than 5MB.',
+        details: `File size: ${fileSizeMB.toFixed(2)}MB, Maximum: 5MB`
+      });
+    }
+
+    // Use GoHighLevel's media storage API
+    const axios = require('axios');
+    const FormData = require('form-data');
+
+    const formData = new FormData();
+
+    formData.append('locationId', locationId);
+    formData.append('file', fileBuffer, {
+      filename: fileName || `blog-image-${Date.now()}.jpg`,
+      contentType: mimeType || 'image/jpeg'
+    });
+
+    console.log('Uploading blog image to GoHighLevel media storage...');
+
+    const ghlResponse = await axios.post('https://services.leadconnectorhq.com/medias/upload-file', formData, {
+      headers: {
+        ...formData.getHeaders(),
+        'Authorization': `Bearer ${process.env.PRIVATE_INTEGRATION_TOKEN}`,
+        'Version': '2021-07-28'
+      },
+      timeout: 30000,
+      maxContentLength: Infinity,
+      maxBodyLength: Infinity
+    });
+
+    // Extract the media URL from the response
+    const mediaData = ghlResponse.data;
+    const mediaUrl = mediaData.url || mediaData.fileUrl || mediaData.src || mediaData.mediaUrl;
+    const mediaId = mediaData.id || mediaData.mediaId;
+
+    console.log('✅ Blog image upload successful - mediaId:', mediaId);
+
+    if (!mediaUrl) {
+      console.error('No media URL in response:', mediaData);
+      throw new Error('Upload succeeded but no media URL returned');
+    }
+
+    const response = {
+      success: true,
+      mediaId: mediaId,
+      mediaUrl: mediaUrl,
+      message: 'Blog image uploaded successfully to GoHighLevel'
+    };
+
+    return res.status(201).json(response);
+
+  } catch (err) {
+    console.error('Blog image upload error details:', err);
+    console.error('Error stack:', err.stack);
+
+    let errorMessage = 'Failed to upload blog image to GoHighLevel';
+    let statusCode = 500;
+
+    if (err.response) {
+      statusCode = err.response.status;
+      console.error('GoHighLevel API response:', err.response.data);
+
+      if (statusCode === 413) {
+        errorMessage = 'Image file is too large. Please choose an image smaller than 5MB.';
+      } else if (err.response.data?.message) {
+        if (Array.isArray(err.response.data.message)) {
+          errorMessage = `GoHighLevel API error: ${err.response.data.message.join(', ')}`;
+        } else {
+          errorMessage = `GoHighLevel API error: ${err.response.data.message}`;
+        }
+      } else {
+        errorMessage = `GoHighLevel API error (${statusCode}): ${err.message}`;
+      }
+    } else if (err.request) {
+      errorMessage = 'Network error connecting to GoHighLevel API';
+    }
+
+    res.status(statusCode).json({
+      error: errorMessage,
+      details: err.message
+    });
+  }
+}
+
 // Bulk Operations
 async function bulkUpdateMediaObjects(req, res, next) {
   try {
@@ -400,6 +512,8 @@ module.exports = {
   uploadCoverImage,
   // Event Cover Image Upload
   uploadEventCoverImage,
+  // Blog Image Upload
+  uploadBlogImage,
   // Media Folders
   createMediaFolder,
   // Bulk Operations

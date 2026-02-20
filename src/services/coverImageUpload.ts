@@ -3,6 +3,7 @@
  */
 
 import { api } from './apiClient';
+import { compressImage } from '@/lib/imageCompression';
 
 export interface UploadCoverImageResponse {
   success: boolean;
@@ -18,16 +19,19 @@ export interface UploadCoverImageResponse {
  */
 export async function uploadCoverImage(file: File, contactId: string): Promise<UploadCoverImageResponse> {
   try {
+    // Compress image before upload
+    const compressedFile = await compressImage(file);
+    
     // Convert file to base64
-    const fileData = await fileToBase64(file);
+    const fileData = await fileToBase64(compressedFile);
     
     // Prepare JSON payload
     const payload = {
       contactId: contactId,
       locationId: '5FAB1z0AhuVlEdqOzjVX', // Your GHL location ID
       fileData: fileData,
-      fileName: file.name,
-      mimeType: file.type
+      fileName: compressedFile.name,
+      mimeType: compressedFile.type
     };
     
     // Upload to GoHighLevel media storage

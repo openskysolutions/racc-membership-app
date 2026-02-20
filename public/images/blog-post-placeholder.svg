@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" fill="none">
+  <!-- Background -->
+  <rect width="400" height="400" fill="#f3f4f6"/>
+  
+  <!-- Document icon -->
+  <path d="M140 100 H220 L280 160 V300 H140 Z" fill="#d1d5db" stroke="#9ca3af" stroke-width="3"/>
+  <path d="M220 100 V160 H280" fill="#e5e7eb" stroke="#9ca3af" stroke-width="3"/>
+  
+  <!-- Lines representing text -->
+  <line x1="160" y1="190" x2="260" y2="190" stroke="#9ca3af" stroke-width="4" stroke-linecap="round"/>
+  <line x1="160" y1="210" x2="240" y2="210" stroke="#9ca3af" stroke-width="4" stroke-linecap="round"/>
+  <line x1="160" y1="230" x2="250" y2="230" stroke="#9ca3af" stroke-width="4" stroke-linecap="round"/>
+  <line x1="160" y1="250" x2="220" y2="250" stroke="#9ca3af" stroke-width="4" stroke-linecap="round"/>
+</svg>
