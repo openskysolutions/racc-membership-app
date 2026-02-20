@@ -5,6 +5,12 @@ import { postService, type Post } from '@/services/blogService';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 import Lightbox from 'yet-another-react-lightbox';
 import 'yet-another-react-lightbox/styles.css';
 import '@/components/admin/lexical/lexical-editor.css';
@@ -170,32 +176,38 @@ export default function BlogPost() {
 
             {/* Galleries */}
             {post.galleries && post.galleries.length > 0 && (
-              <div className="space-y-8 mb-8">
-                {post.galleries.map((gallery) => (
-                  <div key={gallery.id}>
-                    <h3 className="text-2xl font-bold mb-4">{gallery.title}</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                      {gallery.images.map((image, index) => (
-                        <div
-                          key={index}
-                          className="relative group cursor-pointer overflow-hidden rounded-lg"
-                          onClick={() => {
-                            setGalleryImages(gallery.images.map(img => ({ src: img })));
-                            setLightboxIndex(index);
-                            setLightboxOpen(true);
-                          }}
-                        >
-                          <img
-                            src={image}
-                            alt={`${gallery.title} ${index + 1}`}
-                            className="w-full h-64 object-cover transition-transform duration-300 group-hover:scale-110"
-                          />
-                          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-opacity duration-300" />
+              <div className="mb-8">
+                <Accordion type="single" collapsible defaultValue={`gallery-${post.galleries[0].id}`}>
+                  {post.galleries.map((gallery) => (
+                    <AccordionItem key={gallery.id} value={`gallery-${gallery.id}`}>
+                      <AccordionTrigger className="text-2xl font-bold">
+                        {gallery.title}
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pt-4">
+                          {gallery.images.map((image, index) => (
+                            <div
+                              key={index}
+                              className="relative group cursor-pointer overflow-hidden rounded-lg"
+                              onClick={() => {
+                                setGalleryImages(gallery.images.map(img => ({ src: img })));
+                                setLightboxIndex(index);
+                                setLightboxOpen(true);
+                              }}
+                            >
+                              <img
+                                src={image}
+                                alt={`${gallery.title} ${index + 1}`}
+                                className="w-full h-64 object-cover transition-transform duration-300 group-hover:scale-110"
+                              />
+                              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-opacity duration-300" />
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
               </div>
             )}
 
