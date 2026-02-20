@@ -13,7 +13,7 @@ import {
 import { getCurrentYearEvents, getEventCustomFields, type CalendarEvent } from '@/services/calendar';
 import { Calendar, MapPin } from 'lucide-react';
 import Autoplay from "embla-carousel-autoplay";
-import radioShowImg from '@/assets/radio-show.jpg';
+import mainSlideImage from '@/assets/Collage1.png';
 import meetingImg from '@/assets/meeting-image.jpg';
 
 const GHL_CALENDAR_ID = '9XpDcFHv3SmCUuHeuOOg';
@@ -325,13 +325,13 @@ export const HeroCarousel = () => {
           let bgColorClass = 'bg-[#0f172a]';
 
           if (slide.type === 'main') {
-            bgStyle = { backgroundImage: `url(${radioShowImg})` };
+            bgStyle = { backgroundImage: `url(${mainSlideImage})` };
           } else if (slide.type === 'membership') {
             bgStyle = { backgroundImage: `url(${slide.bgImage})` };
             bgColorClass = slide.bgColor;
           } else if (slide.type === 'event') {
             // Use event cover image if available, otherwise fall back to default
-            const coverImage = slide.coverImageUrl || radioShowImg;
+            const coverImage = slide.coverImageUrl || mainSlideImage;
             bgStyle = { backgroundImage: `url(${coverImage})` };
           }
 
