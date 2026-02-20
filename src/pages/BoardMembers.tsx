@@ -11,10 +11,10 @@ interface BoardMember {
 
 const BoardMembers: React.FC = () => {
   const executiveBoard: BoardMember[] = [
-    { name: "Katie Lindsay", title: "President", business: "Richfield Monuments", photo: "/src/assets/images/board/Katie Lindsay Picture.jpg" },
-    { name: "Jaquel Christensen", title: "President Elect", business: "Home Depot", photo: "/src/assets/images/board/Jaquel Christensen photo.jpg" },
-    { name: "Megan Bird", title: "Vice President", business: "Stonepath Acct", photo: "/src/assets/images/board/Megan Bird Photo.jpg" },
-    { name: "Stacey Busk", title: "Past President", business: "First American Title Company", photo: "/src/assets/images/board/Stacey Busk Photo.jpg" },
+    { name: "Katie Lindsay", title: "President", business: "Richfield Monuments", photo: "/images/board/Katie Lindsay Picture.jpg" },
+    { name: "Jaquel Christensen", title: "President Elect", business: "Home Depot", photo: "/images/board/Jaquel Christensen photo.jpg" },
+    { name: "Megan Bird", title: "Vice President", business: "Stonepath Acct", photo: "/images/board/Megan Bird Photo.jpg" },
+    { name: "Stacey Busk", title: "Past President", business: "First American Title Company", photo: "/images/board/Stacey Busk Photo.jpg" },
   ];
 
   const termBoardMembers: BoardMember[] = [
@@ -42,7 +42,7 @@ const BoardMembers: React.FC = () => {
     name: "Kenzie Draper",
     title: "Executive Director",
     business: "Richfield Area Chamber of Commerce",
-    photo: "/src/assets/images/board/Kenzie Draper photo.jpg"
+    photo: "/images/board/Kenzie Draper photo.jpg"
   };
 
   return (
