@@ -305,7 +305,7 @@ export const Navbar = () => {
                       }}
                       className={cn(
                         // buttonVariants({ variant: "ghost" }),  
-                        "border-b-1 border-b-stone-300 dark:border-b-stone-600 text-lg rounded-none w-full py-3 !justify-start text-left focus:outline-none"
+                        "border-b-1 border-b-stone-300 dark:border-b-stone-600 text-lg rounded-none w-full py-2 !justify-start text-left focus:outline-none"
                       )}
                     >
                       {label}
@@ -315,19 +315,22 @@ export const Navbar = () => {
                   {blogPosts.length > 0 && (
                     <Accordion type="single" collapsible className="w-full">
                       <AccordionItem value="news-events" className="border-b-1 border-b-stone-300 dark:border-b-stone-600">
-                        <AccordionTrigger className="text-lg font-semibold py-3 hover:no-underline">
+                        <AccordionTrigger className="text-lg font-semibold py-2 hover:no-underline border-b-1 border-b-stone-300 dark:border-b-stone-600">
                           News & Events
                         </AccordionTrigger>
-                        <AccordionContent>
+                        <AccordionContent className="pb-0">
                           <div className="flex flex-col">
-                            {blogPosts.map((post) => (
+                            {blogPosts.map((post, index) => (
                               <button
                                 key={post.id}
                                 onClick={() => {
                                   setIsOpen(false);
                                   navigate(`/blog/${post.slug}`);
                                 }}
-                                className="border-b-1 border-b-stone-300 dark:border-b-stone-600 text-base rounded-none w-full py-2 pl-4 !justify-start text-left focus:outline-none hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                                className={cn(
+                                  "text-base rounded-none w-full py-2 pl-4 !justify-start text-left focus:outline-none hover:bg-neutral-100 dark:hover:bg-neutral-800",
+                                  index < blogPosts.length - 1 && "border-b-1 border-b-stone-300 dark:border-b-stone-600"
+                                )}
                               >
                                 {post.title}
                               </button>
@@ -448,68 +451,67 @@ export const Navbar = () => {
       </NavigationMenu>
       <NavigationMenu className="hidden md:flex max-w-full w-full bg-background border-t dark:bg-neutral-800 border-t-border dark:border-t-popover"> 
         <NavigationMenuList className="container h-10 px-0 w-screen flex justify-around items-center">
-            
-            <DropdownMenu>
-              <DropdownMenuTrigger className={cn(
-                buttonVariants({ variant: "ghost", size: 'xs' }),
-                "px-1 py-1 !h-6 hover:bg-highlight-foreground rounded-md"
-              )}>
-                News & Events
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="center" className="w-auto px-2 max-h-[400px] overflow-y-auto">
-                {blogPosts.length > 0 ? (
-                  blogPosts.map((post) => (
-                    <DropdownMenuItem key={post.id} onClick={() => navigate(`/blog/${post.slug}`)}>
-                      <div className="flex flex-col gap-1 py-1">
-                        <div className="text-sm font-medium">{post.title}</div>
-                      </div>
-                    </DropdownMenuItem>
-                  ))
-                ) : (
-                  <DropdownMenuItem disabled>
-                    <span className="text-sm text-muted-foreground">No posts available</span>
+          <DropdownMenu>
+            <DropdownMenuTrigger className={cn(
+              buttonVariants({ variant: "ghost", size: 'xs' }),
+              "px-1 py-1 !h-6 hover:bg-highlight-foreground rounded-md"
+            )}>
+              News & Events
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="center" className="w-auto px-2 max-h-[400px] overflow-y-auto">
+              {blogPosts.length > 0 ? (
+                blogPosts.map((post) => (
+                  <DropdownMenuItem key={post.id} onClick={() => navigate(`/blog/${post.slug}`)}>
+                    <div className="flex flex-col gap-1 py-1">
+                      <div className="text-sm font-medium">{post.title}</div>
+                    </div>
                   </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-            {routeList.map(({ href, label }) => {
-              // Special handling for About menu item with dropdown
-              if (label === 'About') {
-                return (
-                  <DropdownMenu key={label}>
-                    <DropdownMenuTrigger className={cn(
-                      buttonVariants({ variant: "ghost", size: 'xs' }),
-                      "px-1 py-1 !h-6 hover:bg-highlight-foreground rounded-md"
-                    )}>
-                      {label}
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="center" className="w-auto px-2">
-                      <DropdownMenuItem onClick={() => navigate('/about')}>
-                        <span className="text-sm">About Us</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => navigate('/board')}>
-                        <span className="text-sm">Board Members</span>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                );
-              }
-              
+                ))
+              ) : (
+                <DropdownMenuItem disabled>
+                  <span className="text-sm text-muted-foreground">No posts available</span>
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          {routeList.map(({ href, label }) => {
+            // Special handling for About menu item with dropdown
+            if (label === 'About') {
               return (
-                <NavigationMenuItem key={label} className="list-none">
-                  <NavigationMenuLink asChild>
-                    <a
-                      href={href}
-                      className={cn(
-                        buttonVariants({ variant: "ghost", size: 'xs' }),
-                        "px-1 py-1 !h-6 hover:bg-highlight-foreground rounded-md")}
-                    >
-                      {label}
-                    </a>
-                  </NavigationMenuLink>
-                </NavigationMenuItem>
+                <DropdownMenu key={label}>
+                  <DropdownMenuTrigger className={cn(
+                    buttonVariants({ variant: "ghost", size: 'xs' }),
+                    "px-1 py-1 !h-6 hover:bg-highlight-foreground rounded-md"
+                  )}>
+                    {label}
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="center" className="w-auto px-2">
+                    <DropdownMenuItem onClick={() => navigate('/about')}>
+                      <span className="text-sm">About Us</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate('/board')}>
+                      <span className="text-sm">Board Members</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               );
-            })}
+            }
+            
+            return (
+              <NavigationMenuItem key={label} className="list-none">
+                <NavigationMenuLink asChild>
+                  <a
+                    href={href}
+                    className={cn(
+                      buttonVariants({ variant: "ghost", size: 'xs' }),
+                      "px-1 py-1 !h-6 hover:bg-highlight-foreground rounded-md")}
+                  >
+                    {label}
+                  </a>
+                </NavigationMenuLink>
+              </NavigationMenuItem>
+            );
+          })}
         </NavigationMenuList>
       </NavigationMenu>
     </header>

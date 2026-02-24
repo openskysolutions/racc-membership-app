@@ -48,36 +48,38 @@ const AboutPage: React.FC = () => {
     </div>
 
     {/* Board of Directors Section */}
-    <div className="flex flex-col items-center mb-12 bg-slate-200 rounded-lg p-8">
-      <h2 className="text-2xl font-bold mb-4">Leadership</h2>
-      
-      {/* President's Message */}
-      <div className="max-w-3xl mb-6 text-left">
-        <p className="text-muted-foreground mb-3">
+    <Card className="mb-8 bg-slate-200 dark:bg-slate-600/50 border-slate-100 dark:border-slate-600/50">
+      <CardHeader className='sm:p-24 sm:pb-0'>
+        <CardTitle className="text-2xl">Leadership</CardTitle>
+      </CardHeader>
+      <CardContent className='sm:p-24 sm:pt-6'>
+        {/* President's Message */}
+        <div className="max-w-3xl mb-6 text-left text-muted-foreground">
+          <p className="mb-3">
           <span className="font-semibold">Dear Richfield Area Chamber,</span>
         </p>
-        <p className="text-muted-foreground mb-3">
+        <p className="mb-3">
           Hello my name is Katie Lindsay and I am excited to be serving as Richfield Area Chamber President for 2026.
         </p>
-        <p className="text-muted-foreground mb-3">
+        <p className="mb-3">
           A quick note about myself, my husband Rick and I own a small business in town- Richfield Monuments. We make headstones and memorials, and this year we are celebrating 20 years of owning our business. We are proud as a business to be a part of Richfield Area Chamber.
         </p>
-        <p className="text-muted-foreground mb-3">
+        <p className="mb-3">
           As we welcome the start of this New Year, I want to take a moment to reflect on how far we have come. The Richfield Area Chamber has seen exponential growth adding 25+ new businesses in 2024/2025, and I am excited for what lies ahead.
         </p>
-        <p className="text-muted-foreground mb-3">
+        <p className="mb-3">
           My personal goal is to offer even more chances to serve and sponsor our community, network for our businesses, and progress in our knowledge of enterprise.
         </p>
-        <p className="text-muted-foreground mb-3">
+        <p className="mb-3">
           A successful Area Chamber not only strengthens our local economy but also enhances the quality of life for everyone who lives and works here in our little Sevier Valley.
         </p>
-        <p className="text-muted-foreground mb-3">
+        <p className="mb-3">
           None of what our Chamber accomplishes is possible without the commitment and passion of You, our members. Your involvement, ideas, and support are what drives us forward, and I am grateful for each of you. Together, I am confident that we can make this year one of growth, collaboration, and successful business.
         </p>
-        <p className="text-muted-foreground mb-3">
+        <p className="mb-3">
           Thank you for being part of this journey. I look forward to working alongside you in the coming year and to all that we will achieve together.
         </p>
-        <p className="text-muted-foreground font-semibold mt-4">
+        <p className="font-semibold mt-4">
           Katie Lindsay,<br />
           President RAC
         </p>
@@ -95,7 +97,8 @@ const AboutPage: React.FC = () => {
           Meet Our Board Members
         </Button>
       </div>
-    </div>
+      </CardContent>
+    </Card>
 
     {/* Member Benefits */}
     <Benefits />

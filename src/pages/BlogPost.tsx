@@ -161,13 +161,13 @@ export default function BlogPost() {
             <div className="flex flex-col-reverse sm:flex-row items-start sm:items-center gap-4 pb-8 border-b">
               {/* Category badge */}
               {post.category && (
-                <span className="border border-primary text-primary px-4 py-2 rounded-full text-sm font-semibold">
+                <span className="border border-yellow-600 text-yellow-600 px-4 py-2 rounded-full text-sm font-semibold">
                   {post.category.title}
                 </span>
               )}
 
               {/* Title */}
-              <h1 className="text-2xl md:text-4xl font-semibold uppercase mb-0">{post.title}</h1>
+              <h1 className="text-2xl md:text-4xl !text-amber-900 font-semibold uppercase mb-0">{post.title}</h1>
             </div>
             {/* Author info */}
             {/* {post.author && (
@@ -305,11 +305,11 @@ export default function BlogPost() {
             <Card className="sticky top-36">
               <CardContent className="p-6">
                 <h3 className="text-3xl font-bold mb-4">Join the Chamber</h3>
-                <p className="text-gray-600 mb-6">
+                <p className="text-muted-foreground mb-6">
                   Become part of a thriving business community. Get access to exclusive networking events, 
                   business resources, and advocacy that helps your business grow and succeed.
                 </p>
-                <ul className="space-y-2 mb-6 text-sm text-gray-700">
+                <ul className="space-y-2 mb-6 text-sm text-muted-foreground">
                   <li className="flex items-start">
                     <span className="text-primary mr-2">✓</span>
                     Networking opportunities
