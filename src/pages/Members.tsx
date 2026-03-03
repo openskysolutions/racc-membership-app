@@ -9,6 +9,7 @@ import { api } from '@/services/apiClient';
 import type { Member as BaseMember } from '@/types/member';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
+import { useMembersStore } from '@/stores/membersStore';
 import cn from 'classnames';
 
 // Extended member type for the directory page
@@ -46,21 +47,26 @@ const MembersPage: React.FC = () => {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuthStore();
   
+  // Use Zustand store for persistent filter/sort state
+  const {
+    searchTerm,
+    roleFilter,
+    specialtyFilter,
+    viewMode,
+    sortBy,
+    setSearchTerm,
+    setRoleFilter,
+    setViewMode,
+    setSortBy,
+    resetFilters
+  } = useMembersStore();
+  
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const [totalMembers, setTotalMembers] = useState(0);
-  
-  // Filter states
-  const [searchTerm, setSearchTerm] = useState('');
-  const [roleFilter, setRoleFilter] = useState('all');
-  const [specialtyFilter, setSpecialtyFilter] = useState('all');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  
-  // Sort states
-  const [sortBy, setSortBy] = useState<'businessName' | 'memberSince' | 'membershipTier'>('businessName');
   
   // Debounce search term to avoid triggering API calls on every keystroke
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
@@ -84,7 +90,8 @@ const MembersPage: React.FC = () => {
       const params = new URLSearchParams({
         source: 'MembersPage',
         limit: pageSize.toString(),
-        offset: offset.toString()
+        offset: offset.toString(),
+        sortBy: sortBy
       });
 
       // Add filters if present
@@ -119,7 +126,7 @@ const MembersPage: React.FC = () => {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [debouncedSearchTerm, roleFilter, pageSize]);
+  }, [debouncedSearchTerm, roleFilter, pageSize, sortBy]);
 
   // Refresh function to force reload
   const refreshMembers = useCallback(() => {
@@ -133,7 +140,8 @@ const MembersPage: React.FC = () => {
     loadMembers(currentOffset, true);
   }, [hasMore, loadingMore, currentOffset, loadMembers]);
 
-  // Filter and sort members on client side
+  // Filter members on client side (only specialty filter since backend doesn't support it yet)
+  // Sorting is now done server-side to prevent list jumping during infinite scroll
   const filteredMembers = useMemo(() => {
     let filtered = members.filter(member => {
       // Specialty filter (client-side only since API doesn't support this yet)
@@ -143,32 +151,8 @@ const MembersPage: React.FC = () => {
       return matchesSpecialty;
     });
 
-    // Sort the filtered results
-    filtered.sort((a, b) => {
-      switch (sortBy) {
-        case 'businessName':
-          const nameA = (a.businessName || formatMemberName(a)).toLowerCase();
-          const nameB = (b.businessName || formatMemberName(b)).toLowerCase();
-          return nameA.localeCompare(nameB);
-        
-        case 'memberSince':
-          const dateA = new Date(a.memberSince || a.createdAt || '').getTime();
-          const dateB = new Date(b.memberSince || b.createdAt || '').getTime();
-          return dateA - dateB; // Earliest first
-        
-        case 'membershipTier':
-          const tierOrder = { 'elite': 0, 'enhanced': 1, 'basic': 2 };
-          const tierA = tierOrder[a.membershipTier as keyof typeof tierOrder] ?? 3;
-          const tierB = tierOrder[b.membershipTier as keyof typeof tierOrder] ?? 3;
-          return tierA - tierB;
-        
-        default:
-          return 0;
-      }
-    });
-
     return filtered;
-  }, [members, specialtyFilter, sortBy]);
+  }, [members, specialtyFilter]);
 
   // Intersection observer target for scroll pagination
   const observerTarget = useRef<HTMLDivElement>(null);
@@ -201,11 +185,11 @@ const MembersPage: React.FC = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run on mount to avoid infinite loops
 
-  // Reset and reload when search/role filters change (using debounced search)
+  // Reset and reload when search/role/sort filters change (using debounced search)
   useEffect(() => {
     setCurrentOffset(0);
     loadMembers(0, false);
-  }, [debouncedSearchTerm, roleFilter, loadMembers]);
+  }, [debouncedSearchTerm, roleFilter, sortBy, loadMembers]);
 
   // Restore focus to search input after members update (but only if user was actively searching)
   useEffect(() => {
@@ -412,15 +396,11 @@ const MembersPage: React.FC = () => {
             {/* <p className="text-sm text-muted-foreground">
               Showing {filteredMembers.length} of {totalMembers} members
             </p> */}
-            {(debouncedSearchTerm || roleFilter !== 'all' || specialtyFilter !== 'all') && (
+            {(debouncedSearchTerm || roleFilter !== 'all' || specialtyFilter !== 'all' || sortBy !== 'businessName') && (
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => {
-                  setSearchTerm('');
-                  setRoleFilter('all');
-                  setSpecialtyFilter('all');
-                }}
+                onClick={resetFilters}
               >
                 Clear Filters
               </Button>

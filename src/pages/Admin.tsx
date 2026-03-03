@@ -208,7 +208,7 @@ export default function AdminPage() {
     setBusinessLoading(true);
     try {
       const [year, month] = businessMonthSelected.split('-').map(Number);
-      const votingDate = new Date(year, month - 2);
+      const votingDate = new Date(year, month - 3);
       const votingMonth = `${votingDate.getFullYear()}-${String(votingDate.getMonth() + 1).padStart(2, '0')}`;
       
       const params = new URLSearchParams({
@@ -237,7 +237,7 @@ export default function AdminPage() {
     setSuperstarLoading(true);
     try {
       const [year, month] = superstarMonthSelected.split('-').map(Number);
-      const votingDate = new Date(year, month - 2);
+      const votingDate = new Date(year, month - 3);
       const votingMonth = `${votingDate.getFullYear()}-${String(votingDate.getMonth() + 1).padStart(2, '0')}`;
       
       const params = new URLSearchParams({
@@ -896,7 +896,16 @@ export default function AdminPage() {
                     ) : (() => {
                       const votedNominations = [...businessNominations]
                         .filter(n => (n.monthlyVoteCount || 0) > 0)
-                        .sort((a, b) => (b.monthlyVoteCount || 0) - (a.monthlyVoteCount || 0));
+                        .sort((a, b) => {
+                          // Sort winners first, then by vote count
+                          const aIsWinner = a.isWinner && a.winnerMonth === businessMonthSelected;
+                          const bIsWinner = b.isWinner && b.winnerMonth === businessMonthSelected;
+                          
+                          if (aIsWinner && !bIsWinner) return -1;
+                          if (!aIsWinner && bIsWinner) return 1;
+                          
+                          return (b.monthlyVoteCount || 0) - (a.monthlyVoteCount || 0);
+                        });
                       
                       if (votedNominations.length === 0) {
                         return (
@@ -907,12 +916,10 @@ export default function AdminPage() {
                         );
                       }
                       
-                      const highestVoteCount = votedNominations[0]?.monthlyVoteCount || 0;
-                      
                       return (
                         <div className="space-y-3">
                           {votedNominations.map((nomination) => {
-                            const isLeading = (nomination.monthlyVoteCount || 0) === highestVoteCount;
+                            const isLeading = nomination.isWinner && nomination.winnerMonth === businessMonthSelected;
                             return (
                               <Card key={nomination.id} className={isLeading ? 'border-yellow-500 bg-yellow-50 dark:bg-yellow-950' : ''}>
                                 <CardContent className="p-3">
@@ -929,7 +936,7 @@ export default function AdminPage() {
                                         {isLeading && (
                                           <Badge variant="default" className="bg-yellow-500">
                                             <Star className="h-3 w-3 mr-1" />
-                                            Leading
+                                            Winner
                                           </Badge>
                                         )}
                                         <div className="flex items-center gap-2">
@@ -1001,7 +1008,16 @@ export default function AdminPage() {
                     ) : (() => {
                       const votedNominations = [...superstarNominations]
                         .filter(n => (n.monthlyVoteCount || 0) > 0)
-                        .sort((a, b) => (b.monthlyVoteCount || 0) - (a.monthlyVoteCount || 0));
+                        .sort((a, b) => {
+                          // Sort winners first, then by vote count
+                          const aIsWinner = a.isWinner && a.winnerMonth === superstarMonthSelected;
+                          const bIsWinner = b.isWinner && b.winnerMonth === superstarMonthSelected;
+                          
+                          if (aIsWinner && !bIsWinner) return -1;
+                          if (!aIsWinner && bIsWinner) return 1;
+                          
+                          return (b.monthlyVoteCount || 0) - (a.monthlyVoteCount || 0);
+                        });
                       
                       if (votedNominations.length === 0) {
                         return (
@@ -1012,12 +1028,10 @@ export default function AdminPage() {
                         );
                       }
                       
-                      const highestVoteCount = votedNominations[0]?.monthlyVoteCount || 0;
-                      
                       return (
                         <div className="space-y-3">
                           {votedNominations.map((nomination) => {
-                            const isLeading = (nomination.monthlyVoteCount || 0) === highestVoteCount;
+                            const isLeading = nomination.isWinner && nomination.winnerMonth === superstarMonthSelected;
                             return (
                               <Card key={nomination.id} className={isLeading ? 'border-yellow-500 bg-yellow-50 dark:bg-yellow-950' : ''}>
                                 <CardContent className="p-3">
@@ -1034,7 +1048,7 @@ export default function AdminPage() {
                                         {isLeading && (
                                           <Badge variant="default" className="bg-yellow-500">
                                             <Star className="h-3 w-3 mr-1" />
-                                            Leading
+                                            Winner
                                           </Badge>
                                         )}
                                         <div className="flex items-center gap-2">

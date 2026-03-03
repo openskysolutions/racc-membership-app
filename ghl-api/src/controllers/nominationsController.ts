@@ -353,8 +353,8 @@ export class NominationsController {
       const decemberYear = currentMonth === 11 ? currentYear : currentYear - 1;
       startDate = new Date(decemberYear, 11, 1); // December 1st
     } else {
-      // Regular period: 3 months back including current month
-      startDate = new Date(currentYear, currentMonth - 2, 1);
+      // Regular period: 6 months back including current month
+      startDate = new Date(currentYear, currentMonth - 5, 1);
     }
     
     // End date is end of current month

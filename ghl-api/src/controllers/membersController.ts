@@ -72,7 +72,7 @@ class MembersController {
    */
   async getMembers(req: Request, res: Response) {
     try {
-      const { search = '', role = '', limit = 20, offset = 0 } = req.query;
+      const { search = '', role = '', sortBy = 'businessName', limit = 20, offset = 0 } = req.query;
       const pageLimit = Math.min(parseInt(limit as string) || 20, 100); // Cap at 100
       const pageOffset = parseInt(offset as string) || 0;
       
@@ -144,20 +144,37 @@ class MembersController {
         transformedMembers = transformedMembers.filter(member => member.role === role);
       }
       
-      // Apply pagination to the filtered results
+      // Sort the filtered results based on sortBy parameter
+      transformedMembers.sort((a, b) => {
+        switch (sortBy) {
+          case 'businessName': {
+            const nameA = (a.businessName || a.companyName || `${a.firstName} ${a.lastName}`.trim() || '').toLowerCase();
+            const nameB = (b.businessName || b.companyName || `${b.firstName} ${b.lastName}`.trim() || '').toLowerCase();
+            return nameA.localeCompare(nameB);
+          }
+          case 'memberSince': {
+            const dateA = new Date(a.memberSince || a.createdAt || '').getTime();
+            const dateB = new Date(b.memberSince || b.createdAt || '').getTime();
+            return dateA - dateB; // Earliest first
+          }
+          case 'membershipTier': {
+            const tierOrder: Record<string, number> = { 'elite': 0, 'enhanced': 1, 'basic': 2 };
+            const tierA = tierOrder[a.membershipTier as string] ?? 3;
+            const tierB = tierOrder[b.membershipTier as string] ?? 3;
+            return tierA - tierB;
+          }
+          default:
+            return 0;
+        }
+      });
+      
+      // Apply pagination to the filtered and sorted results
       const totalMembers = transformedMembers.length;
       const paginatedMembers = transformedMembers.slice(pageOffset, pageOffset + pageLimit);
       
-      // Return business name, contact name, and ID for each member
-      const simplifiedMembers = paginatedMembers.map(member => ({
-        id: member.id,
-        name: `${member.firstName || ''} ${member.lastName || ''}`.trim() || 'Unknown Name',
-        businessName: member.businessName || member.companyName || `${member.firstName} ${member.lastName}`.trim() || 'Unknown Business',
-        avatar: member.avatar || '/profile-placeholder.png',
-      }));
-      
+      // Return full member objects (frontend needs all fields for display and filtering)
       res.json({
-        members: simplifiedMembers,
+        members: paginatedMembers,
         total: totalMembers,
         limit: pageLimit,
         offset: pageOffset,
