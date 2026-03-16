@@ -5,11 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getApiBaseUrl } from '@/lib/config';
+import { useAuthStore } from '@/stores/authStore';
 
 export default function FormPage() {
   const { formId } = useParams<{ formId: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuthStore();
   const [formName, setFormName] = useState<string>('Form');
   const [iframeHeight, setIframeHeight] = useState<string>('600px');
   const [processedEmbedCode, setProcessedEmbedCode] = useState<string>('');
@@ -33,8 +35,39 @@ export default function FormPage() {
         return res.json();
       })
       .then(data => {
-        const embedCode = data.embedCode;
         setFormName(data.name);
+        
+        // If external URL is provided, redirect to it
+        if (data.externalUrl) {
+          window.location.href = data.externalUrl;
+          return;
+        }
+        
+        // Determine which embed code to use based on membership tier
+        const membershipTier = user?.membershipTier?.toLowerCase();
+        let embedCode = '';
+        
+        // Priority: member's tier > fallback to available codes
+        if (membershipTier === 'elite' && data.eliteEmbedCode) {
+          embedCode = data.eliteEmbedCode;
+        } else if (membershipTier === 'enhanced' && data.enhancedEmbedCode) {
+          embedCode = data.enhancedEmbedCode;
+        } else if (data.basicEmbedCode) {
+          embedCode = data.basicEmbedCode;
+        } else if (data.enhancedEmbedCode) {
+          // Fallback if no basic but has enhanced
+          embedCode = data.enhancedEmbedCode;
+        } else if (data.eliteEmbedCode) {
+          // Fallback if only elite is available
+          embedCode = data.eliteEmbedCode;
+        } else if (data.embedCode) {
+          // Legacy support for old single embed code field
+          embedCode = data.embedCode;
+        }
+        
+        if (!embedCode) {
+          throw new Error('No embed code available for this form');
+        }
         
         // Extract data-height attribute from iframe if present
         const heightMatch = embedCode.match(/data-height=["'](\d+)["']/i);
@@ -70,7 +103,7 @@ export default function FormPage() {
         setError('The requested form could not be found.');
         setLoading(false);
       });
-  }, [formId]);
+  }, [formId, user]);
 
   // Handle iframe message events (e.g., form submission)
   useEffect(() => {

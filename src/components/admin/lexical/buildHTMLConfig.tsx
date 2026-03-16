@@ -82,7 +82,9 @@ function buildImportMap(): DOMConversionMap {
 
 export function buildHTMLConfig(): HTMLConfig {
   return {
-    export: new Map(),
+    export: new Map([
+      // FormButtonNode exports will use their exportDOM method automatically
+    ]),
     import: buildImportMap(),
   };
 }

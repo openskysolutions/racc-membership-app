@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { useEffect, lazy } from 'react';
+import { useEffect, lazy, Suspense } from 'react';
 
 import PagesLayout from '@/components/layouts/pagesLayout';
 import { useAuthStore } from '@/stores/authStore';
@@ -106,6 +106,16 @@ const AdminRoute = ({ children }: { children: ReactNode }) => {
   return <>{children}</>;
 };
 
+// Loading fallback component
+const LazyLoadingFallback = () => (
+  <div className="flex items-center justify-center min-h-screen">
+    <div className="text-center">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-2"></div>
+      <p>Loading...</p>
+    </div>
+  </div>
+);
+
 export default function AppRoutes() {
   const { isLoading } = useAuthStore();
   // Force rebuild - updated routing Oct 4, 2025
@@ -173,16 +183,16 @@ export default function AppRoutes() {
         <Route path="admin/posts" element={<AdminRoute><PostsPage /></AdminRoute>} />
         
         {/* Admin edit routes - only available on web builds, excluded from mobile */}
-        <Route path="admin/post-categories" element={<AdminRoute><PostCategoriesPage /></AdminRoute>} />
-        <Route path="admin/post-categories/new" element={<AdminRoute><PostCategoryFormPage /></AdminRoute>} />
-        <Route path="admin/post-categories/:id/edit" element={<AdminRoute><PostCategoryFormPage /></AdminRoute>} />
+        <Route path="admin/post-categories" element={<AdminRoute><Suspense fallback={<LazyLoadingFallback />}><PostCategoriesPage /></Suspense></AdminRoute>} />
+        <Route path="admin/post-categories/new" element={<AdminRoute><Suspense fallback={<LazyLoadingFallback />}><PostCategoryFormPage /></Suspense></AdminRoute>} />
+        <Route path="admin/post-categories/:id/edit" element={<AdminRoute><Suspense fallback={<LazyLoadingFallback />}><PostCategoryFormPage /></Suspense></AdminRoute>} />
         
-        <Route path="admin/post-authors" element={<AdminRoute><PostAuthorsPage /></AdminRoute>} />
-        <Route path="admin/post-authors/new" element={<AdminRoute><PostAuthorFormPage /></AdminRoute>} />
-        <Route path="admin/post-authors/:id/edit" element={<AdminRoute><PostAuthorFormPage /></AdminRoute>} />
+        <Route path="admin/post-authors" element={<AdminRoute><Suspense fallback={<LazyLoadingFallback />}><PostAuthorsPage /></Suspense></AdminRoute>} />
+        <Route path="admin/post-authors/new" element={<AdminRoute><Suspense fallback={<LazyLoadingFallback />}><PostAuthorFormPage /></Suspense></AdminRoute>} />
+        <Route path="admin/post-authors/:id/edit" element={<AdminRoute><Suspense fallback={<LazyLoadingFallback />}><PostAuthorFormPage /></Suspense></AdminRoute>} />
         
-        <Route path="admin/posts/new" element={<AdminRoute><PostFormPage /></AdminRoute>} />
-        <Route path="admin/posts/:id/edit" element={<AdminRoute><PostFormPage /></AdminRoute>} />
+        <Route path="admin/posts/new" element={<AdminRoute><Suspense fallback={<LazyLoadingFallback />}><PostFormPage /></Suspense></AdminRoute>} />
+        <Route path="admin/posts/:id/edit" element={<AdminRoute><Suspense fallback={<LazyLoadingFallback />}><PostFormPage /></Suspense></AdminRoute>} />
       </Route>
 
       {/* fallback */}

@@ -121,11 +121,16 @@ router.get('/:formId', async (req, res) => {
  *             type: object
  *             required:
  *               - name
- *               - embedCode
  *             properties:
  *               name:
  *                 type: string
- *               embedCode:
+ *               basicEmbedCode:
+ *                 type: string
+ *               enhancedEmbedCode:
+ *                 type: string
+ *               eliteEmbedCode:
+ *                 type: string
+ *               externalUrl:
  *                 type: string
  *     responses:
  *       201:
@@ -135,21 +140,25 @@ router.get('/:formId', async (req, res) => {
  */
 router.post('/embeds', async (req, res) => {
   try {
-    const { name, embedCode } = req.body;
+    const { name, basicEmbedCode, enhancedEmbedCode, eliteEmbedCode, externalUrl } = req.body;
 
-    if (!name || !embedCode) {
-      return res.status(400).json({ error: 'Name and embedCode are required' });
+    if (!name) {
+      return res.status(400).json({ error: 'Name is required' });
     }
 
-    // Validate that embed code contains only iframe tags (security)
-    if (!embedCode.includes('<iframe')) {
-      return res.status(400).json({ error: 'Embed code must contain an iframe' });
+    // Either embed codes or external URL must be provided
+    const hasEmbedCodes = basicEmbedCode || enhancedEmbedCode || eliteEmbedCode;
+    if (!hasEmbedCodes && !externalUrl) {
+      return res.status(400).json({ error: 'Either embed codes or external URL must be provided' });
     }
 
     const formEmbed = await prisma.formEmbed.create({
       data: {
         name,
-        embedCode,
+        basicEmbedCode: basicEmbedCode || null,
+        enhancedEmbedCode: enhancedEmbedCode || null,
+        eliteEmbedCode: eliteEmbedCode || null,
+        externalUrl: externalUrl || null,
       },
     });
 
@@ -226,7 +235,13 @@ router.get('/embeds/:id', async (req, res) => {
  *             properties:
  *               name:
  *                 type: string
- *               embedCode:
+ *               basicEmbedCode:
+ *                 type: string
+ *               enhancedEmbedCode:
+ *                 type: string
+ *               eliteEmbedCode:
+ *                 type: string
+ *               externalUrl:
  *                 type: string
  *     responses:
  *       200:
@@ -237,17 +252,14 @@ router.get('/embeds/:id', async (req, res) => {
 router.put('/embeds/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, embedCode } = req.body;
+    const { name, basicEmbedCode, enhancedEmbedCode, eliteEmbedCode, externalUrl } = req.body;
 
     const updateData: any = {};
-    if (name) updateData.name = name;
-    if (embedCode) {
-      // Validate embed code
-      if (!embedCode.includes('<iframe')) {
-        return res.status(400).json({ error: 'Embed code must contain an iframe' });
-      }
-      updateData.embedCode = embedCode;
-    }
+    if (name !== undefined) updateData.name = name;
+    if (basicEmbedCode !== undefined) updateData.basicEmbedCode = basicEmbedCode || null;
+    if (enhancedEmbedCode !== undefined) updateData.enhancedEmbedCode = enhancedEmbedCode || null;
+    if (eliteEmbedCode !== undefined) updateData.eliteEmbedCode = eliteEmbedCode || null;
+    if (externalUrl !== undefined) updateData.externalUrl = externalUrl || null;
 
     const formEmbed = await prisma.formEmbed.update({
       where: { id },

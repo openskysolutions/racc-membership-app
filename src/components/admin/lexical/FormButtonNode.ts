@@ -46,15 +46,30 @@ export class FormButtonNode extends ElementNode {
     }
     element.className = 'lexical-form-button';
     
-    // Add click handler for mobile app external browser support
-    element.addEventListener('click', async (e: MouseEvent) => {
-      e.preventDefault();
-      const wasHandledExternally = await openExternalUrl(this.__url);
-      if (!wasHandledExternally) {
-        // On web, use normal navigation
-        window.location.href = this.__url;
+    // Single click handler for the entire button - capture phase to run first
+    element.addEventListener('click', (e: MouseEvent) => {
+      // Check if we're in an editable editor
+      const editableParent = element.closest('[contenteditable="true"]');
+      
+      if (editableParent) {
+        // In edit mode - only prevent default navigation
+        // Don't stop propagation so Lexical can handle the click for selection
+        e.preventDefault();
+        console.log('FormButtonNode: In edit mode - preventing navigation, allowing selection');
+        return;
       }
-    });
+      
+      // Not in edit mode - handle navigation
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('FormButtonNode: Navigating to', this.__url);
+      (async () => {
+        const wasHandledExternally = await openExternalUrl(this.__url);
+        if (!wasHandledExternally) {
+          window.location.href = this.__url;
+        }
+      })();
+    }, true); // Use capture phase to run before other handlers
     
     return element;
   }
@@ -108,11 +123,18 @@ export class FormButtonNode extends ElementNode {
 
   exportDOM(): DOMExportOutput {
     const element = document.createElement('a');
+    // For export (published content), use href so it works as a normal link
     element.setAttribute('href', this.__url);
     if (this.__title) {
       element.setAttribute('title', this.__title);
     }
     element.className = 'lexical-form-button';
+    
+    console.log('FormButtonNode exportDOM:', {
+      url: this.__url,
+      title: this.__title,
+      className: element.className,
+    });
     
     // Export format (alignment) as inline style
     const format = this.getFormatType();
@@ -169,8 +191,8 @@ export class FormButtonNode extends ElementNode {
     return false;
   }
 
-  isInline(): false {
-    return false;
+  isInline(): true {
+    return true;
   }
 
   isSegmented(): false {
@@ -188,10 +210,19 @@ function convertAnchorElement(domNode: Node): null | DOMConversionOutput {
     const href = domNode.getAttribute('href');
     const className = domNode.getAttribute('class');
     
+    console.log('FormButtonNode convertAnchorElement:', {
+      href,
+      className,
+      hasFormButtonClass: className?.includes('lexical-form-button'),
+      hasFormsInHref: href?.includes('/forms/'),
+    });
+    
     // Only convert if it has the form-button class or URL contains /forms/
     if ((className && className.includes('lexical-form-button')) || (href && href.includes('/forms/'))) {
       const title = domNode.getAttribute('title');
       node = $createFormButtonNode(href || '', title || undefined);
+      
+      console.log('Creating FormButtonNode:', { href, title });
       
       // Read text-align style and apply format
       const style = domNode.getAttribute('style');
@@ -206,6 +237,8 @@ function convertAnchorElement(domNode: Node): null | DOMConversionOutput {
           node.setFormat('justify');
         }
       }
+    } else {
+      console.log('SKIPPING anchor - does not match form button criteria');
     }
   }
   return { node };

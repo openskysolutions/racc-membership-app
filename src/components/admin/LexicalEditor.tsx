@@ -68,7 +68,22 @@ function OnChangePlugin({ onChange, skipNextChange, isInternalEdit }: { onChange
           // Debug: Check what styles are on text nodes
           const root = $getRoot();
           let foundFontSize = false;
+          let foundFormButton = false;
+          
+          // Check all nodes in the editor
           root.getChildren().forEach((child) => {
+            console.log('Root child type:', child.getType());
+            
+            // Check if this is a form button
+            if (child.getType() === 'form-button') {
+              foundFormButton = true;
+              console.log('✅ FOUND FormButtonNode in editor state!', {
+                url: (child as any).getURL?.(),
+                title: (child as any).getTitle?.(),
+                textContent: child.getTextContent(),
+              });
+            }
+            
             if (child instanceof ElementNode) {
               child.getChildren().forEach((textNode: any) => {
                 if (textNode.getStyle) {
@@ -87,14 +102,26 @@ function OnChangePlugin({ onChange, skipNextChange, isInternalEdit }: { onChange
             console.warn('⚠️ NO font-size found in any text nodes!');
           }
           
+          if (!foundFormButton) {
+            console.warn('⚠️ NO FormButtonNode found in editor state!');
+          }
+          
           const html = $generateHtmlFromNodes(editor);
-          console.log('Generated HTML sample:', html.substring(0, 500));
+          console.log('Generated HTML (first 1000 chars):', html.substring(0, 1000));
+          console.log('Generated HTML (last 500 chars):', html.substring(Math.max(0, html.length - 500)));
           
           // Check if font-size is in the HTML
           if (html.includes('font-size')) {
             console.log('✅ font-size IS in the generated HTML');
           } else {
             console.warn('⚠️ font-size NOT in the generated HTML');
+          }
+          
+          // Check if form button is in the HTML
+          if (html.includes('lexical-form-button') || html.includes('/forms/')) {
+            console.log('✅ Form button IS in the generated HTML');
+          } else {
+            console.warn('⚠️ Form button NOT in the generated HTML');
           }
           
           onChange(html);

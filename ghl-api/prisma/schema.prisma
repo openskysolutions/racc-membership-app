@@ -237,12 +237,23 @@ model Gallery {
 
 // Form Embeds - Securely store form embed codes
 model FormEmbed {
-  id         String   @id @default(cuid())
-  name       String   // Display name for the form
-  embedCode  String   @db.Text // The actual embed code (iframe, script, etc.)
-  createdBy  Int?     // Optional: User who created it
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id                String   @id @default(cuid())
+  name              String   // Display name for the form
+  
+  // Legacy field - kept for backward compatibility
+  embedCode         String?  @db.Text // The actual embed code (iframe, script, etc.)
+  
+  // New fields for different membership tiers
+  basicEmbedCode    String?  @db.Text
+  enhancedEmbedCode String?  @db.Text
+  eliteEmbedCode    String?  @db.Text
+  
+  // Alternative: external URL instead of embed codes
+  externalUrl       String?  @db.Text
+  
+  createdBy         Int?     // Optional: User who created it
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
   
   @@index([createdBy])
   @@map("form_embeds")

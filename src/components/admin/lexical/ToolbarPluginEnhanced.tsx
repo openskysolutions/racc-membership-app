@@ -446,8 +446,10 @@ export default function ToolbarPlugin({
   useEffect(() => {
     const handleLinkClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      if (target.tagName === 'A') {
-        const href = target.getAttribute('href');
+      // Check if the click is on or inside an anchor element
+      const anchor = target.closest('a');
+      if (anchor) {
+        const href = anchor.getAttribute('href');
         if (href && href.includes('/forms/')) {
           e.preventDefault();
           e.stopPropagation();
@@ -542,33 +544,89 @@ export default function ToolbarPlugin({
 
   const handleFormSelect = useCallback(
     (_formId: string, formName: string, formUrl: string) => {
+      console.log('handleFormSelect called:', { formName, formUrl, hasSelectedFormLink: !!selectedFormLink });
+      
       editor.update(() => {
         if (selectedFormLink?.node) {
-          // Update existing form button
-          const formButtonNode = selectedFormLink.node;
-          formButtonNode.setURL(formUrl);
-          formButtonNode.setTitle(formName);
+          // Replace existing form button with a new one
+          console.log('Replacing existing form button');
+          const oldFormButtonNode = selectedFormLink.node;
           
-          // Update the text content - remove old children and add new text
-          const children = formButtonNode.getChildren();
-          children.forEach(child => child.remove());
+          // Preserve the old button's format/alignment
+          const oldFormat = oldFormButtonNode.getFormatType();
+          const oldIndent = oldFormButtonNode.getIndent();
+          const oldDirection = oldFormButtonNode.getDirection();
+          
+          console.log('Old button:', {
+            url: oldFormButtonNode.getURL(),
+            title: oldFormButtonNode.getTitle(),
+            childCount: oldFormButtonNode.getChildrenSize(),
+            format: oldFormat,
+            indent: oldIndent,
+            direction: oldDirection,
+          });
+          
+          // Create new form button with updated values
+          const newFormButtonNode = $createFormButtonNode(formUrl, formName);
           const textNode = $createTextNode(formName);
-          formButtonNode.append(textNode);
+          newFormButtonNode.append(textNode);
+          
+          // Apply the preserved formatting
+          if (oldFormat) {
+            newFormButtonNode.setFormat(oldFormat);
+          }
+          if (oldIndent) {
+            newFormButtonNode.setIndent(oldIndent);
+          }
+          if (oldDirection) {
+            newFormButtonNode.setDirection(oldDirection);
+          }
+          
+          console.log('New button created:', {
+            url: newFormButtonNode.getURL(),
+            title: newFormButtonNode.getTitle(),
+            childCount: newFormButtonNode.getChildrenSize(),
+            format: newFormButtonNode.getFormatType(),
+          });
+          
+          // Replace the old node with the new one
+          oldFormButtonNode.replace(newFormButtonNode);
+          
+          // Select the new button to maintain focus/scroll position
+          newFormButtonNode.selectEnd();
+          
+          console.log('Button replaced and selected successfully');
         } else {
           // Insert new form button
+          console.log('Inserting new form button');
           const selection = $getSelection();
           if ($isRangeSelection(selection)) {
             const formButtonNode = $createFormButtonNode(formUrl, formName);
             const textNode = $createTextNode(formName);
             formButtonNode.append(textNode);
             
+            console.log('Created new form button:', {
+              url: formButtonNode.getURL(),
+              title: formButtonNode.getTitle(),
+              childCount: formButtonNode.getChildrenSize(),
+            });
+            
             selection.insertNodes([formButtonNode]);
+            console.log('Inserted form button into editor');
+          } else {
+            console.warn('No range selection available');
           }
         }
       });
       
+      // Focus the editor after a brief delay to prevent scroll issues
+      setTimeout(() => {
+        editor.focus();
+      }, 50);
+      
       // Reset selected form link after update
       setSelectedFormLink(null);
+      console.log('Form select complete, cleared selectedFormLink');
     },
     [editor, selectedFormLink],
   );
