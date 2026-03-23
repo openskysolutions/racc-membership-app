@@ -73,7 +73,7 @@ class MembersController {
   async getMembers(req: Request, res: Response) {
     try {
       const { search = '', role = '', sortBy = 'businessName', limit = 20, offset = 0 } = req.query;
-      const pageLimit = Math.min(parseInt(limit as string) || 20, 100); // Cap at 100
+      const pageLimit = Math.min(parseInt(limit as string) || 20, 5000); // Cap at 5000 to allow fetching all members
       const pageOffset = parseInt(offset as string) || 0;
       
       // Calculate how many contacts we need to fetch to account for filtering

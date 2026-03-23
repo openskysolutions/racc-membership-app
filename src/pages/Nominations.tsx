@@ -10,6 +10,7 @@ import CustomerServiceSuperstarBadge from '@/assets/customer-service-superstar.p
 import BusinessOfYear2025 from '@/assets/business-of-year-2025.jpg';
 import CustomerServiceSuperstar2025 from '@/assets/customer-service-superstar-2025.jpg';
 import NominationForm from '@/components/nominations/NominationForm';
+import cn from 'classnames'
 
 const NominationsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState("bofm");
@@ -124,21 +125,23 @@ const NominationsPage: React.FC = () => {
         className="w-full md:max-w-[900px]"
       >
         <TabsList className="h-25 w-full md:h-10 flex flex-col sm:flex-row item-center md:justify-around mb-3 md:mb-6 bg-transparent">
-          <TabsTrigger value="bofm">
-            <Button 
-              variant={activeTab === "bofm" ? "default" : "outline"}
-              className='w-[320px]'
-            >
-              Nominate a Business of the Month
-            </Button>
+          <TabsTrigger 
+            value="bofm"
+            className={cn(
+              'w-[320px] h-10 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-background data-[state=inactive]:border data-[state=inactive]:border-input',
+              activeTab === "bofm" ? "" : "hover:bg-accent hover:text-accent-foreground"
+            )}
+          >
+            Nominate a Business of the Month
           </TabsTrigger>
-          <TabsTrigger value="superstar">
-            <Button 
-              variant={activeTab === "superstar" ? "default" : "outline"}
-              className='w-[320px]'
-            >
-              Nominate a Customer Service Superstar
-            </Button>
+          <TabsTrigger 
+            value="superstar"
+            className={cn(
+              'w-[320px] h-10 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-background data-[state=inactive]:border data-[state=inactive]:border-input',
+              activeTab === "superstar" ? "" : "hover:bg-accent hover:text-accent-foreground"
+            )}
+          >
+            Nominate a Customer Service Superstar
           </TabsTrigger>
         </TabsList>
         <TabsContent value="bofm" className="flex flex-row justify-center items-center w-full pt-0 mt-0">

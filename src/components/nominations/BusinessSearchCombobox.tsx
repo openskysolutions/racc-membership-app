@@ -66,7 +66,7 @@ const BusinessSearchCombobox: React.FC<BusinessSearchComboboxProps> = ({
       setIsLoading(true);
       try {
         // Fetch all members without pagination limit
-        const response = await api.get('/members?limit=1000');
+        const response = await api.get('/members?limit=5000');
         
         if (response.ok) {
           const data = await response.json();
