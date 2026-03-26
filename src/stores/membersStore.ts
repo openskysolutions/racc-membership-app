@@ -9,6 +9,9 @@ interface MembersState {
   viewMode: 'grid' | 'list';
   sortBy: 'businessName' | 'memberSince' | 'membershipTier';
   
+  // Refresh trigger - timestamp of last member update that requires directory refresh
+  lastMemberUpdate: number;
+  
   // Actions
   setSearchTerm: (searchTerm: string) => void;
   setRoleFilter: (roleFilter: string) => void;
@@ -16,6 +19,7 @@ interface MembersState {
   setViewMode: (viewMode: 'grid' | 'list') => void;
   setSortBy: (sortBy: 'businessName' | 'memberSince' | 'membershipTier') => void;
   resetFilters: () => void;
+  triggerMemberRefresh: () => void;
 }
 
 const initialState = {
@@ -24,6 +28,7 @@ const initialState = {
   specialtyFilter: 'all',
   viewMode: 'grid' as const,
   sortBy: 'businessName' as const,
+  lastMemberUpdate: 0,
 };
 
 export const useMembersStore = create<MembersState>()(
@@ -37,6 +42,7 @@ export const useMembersStore = create<MembersState>()(
       setViewMode: (viewMode) => set({ viewMode }),
       setSortBy: (sortBy) => set({ sortBy }),
       resetFilters: () => set(initialState),
+      triggerMemberRefresh: () => set({ lastMemberUpdate: Date.now() }),
     }),
     {
       name: 'members-filters', // localStorage key

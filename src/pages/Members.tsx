@@ -54,6 +54,7 @@ const MembersPage: React.FC = () => {
     specialtyFilter,
     viewMode,
     sortBy,
+    lastMemberUpdate,
     setSearchTerm,
     setRoleFilter,
     setViewMode,
@@ -190,6 +191,14 @@ const MembersPage: React.FC = () => {
     setCurrentOffset(0);
     loadMembers(0, false);
   }, [debouncedSearchTerm, roleFilter, sortBy, loadMembers]);
+
+  // Refresh when member data is updated (e.g., after editing a profile)
+  useEffect(() => {
+    if (lastMemberUpdate > 0) {
+      console.log('Member update detected, forcing refresh...');
+      refreshMembers();
+    }
+  }, [lastMemberUpdate, refreshMembers]);
 
   // Restore focus to search input after members update (but only if user was actively searching)
   useEffect(() => {

@@ -37,7 +37,7 @@ const benefits: Array<{
   checks: Record<TierKey, boolean>;
 }> = [
   {
-    label: "Your business featured in the Chamber’s online directory with a customizable profile—add your website, bio, photos, social links, job postings, and coupons to help customers easily find and connect with you.",
+    label: "Your business featured in the Chamber’s online directory with a customizable profile—add your website, bio, photos, social links, job postings, to help customers easily find and connect with you.",
     checks: { basic: true, enhanced: true, elite: true },
   },
   {
@@ -66,7 +66,7 @@ const benefits: Array<{
   },
   {
     label:
-      "Listing in Chamber Directory to include link to your business website, Cover image, coupon uploads",
+      "Listing in Chamber Directory to include link to your business website, Cover image, business bio, address map, address map",
     checks: { basic: true, enhanced: true, elite: true },
   },
   // {

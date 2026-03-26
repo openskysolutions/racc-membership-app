@@ -97,7 +97,7 @@ const EliteMembershipPage: React.FC = () => {
                     </div>
                   </div>
                   
-                  <div className="flex items-start gap-3">
+                  {/* <div className="flex items-start gap-3">
                     <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
                     <div>
                       <h3 className="font-semibold">Member Listing Coupon Uploads</h3>
@@ -111,7 +111,7 @@ const EliteMembershipPage: React.FC = () => {
                       <h3 className="font-semibold">Member Listing Business Image Gallery</h3>
                       <p className="text-muted-foreground">Member listing business image gallery</p>
                     </div>
-                  </div>
+                  </div> */}
                   
                   {/* <div className="flex items-start gap-3">
                     <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />

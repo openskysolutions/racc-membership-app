@@ -423,8 +423,10 @@ class MembersController {
       // Update contact in GoHighLevel
       const ghlResponse = await ghlService.updateContact(id, ghlUpdateData);
       
-      // Clear cache for this member
+      // Clear cache for this member AND the main members cache to show changes immediately
       this.memberDetailsCache.delete(id);
+      this.membersCache = null; // Clear main cache so changes refresh immediately
+      this.cacheTimestamp = 0;
       
       // Add a small delay to allow GoHighLevel to propagate changes
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -544,8 +546,10 @@ class MembersController {
         coverImage: coverImageUrl
       });
       
-      // Clear cache for this member
+      // Clear cache for this member AND the main members cache to show updated cover image immediately
       this.memberDetailsCache.delete(id);
+      this.membersCache = null; // Clear main cache so cover images refresh immediately
+      this.cacheTimestamp = 0;
       
       res.json({ 
         success: true, 

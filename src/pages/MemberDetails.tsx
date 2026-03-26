@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { capitalizeFirst } from '@/lib/utils';
 import { api } from '@/services/apiClient';
 import { useAuthStore } from '@/stores/authStore';
+import { useMembersStore } from '@/stores/membersStore';
 import type { Member } from '@/types/member';
 import AvatarUpload from '@/components/AvatarUpload';
 import CoverImageUpload from '@/components/CoverImageUpload';
@@ -40,6 +41,7 @@ const MemberDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuthStore();
+  const { triggerMemberRefresh } = useMembersStore();
   const fetchingRef = useRef(false);
 
   const [member, setMember] = useState<Member | null>(null);
@@ -237,6 +239,9 @@ const MemberDetailsPage: React.FC = () => {
       const updatedMember: Member = await response.json();
       setMember(updatedMember);
       setIsEditing(false);
+      
+      // Trigger refresh of members directory so changes appear immediately
+      triggerMemberRefresh();
       toast.success('Profile updated successfully!');
     } catch (err) {
       console.error('Error updating member:', err);
@@ -502,6 +507,8 @@ const MemberDetailsPage: React.FC = () => {
                       onAvatarUpdated={(newAvatarUrl: string) => {
                         if (member) {
                           setMember({ ...member, avatar: newAvatarUrl });
+                          // Trigger refresh of members directory
+                          triggerMemberRefresh();
                         }
                       }}
                     />
@@ -552,6 +559,8 @@ const MemberDetailsPage: React.FC = () => {
                           if (member) {
                             setMember({ ...member, coverImage: newCoverImageUrl });
                             setFormData(prev => ({ ...prev, coverImage: newCoverImageUrl }));
+                            // Trigger refresh of members directory
+                            triggerMemberRefresh();
                           }
                         }}
                       />
