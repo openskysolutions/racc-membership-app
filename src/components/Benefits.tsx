@@ -37,7 +37,11 @@ const benefits: Array<{
   checks: Record<TierKey, boolean>;
 }> = [
   {
-    label: "Business listed in the Chamber directory on Chamber website",
+    label: "Your business featured in the Chamber’s online directory with a customizable profile—add your website, bio, photos, social links, job postings, and coupons to help customers easily find and connect with you.",
+    checks: { basic: true, enhanced: true, elite: true },
+  },
+  {
+    label: "1/6 Ad in the Sevier County Magazine + Discounts to upgrade ad size",
     checks: { basic: true, enhanced: true, elite: true },
   },
   {
@@ -49,7 +53,7 @@ const benefits: Array<{
     checks: { basic: true, enhanced: true, elite: true },
   },
   {
-    label: "Discounted monthly education courses",
+    label: "Discounted/ Free monthly education courses offered by the Sevier County Entrepreneurship Program",
     checks: { basic: true, enhanced: true, elite: true },
   },
   {
@@ -61,9 +65,17 @@ const benefits: Array<{
     checks: { basic: true, enhanced: true, elite: true },
   },
   {
+    label: "Member listing Cover image",
+    checks: { basic: true, enhanced: true, elite: true },
+  },
+  {
+    label: "Member listing coupon uploads",
+    checks: { basic: true, enhanced: true, elite: true },
+  },
+  {
     label:
       "Upgraded listing in Chamber Directory to include link to your business website",
-    checks: { basic: false, enhanced: true, elite: true },
+    checks: { basic: true, enhanced: true, elite: true },
   },
   // {
   //   label: "Business announced as new member on Chamber social media pages",
@@ -86,32 +98,23 @@ const benefits: Array<{
     checks: { basic: false, enhanced: false, elite: true },
   },
   {
-    label: "Upgraded directory listing to include links to your social media pages",
-    checks: { basic: false, enhanced: false, elite: true },
-  },
-  {
     label: "Free luncheon sponsorship once a year",
-    checks: { basic: false, enhanced: false, elite: true },
-  },
-  {
-    label: "Member listing Cover image & social links",
-    checks: { basic: false, enhanced: false, elite: true },
-  },
-  {
-    label: "Member listing coupon uploads",
-    checks: { basic: false, enhanced: false, elite: true },
-  },
-  {
-    label: "Member listing business image gallery",
     checks: { basic: false, enhanced: false, elite: true },
   },
 ];
 
 const newMemberBenefits: string[] = [
-  "$500 worth of advertising on Mid-Utah Radio for new Chamber members in 2026",
+  "$500 worth of advertising on Mid-Utah Radio for new Chamber members",
   "Time to share about your business at first Chamber luncheon",
   "Ribbon cutting, open house or groundbreaking support for new business",
   "Business announced as new member in Chamber newsletter, in newspaper, radio, and on social media",
+];
+
+const optionalAddons: String[] = [
+  "Luncheon Sponsor: $100",
+  "Pre-pay Monthly Luncheons: $170",
+  "Ad on luncheon placemats: $300",
+  "Business Landing page website: $150",
 ];
 
 function CheckCell({ active }: { active: boolean }) {
@@ -224,6 +227,19 @@ export default function ChamberMembershipBenefits() {
           <CardContent className="space-y-2">
             <ul className="list-disc pl-5 text-sm text-muted-foreground">
               {newMemberBenefits.map((b, idx) => (
+                <li key={idx} className="leading-relaxed">
+                  {b}
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+
+          <CardHeader>
+            <CardTitle>Optional Add Ons</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <ul className="list-disc pl-5 text-sm text-muted-foreground">
+              {optionalAddons.map((b, idx) => (
                 <li key={idx} className="leading-relaxed">
                   {b}
                 </li>

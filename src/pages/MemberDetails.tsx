@@ -178,21 +178,13 @@ const MemberDetailsPage: React.FC = () => {
 
   const canEdit = user && member && (user.ghlContactId === member.id || user.role === 'admin');
 
-  // Check if member has Enhanced or Elite membership (case-insensitive and includes partial matches)
-  const hasEnhancedOrElite = member && member.tags && (
-    member.tags.some(tag => tag.toLowerCase().includes('enhanced')) || 
-    member.tags.some(tag => tag.toLowerCase().includes('elite')) ||
-    member.tags.some(tag => tag.toLowerCase() === 'admin')
-  );
+  // Allow all users to have elite-level access for profile editing
+  // Previously was restricted based on membership tier tags from HighLevel
+  const hasEnhancedOrElite = true;
 
-  console.log('hasEnhancedOrElite:', hasEnhancedOrElite);
-  console.log('member?.tags:', member?.tags);
-
-  // Check if member has Elite membership only (case-insensitive and includes partial matches)
-  const hasElite = member && member.tags && (
-    member.tags.some(tag => tag.toLowerCase().includes('elite')) ||
-    member.tags.some(tag => tag.toLowerCase() === 'admin')
-  );
+  // Allow all users to have elite-level access for profile editing
+  // Previously was restricted to elite membership tier only
+  const hasElite = true;
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -345,7 +337,8 @@ const MemberDetailsPage: React.FC = () => {
       <div
         className="absolute h-80 w-screen md:h-[400px] bg-cover bg-center bg-no-repeat pt-10 pb-8 px-8 top-20 md:top-30 z-20"
         style={{
-          backgroundImage: (member.tags?.includes('elite') || member.tags?.includes('admin')) && member.coverImage 
+          // Show cover image for all members if they have one (previously restricted to elite/admin)
+          backgroundImage: member.coverImage 
             ? `linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url('${member.coverImage}')`
             : 'linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5))',
         }}
@@ -626,7 +619,7 @@ const MemberDetailsPage: React.FC = () => {
                         <div>
                           <label htmlFor="bio" className="block text-sm font-medium mb-1">
                             Bio / About
-                            <span className="text-xs text-muted-foreground ml-2">(Enhanced/Elite only)</span>
+                            {/* <span className="text-xs text-muted-foreground ml-2">(Enhanced/Elite only)</span> */}
                           </label>
                           <Textarea
                             id="bio"
@@ -641,7 +634,7 @@ const MemberDetailsPage: React.FC = () => {
                         <div>
                           <label htmlFor="website" className="block text-sm font-medium mb-1">
                             Website
-                            <span className="text-xs text-muted-foreground ml-2">(Enhanced/Elite only)</span>
+                            {/* <span className="text-xs text-muted-foreground ml-2">(Enhanced/Elite only)</span> */}
                           </label>
                           <Input
                             id="website"
@@ -655,7 +648,7 @@ const MemberDetailsPage: React.FC = () => {
 
                         <h3 className="font-semibold mb-3">
                           Address Information
-                          <span className="text-xs text-muted-foreground ml-2 font-normal">(Enhanced/Elite only)</span>
+                          {/* <span className="text-xs text-muted-foreground ml-2 font-normal">(Enhanced/Elite only)</span> */}
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
@@ -718,7 +711,7 @@ const MemberDetailsPage: React.FC = () => {
                       <div>
                         <label htmlFor="couponCodes" className="block text-sm font-medium mb-1">
                           Coupon Codes
-                          <span className="text-xs text-muted-foreground ml-2">(Elite only)</span>
+                          {/* <span className="text-xs text-muted-foreground ml-2">(Elite only)</span> */}
                         </label>
                         <CouponCodesInput
                           id="couponCodes"

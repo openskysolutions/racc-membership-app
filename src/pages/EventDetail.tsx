@@ -60,25 +60,17 @@ const EventDetailPage: React.FC = () => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  // Determine user's membership tier from tags
+  // All users now have elite-level access for event registration forms
+  // Previously was restricted based on membership tier tags from HighLevel
   const userTags = (user?.tags || []) as string[];
-  const isEliteUser = userTags.includes('elite membership package');
-  const isEnhancedUser = userTags.includes('enhanced membership package');
-  const isBasicUser = userTags.includes('basic membership package');
+  const isEliteUser = true; // Everyone has elite access
+  const isEnhancedUser = true; // Everyone has enhanced access
+  const isBasicUser = true; // Everyone has basic access
 
-  // Get the appropriate embed code based on membership tier (with fallback)
+  // Get the appropriate embed code - show elite tier content for all users (with fallback)
   const getEmbedCode = () => {
-    if (isEliteUser) {
-      return customFields.eliteEmbedCode || customFields.enhancedEmbedCode || customFields.basicEmbedCode;
-    }
-    if (isEnhancedUser) {
-      return customFields.enhancedEmbedCode || customFields.basicEmbedCode;
-    }
-    if (isBasicUser) {
-      return customFields.basicEmbedCode;
-    }
-    // Default: Show basic embed code for all users (even without membership tags)
-    return customFields.basicEmbedCode;
+    // Everyone gets elite-level content
+    return customFields.eliteEmbedCode || customFields.enhancedEmbedCode || customFields.basicEmbedCode;
   };
 
   // Process embed code to ensure iframe uses data-height attribute
