@@ -178,13 +178,25 @@ const MemberDetailsPage: React.FC = () => {
 
   const canEdit = user && member && (user.ghlContactId === member.id || user.role === 'admin');
 
-  // Allow all users to have elite-level access for profile editing
-  // Previously was restricted based on membership tier tags from HighLevel
-  const hasEnhancedOrElite = true;
+  // Check if member has Enhanced or Elite membership (case-insensitive and includes partial matches)
+  // Note: All members now have enhanced/elite-level access regardless of actual tier
+  const hasEnhancedOrElite = member?.tags && (
+      // Give everyone elite access for now, but keep tag-checking logic for future reference/rollback
+    member?.tags.some(tag => tag.toLowerCase().includes('basic')) ||
+    member?.tags.some(tag => tag.toLowerCase().includes('enhanced')) || 
+    member?.tags.some(tag => tag.toLowerCase().includes('elite')) ||
+    member?.tags.some(tag => tag.toLowerCase() === 'admin')
+  );
 
-  // Allow all users to have elite-level access for profile editing
-  // Previously was restricted to elite membership tier only
-  const hasElite = true;
+  // Check if member has Elite membership only (case-insensitive and includes partial matches)
+  // Note: All members now have elite-level access regardless of actual tier
+  const hasElite = member?.tags && (
+      // Give everyone elite access for now, but keep tag-checking logic for future reference/rollback
+      member?.tags.some(tag => tag.toLowerCase().includes('basic')) ||
+      member?.tags.some(tag => tag.toLowerCase().includes('enhanced')) ||
+      member?.tags.some(tag => tag.toLowerCase().includes('elite')) ||
+      member?.tags.some(tag => tag.toLowerCase() === 'admin')
+  );
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -337,8 +349,13 @@ const MemberDetailsPage: React.FC = () => {
       <div
         className="absolute h-80 w-screen md:h-[400px] bg-cover bg-center bg-no-repeat pt-10 pb-8 px-8 top-20 md:top-30 z-20"
         style={{
-          // Show cover image for all members if they have one (previously restricted to elite/admin)
-          backgroundImage: member.coverImage 
+          // Show cover image for all members (previously restricted to elite/admin only)
+          // Keep tag-checking logic for future reference/rollback
+          backgroundImage: (
+            true || 
+            member?.tags?.includes('elite') || 
+            member?.tags?.includes('admin')
+          ) && member.coverImage 
             ? `linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url('${member.coverImage}')`
             : 'linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5))',
         }}
@@ -758,27 +775,20 @@ const MemberDetailsPage: React.FC = () => {
                     )}
 
                     {/* Coupon Codes - Elite Only */}
-                    {hasElite && (member as any).coupon_codes && (() => {
-                      try {
-                        const codes = JSON.parse((member as any).coupon_codes);
-                        return codes.length > 0 ? (
-                          <div>
-                            <h3 className="font-semibold mb-2 flex items-center gap-2">
-                              Special Offers
-                            </h3>
-                            <div className="flex flex-wrap gap-2">
-                              {codes.map((code: string, index: number) => (
-                                <Badge key={index} variant="outline" className="text-sm">
-                                  {code}
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-                        ) : null;
-                      } catch {
-                        return null;
-                      }
-                    })()}
+                    {/* {hasElite && (member as any).couponCodes && (member as any).couponCodes.length > 0 && (
+                      <div>
+                        <h3 className="font-semibold mb-2 flex items-center gap-2">
+                          Coupon Codes
+                        </h3>
+                        <div className="flex flex-wrap gap-2">
+                          {(member as any).couponCodes.map((code: string, index: number) => (
+                            <Badge key={index} variant="outline" className="text-sm">
+                              {code}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )} */}
 
                     {/* Membership Information */}
                     <h3 className="font-semibold mb-0 flex items-center gap-2">

@@ -35,11 +35,7 @@ const MembershipLevels: React.FC = () => {
               <li>• Discounted quarterly education courses</li>
               <li>• Networking opportunities at lunches</li>
               <li>• Sponsorship opportunities</li>
-              <li>• Member listing Cover image & social links</li>
-              <li>• Member listing coupon uploads</li>
-              <li>• Member listing website link</li>
-              <li>• Member listing address map</li>
-              <li>• Member listing business bio</li>
+              <li>• Member listing Cover image, website link, business bio, address map</li>
             </ul>
             <Button
               size="sm"

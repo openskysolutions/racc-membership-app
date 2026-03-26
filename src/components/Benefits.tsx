@@ -65,16 +65,8 @@ const benefits: Array<{
     checks: { basic: true, enhanced: true, elite: true },
   },
   {
-    label: "Member listing Cover image",
-    checks: { basic: true, enhanced: true, elite: true },
-  },
-  {
-    label: "Member listing coupon uploads",
-    checks: { basic: true, enhanced: true, elite: true },
-  },
-  {
     label:
-      "Upgraded listing in Chamber Directory to include link to your business website",
+      "Listing in Chamber Directory to include link to your business website, Cover image, coupon uploads",
     checks: { basic: true, enhanced: true, elite: true },
   },
   // {
