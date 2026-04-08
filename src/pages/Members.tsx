@@ -441,7 +441,7 @@ const MembersPage: React.FC = () => {
             {filteredMembers.map((member, index) => (
             <Card 
               key={member.id} 
-              className={`cursor-pointer hover:shadow-lg transition-shadow ${
+              className={`cursor-pointer hover:shadow-lg transition-shadow overflow-hidden bg-cover bg-center ${
                 viewMode === 'list' 
                   ? `p-2 flex flex-col sm:flex-row mt-0 ${
                       index === 0 
@@ -456,39 +456,27 @@ const MembersPage: React.FC = () => {
                     }` 
                   : 'p-4'
               }`}
+              style={viewMode === 'grid' && member.coverImage ? {
+                backgroundImage: `linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45)), url('${member.coverImage}')`
+              } : undefined}
               onClick={() => handleMemberClick(member.id)}
             >
               <CardHeader className={`${viewMode === 'list' ? 'flex-1 p-0' : 'p-0'}`}>
                 <div className={`flex flex-row items-center space-x-4`}>
-                  <Avatar className={'h-12 w-12'}>
+                  <Avatar className={'h-12 w-12 ring-0 ring-white !rounded-lg'}>
                     {member.avatar ? (
-                      <AvatarImage src={member.avatar} alt={formatMemberName(member)} />
+                      <AvatarImage src={member.avatar} alt={formatMemberName(member)} className="!rounded-lg" />
                     ) : (
-                      <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                      <AvatarFallback className="bg-primary/10 text-primary font-semibold !rounded-lg">
                         {getInitials(member)}
                       </AvatarFallback>
                     )}
                   </Avatar>
                   
                   <div className={'flex-1'}>
-                    <CardTitle className="text-md text-highlight-foreground hover:text-foreground">
+                    <CardTitle className={`text-md hover:text-foreground ${viewMode === 'grid' && member.coverImage ? 'text-white' : 'text-highlight-foreground'}`}>
                       {member.businessName || formatMemberName(member)}
                     </CardTitle>
-                    {/* {member.businessName && (
-                      <p className="text-sm text-muted-foreground mt-1 capitalize">
-                        {formatMemberName(member)}
-                      </p>
-                    )} */}
-                    {/* <div className="flex gap-1 mt-2 flex-wrap justify-center">
-                      <Badge variant="secondary" className={getRoleColor(member.role)}>
-                        {member.role}
-                      </Badge>
-                      {member.specialties?.slice(0, 2).map(specialty => (
-                        <Badge key={specialty} variant="outline" className="text-xs">
-                          {specialty}
-                        </Badge>
-                      ))}
-                    </div> */}
                   </div>
                 </div>
               </CardHeader>
