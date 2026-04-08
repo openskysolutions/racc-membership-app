@@ -44,6 +44,12 @@ interface Member {
   city?: string;
   state?: string;
   postalCode?: string;
+
+  // Social Media Links
+  facebookUrl?: string;
+  instagramUrl?: string;
+  twitterUrl?: string;
+  linkedinUrl?: string;
   
   // System Fields
   role: string;
@@ -211,7 +217,12 @@ class MembersController {
       membershipType: 'inm2jc52WNhxX8H2FHHm',
       organizationType: 'kPoBTUVldHyg3WbywLJ9',
       tagline: '3PZ7J4UcjLwnzWudAZHi',
-      couponCodes: '9rtkCBAUmFZdHs9ALwQl'
+      couponCodes: '9rtkCBAUmFZdHs9ALwQl',
+      // Social media links (custom fields created 2026-04-08)
+      facebookUrl: '1Yv2752kZqX9YQD2YWQI',
+      instagramUrl: 'VVMVScdl9xkx24OiBZeP',
+      twitterUrl: 'acDP54JNNtqdxJh7Ee5h',
+      linkedinUrl: 'b5LrmKi7eRpvD8r3FPmQ'
     };
     
     // Extract custom field values
@@ -289,6 +300,11 @@ class MembersController {
       coverImage: getCustomField('cover_image') || '', // Cover image is stored as a custom field
       tagline: getCustomField('tagline') || '', // Tagline is stored as a custom field
       couponCodes: couponCodes, // Coupon codes are stored as a JSON array in custom field
+      // Social media links stored as custom fields
+      facebookUrl: getCustomField('facebookUrl') || '',
+      instagramUrl: getCustomField('instagramUrl') || '',
+      twitterUrl: getCustomField('twitterUrl') || '',
+      linkedinUrl: getCustomField('linkedinUrl') || '',
       
       // GoHighLevel Specific Fields
       tags: tags,
@@ -412,6 +428,11 @@ class MembersController {
           return result;
         })(),
         coverImage: updateData.coverImage || '',
+        // Social media links
+        facebookUrl: updateData.facebookUrl !== undefined ? updateData.facebookUrl : undefined,
+        instagramUrl: updateData.instagramUrl !== undefined ? updateData.instagramUrl : undefined,
+        twitterUrl: updateData.twitterUrl !== undefined ? updateData.twitterUrl : undefined,
+        linkedinUrl: updateData.linkedinUrl !== undefined ? updateData.linkedinUrl : undefined,
         // Map address fields directly (no nesting needed)
         address1: updateData.address1 || '',
         city: updateData.city || '',

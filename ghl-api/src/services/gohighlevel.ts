@@ -60,6 +60,11 @@ interface ContactData {
   tagline?: string;
   couponCodes?: string;
   coverImage?: string;
+  // Social media links - stored as custom fields in GoHighLevel
+  facebookUrl?: string;
+  instagramUrl?: string;
+  twitterUrl?: string;
+  linkedinUrl?: string;
 }
 
 interface PaymentLinkData {
@@ -913,6 +918,20 @@ class GoHighLevelService {
           id: '3tSDY90RIMPP4W7uQxF9',
           field_value: updateData.coverImage
         });
+      }
+
+      // Add social media links as custom fields if provided
+      if (updateData.facebookUrl !== undefined) {
+        customFields.push({ id: '1Yv2752kZqX9YQD2YWQI', field_value: updateData.facebookUrl });
+      }
+      if (updateData.instagramUrl !== undefined) {
+        customFields.push({ id: 'VVMVScdl9xkx24OiBZeP', field_value: updateData.instagramUrl });
+      }
+      if (updateData.twitterUrl !== undefined) {
+        customFields.push({ id: 'acDP54JNNtqdxJh7Ee5h', field_value: updateData.twitterUrl });
+      }
+      if (updateData.linkedinUrl !== undefined) {
+        customFields.push({ id: 'b5LrmKi7eRpvD8r3FPmQ', field_value: updateData.linkedinUrl });
       }
       
       // Add other custom fields if provided

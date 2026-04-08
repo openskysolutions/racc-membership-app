@@ -14,7 +14,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { capitalizeFirst } from '@/lib/utils';
-import { Mail, Phone, Globe, Calendar, Shield, User, Edit, Save, X, AlertTriangle, Lock } from 'lucide-react';
+import { Mail, Phone, Globe, Calendar, Shield, User, Edit, Save, X, AlertTriangle, Lock, Facebook, Instagram, Twitter, Linkedin } from 'lucide-react';
 import { api } from '@/services/apiClient';
 import type { Member } from '@/types/member';
 import AvatarUpload from '@/components/AvatarUpload';
@@ -35,6 +35,11 @@ interface ExtendedUpdateProfileRequest extends UpdateProfileRequest {
   city?: string;
   state?: string;
   postalCode?: string;
+  // Social media links
+  facebookUrl?: string;
+  instagramUrl?: string;
+  twitterUrl?: string;
+  linkedinUrl?: string;
 }
 
 const ProfilePage: React.FC = () => {
@@ -57,7 +62,12 @@ const ProfilePage: React.FC = () => {
     address1: '',
     city: '',
     state: '',
-    postalCode: ''
+    postalCode: '',
+    // Social media links
+    facebookUrl: '',
+    instagramUrl: '',
+    twitterUrl: '',
+    linkedinUrl: ''
   });
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
@@ -111,7 +121,12 @@ const ProfilePage: React.FC = () => {
           address1: profileData.address1 || '',
           city: profileData.city || '',
           state: profileData.state || '',
-          postalCode: profileData.postalCode || ''
+          postalCode: profileData.postalCode || '',
+          // Social media links
+          facebookUrl: profileData.facebookUrl || '',
+          instagramUrl: profileData.instagramUrl || '',
+          twitterUrl: profileData.twitterUrl || '',
+          linkedinUrl: profileData.linkedinUrl || ''
         });
       } catch (error) {
         console.error('Failed to load profile:', error);
@@ -182,7 +197,12 @@ const ProfilePage: React.FC = () => {
         address1: profile.address1 || '',
         city: profile.city || '',
         state: profile.state || '',
-        postalCode: profile.postalCode || ''
+        postalCode: profile.postalCode || '',
+        // Social media links
+        facebookUrl: (profile as any).facebookUrl || '',
+        instagramUrl: (profile as any).instagramUrl || '',
+        twitterUrl: (profile as any).twitterUrl || '',
+        linkedinUrl: (profile as any).linkedinUrl || ''
       });
     }
     setIsEditing(false);
@@ -561,6 +581,62 @@ const ProfilePage: React.FC = () => {
                 </div>
               </div>
 
+              <h3 className="font-semibold mb-1">Social Media Links</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="facebookUrl" className="flex items-center gap-1 text-sm font-medium mb-1">
+                    <Facebook className="h-3.5 w-3.5" /> Facebook
+                  </label>
+                  <Input
+                    id="facebookUrl"
+                    name="facebookUrl"
+                    type="url"
+                    value={formData.facebookUrl || ''}
+                    onChange={handleChange}
+                    placeholder="https://facebook.com/yourpage"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="instagramUrl" className="flex items-center gap-1 text-sm font-medium mb-1">
+                    <Instagram className="h-3.5 w-3.5" /> Instagram
+                  </label>
+                  <Input
+                    id="instagramUrl"
+                    name="instagramUrl"
+                    type="url"
+                    value={formData.instagramUrl || ''}
+                    onChange={handleChange}
+                    placeholder="https://instagram.com/yourhandle"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="twitterUrl" className="flex items-center gap-1 text-sm font-medium mb-1">
+                    <Twitter className="h-3.5 w-3.5" /> X / Twitter
+                  </label>
+                  <Input
+                    id="twitterUrl"
+                    name="twitterUrl"
+                    type="url"
+                    value={formData.twitterUrl || ''}
+                    onChange={handleChange}
+                    placeholder="https://x.com/yourhandle"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="linkedinUrl" className="flex items-center gap-1 text-sm font-medium mb-1">
+                    <Linkedin className="h-3.5 w-3.5" /> LinkedIn
+                  </label>
+                  <Input
+                    id="linkedinUrl"
+                    name="linkedinUrl"
+                    type="url"
+                    value={formData.linkedinUrl || ''}
+                    onChange={handleChange}
+                    placeholder="https://linkedin.com/in/yourprofile"
+                  />
+                </div>
+              </div>
+
               <h3 className="font-semibold mb-3">Address Information</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -698,6 +774,40 @@ const ProfilePage: React.FC = () => {
                         className="text-primary hover:underline flex-1 truncate"
                       >
                         {profile.website.replace(/^https?:\/\//, '')}
+                      </a>
+                    </div>
+                  )}
+
+                  {/* Social Media Links */}
+                  {(profile as any)?.facebookUrl && (
+                    <div className="flex items-center gap-3">
+                      <Facebook className="h-4 w-4 text-muted-foreground" />
+                      <a href={(profile as any).facebookUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex-1 truncate">
+                        Facebook
+                      </a>
+                    </div>
+                  )}
+                  {(profile as any)?.instagramUrl && (
+                    <div className="flex items-center gap-3">
+                      <Instagram className="h-4 w-4 text-muted-foreground" />
+                      <a href={(profile as any).instagramUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex-1 truncate">
+                        Instagram
+                      </a>
+                    </div>
+                  )}
+                  {(profile as any)?.twitterUrl && (
+                    <div className="flex items-center gap-3">
+                      <Twitter className="h-4 w-4 text-muted-foreground" />
+                      <a href={(profile as any).twitterUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex-1 truncate">
+                        X / Twitter
+                      </a>
+                    </div>
+                  )}
+                  {(profile as any)?.linkedinUrl && (
+                    <div className="flex items-center gap-3">
+                      <Linkedin className="h-4 w-4 text-muted-foreground" />
+                      <a href={(profile as any).linkedinUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex-1 truncate">
+                        LinkedIn
                       </a>
                     </div>
                   )}

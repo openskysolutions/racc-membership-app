@@ -38,6 +38,12 @@ export interface Member {
   coupon_codes?: string[];
   tagline?: string;
   
+  // Social Media Links
+  facebookUrl?: string;
+  instagramUrl?: string;
+  twitterUrl?: string;
+  linkedinUrl?: string;
+
   // Address Information (flat to match GoHighLevel format)
   address1?: string;
   city?: string;

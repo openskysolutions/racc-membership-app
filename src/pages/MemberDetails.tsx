@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Mail, Phone, Globe, Calendar, Shield, Edit, Save, X, ExternalLink, Briefcase, Plus } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, Globe, Calendar, Shield, Edit, Save, X, ExternalLink, Briefcase, Plus, Facebook, Instagram, Twitter, Linkedin } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -35,6 +35,11 @@ interface MemberFormData {
   city: string;
   state: string;
   postalCode: string;
+  // Social media links
+  facebookUrl: string;
+  instagramUrl: string;
+  twitterUrl: string;
+  linkedinUrl: string;
 }
 
 const MemberDetailsPage: React.FC = () => {
@@ -67,7 +72,12 @@ const MemberDetailsPage: React.FC = () => {
     address1: '',
     city: '',
     state: '',
-    postalCode: ''
+    postalCode: '',
+    // Social media links
+    facebookUrl: '',
+    instagramUrl: '',
+    twitterUrl: '',
+    linkedinUrl: ''
   });
 
   useEffect(() => {
@@ -123,7 +133,12 @@ const MemberDetailsPage: React.FC = () => {
           address1: memberData.address1 || '',
           city: memberData.city || '',
           state: memberData.state || '',
-          postalCode: memberData.postalCode || ''
+          postalCode: memberData.postalCode || '',
+          // Social media links
+          facebookUrl: (memberData as any).facebookUrl || '',
+          instagramUrl: (memberData as any).instagramUrl || '',
+          twitterUrl: (memberData as any).twitterUrl || '',
+          linkedinUrl: (memberData as any).linkedinUrl || ''
         });
       } catch (err) {
         console.error('Error fetching member:', err);
@@ -269,7 +284,12 @@ const MemberDetailsPage: React.FC = () => {
         address1: member.address1 || '',
         city: member.city || '',
         state: member.state || '',
-        postalCode: member.postalCode || ''
+        postalCode: member.postalCode || '',
+        // Social media links
+        facebookUrl: (member as any).facebookUrl || '',
+        instagramUrl: (member as any).instagramUrl || '',
+        twitterUrl: (member as any).twitterUrl || '',
+        linkedinUrl: (member as any).linkedinUrl || ''
       });
     }
     setIsEditing(false);
@@ -428,6 +448,44 @@ const MemberDetailsPage: React.FC = () => {
                             {member.website.replace(/^https?:\/\//, '')}
                           </a>
                         </div>
+                      )}
+
+                      {/* Social Media Links */}
+                      {hasEnhancedOrElite && (
+                        <>
+                          {(member as any).facebookUrl && (
+                            <div className="flex items-center gap-3">
+                              <Facebook className="h-4 w-4 text-muted-foreground" />
+                              <a href={(member as any).facebookUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex-1 truncate">
+                                Facebook
+                              </a>
+                            </div>
+                          )}
+                          {(member as any).instagramUrl && (
+                            <div className="flex items-center gap-3">
+                              <Instagram className="h-4 w-4 text-muted-foreground" />
+                              <a href={(member as any).instagramUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex-1 truncate">
+                                Instagram
+                              </a>
+                            </div>
+                          )}
+                          {(member as any).twitterUrl && (
+                            <div className="flex items-center gap-3">
+                              <Twitter className="h-4 w-4 text-muted-foreground" />
+                              <a href={(member as any).twitterUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex-1 truncate">
+                                X / Twitter
+                              </a>
+                            </div>
+                          )}
+                          {(member as any).linkedinUrl && (
+                            <div className="flex items-center gap-3">
+                              <Linkedin className="h-4 w-4 text-muted-foreground" />
+                              <a href={(member as any).linkedinUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex-1 truncate">
+                                LinkedIn
+                              </a>
+                            </div>
+                          )}
+                        </>
                       )}
                     </div>
                   </div>
@@ -670,6 +728,62 @@ const MemberDetailsPage: React.FC = () => {
                             onChange={handleFormChange}
                             placeholder="https://example.com"
                           />
+                        </div>
+
+                        <h3 className="font-semibold mb-1">Social Media Links</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label htmlFor="facebookUrl" className="flex items-center gap-1 text-sm font-medium mb-1">
+                              <Facebook className="h-3.5 w-3.5" /> Facebook
+                            </label>
+                            <Input
+                              id="facebookUrl"
+                              name="facebookUrl"
+                              type="url"
+                              value={formData.facebookUrl}
+                              onChange={handleFormChange}
+                              placeholder="https://facebook.com/yourpage"
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="instagramUrl" className="flex items-center gap-1 text-sm font-medium mb-1">
+                              <Instagram className="h-3.5 w-3.5" /> Instagram
+                            </label>
+                            <Input
+                              id="instagramUrl"
+                              name="instagramUrl"
+                              type="url"
+                              value={formData.instagramUrl}
+                              onChange={handleFormChange}
+                              placeholder="https://instagram.com/yourhandle"
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="twitterUrl" className="flex items-center gap-1 text-sm font-medium mb-1">
+                              <Twitter className="h-3.5 w-3.5" /> X / Twitter
+                            </label>
+                            <Input
+                              id="twitterUrl"
+                              name="twitterUrl"
+                              type="url"
+                              value={formData.twitterUrl}
+                              onChange={handleFormChange}
+                              placeholder="https://x.com/yourhandle"
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="linkedinUrl" className="flex items-center gap-1 text-sm font-medium mb-1">
+                              <Linkedin className="h-3.5 w-3.5" /> LinkedIn
+                            </label>
+                            <Input
+                              id="linkedinUrl"
+                              name="linkedinUrl"
+                              type="url"
+                              value={formData.linkedinUrl}
+                              onChange={handleFormChange}
+                              placeholder="https://linkedin.com/in/yourprofile"
+                            />
+                          </div>
                         </div>
 
                         <h3 className="font-semibold mb-3">
