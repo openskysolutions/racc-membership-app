@@ -20,7 +20,7 @@ interface CoverImageUploadProps {
 }
 
 const CoverImageUpload: React.FC<CoverImageUploadProps> = ({
-  // currentCoverImage,
+  currentCoverImage,
   contactId,
   // fallbackText,
   onCoverImageUpdated,
@@ -120,9 +120,9 @@ const CoverImageUpload: React.FC<CoverImageUploadProps> = ({
   // const displayCoverImage = previewUrl || currentCoverImage;
 
   return (
-    <div className="flex flex-col items-center space-y-4">
+    <div className="flex flex-col space-y-4">
       {/* CoverImage with Upload Button */}
-      <div className="relative -top-22 -right-5">
+      <div className="relative bottom-6 sm:bottom-10 -right-4 sm:right-0">
         {/* <img src={displayCoverImage} alt={fallbackText} className={`rounded ${sizeClasses[size]} object-cover`} /> */}
         
         {/* Upload Button Overlay */}
@@ -130,7 +130,7 @@ const CoverImageUpload: React.FC<CoverImageUploadProps> = ({
           type="button"
           variant="secondary"
           size="sm"
-          className={`absolute -bottom-1 -right-1 rounded-full ${buttonSizeClasses[size]} p-0 shadow-lg border-1 border-white bg-white/20 hover:bg-neutral-500/70`}
+          className={`absolute -bottom-1 -right-1 rounded-full ${buttonSizeClasses[size]} p-0 shadow-lg border-2 border-white bg-white/20 hover:bg-neutral-500/70 ${!uploading ? 'animate-pulse' : ''}`}
           onClick={handleButtonClick}
           disabled={disabled || uploading}
         >
@@ -139,7 +139,7 @@ const CoverImageUpload: React.FC<CoverImageUploadProps> = ({
           ) : (
             <Camera className="!h-5 !w-5 text-white" />
           )}
-          <span className="absolute right-12 text-sm text-white">Cover Image</span>
+          <span className="absolute right-12 text-sm text-white">{currentCoverImage ? 'Edit Cover Image' : 'Add Cover Image'}</span>
         </Button>
 
         {/* Remove Preview Button */}

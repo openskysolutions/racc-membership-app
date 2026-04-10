@@ -393,6 +393,24 @@ const MemberDetailsPage: React.FC = () => {
             </p>
           </div>
         </div>
+
+
+        {/* Cover Image Upload - Elite Only */}
+        {canEdit && isEditing && hasElite && (
+          <CoverImageUpload
+            contactId={member?.id || ''}
+            fallbackText={''}
+            currentCoverImage={member?.coverImage}
+            onCoverImageUpdated={(newCoverImageUrl: string) => {
+              if (member) {
+                setMember({ ...member, coverImage: newCoverImageUrl });
+                setFormData(prev => ({ ...prev, coverImage: newCoverImageUrl }));
+                // Trigger refresh of members directory
+                triggerMemberRefresh();
+              }
+            }}
+          />
+        )}
       </div>
 
       <div className="container pt-0 pb-8 px-3 md:px-6 relative">
@@ -605,25 +623,6 @@ const MemberDetailsPage: React.FC = () => {
                       )}
                     </div>
                   </div>
-
-                  {/* Cover Image Upload - Elite Only */}
-                  {canEdit && isEditing && hasElite && (
-                    <div className="flex-shrink-0">
-                      <CoverImageUpload
-                        contactId={member?.id || ''}
-                        fallbackText={''}
-                        currentCoverImage={member?.coverImage}
-                        onCoverImageUpdated={(newCoverImageUrl: string) => {
-                          if (member) {
-                            setMember({ ...member, coverImage: newCoverImageUrl });
-                            setFormData(prev => ({ ...prev, coverImage: newCoverImageUrl }));
-                            // Trigger refresh of members directory
-                            triggerMemberRefresh();
-                          }
-                        }}
-                      />
-                    </div>
-                  )}
                 </div>
               </CardHeader>
 

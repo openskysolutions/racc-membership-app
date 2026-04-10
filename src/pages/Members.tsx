@@ -474,7 +474,7 @@ const MembersPage: React.FC = () => {
                   </Avatar>
                   
                   <div className={'flex-1'}>
-                    <CardTitle className={`text-md hover:text-foreground ${viewMode === 'grid' && member.coverImage ? 'text-white' : 'text-highlight-foreground'}`}>
+                    <CardTitle className={`text-md ${viewMode === 'grid' && member.coverImage ? 'text-white hover:text-white' : 'text-highlight-foreground hover:text-foreground'}`}>
                       {member.businessName || formatMemberName(member)}
                     </CardTitle>
                   </div>
