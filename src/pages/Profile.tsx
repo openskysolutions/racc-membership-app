@@ -3,7 +3,6 @@ import { useAuthStore } from '@/stores/authStore';
 import type { UpdateProfileRequest } from '@/services/profile';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -13,6 +12,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
+import { BioDisplay, BioEditor } from '@/components/BioField';
 import { capitalizeFirst } from '@/lib/utils';
 import { Mail, Phone, Globe, Calendar, Shield, User, Edit, Save, X, AlertTriangle, Lock, Facebook, Instagram, Twitter, Linkedin } from 'lucide-react';
 import { api } from '@/services/apiClient';
@@ -518,13 +518,9 @@ const ProfilePage: React.FC = () => {
                 <label htmlFor="bio" className="block text-sm font-medium mb-1">
                   Bio / About
                 </label>
-                <Textarea
-                  id="bio"
-                  name="bio"
-                  value={formData.bio}
-                  onChange={handleChange}
-                  placeholder="Tell us about yourself or your business..."
-                  rows={4}
+                <BioEditor
+                  value={formData.bio || ''}
+                  onChange={(val) => setFormData(prev => ({ ...prev, bio: val }))}
                 />
               </div>
 
@@ -710,7 +706,7 @@ const ProfilePage: React.FC = () => {
                     <User className="h-4 w-4" />
                     About
                   </h3>
-                  <p className="text-muted-foreground leading-relaxed">{(profile as any).bio}</p>
+                  <BioDisplay text={(profile as any).bio} />
                 </div>
               )}
 

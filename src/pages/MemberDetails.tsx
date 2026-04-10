@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { CouponCodesInput } from '@/components/ui/coupon-codes-input';
 import { toast } from 'sonner';
 import { capitalizeFirst } from '@/lib/utils';
@@ -17,6 +16,7 @@ import type { Member } from '@/types/member';
 import AvatarUpload from '@/components/AvatarUpload';
 import CoverImageUpload from '@/components/CoverImageUpload';
 import { getJobs, Job } from '@/services/jobs';
+import { BioDisplay, BioEditor } from '@/components/BioField';
 
 interface MemberFormData {
   firstName: string;
@@ -704,13 +704,9 @@ const MemberDetailsPage: React.FC = () => {
                             Bio / About
                             {/* <span className="text-xs text-muted-foreground ml-2">(Enhanced/Elite only)</span> */}
                           </label>
-                          <Textarea
-                            id="bio"
-                            name="bio"
+                          <BioEditor
                             value={formData.bio}
-                            onChange={handleFormChange}
-                            placeholder="Tell us about yourself or your business..."
-                            rows={4}
+                            onChange={(val) => setFormData(prev => ({ ...prev, bio: val }))}
                           />
                         </div>
 
@@ -892,7 +888,7 @@ const MemberDetailsPage: React.FC = () => {
                     {/* Bio - Enhanced/Elite Only */}
                     {hasEnhancedOrElite && member.bio && (
                       <div>
-                        <p className="text-muted-foreground leading-relaxed">{member.bio}</p>
+                        <BioDisplay text={member.bio} />
                       </div>
                     )}
 
