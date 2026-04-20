@@ -19,7 +19,7 @@ const BoardMembers: React.FC = () => {
 
   const termBoardMembers: BoardMember[] = [
     { name: "Ashlin Shaver", title: "Term Board Member", business: "Leona's Bistro" },
-    { name: "Justin Jepson", title: "Term Board Member", business: "All In 1 Print & Sign" },
+    { name: "Justin Jepson", title: "Term Board Member", business: "All In 1 Print & Sign", photo: "/images/board/JustinJepson.jpg" },
     { name: "Devin Johnson", title: "Term Board Member", business: "Black Lotus", photo: "/images/board/DevinJohnson.jpg" },
     { name: "Liz Geer", title: "Term Board Member", business: "Trip Taxi", photo: "/images/board/LizGeer.jpg" },
     { name: "Katie Torgerson", title: "Term Board Member", business: "Steve's Steakhouse" },
@@ -30,7 +30,7 @@ const BoardMembers: React.FC = () => {
   ];
 
   const exOfficioMembers: BoardMember[] = [
-    { name: "Kevin Arrington", title: "Ex Officio Board Member", business: "SVC Snow College" },
+    { name: "Kevin Arrington", title: "Ex Officio Board Member", business: "SVC Snow College", photo: "/images/board/KevinArrington.jpg" },
     { name: "Michele Jolley", title: "Ex Officio Board Member", business: "Richfield City" },
     { name: "Amy Myers", title: "Ex Officio Board Member", business: "Sevier County Tourism" },
     { name: "Malcolm Nash", title: "Ex Officio Board Member", business: "Sevier County", photo: "/images/board/MalcolmNash.jpg" },
