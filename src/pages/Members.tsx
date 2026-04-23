@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
 import { useMembersStore } from '@/stores/membersStore';
 import cn from 'classnames';
+import { isNativeApp } from '@/lib/platform';
 
 // Extended member type for the directory page
 interface Member extends BaseMember {
@@ -201,7 +202,11 @@ const MembersPage: React.FC = () => {
   }, [lastMemberUpdate, refreshMembers]);
 
   // Restore focus to search input after members update (but only if user was actively searching)
+  // Skip this on native mobile apps to prevent keyboard closing/reopening
   useEffect(() => {
+    // Don't restore focus on native mobile apps - it causes keyboard issues
+    if (isNativeApp()) return;
+    
     const input = searchInputRef.current;
     if (input && searchTerm && document.activeElement !== input) {
       // Only restore focus if user was actually searching and input isn't already focused

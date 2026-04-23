@@ -10,39 +10,42 @@ interface BoardMember {
 }
 
 const BoardMembers: React.FC = () => {
+  // Load board member images from website instead of bundling in app
+  const BASE_URL = 'https://members.richfieldareachamber.com';
+
   const executiveBoard: BoardMember[] = [
-    { name: "Katie Lindsay", title: "President", business: "Richfield Monuments", photo: "/images/board/KatieLindsay.jpg" },
-    { name: "Jaquel Christensen", title: "President Elect", business: "Home Depot", photo: "/images/board/JaquelChristensen.jpg" },
-    { name: "Megan Bird", title: "Vice President", business: "Stonepath Acct", photo: "/images/board/MeganBird.jpg" },
-    { name: "Stacey Busk", title: "Past President", business: "First American Title Company", photo: "/images/board/Stacey Busk Photo.jpg" },
+    { name: "Katie Lindsay", title: "President", business: "Richfield Monuments", photo: `${BASE_URL}/images/board/KatieLindsay.jpg` },
+    { name: "Jaquel Christensen", title: "President Elect", business: "Home Depot", photo: `${BASE_URL}/images/board/JaquelChristensen.jpg` },
+    { name: "Megan Bird", title: "Vice President", business: "Stonepath Acct", photo: `${BASE_URL}/images/board/MeganBird.jpg` },
+    { name: "Stacey Busk", title: "Past President", business: "First American Title Company", photo: `${BASE_URL}/images/board/Stacey Busk Photo.jpg` },
   ];
 
   const termBoardMembers: BoardMember[] = [
     { name: "Ashlin Shaver", title: "Term Board Member", business: "Leona's Bistro" },
-    { name: "Justin Jepson", title: "Term Board Member", business: "All In 1 Print & Sign", photo: "/images/board/JustinJepson.jpg" },
-    { name: "Devin Johnson", title: "Term Board Member", business: "Black Lotus", photo: "/images/board/DevinJohnson.jpg" },
-    { name: "Liz Geer", title: "Term Board Member", business: "Trip Taxi", photo: "/images/board/LizGeer.jpg" },
+    { name: "Justin Jepson", title: "Term Board Member", business: "All In 1 Print & Sign", photo: `${BASE_URL}/images/board/JustinJepson.jpg` },
+    { name: "Devin Johnson", title: "Term Board Member", business: "Black Lotus", photo: `${BASE_URL}/images/board/DevinJohnson.jpg` },
+    { name: "Liz Geer", title: "Term Board Member", business: "Trip Taxi", photo: `${BASE_URL}/images/board/LizGeer.jpg` },
     { name: "Katie Torgerson", title: "Term Board Member", business: "Steve's Steakhouse" },
-    { name: "Heather Madsen", title: "Term Board Member", business: "Elwood Staffing", photo: "/images/board/HeatherMadsen.jpg" },
-    { name: "Nathan Heyborn", title: "Term Board Member", business: "CTR Eyecare", photo: "/images/board/NathanHeyborn.jpg" },
-    { name: "Michael Taylor", title: "Term Board Member", business: "Springer Turner", photo: "/images/board/MichaelTaylor.jpg" },
-    { name: "Lisa Jensen", title: "Term Board Member", business: "Edward Jones", photo: "/images/board/LisaJensen.jpg" },
+    { name: "Heather Madsen", title: "Term Board Member", business: "Elwood Staffing", photo: `${BASE_URL}/images/board/HeatherMadsen.jpg` },
+    { name: "Nathan Heyborn", title: "Term Board Member", business: "CTR Eyecare", photo: `${BASE_URL}/images/board/NathanHeyborn.jpg` },
+    { name: "Michael Taylor", title: "Term Board Member", business: "Springer Turner", photo: `${BASE_URL}/images/board/MichaelTaylor.jpg` },
+    { name: "Lisa Jensen", title: "Term Board Member", business: "Edward Jones", photo: `${BASE_URL}/images/board/LisaJensen.jpg` },
   ];
 
   const exOfficioMembers: BoardMember[] = [
-    { name: "Kevin Arrington", title: "Ex Officio Board Member", business: "SVC Snow College", photo: "/images/board/KevinArrington.jpg" },
+    { name: "Kevin Arrington", title: "Ex Officio Board Member", business: "SVC Snow College", photo: `${BASE_URL}/images/board/KevinArrington.jpg` },
     { name: "Michele Jolley", title: "Ex Officio Board Member", business: "Richfield City" },
     { name: "Amy Myers", title: "Ex Officio Board Member", business: "Sevier County Tourism" },
-    { name: "Malcolm Nash", title: "Ex Officio Board Member", business: "Sevier County", photo: "/images/board/MalcolmNash.jpg" },
-    { name: "Cade Douglas", title: "Ex Officio Board Member", business: "Sevier School District", photo: "/images/board/CadeDouglas.jpg" },
-    { name: "Robert Lovell", title: "Ex Officio Board Member", business: "Mid Utah Radio", photo: "/images/board/RobertLovell.jpg" },
+    { name: "Malcolm Nash", title: "Ex Officio Board Member", business: "Sevier County", photo: `${BASE_URL}/images/board/MalcolmNash.jpg` },
+    { name: "Cade Douglas", title: "Ex Officio Board Member", business: "Sevier School District", photo: `${BASE_URL}/images/board/CadeDouglas.jpg` },
+    { name: "Robert Lovell", title: "Ex Officio Board Member", business: "Mid Utah Radio", photo: `${BASE_URL}/images/board/RobertLovell.jpg` },
   ];
 
   const executiveDirector: BoardMember = {
     name: "Kenzie Draper",
     title: "Executive Director",
     business: "Richfield Area Chamber of Commerce",
-    photo: "/images/board/KenzieDraper.jpg"
+    photo: `${BASE_URL}/images/board/KenzieDraper.jpg`
   };
 
   return (

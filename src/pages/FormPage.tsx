@@ -71,11 +71,11 @@ export default function FormPage() {
         
         // Extract data-height attribute from iframe if present
         const heightMatch = embedCode.match(/data-height=["'](\d+)["']/i);
-        let height = '600';
+        let height = 600;
         if (heightMatch && heightMatch[1]) {
-          height = heightMatch[1];
+          height = parseInt(heightMatch[1], 10) + 460;
           setIframeHeight(`${height}px`);
-          console.log('📏 Extracted height from data-height:', height);
+          console.log('🔍 Extracting height from embed code...', `${height}px`);
         }
         
         // Process the embed code to ensure iframe uses the correct height

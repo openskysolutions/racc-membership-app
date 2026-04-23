@@ -17,6 +17,7 @@ import AvatarUpload from '@/components/AvatarUpload';
 import CoverImageUpload from '@/components/CoverImageUpload';
 import { getJobs, Job } from '@/services/jobs';
 import { BioDisplay, BioEditor } from '@/components/BioField';
+import { isNativeApp } from '@/lib/platform';
 
 interface MemberFormData {
   firstName: string;
@@ -195,6 +196,24 @@ const MemberDetailsPage: React.FC = () => {
 
   const canEdit = user && member && (user.ghlContactId === member.id || user.role === 'admin');
 
+  // Debug logging for authorization - helps troubleshoot edit button visibility
+  if (user && member) {
+    console.log('🔍 MemberDetails Authorization Debug:', {
+      userExists: !!user,
+      memberExists: !!member,
+      'user.ghlContactId': user?.ghlContactId,
+      'member.id': member?.id,
+      'member.contactId': member?.contactId,
+      'user.role': user?.role,
+      'user.ghlContactId === member.id': user?.ghlContactId === member?.id,
+      'user.ghlContactId === member.contactId': user?.ghlContactId === member?.contactId,
+      'user.role === admin': user?.role === 'admin',
+      canEdit,
+      isEditing,
+      'Button should render': canEdit && !isEditing
+    });
+  }
+
   // Check if member has Enhanced or Elite membership (case-insensitive and includes partial matches)
   // Note: All members now have enhanced/elite-level access regardless of actual tier
   const hasEnhancedOrElite = member?.tags && (
@@ -325,7 +344,14 @@ const MemberDetailsPage: React.FC = () => {
   return (
     <>
       {/* Header */}
-      <div className="flex h-10 items-center justify-between mb-6 z-35 shadow-md fixed top-20 md:top-30 w-screen bg-card/70 px-4">
+      <div 
+        className="flex h-10 items-center justify-between mb-6 z-40 shadow-md fixed left-0 right-0 bg-card/70 px-4"
+        style={isNativeApp() ? { 
+          top: 'calc(5rem + var(--safe-area-inset-top, 0px))' 
+        } : { 
+          top: '7.5rem' 
+        }}
+      >
         <Button
           variant="ghost"
           onClick={() => navigate('/members')}
@@ -372,8 +398,10 @@ const MemberDetailsPage: React.FC = () => {
 
       {/* Hero Section */}
       <div
-        className="absolute h-80 w-screen md:h-[400px] bg-cover bg-center bg-no-repeat pt-10 pb-8 px-8 top-20 md:top-30 z-20"
+        className="absolute h-80 md:h-[400px] bg-cover bg-center bg-no-repeat pt-10 pb-8 px-8 left-0 right-0 z-20"
         style={{
+          // Position below navbar (5rem) + header (2.5rem) + safe area
+          top: isNativeApp() ? 'calc(7.5rem + var(--safe-area-inset-top, 0px))' : '7.5rem',
           // Show cover image for all members (previously restricted to elite/admin only)
           // Keep tag-checking logic for future reference/rollback
           backgroundImage: (
@@ -415,7 +443,7 @@ const MemberDetailsPage: React.FC = () => {
 
       <div className="container pt-0 pb-8 px-3 md:px-6 relative">
         {/* Responsive Layout Grid */}
-        <div className="relative grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-7xl mx-auto z-30 mt-68 md:mt-84">
+        <div className="relative grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-7xl mx-auto z-30 mt-80 md:mt-96">
           {/* Left Column - Address & Location (1/3 on large screens, stacks on smaller) */}
           <div className="lg:order-1 order-2 space-y-6">
             {/* Combined Address & Location Card */}
