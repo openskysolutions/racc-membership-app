@@ -106,6 +106,12 @@ const AdminRoute = ({ children }: { children: ReactNode }) => {
   return <>{children}</>;
 };
 
+// External redirect component
+const ExternalRedirect = ({ to }: { to: string }) => {
+  useEffect(() => { window.location.replace(to); }, [to]);
+  return null;
+};
+
 // Loading fallback component
 const LazyLoadingFallback = () => (
   <div className="flex items-center justify-center min-h-screen">
@@ -194,6 +200,10 @@ export default function AppRoutes() {
         <Route path="admin/posts/new" element={<AdminRoute><Suspense fallback={<LazyLoadingFallback />}><PostFormPage /></Suspense></AdminRoute>} />
         <Route path="admin/posts/:id/edit" element={<AdminRoute><Suspense fallback={<LazyLoadingFallback />}><PostFormPage /></Suspense></AdminRoute>} />
       </Route>
+
+      {/* External redirects */}
+      <Route path="magazine" element={<ExternalRedirect to="https://richfieldchamber.pagemotion.io/" />} />
+      <Route path="chamber-luncheons" element={<ExternalRedirect to="https://richfieldareachamber.com/events/GTwd1YcRh6O5g064pNYc_1778695200000_3600" />} />
 
       {/* fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />

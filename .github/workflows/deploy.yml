@@ -312,13 +312,47 @@ jobs:
           
           # Update nginx configuration to properly proxy to frontend service
           cat > /etc/nginx/sites-available/racc-membership-app << 'NGINXEOF'
+          # HTTP → HTTPS redirect for all domains
           server {
               listen 80;
+              server_name members.richfieldareachamber.com richfieldareachamber.com www.richfieldareachamber.com;
+              return 301 https://members.richfieldareachamber.com\$request_uri;
+          }
+
+          # richfieldareachamber.com → members.* redirect (HTTPS)
+          server {
+              listen 443 ssl;
+              server_name richfieldareachamber.com;
+              ssl_certificate /etc/letsencrypt/live/members.richfieldareachamber.com/fullchain.pem;
+              ssl_certificate_key /etc/letsencrypt/live/members.richfieldareachamber.com/privkey.pem;
+              include /etc/letsencrypt/options-ssl-nginx.conf;
+              ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+              return 301 https://members.richfieldareachamber.com\$request_uri;
+          }
+
+          # www.* → members.* redirect (HTTPS)
+          server {
+              listen 443 ssl;
+              server_name www.richfieldareachamber.com;
+              ssl_certificate /etc/letsencrypt/live/members.richfieldareachamber.com/fullchain.pem;
+              ssl_certificate_key /etc/letsencrypt/live/members.richfieldareachamber.com/privkey.pem;
+              include /etc/letsencrypt/options-ssl-nginx.conf;
+              ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+              return 301 https://members.richfieldareachamber.com\$request_uri;
+          }
+
+          # Main app (canonical domain)
+          server {
+              listen 443 ssl;
               server_name members.richfieldareachamber.com;
-          
+              ssl_certificate /etc/letsencrypt/live/members.richfieldareachamber.com/fullchain.pem;
+              ssl_certificate_key /etc/letsencrypt/live/members.richfieldareachamber.com/privkey.pem;
+              include /etc/letsencrypt/options-ssl-nginx.conf;
+              ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
               # Allow larger request bodies for image uploads (base64 encoded adds ~33% overhead)
               client_max_body_size 15M;
-          
+
               # API routes - proxy to backend service
               location /api {
                   proxy_pass http://localhost:3000;
@@ -331,7 +365,7 @@ jobs:
                   proxy_set_header X-Forwarded-Proto \$scheme;
                   proxy_cache_bypass \$http_upgrade;
               }
-          
+
               # All other routes - proxy to frontend service for SPA routing
               location / {
                   proxy_pass http://localhost:3001;
@@ -343,7 +377,7 @@ jobs:
                   proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
                   proxy_set_header X-Forwarded-Proto \$scheme;
                   proxy_cache_bypass \$http_upgrade;
-                  
+
                   # Cache busting headers for development
                   add_header Cache-Control "no-cache, no-store, must-revalidate";
                   add_header Pragma "no-cache";
@@ -351,18 +385,26 @@ jobs:
               }
           }
           NGINXEOF
-          
+
           # Enable the site and reload nginx
           ln -sf /etc/nginx/sites-available/racc-membership-app /etc/nginx/sites-enabled/
           nginx -t && systemctl reload nginx
-          
-          # Ensure HTTPS is configured (certbot adds the SSL config to the nginx file)
+
+          # Ensure HTTPS is configured
+          # Use a flag file rather than checking the nginx config (which is rewritten on every deploy,
+          # causing certbot to re-run unnecessarily and burn Let's Encrypt rate limits)
           echo "Ensuring HTTPS configuration..."
-          if ! grep -q "listen 443" /etc/nginx/sites-available/racc-membership-app; then
-            echo "HTTPS not configured, running certbot..."
-            certbot --nginx -d members.richfieldareachamber.com --non-interactive --agree-tos --email admin@richfieldareachamber.com
+          if [ ! -f /etc/letsencrypt/.racc-cert-issued ]; then
+            echo "SSL cert not yet issued, running certbot..."
+            certbot --nginx --expand \
+              -d members.richfieldareachamber.com \
+              -d richfieldareachamber.com \
+              -d www.richfieldareachamber.com \
+              --non-interactive --agree-tos --email admin@richfieldareachamber.com
+            touch /etc/letsencrypt/.racc-cert-issued
           else
-            echo "HTTPS already configured"
+            echo "SSL cert already issued, reloading nginx with existing cert..."
+            nginx -t && systemctl reload nginx
           fi
           
           echo "Nginx configuration updated and reloaded"
