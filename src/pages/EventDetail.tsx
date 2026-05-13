@@ -68,20 +68,23 @@ const EventDetailPage: React.FC = () => {
   const isEnhancedUser = userTags.includes('enhanced membership package');
   const isBasicUser = userTags.includes('basic membership package');
   
-  // Get the appropriate embed code - show elite tier content for all users (with fallback)
+  // Get the appropriate embed code based on the user's membership tier
   const getEmbedCode = () => {
-    // Everyone gets elite-level content
+    if (!isAuthenticated) {
+      // Not logged in: show basic embed code
+      return customFields.basicEmbedCode || customFields.enhancedEmbedCode || customFields.eliteEmbedCode;
+    }
     if (isEliteUser) {
       return customFields.eliteEmbedCode || customFields.enhancedEmbedCode || customFields.basicEmbedCode;
     }
     if (isEnhancedUser) {
-      return customFields.eliteEmbedCode || customFields.enhancedEmbedCode || customFields.basicEmbedCode;
+      return customFields.enhancedEmbedCode || customFields.basicEmbedCode || customFields.eliteEmbedCode;
     }
     if (isBasicUser) {
-      return customFields.eliteEmbedCode || customFields.enhancedEmbedCode || customFields.basicEmbedCode;
+      return customFields.basicEmbedCode || customFields.enhancedEmbedCode || customFields.eliteEmbedCode;
     }
-    // Default: Show basic embed code for all users (even without membership tags)
-    return customFields.eliteEmbedCode || customFields.enhancedEmbedCode || customFields.basicEmbedCode
+    // Logged in but no recognized tier tag: show basic embed code
+    return customFields.basicEmbedCode || customFields.enhancedEmbedCode || customFields.eliteEmbedCode;
   };
 
   // Process embed code to ensure iframe uses data-height attribute
