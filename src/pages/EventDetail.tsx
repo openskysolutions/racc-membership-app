@@ -587,7 +587,7 @@ const EventDetailPage: React.FC = () => {
                   )
                 : null}
                 {getEmbedCode() && (
-                  <div className="w-full overflow-auto"
+                  <div className="w-full overflow-auto bg-neutral-50 rounded-lg p-2"
                     dangerouslySetInnerHTML={{ __html: processEmbedCode(getEmbedCode()) }} 
                   />
                 )}

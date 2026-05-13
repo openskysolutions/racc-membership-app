@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { getWordPressEventPages, WordPressPost } from '@/services/wordpress';
+import { isNativeApp } from '@/lib/platform';
+import { openExternalUrl } from '@/lib/externalBrowser';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Search, Grid3x3, List } from 'lucide-react';
 
 export default function EventsPage() {
+  const navigate = useNavigate();
   const [posts, setPosts] = useState<WordPressPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -177,10 +180,16 @@ export default function EventsPage() {
                       </CardContent>
                       <CardFooter>
                         <Button 
-                          asChild 
                           variant="default"
+                          onClick={async () => {
+                            if (isNativeApp()) {
+                              await openExternalUrl(`/event-pages/${post.slug}`);
+                            } else {
+                              navigate(`/event-pages/${post.slug}`);
+                            }
+                          }}
                         >
-                          <Link to={`/event-pages/${post.slug}`}>View Full Details</Link>
+                          View Full Details
                         </Button>
                       </CardFooter>
                     </div>
@@ -211,11 +220,17 @@ export default function EventsPage() {
                   </CardContent>
                   <CardFooter>
                     <Button 
-                      asChild 
                       variant="default" 
                       className="w-full"
+                      onClick={async () => {
+                        if (isNativeApp()) {
+                          await openExternalUrl(`/event-pages/${post.slug}`);
+                        } else {
+                          navigate(`/event-pages/${post.slug}`);
+                        }
+                      }}
                     >
-                      <Link to={`/event-pages/${post.slug}`}>View Full Details</Link>
+                      View Full Details
                     </Button>
                   </CardFooter>
                 </Card>

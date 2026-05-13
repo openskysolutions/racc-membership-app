@@ -700,7 +700,13 @@ const CalendarPage: React.FC = () => {
               <Button
                 variant="default"
                 size='sm'
-                onClick={() => navigate(`/events/${selectedEvent.id}`)}
+                onClick={async () => {
+                  if (isNativeApp()) {
+                    await openExternalUrl(`/events/${selectedEvent.id}`);
+                  } else {
+                    navigate(`/events/${selectedEvent.id}`);
+                  }
+                }}
               >
                 View Full Details
               </Button>
