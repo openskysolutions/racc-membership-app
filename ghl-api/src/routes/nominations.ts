@@ -87,6 +87,12 @@ router.post('/:id/vote', requireAuth, (req, res) => controller.voteOnNomination(
 router.post('/:id/vote/yearly', requireAuth, (req, res) => controller.voteOnYearlyNomination(req, res));
 
 /**
+ * DELETE /nominations/:id
+ * Delete a nomination (REQUIRES AUTH - admin only)
+ */
+router.delete('/:id', requireAuth, (req, res) => controller.deleteNomination(req, res));
+
+/**
  * GET /nominations/:id/votes
  * Get votes for a nomination (PUBLIC)
  */

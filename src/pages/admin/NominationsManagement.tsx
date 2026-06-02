@@ -3,6 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Trash2 } from 'lucide-react';
 import { api } from '@/services/apiClient';
 import { toast } from 'sonner';
 
@@ -28,6 +30,8 @@ const NominationsManagement: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState<'business_of_month' | 'customer_service_superstar'>('business_of_month');
   const [statusFilter, setStatusFilter] = useState<'pending' | 'approved' | 'rejected' | 'all'>('pending');
+  const [nominationToDelete, setNominationToDelete] = useState<Nomination | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   useEffect(() => {
     loadNominations();
@@ -76,6 +80,24 @@ const NominationsManagement: React.FC = () => {
     } catch (error: any) {
       console.error('Error updating status:', error);
       toast.error('Failed to update nomination status');
+    }
+  };
+
+  const deleteNomination = async (nominationId: number) => {
+    try {
+      const response = await api.delete(`/nominations/${nominationId}`);
+
+      if (!response.ok) {
+        throw new Error('Failed to delete nomination');
+      }
+
+      toast.success('Nomination deleted');
+      setShowDeleteDialog(false);
+      setNominationToDelete(null);
+      loadNominations();
+    } catch (error: any) {
+      console.error('Error deleting nomination:', error);
+      toast.error('Failed to delete nomination');
     }
   };
 
@@ -180,24 +202,38 @@ const NominationsManagement: React.FC = () => {
                           </span>
                         </div>
                       </div>
-                      {nomination.status === 'pending' && (
-                        <div className="flex gap-2">
+                      <div className="flex gap-2">
+                          {nomination.status === 'pending' && (
+                            <>
+                              <Button
+                                variant="default"
+                                size="sm"
+                                onClick={() => updateNominationStatus(nomination.id, 'approved')}
+                              >
+                                Approve
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => updateNominationStatus(nomination.id, 'rejected')}
+                              >
+                                Reject
+                              </Button>
+                            </>
+                          )}
                           <Button
-                            variant="default"
+                            variant="ghost"
                             size="sm"
-                            onClick={() => updateNominationStatus(nomination.id, 'approved')}
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => {
+                              setNominationToDelete(nomination);
+                              setShowDeleteDialog(true);
+                            }}
                           >
-                            Approve
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => updateNominationStatus(nomination.id, 'rejected')}
-                          >
-                            Reject
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            Delete
                           </Button>
                         </div>
-                      )}
                     </div>
                   </CardHeader>
                   <CardContent>
@@ -236,6 +272,29 @@ const NominationsManagement: React.FC = () => {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Delete Nomination Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Nomination</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete the nomination for{' '}
+              <strong>{nominationToDelete?.nomineeName}</strong>?
+              This action cannot be undone and will permanently remove the nomination and all associated votes.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setNominationToDelete(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => nominationToDelete && deleteNomination(nominationToDelete.id)}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

@@ -52,6 +52,8 @@ export default function AdminPage() {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [nominationToDelete, setNominationToDelete] = useState<Nomination | null>(null);
+  const [showDeleteNominationDialog, setShowDeleteNominationDialog] = useState(false);
   const [pagination, setPagination] = useState({
     total: 0,
     limit: 25,
@@ -332,6 +334,25 @@ export default function AdminPage() {
       toast.error('Failed to load nominations');
     } finally {
       setNominationsLoading(false);
+    }
+  };
+
+  // Delete nomination (admin only)
+  const handleDeleteNomination = async (nominationId: number) => {
+    try {
+      const response = await api.delete(`/nominations/${nominationId}`);
+
+      if (!response.ok) {
+        throw new Error('Failed to delete nomination');
+      }
+
+      toast.success('Nomination deleted');
+      setShowDeleteNominationDialog(false);
+      setNominationToDelete(null);
+      loadNominations();
+    } catch (error: any) {
+      console.error('Error deleting nomination:', error);
+      toast.error('Failed to delete nomination');
     }
   };
 
@@ -804,6 +825,23 @@ export default function AdminPage() {
                           </p>
                         </div>
                       </div>
+
+                      {isFullAdmin && (
+                        <div className="mt-3 flex justify-end">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => {
+                              setNominationToDelete(nomination);
+                              setShowDeleteNominationDialog(true);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            Delete
+                          </Button>
+                        </div>
+                      )}
 
                       {/* Voting Section */}
                       {/* <div className="mt-4 pt-4 border-t">
@@ -1385,6 +1423,29 @@ export default function AdminPage() {
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction 
                 onClick={() => userToDelete && handleDeleteUser(userToDelete.id)}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Delete Nomination Dialog */}
+        <AlertDialog open={showDeleteNominationDialog} onOpenChange={setShowDeleteNominationDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Nomination</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete the nomination for{' '}
+                <strong>{nominationToDelete?.name || nominationToDelete?.businessName}</strong>?
+                This action cannot be undone and will permanently remove the nomination and all associated votes.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setNominationToDelete(null)}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => nominationToDelete && handleDeleteNomination(nominationToDelete.id)}
                 className="bg-red-600 hover:bg-red-700"
               >
                 Delete

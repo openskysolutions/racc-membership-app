@@ -628,6 +628,44 @@ export class NominationsController {
   }
 
   /**
+   * Delete a nomination (admin only)
+   * DELETE /nominations/:id
+   */
+  async deleteNomination(req: Request, res: Response): Promise<Response> {
+    try {
+      const { id } = req.params;
+      const user = (req as any).user;
+
+      // Check if user is admin
+      if (!user || user.role !== 'admin') {
+        return res.status(403).json({ error: 'Admin access required' });
+      }
+
+      const nominationId = parseInt(id);
+      if (isNaN(nominationId)) {
+        return res.status(400).json({ error: 'Invalid nomination ID' });
+      }
+
+      // Delete votes first due to foreign key constraint
+      await prisma.vote.deleteMany({ where: { nominationId } });
+      await prisma.nomination.delete({ where: { id: nominationId } });
+
+      console.log(`🗑️ Nomination ${nominationId} deleted by admin ${user.id}`);
+
+      return res.json({ success: true, message: 'Nomination deleted successfully' });
+    } catch (error: any) {
+      if (error.code === 'P2025') {
+        return res.status(404).json({ error: 'Nomination not found' });
+      }
+      console.error('❌ Error deleting nomination:', error);
+      return res.status(500).json({
+        error: 'Failed to delete nomination',
+        details: error.message
+      });
+    }
+  }
+
+  /**
    * Get nominations available for voting in the current period
    * GET /nominations/voting
    */
