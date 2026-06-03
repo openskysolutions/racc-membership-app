@@ -78,19 +78,19 @@ const CategoryBar: React.FC<CategoryBarProps> = ({ selected, onChange }) => {
   if (loading) return null;
 
   return (
-    <div className="w-full grid grid-cols-5 2xl:grid-cols-10 gap-1 sm:gap-2">
+    <div className="w-full grid grid-cols-5 2xl:grid-cols-10 gap-0.5 sm:gap-2">
       {/* "All" pill */}
       <button
         title="All categories"
         onClick={() => onChange('')}
         className={cn(
-          'flex flex-col items-center justify-center gap-0.5 sm:gap-1 px-1 sm:px-3 h-14 sm:h-auto py-1.5 sm:py-2 bg-card rounded-lg border text-xs font-medium transition-colors',
+          'relative min-h-14 overflow-hidden flex flex-col items-center justify-center gap-0.5 sm:gap-1 px-1 sm:px-3 h-14 sm:h-auto py-1.5 sm:py-2 rounded-sm text-xs font-medium transition-colors',
           selected
-            ? 'text-foreground border-primary/50 hover:bg-stone-100 cursor-pointer'
-            : 'text-muted-foreground border-border hover:border-primary/50 hover:text-foreground hover:bg-stone-200 cursor-pointer'
+            ? 'text-white dark:text-stone-900 border-border bg-card-foreground hover:text-white dark:hover:text-stone-900 hover:bg-stone-500 dark:hover:bg-stone-200 cursor-pointer'
+            : 'text-white dark:text-stone-900 border-border bg-card-foreground hover:text-white dark:hover:text-stone-900 hover:bg-stone-400 dark:hover:bg-stone-200 cursor-pointer'
+            // bg-card-foreground hover:bg-card-foreground/90 text-card
         )}
       >
-        <LayoutGrid className="h-4 w-4 sm:h-5 sm:w-5" />
         <span className="leading-tight">All Members</span>
       </button>
 
@@ -106,7 +106,7 @@ const CategoryBar: React.FC<CategoryBarProps> = ({ selected, onChange }) => {
             title={cat.name}
             onClick={() => onChange(isActive ? '' : cat.id)}
             className={cn(
-              'relative overflow-hidden flex flex-col items-center justify-center text-white gap-0.5 sm:gap-1 px-1 sm:px-3 h-14 sm:h-auto py-1.5 sm:py-2 rounded-lg text-xs font-medium transition-colors',
+              'group relative min-h-14 overflow-hidden flex flex-col items-center justify-center text-white gap-0.5 sm:gap-1 px-1 sm:px-3 h-14 sm:h-auto py-1.5 sm:py-2 rounded-sm text-xs font-medium transition-colors',
               color ?? 'ring-1 ring-inset ring-border hover:ring-primary/50 hover:text-foreground'
             )}
           >
@@ -119,13 +119,12 @@ const CategoryBar: React.FC<CategoryBarProps> = ({ selected, onChange }) => {
             )}
             {/* Color tint overlay */}
             {bgUrl && tint && (
-              <div className={cn('absolute inset-0 z-0 transition-colors', tint)} />
+              <div className={cn('absolute inset-0 z-0 transition-opacity group-hover:opacity-60', tint)} />
             )}
             {isActive && (
               <span className="absolute z-20 top-[20%] -left-[7px] sm:top-[35%] sm:-left-[9px] 2xl:top-[40%] w-3 h-3 sm:w-4 sm:h-4 rotate-45 bg-white/100 shadow-sm" />
             )}
             <div className="relative z-10 flex flex-col items-center gap-0.5 sm:gap-1">
-              {Icon && <Icon className="h-4 w-4 sm:h-5 sm:w-5" />}
               <span className="text-[10px] sm:text-xs text-center leading-tight">{cat.name}</span>
             </div>
           </button>
