@@ -23,7 +23,7 @@ const HomePage: React.FC = () => {
       {/* Browse member directory by category */}
       <div className="px-4 sm:px-6 pt-8 pb-0 max-w-full mx-auto">
         <h1 className="text-xl md:text-3xl font-semibold mb-4">
-          Discover Service in the Richfield Area
+          Discover Services in the Richfield Area
         </h1>
         <CategoryBar selected="" onChange={handleCategoryClick} />
       </div>
