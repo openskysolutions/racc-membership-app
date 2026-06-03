@@ -51,6 +51,9 @@ interface Member {
   twitterUrl?: string;
   linkedinUrl?: string;
   
+  // Business Categories (stored in local DB)
+  categories?: string[]; // Array of subcategory ids
+
   // System Fields
   role: string;
   status: string;
@@ -78,7 +81,7 @@ class MembersController {
    */
   async getMembers(req: Request, res: Response) {
     try {
-      const { search = '', role = '', sortBy = 'businessName', limit = 20, offset = 0 } = req.query;
+      const { search = '', role = '', sortBy = 'businessName', limit = 20, offset = 0, category = '' } = req.query;
       const pageLimit = Math.min(parseInt(limit as string) || 20, 5000); // Cap at 5000 to allow fetching all members
       const pageOffset = parseInt(offset as string) || 0;
       
@@ -124,8 +127,32 @@ class MembersController {
         }
       }
       
+      // Load all category assignments from DB in one query (fast indexed lookup)
+      const allCategoryRows = await prisma.memberCategory.findMany({
+        select: { ghlContactId: true, subcategory: true },
+      });
+      // Build a map: ghlContactId -> subcategory[]
+      const categoryMap = new Map<string, string[]>();
+      for (const row of allCategoryRows) {
+        const existing = categoryMap.get(row.ghlContactId) ?? [];
+        existing.push(row.subcategory);
+        categoryMap.set(row.ghlContactId, existing);
+      }
+
+      // Build subcategory id -> searchable text map (id + name + parent category name)
+      const allSubcategories = await prisma.businessSubcategory.findMany({
+        select: { id: true, name: true, category: { select: { name: true } } },
+      });
+      const subcategorySearchMap = new Map<string, string>();
+      for (const sub of allSubcategories) {
+        subcategorySearchMap.set(sub.id, `${sub.name} ${sub.category.name}`.toLowerCase());
+      }
+
       // Transform GoHighLevel contacts to our Member format
-      let transformedMembers = allContacts.map(contact => this.transformContactToMember(contact));
+      let transformedMembers = allContacts.map(contact => ({
+        ...this.transformContactToMember(contact),
+        categories: categoryMap.get(contact.id) ?? [],
+      }));
       
       // DON'T cache individual member details from the list endpoint
       // because list endpoint might have incomplete data (especially address fields)
@@ -141,6 +168,9 @@ class MembersController {
           member.email?.toLowerCase().includes(searchLower) ||
           member.specialties?.some((specialty: string) => 
             specialty.toLowerCase().includes(searchLower)
+          ) ||
+          (member.categories ?? []).some((subcatId: string) =>
+            (subcategorySearchMap.get(subcatId) ?? subcatId).includes(searchLower)
           )
         );
       }
@@ -148,6 +178,20 @@ class MembersController {
       // Filter by role (based on tags) - only if role is provided
       if (role && typeof role === 'string') {
         transformedMembers = transformedMembers.filter(member => member.role === role);
+      }
+
+      // Filter by top-level category — keep members who have at least one subcategory under it
+      if (category && typeof category === 'string') {
+        const subcategoryRows = await prisma.businessSubcategory.findMany({
+          where: { categoryId: category },
+          select: { id: true },
+        });
+        const subcategoryIds = subcategoryRows.map(r => r.id);
+        if (subcategoryIds.length > 0) {
+          transformedMembers = transformedMembers.filter(member =>
+            (member.categories ?? []).some((sub: string) => subcategoryIds.includes(sub))
+          );
+        }
       }
       
       // Sort the filtered results based on sortBy parameter
@@ -367,10 +411,17 @@ class MembersController {
       
       // Transform to member format
       const member = this.transformContactToMember(contact);
+
+      // Fetch categories from local DB
+      const categoryRows = await prisma.memberCategory.findMany({
+        where: { ghlContactId: id },
+        select: { subcategory: true },
+      });
       
       // Add computed fields for API compatibility
       const memberWithComputedFields = {
         ...member,
+        categories: categoryRows.map(r => r.subcategory),
         name: `${member.firstName} ${member.lastName}`.trim(),
         membershipTier: this.getMembershipTier(member)
       };
@@ -794,6 +845,63 @@ class MembersController {
     return Object.entries(specialtyCount)
       .sort(([,a], [,b]) => (b as number) - (a as number))
       .slice(0, 10); // Top 10 specialties
+  }
+
+  /**
+   * GET /members/:id/categories
+   * Get the selected business subcategories for a member (PUBLIC)
+   */
+  async getMemberCategories(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const rows = await prisma.memberCategory.findMany({
+        where: { ghlContactId: id },
+        select: { subcategory: true },
+      });
+      res.json({ categories: rows.map(r => r.subcategory) });
+    } catch (error) {
+      console.error('Error fetching member categories:', error);
+      res.status(500).json({ error: 'Failed to fetch member categories', details: error.message });
+    }
+  }
+
+  /**
+   * PUT /members/:id/categories
+   * Set the business subcategories for a member (max 3, auth required — own profile or admin)
+   */
+  async updateMemberCategories(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const userGhlContactId = (req as any).user?.ghlContactId;
+      const userRole = (req as any).user?.role;
+
+      if (userGhlContactId !== id && userRole !== 'admin') {
+        return res.status(403).json({ error: 'You can only update your own categories or admin access required' });
+      }
+
+      const { categories } = req.body;
+      if (!Array.isArray(categories)) {
+        return res.status(400).json({ error: 'categories must be an array of subcategory ids' });
+      }
+      if (categories.length > 3) {
+        return res.status(400).json({ error: 'A maximum of 3 subcategories may be selected' });
+      }
+
+      // Replace all existing selections for this contact atomically
+      await prisma.$transaction([
+        prisma.memberCategory.deleteMany({ where: { ghlContactId: id } }),
+        ...(categories.length > 0
+          ? [prisma.memberCategory.createMany({
+              data: categories.map((subcategory: string) => ({ ghlContactId: id, subcategory })),
+            })]
+          : []),
+      ]);
+
+      res.json({ categories });
+    } catch (error) {
+      console.error('Error updating member categories:', error);
+      res.status(500).json({ error: 'Failed to update member categories', details: error.message });
+    }
   }
 }
 

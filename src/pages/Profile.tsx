@@ -128,6 +128,7 @@ const ProfilePage: React.FC = () => {
           twitterUrl: profileData.twitterUrl || '',
           linkedinUrl: profileData.linkedinUrl || ''
         });
+
       } catch (error) {
         console.error('Failed to load profile:', error);
         toast.error('Failed to load profile');
@@ -208,8 +209,7 @@ const ProfilePage: React.FC = () => {
     setIsEditing(false);
   };
 
-  const handlePasswordChange = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handlePasswordChange = async (e: React.FormEvent) => {    e.preventDefault();
     
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       toast.error('New passwords do not match');
@@ -633,8 +633,7 @@ const ProfilePage: React.FC = () => {
                 </div>
               </div>
 
-              <h3 className="font-semibold mb-3">Address Information</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <h3 className="font-semibold mb-3">Address Information</h3>              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="address1" className="block text-sm font-medium mb-1">
                     Street Address

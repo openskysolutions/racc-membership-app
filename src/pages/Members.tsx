@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { api } from '@/services/apiClient';
 import type { Member as BaseMember } from '@/types/member';
@@ -12,12 +13,15 @@ import { useAuthStore } from '@/stores/authStore';
 import { useMembersStore } from '@/stores/membersStore';
 import cn from 'classnames';
 import { isNativeApp } from '@/lib/platform';
+import CategoryBar from '@/components/CategoryBar';
+import { useBusinessCategories, getSubcategoryName } from '@/hooks/useBusinessCategories';
 
 // Extended member type for the directory page
 interface Member extends BaseMember {
   memberSince?: string;
   specialties?: string[];
   membershipTier?: 'elite' | 'enhanced' | 'basic';
+  categories?: string[]; // subcategory ids from local DB
   address?: {
     street: string;
     city: string;
@@ -47,12 +51,14 @@ const MembersPage: React.FC = () => {
   const navigate = useNavigate();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuthStore();
+  const { categories } = useBusinessCategories();
   
   // Use Zustand store for persistent filter/sort state
   const {
     searchTerm,
     roleFilter,
     specialtyFilter,
+    categoryFilter,
     viewMode,
     sortBy,
     lastMemberUpdate,
@@ -60,6 +66,7 @@ const MembersPage: React.FC = () => {
     setRoleFilter,
     setViewMode,
     setSortBy,
+    setCategoryFilter,
     resetFilters
   } = useMembersStore();
   
@@ -99,6 +106,7 @@ const MembersPage: React.FC = () => {
       // Add filters if present
       if (debouncedSearchTerm) params.append('search', debouncedSearchTerm);
       if (roleFilter !== 'all') params.append('role', roleFilter);
+      if (categoryFilter) params.append('category', categoryFilter);
 
       if (forceRefresh) params.append('refresh', 'true');
 
@@ -128,7 +136,7 @@ const MembersPage: React.FC = () => {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [debouncedSearchTerm, roleFilter, pageSize, sortBy]);
+  }, [debouncedSearchTerm, roleFilter, pageSize, sortBy, categoryFilter]);
 
   // Refresh function to force reload
   const refreshMembers = useCallback(() => {
@@ -288,14 +296,19 @@ const MembersPage: React.FC = () => {
   return (
     <div className="container py-8 px-3 md:px-6">
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-6">
         <h1 className="text-3xl font-bold mb-2">Member Directory</h1>
         <p className="text-muted-foreground">
-          {searchTerm || roleFilter !== 'all' || specialtyFilter !== 'all' 
+          {searchTerm || roleFilter !== 'all' || specialtyFilter !== 'all' || categoryFilter
             ? `Showing ${filteredMembers.length} of ${totalMembers} RACC members`
             : `Connect with ${totalMembers} active RACC members`
           }
         </p>
+      </div>
+
+      {/* Category Icon Bar */}
+      <div className="mb-4">
+        <CategoryBar selected={categoryFilter} onChange={setCategoryFilter} />
       </div>
 
       {/* Search and Filters */}
@@ -410,7 +423,7 @@ const MembersPage: React.FC = () => {
             {/* <p className="text-sm text-muted-foreground">
               Showing {filteredMembers.length} of {totalMembers} members
             </p> */}
-            {(debouncedSearchTerm || roleFilter !== 'all' || specialtyFilter !== 'all' || sortBy !== 'businessName') && (
+            {(debouncedSearchTerm || roleFilter !== 'all' || specialtyFilter !== 'all' || sortBy !== 'businessName' || categoryFilter) && (
               <Button
                 variant="outline"
                 size="sm"
@@ -440,7 +453,7 @@ const MembersPage: React.FC = () => {
         <>
           <div className={
             viewMode === 'grid' 
-              ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+              ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"
               : "space-y-0"
           }>
             {filteredMembers.map((member, index) => (
@@ -486,7 +499,20 @@ const MembersPage: React.FC = () => {
                 </div>
               </CardHeader>
 
-              <CardContent className="space-y-1 p-0 flex-1 ml-16">
+              <CardContent className="space-y-1 mt-3 p-0 flex-1">
+                {member.categories && member.categories.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {member.categories.map((subcatId) => (
+                      <Badge
+                        key={subcatId}
+                        variant="secondary"
+                        className={`font-medium bg-opacity-50 ${member.coverImage ? 'text-white hover:text-white bg-opacity-30' : 'text-primary hover:text-foreground'} text-xs px-2 py-0`}
+                      >
+                        {getSubcategoryName(subcatId, categories)}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
                 {/* {member.email && (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Mail className="email h-4 w-4" />

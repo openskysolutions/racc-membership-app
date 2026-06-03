@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Mail, Phone, Globe, Calendar, Shield, Edit, Save, X, ExternalLink, Briefcase, Plus, Facebook, Instagram, Twitter, Linkedin } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, Globe, Calendar, Shield, Edit, Save, X, ExternalLink, Briefcase, Plus, Facebook, Instagram, Twitter, Linkedin, Tag } from 'lucide-react';
+import BusinessCategorySelector from '@/components/BusinessCategorySelector';
+import { useBusinessCategories, getSubcategoryName, getCategoryForSubcategory } from '@/hooks/useBusinessCategories';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -48,6 +50,7 @@ const MemberDetailsPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const { triggerMemberRefresh } = useMembersStore();
+  const { categories } = useBusinessCategories();
   const fetchingRef = useRef(false);
 
   const [member, setMember] = useState<Member | null>(null);
@@ -57,6 +60,9 @@ const MemberDetailsPage: React.FC = () => {
   const [updating, setUpdating] = useState(false);
   const [companyJobs, setCompanyJobs] = useState<Job[]>([]);
   const [loadingJobs, setLoadingJobs] = useState(false);
+
+  // Business categories state
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [formData, setFormData] = useState<MemberFormData>({
     firstName: '',
     lastName: '',
@@ -116,6 +122,21 @@ const MemberDetailsPage: React.FC = () => {
         console.log('Tags is array:', Array.isArray(memberData.tags));
 
         setMember(memberData);
+
+        // Load categories (may already be embedded in member response)
+        if (memberData.categories) {
+          setSelectedCategories(memberData.categories);
+        } else {
+          try {
+            const catRes = await api.get(`/members/${memberData.id}/categories`);
+            if (catRes.ok) {
+              const catData = await catRes.json();
+              setSelectedCategories(catData.categories || []);
+            }
+          } catch {
+            // non-fatal
+          }
+        }
 
         // Initialize form data
         setFormData({
@@ -263,7 +284,7 @@ const MemberDetailsPage: React.FC = () => {
     setUpdating(true);
 
     try {
-      // Send form data with flat address fields
+      // Save profile fields to GHL
       const response = await api.put(`/members/${member.id}`, formData);
 
       if (!response.ok) {
@@ -271,9 +292,19 @@ const MemberDetailsPage: React.FC = () => {
       }
 
       const updatedMember: Member = await response.json();
-      setMember(updatedMember);
+      setMember({ ...updatedMember, categories: selectedCategories });
       setIsEditing(false);
-      
+
+      // Save business categories to local DB (fire alongside profile save)
+      try {
+        const catResponse = await api.put(`/members/${member.id}/categories`, { categories: selectedCategories });
+        if (!catResponse.ok) {
+          console.warn('Categories save returned non-OK status:', catResponse.status);
+        }
+      } catch (catErr) {
+        console.warn('Failed to save categories:', catErr);
+      }
+
       // Trigger refresh of members directory so changes appear immediately
       triggerMemberRefresh();
       toast.success('Profile updated successfully!');
@@ -901,6 +932,23 @@ const MemberDetailsPage: React.FC = () => {
                         onChange={handleFormChange}
                       />
                     </div>
+                    {/* Business Categories */}
+                    {canEdit && (
+                      <div>
+                        <h3 className="font-semibold mb-2 flex items-center gap-2">
+                          <Tag className="h-4 w-4" />
+                          Business Categories
+                        </h3>
+                        <BusinessCategorySelector
+                          selected={selectedCategories}
+                          onChange={setSelectedCategories}
+                        />
+                        <p className="mt-2 text-xs text-muted-foreground">
+                          Select up to 3 subcategories. Saved with your profile.
+                        </p>
+                      </div>
+                    )}
+
                     <Button
                       onClick={handleSave}
                       disabled={updating}
@@ -935,6 +983,28 @@ const MemberDetailsPage: React.FC = () => {
                         </div>
                       </div>
                     )} */}
+
+                    {/* Business Categories (read-only) */}
+                    {selectedCategories.length > 0 && (
+                      <div>
+                        <h3 className="font-semibold mb-2 flex items-center gap-2">
+                          <Tag className="h-4 w-4" />
+                          Business Categories
+                        </h3>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedCategories.map((subcatId) => (
+                            <Badge key={subcatId} variant="secondary">
+                              {getSubcategoryName(subcatId, categories)}
+                              {getCategoryForSubcategory(subcatId, categories) && (
+                                <span className="ml-1 text-muted-foreground opacity-70">
+                                  · {getCategoryForSubcategory(subcatId, categories)!.name}
+                                </span>
+                              )}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                     {/* Membership Information */}
                     <h3 className="font-semibold mb-0 flex items-center gap-2">

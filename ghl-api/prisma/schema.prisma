@@ -154,6 +154,49 @@ model JobApplication {
   @@map("job_applications")
 }
 
+// Member business categories - stores up to 3 subcategory selections per GHL contact
+// Keyed by ghlContactId (not userId) because not all GHL contacts have portal accounts
+model MemberCategory {
+  id           Int      @id @default(autoincrement())
+  ghlContactId String   // GoHighLevel contact ID
+  subcategory  String   // Subcategory id, e.g. "restaurants", "hvac"
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([ghlContactId, subcategory])
+  @@index([ghlContactId])
+  @@index([subcategory])
+  @@map("member_categories")
+}
+
+// Business category definitions — single source of truth for the category tree
+model BusinessCategory {
+  id            String               @id // e.g. "food-beverage"
+  name          String
+  icon          String               // lucide-react icon name, e.g. "Utensils"
+  sortOrder     Int                  @default(0)
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+
+  subcategories BusinessSubcategory[]
+
+  @@map("business_categories")
+}
+
+model BusinessSubcategory {
+  id         String           @id // e.g. "restaurants"
+  name       String
+  categoryId String
+  sortOrder  Int              @default(0)
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  category   BusinessCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([categoryId])
+  @@map("business_subcategories")
+}
+
 // Blog post categories
 model PostCategory {
   id          Int      @id @default(autoincrement())

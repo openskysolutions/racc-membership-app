@@ -69,6 +69,9 @@ export interface Member {
   // Gamification
   gamificationMeta?: GamificationMeta;
   
+  // Business Categories (subcategory ids, stored in local DB)
+  categories?: string[];
+
   // Computed Fields
   name?: string;
 }

@@ -97,4 +97,20 @@ router.delete('/cache', requireAuth, requireAdmin, async (req, res) => {
   return membersController.clearCache(req, res);
 });
 
+/**
+ * GET /members/:id/categories
+ * Get a member's selected business subcategories (PUBLIC)
+ */
+router.get('/:id/categories', async (req, res) => {
+  return membersController.getMemberCategories(req, res);
+});
+
+/**
+ * PUT /members/:id/categories
+ * Update a member's selected business subcategories (authenticated — own profile or admin)
+ */
+router.put('/:id/categories', requireAuth, async (req, res) => {
+  return membersController.updateMemberCategories(req, res);
+});
+
 export default router;

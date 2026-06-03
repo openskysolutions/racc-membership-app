@@ -14,6 +14,7 @@ import postCategoriesRoutes from '@/routes/post-categories';
 import postAuthorsRoutes from '@/routes/post-authors';
 import postsRoutes from '@/routes/posts';
 import formsRoutes from '@/routes/forms';
+import businessCategoriesRoutes from '@/routes/business-categories';
 
 // CommonJS imports
 const moderationRoutes = require('@/routes/moderation');
@@ -28,6 +29,7 @@ router.use('/auth', authRoutes); // Enhanced auth routes with registration
 router.use('/webhooks', webhookRoutes); // Payment and subscription webhooks
 router.use('/nominations', nominationsRoutes);
 router.use('/members', membersRoutes);
+router.use('/business-categories', businessCategoriesRoutes);
 router.use('/events', eventsRoutes);
 router.use('/moderation', moderationRoutes);
 router.use('/jobs', jobsRoutes);
