@@ -1,32 +1,7 @@
 import React from 'react';
-import {
-  Utensils,
-  Hotel,
-  ShoppingCart,
-  HeartPulse,
-  Briefcase,
-  Building2,
-  Factory,
-  Megaphone,
-  LayoutGrid,
-} from 'lucide-react';
-import { VscTools } from 'react-icons/vsc';
 import { useBusinessCategories } from '@/hooks/useBusinessCategories';
 import cn from 'classnames';
 
-// Icon name → icon component. Accepts any icon library (lucide-react, react-icons, etc.).
-type AnyIcon = React.ComponentType<{ className?: string; size?: number | string }>;
-const ICON_MAP: Record<string, AnyIcon> = {
-  Utensils,
-  Hotel,
-  ShoppingCart,
-  HeartPulse,
-  Briefcase,
-  VscTools,
-  Building2,
-  Factory,
-  Megaphone,
-};
 
 // Icon name → color classes (same color whether idle or active — indicator dot shows selection).
 const COLOR_MAP: Record<string, string> = {
@@ -95,7 +70,6 @@ const CategoryBar: React.FC<CategoryBarProps> = ({ selected, onChange }) => {
       </button>
 
       {categories.map((cat) => {
-        const Icon = ICON_MAP[cat.icon];
         const isActive = selected === cat.id;
         const color = COLOR_MAP[cat.icon];
         const bgUrl = BG_MAP[cat.icon];
