@@ -1,5 +1,7 @@
 import express from 'express';
 import path from 'path';
+import https from 'https';
+import http from 'http';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -14,8 +16,9 @@ const DEFAULT_IMAGE = `${SITE_URL}/images/og-image.png`;
 // Only proxy images from trusted GoHighLevel / Google Cloud Storage domains
 const ALLOWED_IMAGE_HOSTS = ['assets.cdn.filesafe.space', 'storage.googleapis.com', 'msgsndr.com'];
 
-// Image proxy – lets Facebook fetch CDN images through our domain
-app.get('/og-image-proxy', async (req, res) => {
+// Image proxy – pipes CDN images through our domain so Facebook can fetch them.
+// Only allows trusted GoHighLevel / Google Cloud Storage hosts.
+app.get('/og-image-proxy', (req, res) => {
   const imageUrl = req.query.url;
   if (!imageUrl) return res.status(400).end();
   try {
@@ -23,12 +26,16 @@ app.get('/og-image-proxy', async (req, res) => {
     if (!ALLOWED_IMAGE_HOSTS.some(h => parsed.hostname === h || parsed.hostname.endsWith(`.${h}`))) {
       return res.status(403).end();
     }
-    const upstream = await fetch(imageUrl);
-    if (!upstream.ok) return res.status(502).end();
-    res.setHeader('Content-Type', upstream.headers.get('content-type') || 'image/jpeg');
-    res.setHeader('Cache-Control', 'public, max-age=86400');
-    const buf = await upstream.arrayBuffer();
-    return res.send(Buffer.from(buf));
+    const client = parsed.protocol === 'https:' ? https : http;
+    client.get(imageUrl, (upstream) => {
+      res.setHeader('Content-Type', upstream.headers['content-type'] || 'image/jpeg');
+      if (upstream.headers['content-length']) {
+        res.setHeader('Content-Length', upstream.headers['content-length']);
+      }
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      res.status(upstream.statusCode || 200);
+      upstream.pipe(res);
+    }).on('error', () => res.status(500).end());
   } catch {
     return res.status(500).end();
   }
