@@ -1,7 +1,5 @@
 import express from 'express';
 import path from 'path';
-import https from 'https';
-import http from 'http';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -10,36 +8,8 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const port = process.env.FRONTEND_PORT || 3001;
 const API_BASE = `http://localhost:${process.env.PORT || 3000}/api`;
-const SITE_URL = 'https://members.richfieldareachamber.com';
+const SITE_URL = 'https://members.richfieldareachamber.com'\;
 const DEFAULT_IMAGE = `${SITE_URL}/images/og-image.png`;
-
-// Only proxy images from trusted GoHighLevel / Google Cloud Storage domains
-const ALLOWED_IMAGE_HOSTS = ['assets.cdn.filesafe.space', 'storage.googleapis.com', 'msgsndr.com'];
-
-// Image proxy – pipes CDN images through our domain so Facebook can fetch them.
-// Only allows trusted GoHighLevel / Google Cloud Storage hosts.
-app.get('/og-image-proxy', (req, res) => {
-  const imageUrl = req.query.url;
-  if (!imageUrl) return res.status(400).end();
-  try {
-    const parsed = new URL(imageUrl);
-    if (!ALLOWED_IMAGE_HOSTS.some(h => parsed.hostname === h || parsed.hostname.endsWith(`.${h}`))) {
-      return res.status(403).end();
-    }
-    const client = parsed.protocol === 'https:' ? https : http;
-    client.get(imageUrl, (upstream) => {
-      res.setHeader('Content-Type', upstream.headers['content-type'] || 'image/jpeg');
-      if (upstream.headers['content-length']) {
-        res.setHeader('Content-Length', upstream.headers['content-length']);
-      }
-      res.setHeader('Cache-Control', 'public, max-age=86400');
-      res.status(upstream.statusCode || 200);
-      upstream.pipe(res);
-    }).on('error', () => res.status(500).end());
-  } catch {
-    return res.status(500).end();
-  }
-});
 
 // Detect social media / link-preview crawlers
 function isSocialCrawler(ua = '') {
@@ -69,13 +39,11 @@ function buildOgHtml({ title, description, image, url }) {
 </html>`;
 }
 
-// Add logging middleware
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
   next();
 });
 
-// Serve static files from the dist directory
 app.use(express.static(path.join(__dirname, 'dist')));
 
 // OG tag injection for blog post pages when requested by social crawlers
@@ -92,9 +60,7 @@ app.get('/blog/:slug', async (req, res, next) => {
     const post = body.data || body;
     if (!post || !post.title) return next();
     const description = post.metadata || 'Read this post on the Richfield Area Chamber of Commerce member portal.';
-    const image = post.mainImage
-      ? `${SITE_URL}/og-image-proxy?url=${encodeURIComponent(post.mainImage)}`
-      : DEFAULT_IMAGE;
+    const image = post.mainImage || DEFAULT_IMAGE;
     const html = buildOgHtml({
       title: post.title || 'Richfield Area Chamber of Commerce',
       description,
@@ -109,7 +75,6 @@ app.get('/blog/:slug', async (req, res, next) => {
   }
 });
 
-// Handle client-side routing by serving index.html for all non-API routes
 app.get('*', (req, res) => {
   console.log(`Serving index.html for route: ${req.path}`);
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
