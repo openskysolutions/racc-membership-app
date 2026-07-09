@@ -62,10 +62,11 @@ app.get('/blog/:slug', async (req, res, next) => {
     const post = body.data || body;
     if (!post || !post.title) return next();
     const description = post.metadata || 'Read this post on the Richfield Area Chamber of Commerce member portal.';
+    const rawImage = post.mainImage ? `${post.mainImage}?v=1` : DEFAULT_IMAGE;
     const html = buildOgHtml({
       title: post.title || 'Richfield Area Chamber of Commerce',
       description,
-      image: post.mainImage || DEFAULT_IMAGE,
+      image: rawImage,
       url: `${SITE_URL}/blog/${req.params.slug}`,
     });
     res.setHeader('Content-Type', 'text/html');
