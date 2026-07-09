@@ -7,6 +7,37 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const port = process.env.FRONTEND_PORT || 3001;
+const API_BASE = `http://localhost:${process.env.PORT || 3000}/api`;
+const SITE_URL = 'https://members.richfieldareachamber.com';
+const DEFAULT_IMAGE = `${SITE_URL}/images/og-image.png`;
+
+// Detect social media / link-preview crawlers
+function isSocialCrawler(ua = '') {
+  return /facebookexternalhit|facebookcatalog|Twitterbot|LinkedInBot|Slackbot|WhatsApp|Discordbot|TelegramBot|pinterest|Googlebot/i.test(ua);
+}
+
+// Build an OG-only HTML shell so scrapers get meaningful meta tags
+function buildOgHtml({ title, description, image, url }) {
+  const esc = (s = '') => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>${esc(title)}</title>
+  <meta name="description" content="${esc(description)}" />
+  <meta property="og:type" content="article" />
+  <meta property="og:url" content="${esc(url)}" />
+  <meta property="og:title" content="${esc(title)}" />
+  <meta property="og:description" content="${esc(description)}" />
+  <meta property="og:image" content="${esc(image)}" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="${esc(title)}" />
+  <meta name="twitter:description" content="${esc(description)}" />
+  <meta name="twitter:image" content="${esc(image)}" />
+</head>
+<body></body>
+</html>`;
+}
 
 // Add logging middleware
 app.use((req, res, next) => {
@@ -16,6 +47,32 @@ app.use((req, res, next) => {
 
 // Serve static files from the dist directory
 app.use(express.static(path.join(__dirname, 'dist')));
+
+// OG tag injection for blog post pages when requested by social crawlers
+app.get('/blog/:slug', async (req, res, next) => {
+  const ua = req.headers['user-agent'] || '';
+  if (!isSocialCrawler(ua)) return next();
+
+  try {
+    const apiUrl = `${API_BASE}/posts/slug/${encodeURIComponent(req.params.slug)}`;
+    const apiRes = await fetch(apiUrl);
+    if (!apiRes.ok) return next();
+
+    const post = await apiRes.json();
+    const description = post.metadata || 'Read this post on the Richfield Area Chamber of Commerce member portal.';
+    const html = buildOgHtml({
+      title: post.title || 'Richfield Area Chamber of Commerce',
+      description,
+      image: post.mainImage || DEFAULT_IMAGE,
+      url: `${SITE_URL}/blog/${req.params.slug}`,
+    });
+    res.setHeader('Content-Type', 'text/html');
+    return res.send(html);
+  } catch (err) {
+    console.error('OG scraper handler error:', err);
+    return next();
+  }
+});
 
 // Handle client-side routing by serving index.html for all non-API routes
 app.get('*', (req, res) => {
