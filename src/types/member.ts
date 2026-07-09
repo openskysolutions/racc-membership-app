@@ -35,6 +35,7 @@ export interface Member {
   memberSince?: string;
   specialties?: string[];
   membershipTier?: 'elite' | 'enhanced' | 'basic' | 'standard';
+  hideMembershipTier?: boolean;
   coupon_codes?: string[];
   tagline?: string;
   

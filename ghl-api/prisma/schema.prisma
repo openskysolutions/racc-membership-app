@@ -18,6 +18,7 @@ model User {
   emailVerified Boolean   @default(false)
   ghlContactId  String?   @unique
   lastLoginAt   DateTime?
+  hideMembershipTier        Boolean   @default(false)
   passwordResetToken        String?
   passwordResetTokenExpiry  DateTime?
   createdAt     DateTime  @default(now())

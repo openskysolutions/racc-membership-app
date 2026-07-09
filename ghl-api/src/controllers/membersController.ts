@@ -412,16 +412,23 @@ class MembersController {
       // Transform to member format
       const member = this.transformContactToMember(contact);
 
-      // Fetch categories from local DB
-      const categoryRows = await prisma.memberCategory.findMany({
-        where: { ghlContactId: id },
-        select: { subcategory: true },
-      });
+      // Fetch categories and preferences from local DB
+      const [categoryRows, userPrefs] = await Promise.all([
+        prisma.memberCategory.findMany({
+          where: { ghlContactId: id },
+          select: { subcategory: true },
+        }),
+        prisma.user.findUnique({
+          where: { ghlContactId: id },
+          select: { hideMembershipTier: true },
+        }),
+      ]);
       
       // Add computed fields for API compatibility
       const memberWithComputedFields = {
         ...member,
         categories: categoryRows.map(r => r.subcategory),
+        hideMembershipTier: userPrefs?.hideMembershipTier ?? false,
         name: `${member.firstName} ${member.lastName}`.trim(),
         membershipTier: this.getMembershipTier(member)
       };
@@ -492,6 +499,14 @@ class MembersController {
         email: updateData.email
       };
       
+      // Save hideMembershipTier preference to local DB if provided
+      if (updateData.hideMembershipTier !== undefined) {
+        await prisma.user.updateMany({
+          where: { ghlContactId: id },
+          data: { hideMembershipTier: Boolean(updateData.hideMembershipTier) },
+        });
+      }
+
       // Update contact in GoHighLevel
       const ghlResponse = await ghlService.updateContact(id, ghlUpdateData);
       
@@ -508,8 +523,14 @@ class MembersController {
       
       const updatedMember = this.transformContactToMember(updatedContact);
       
+      const updatedUserPrefs = await prisma.user.findUnique({
+        where: { ghlContactId: id },
+        select: { hideMembershipTier: true },
+      });
+
       const memberWithComputedFields = {
         ...updatedMember,
+        hideMembershipTier: updatedUserPrefs?.hideMembershipTier ?? false,
         name: `${updatedMember.firstName} ${updatedMember.lastName}`.trim(),
         membershipTier: this.getMembershipTier(updatedMember)
       };

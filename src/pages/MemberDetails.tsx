@@ -43,6 +43,7 @@ interface MemberFormData {
   instagramUrl: string;
   twitterUrl: string;
   linkedinUrl: string;
+  hideMembershipTier: boolean;
 }
 
 const MemberDetailsPage: React.FC = () => {
@@ -84,7 +85,8 @@ const MemberDetailsPage: React.FC = () => {
     facebookUrl: '',
     instagramUrl: '',
     twitterUrl: '',
-    linkedinUrl: ''
+    linkedinUrl: '',
+    hideMembershipTier: false
   });
 
   useEffect(() => {
@@ -160,7 +162,8 @@ const MemberDetailsPage: React.FC = () => {
           facebookUrl: (memberData as any).facebookUrl || '',
           instagramUrl: (memberData as any).instagramUrl || '',
           twitterUrl: (memberData as any).twitterUrl || '',
-          linkedinUrl: (memberData as any).linkedinUrl || ''
+          linkedinUrl: (memberData as any).linkedinUrl || '',
+          hideMembershipTier: (memberData as any).hideMembershipTier ?? false
         });
       } catch (err) {
         console.error('Error fetching member:', err);
@@ -339,7 +342,8 @@ const MemberDetailsPage: React.FC = () => {
         facebookUrl: (member as any).facebookUrl || '',
         instagramUrl: (member as any).instagramUrl || '',
         twitterUrl: (member as any).twitterUrl || '',
-        linkedinUrl: (member as any).linkedinUrl || ''
+        linkedinUrl: (member as any).linkedinUrl || '',
+        hideMembershipTier: (member as any).hideMembershipTier ?? false
       });
     }
     setIsEditing(false);
@@ -949,6 +953,20 @@ const MemberDetailsPage: React.FC = () => {
                       </div>
                     )}
 
+                    {/* Privacy Settings */}
+                    <div>
+                      <h3 className="font-semibold mb-2">Privacy</h3>
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={formData.hideMembershipTier}
+                          onChange={(e) => setFormData(prev => ({ ...prev, hideMembershipTier: e.target.checked }))}
+                          className="h-4 w-4 rounded border-input"
+                        />
+                        <span className="text-sm">Hide membership tier from my public profile</span>
+                      </label>
+                    </div>
+
                     <Button
                       onClick={handleSave}
                       disabled={updating}
@@ -1021,15 +1039,20 @@ const MemberDetailsPage: React.FC = () => {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-3">
-                        <Shield className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <p className="text-sm font-medium">Membership Tier</p>
-                          <p className="text-sm text-muted-foreground">
-                            {capitalizeFirst((member as any).membershipTier || 'Standard')}
-                          </p>
+                      {(canEdit || !(member as any).hideMembershipTier) && (
+                        <div className="flex items-center gap-3">
+                          <Shield className="h-4 w-4 text-muted-foreground" />
+                          <div>
+                            <p className="text-sm font-medium">Membership Tier</p>
+                            <p className="text-sm text-muted-foreground">
+                              {capitalizeFirst((member as any).membershipTier || 'Standard')}
+                              {(member as any).hideMembershipTier && (
+                                <span className="ml-2 text-xs text-muted-foreground/60">(hidden from others)</span>
+                              )}
+                            </p>
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
                   </div>
                 )}
