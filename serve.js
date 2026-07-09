@@ -58,7 +58,9 @@ app.get('/blog/:slug', async (req, res, next) => {
     const apiRes = await fetch(apiUrl);
     if (!apiRes.ok) return next();
 
-    const post = await apiRes.json();
+    const body = await apiRes.json();
+    const post = body.data || body;
+    if (!post || !post.title) return next();
     const description = post.metadata || 'Read this post on the Richfield Area Chamber of Commerce member portal.';
     const html = buildOgHtml({
       title: post.title || 'Richfield Area Chamber of Commerce',
