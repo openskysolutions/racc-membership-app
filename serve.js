@@ -11,6 +11,29 @@ const API_BASE = `http://localhost:${process.env.PORT || 3000}/api`;
 const SITE_URL = 'https://members.richfieldareachamber.com';
 const DEFAULT_IMAGE = `${SITE_URL}/images/og-image.png`;
 
+// Only proxy images from trusted GoHighLevel / Google Cloud Storage domains
+const ALLOWED_IMAGE_HOSTS = ['assets.cdn.filesafe.space', 'storage.googleapis.com', 'msgsndr.com'];
+
+// Image proxy – lets Facebook fetch CDN images through our domain
+app.get('/og-image-proxy', async (req, res) => {
+  const imageUrl = req.query.url;
+  if (!imageUrl) return res.status(400).end();
+  try {
+    const parsed = new URL(imageUrl);
+    if (!ALLOWED_IMAGE_HOSTS.some(h => parsed.hostname === h || parsed.hostname.endsWith(`.${h}`))) {
+      return res.status(403).end();
+    }
+    const upstream = await fetch(imageUrl);
+    if (!upstream.ok) return res.status(502).end();
+    res.setHeader('Content-Type', upstream.headers.get('content-type') || 'image/jpeg');
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    const buf = await upstream.arrayBuffer();
+    return res.send(Buffer.from(buf));
+  } catch {
+    return res.status(500).end();
+  }
+});
+
 // Detect social media / link-preview crawlers
 function isSocialCrawler(ua = '') {
   return /facebookexternalhit|facebookcatalog|Twitterbot|LinkedInBot|Slackbot|WhatsApp|Discordbot|TelegramBot|pinterest|Googlebot/i.test(ua);
@@ -62,11 +85,13 @@ app.get('/blog/:slug', async (req, res, next) => {
     const post = body.data || body;
     if (!post || !post.title) return next();
     const description = post.metadata || 'Read this post on the Richfield Area Chamber of Commerce member portal.';
-    const rawImage = post.mainImage ? `${post.mainImage}?v=1` : DEFAULT_IMAGE;
+    const image = post.mainImage
+      ? `${SITE_URL}/og-image-proxy?url=${encodeURIComponent(post.mainImage)}`
+      : DEFAULT_IMAGE;
     const html = buildOgHtml({
       title: post.title || 'Richfield Area Chamber of Commerce',
       description,
-      image: rawImage,
+      image,
       url: `${SITE_URL}/blog/${req.params.slug}`,
     });
     res.setHeader('Content-Type', 'text/html');
