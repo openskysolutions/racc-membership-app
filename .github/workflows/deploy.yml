@@ -367,7 +367,7 @@ jobs:
               }
 
               # OG image proxy - no cache-override headers so Facebook can fetch images
-              location /og-image-proxy {
+              location /blog-image {
                   proxy_pass http://localhost:3001;
                   proxy_http_version 1.1;
                   proxy_set_header Host \$host;
