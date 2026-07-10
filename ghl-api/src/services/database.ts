@@ -184,10 +184,14 @@ class DatabaseService {
   /**
    * Get all users with optional pagination
    */
-  async getAllUsers(limit?: number, offset?: number): Promise<User[]> {
+  async getAllUsers(limit?: number, offset?: number, emailSearch?: string): Promise<User[]> {
     const users = await prisma.user.findMany({
-      take: limit,
-      skip: offset,
+      // When filtering by email, skip the row-count cap so the filter sees all rows
+      take: emailSearch ? undefined : limit,
+      skip: emailSearch ? undefined : offset,
+      where: emailSearch
+        ? { email: { contains: emailSearch, mode: 'insensitive' } }
+        : undefined,
       orderBy: { createdAt: 'desc' },
     });
 

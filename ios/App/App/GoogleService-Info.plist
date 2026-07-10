@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>API_KEY</key>
+	<string>AIzaSyBcwsXbYjwsjoDwlQvUYcSM92h9nrcuOA0</string>
+	<key>GCM_SENDER_ID</key>
+	<string>365694408320</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.racc.membership</string>
+	<key>PROJECT_ID</key>
+	<string>richfield-area-chamber</string>
+	<key>STORAGE_BUCKET</key>
+	<string>richfield-area-chamber.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:365694408320:ios:c8f99043b0bf5ae3de7865</string>
+</dict>
+</plist>

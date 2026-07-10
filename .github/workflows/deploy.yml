@@ -95,6 +95,10 @@ jobs:
           EMAIL_FROM: ${{ vars.EMAIL_FROM }}
           EMAIL_FROM_NAME: ${{ vars.EMAIL_FROM_NAME }}
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+          # Firebase / push notification variables
+          FCM_PROJECT_ID: ${{ vars.FCM_PROJECT_ID }}
+          FCM_CLIENT_EMAIL: ${{ secrets.FCM_CLIENT_EMAIL }}
+          FCM_PRIVATE_KEY: ${{ secrets.FCM_PRIVATE_KEY }}
           # Frontend environment variables
           VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
           TEMP_GHL_TOKEN: ${{ secrets.TEMP_GHL_TOKEN }}
@@ -133,6 +137,9 @@ jobs:
           export EMAIL_FROM="$EMAIL_FROM"
           export EMAIL_FROM_NAME="$EMAIL_FROM_NAME"
           export SENDGRID_API_KEY="$SENDGRID_API_KEY"
+          export FCM_PROJECT_ID="$FCM_PROJECT_ID"
+          export FCM_CLIENT_EMAIL="$FCM_CLIENT_EMAIL"
+          export FCM_PRIVATE_KEY="$FCM_PRIVATE_KEY"
           export VITE_API_BASE_URL="$VITE_API_BASE_URL"
           export TEMP_GHL_TOKEN="$TEMP_GHL_TOKEN"
           
@@ -154,6 +161,9 @@ jobs:
           echo "EMAIL_FROM=\$EMAIL_FROM" >> .env
           echo "EMAIL_FROM_NAME=\$EMAIL_FROM_NAME" >> .env
           echo "SENDGRID_API_KEY=\$SENDGRID_API_KEY" >> .env
+          echo "FCM_PROJECT_ID=\$FCM_PROJECT_ID" >> .env
+          echo "FCM_CLIENT_EMAIL=\$FCM_CLIENT_EMAIL" >> .env
+          echo "FCM_PRIVATE_KEY=\$FCM_PRIVATE_KEY" >> .env
           
           # Install all dependencies (including devDependencies for build tools)
           npm install

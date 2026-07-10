@@ -15,6 +15,7 @@ import postAuthorsRoutes from '@/routes/post-authors';
 import postsRoutes from '@/routes/posts';
 import formsRoutes from '@/routes/forms';
 import businessCategoriesRoutes from '@/routes/business-categories';
+import notificationsRoutes from '@/routes/notifications';
 
 // CommonJS imports
 const moderationRoutes = require('@/routes/moderation');
@@ -47,5 +48,8 @@ router.use('/posts', postsRoutes);
 
 // Forms routes
 router.use('/forms', formsRoutes);
+
+// Notification routes
+router.use('/notifications', notificationsRoutes);
 
 export default router;

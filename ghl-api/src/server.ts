@@ -3,6 +3,7 @@ require('tsconfig-paths/register');
 require('dotenv').config();
 import app from './app';
 import { databaseService } from '@/services/database';
+import { startEventReminderScheduler } from '@/services/eventReminderScheduler';
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
@@ -26,6 +27,9 @@ async function startServer() {
       if (process.send) {
         process.send('ready');
       }
+
+      // Start scheduled jobs
+      startEventReminderScheduler();
     });
   } catch (error) {
     console.error('Failed to start server:', error);

@@ -6,6 +6,8 @@ PODS:
   - CapacitorCordova (7.4.4)
   - CapacitorPluginSafeArea (4.0.0):
     - Capacitor
+  - CapacitorPushNotifications (7.0.7):
+    - Capacitor
   - CapacitorSplashScreen (7.0.3):
     - Capacitor
   - CapacitorStatusBar (7.0.3):
@@ -20,6 +22,7 @@ DEPENDENCIES:
   - "CapacitorBrowser (from `../../node_modules/@capacitor/browser`)"
   - "CapacitorCordova (from `../../node_modules/@capacitor/ios`)"
   - CapacitorPluginSafeArea (from `../../node_modules/capacitor-plugin-safe-area`)
+  - "CapacitorPushNotifications (from `../../node_modules/@capacitor/push-notifications`)"
   - "CapacitorSplashScreen (from `../../node_modules/@capacitor/splash-screen`)"
   - "CapacitorStatusBar (from `../../node_modules/@capacitor/status-bar`)"
   - "CapgoCapacitorNavigationBar (from `../../node_modules/@capgo/capacitor-navigation-bar`)"
@@ -34,6 +37,8 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/@capacitor/ios"
   CapacitorPluginSafeArea:
     :path: "../../node_modules/capacitor-plugin-safe-area"
+  CapacitorPushNotifications:
+    :path: "../../node_modules/@capacitor/push-notifications"
   CapacitorSplashScreen:
     :path: "../../node_modules/@capacitor/splash-screen"
   CapacitorStatusBar:
@@ -48,11 +53,12 @@ SPEC CHECKSUMS:
   CapacitorBrowser: 45c681e7abc3b4384e54eb52bafeef1347d98fa8
   CapacitorCordova: bf648a636f3c153f652d312ae145fb508b6ffced
   CapacitorPluginSafeArea: af80830df43015a915e504a56318a3027d3fc806
+  CapacitorPushNotifications: f7e0909b16354405bbf4fd50b1ae5111843220ab
   CapacitorSplashScreen: d06ae8804808e9f649a08e7bb7f283c77b688084
   CapacitorStatusBar: 7d8fcbd6768db014bd721d75e246590b014928e8
   CapgoCapacitorNavigationBar: 7906d7ddd78a318c183b009d1f4fccdb6ce36ba2
   EbarooniCapacitorCalendar: 85a986287f9e82e06f0faf438fec4142526f36e9
 
-PODFILE CHECKSUM: ead70077490ec722a4f03de7ca57fab42b884ece
+PODFILE CHECKSUM: a4c51a5cd8efbff05dd8332685260ef50d29fed0
 
 COCOAPODS: 1.9.3

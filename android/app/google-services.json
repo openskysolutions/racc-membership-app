@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "365694408320",
+    "project_id": "richfield-area-chamber",
+    "storage_bucket": "richfield-area-chamber.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:365694408320:android:cc3ff2435ea64bb1de7865",
+        "android_client_info": {
+          "package_name": "com.racc.membership"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDYmDjp0dA-3C32liTZEVObsZuVqlVz3nY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

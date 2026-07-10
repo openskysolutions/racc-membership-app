@@ -3,7 +3,7 @@
  * Only accessible to users with admin role
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '@/stores/authStore';
 import { adminService, User, AdminStats } from '@/services/admin';
 import { api } from '@/services/apiClient';
@@ -17,7 +17,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Label } from '@/components/ui/label';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, Edit, Trash2, Search, MoreHorizontal, AlertTriangle, CheckCircle, Clock, Award, LucideRefreshCcw, Star, FileText } from 'lucide-react';
+import { Users, Edit, Trash2, Search, MoreHorizontal, AlertTriangle, CheckCircle, Clock, Award, LucideRefreshCcw, Star, FileText, Bell } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
 import { RiShieldUserFill } from "react-icons/ri";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
@@ -476,7 +477,7 @@ export default function AdminPage() {
             loadNominations();
           }
         }}>
-          <TabsList className={`w-full grid gap-1 ${isFullAdmin ? 'grid-cols-3 md:grid-cols-6 h-auto md:h-10' : 'grid-cols-3 md:inline-flex md:w-auto'}`}>
+          <TabsList className={`w-full grid gap-1 ${isFullAdmin ? 'grid-cols-3 md:grid-cols-7 h-auto md:h-10' : 'grid-cols-3 md:inline-flex md:w-auto'}`}>
             {isFullAdmin && (
               <>
                 <TabsTrigger value="overview" className="flex-col sm:flex-row bg-transparent border-0 h-10 sm:h-8 py-2 sm:py-0 gap-1 sm:gap-2">
@@ -506,6 +507,10 @@ export default function AdminPage() {
                 <TabsTrigger value="blog-posts" className="flex-col sm:flex-row bg-transparent border-0 h-10 sm:h-8 py-2 sm:py-0 gap-1 sm:gap-2" onClick={() => window.location.href = '/admin/posts'}>
                   <FileText className="h-4 w-4 hidden sm:inline-block" />
                   <span className="text-xs sm:text-sm">Blog Posts</span>
+                </TabsTrigger>
+                <TabsTrigger value="notifications" className="flex-col sm:flex-row bg-transparent border-0 h-10 sm:h-8 py-2 sm:py-0 gap-1 sm:gap-2">
+                  <Bell className="h-4 w-4 hidden sm:inline-block" />
+                  <span className="text-xs sm:text-sm">Notifications</span>
                 </TabsTrigger>
               </>
             )}
@@ -1388,6 +1393,13 @@ export default function AdminPage() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* Notifications Tab */}
+          {isFullAdmin && (
+            <TabsContent value="notifications" className="space-y-6">
+              <NotificationsTab />
+            </TabsContent>
+          )}
         </Tabs>
 
         {/* Edit User Dialog */}
@@ -1566,6 +1578,298 @@ function UserTableRow({
         </DropdownMenu>
       </td>
     </tr>
+  );
+}
+
+// Notifications Tab Component
+type NotifMember = { id: string; firstName?: string; lastName?: string; email: string };
+
+function NotificationsTab() {
+  const [title, setTitle] = useState('');
+  const [body, setBody] = useState('');
+  const [sending, setSending] = useState(false);
+  const [result, setResult] = useState<{ sent: number; failed: number } | null>(null);
+
+  // Member targeting
+  const [targetAll, setTargetAll] = useState(true);
+  const [memberSearch, setMemberSearch] = useState('');
+  const [memberResults, setMemberResults] = useState<NotifMember[]>([]);
+  const [selectedMembers, setSelectedMembers] = useState<NotifMember[]>([]);
+  const selectedMembersRef = useRef<NotifMember[]>([]);
+  const [searching, setSearching] = useState(false);
+
+  // Keep ref in sync so the search effect can read latest without being a dependency
+  useEffect(() => { selectedMembersRef.current = selectedMembers; }, [selectedMembers]);
+
+  // Reminder settings
+  const [reminderHours, setReminderHours] = useState<number>(24);
+  const [reminderHoursInput, setReminderHoursInput] = useState<string>('24');
+  const [savingSettings, setSavingSettings] = useState(false);
+
+  useEffect(() => {
+    api.get('/notifications/settings')
+      .then(r => r.json())
+      .then(d => {
+        setReminderHours(d.reminderHours);
+        setReminderHoursInput(String(d.reminderHours));
+      })
+      .catch(() => {});
+  }, []);
+
+  async function handleSaveSettings() {
+    const val = parseInt(reminderHoursInput, 10);
+    if (isNaN(val) || val < 1 || val > 168) return;
+    setSavingSettings(true);
+    try {
+      const res = await api.put('/notifications/settings', { reminderHours: val });
+      if (!res.ok) throw new Error();
+      setReminderHours(val);
+      toast.success('Settings saved');
+    } catch {
+      toast.error('Failed to save settings');
+    } finally {
+      setSavingSettings(false);
+    }
+  }
+
+  useEffect(() => {
+    if (!targetAll) {
+      setMemberResults([]);
+      return;
+    }
+    if (memberSearch.trim().length < 2) {
+      setMemberResults([]);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const res = await api.get(`/members?search=${encodeURIComponent(memberSearch)}&limit=50`);
+        const data = await res.json();
+        const term = memberSearch.toLowerCase();
+        const filtered = (data.members ?? []).filter((m: any) =>
+          m.firstName?.toLowerCase().includes(term) ||
+          m.lastName?.toLowerCase().includes(term) ||
+          m.email?.toLowerCase().includes(term) ||
+          `${m.firstName ?? ''} ${m.lastName ?? ''}`.toLowerCase().includes(term)
+        );
+        // Exclude already-selected members (read from ref to avoid dependency)
+        const selectedIds = new Set(selectedMembersRef.current.map(s => s.id));
+        setMemberResults(filtered.filter((m: any) => !selectedIds.has(m.id)).slice(0, 10));
+      } catch {
+        // ignore
+      } finally {
+        setSearching(false);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [memberSearch, targetAll]);
+
+  function addMember(m: NotifMember) {
+    setSelectedMembers(prev => [...prev, m]);
+    setMemberResults([]);
+    setMemberSearch('');
+  }
+
+  function removeMember(id: string) {
+    setSelectedMembers(prev => prev.filter(m => m.id !== id));
+  }
+
+  async function handleSend() {
+    if (!title.trim() || !body.trim()) return;
+    if (!targetAll && selectedMembers.length === 0) return;
+    setSending(true);
+    setResult(null);
+    try {
+      const payload: Record<string, any> = { title: title.trim(), body: body.trim() };
+      if (!targetAll) payload.emails = selectedMembers.map(m => m.email);
+      const res = await api.post('/notifications/send', payload);
+      if (!res.ok) throw new Error('Request failed');
+      const data = await res.json();
+      setResult(data);
+      if (data.sent > 0) {
+        toast.success(`Notification sent to ${data.sent} device${data.sent !== 1 ? 's' : ''}`);
+        setTitle('');
+        setBody('');
+        setSelectedMembers([]);
+        setMemberSearch('');
+      } else {
+        toast.info('No registered devices found');
+      }
+    } catch {
+      toast.error('Failed to send notification');
+    } finally {
+      setSending(false);
+    }
+  }
+
+  const sendLabel = sending
+    ? 'Sending…'
+    : targetAll
+    ? 'Send to All Members'
+    : selectedMembers.length > 0
+    ? `Send to ${selectedMembers.length} Member${selectedMembers.length !== 1 ? 's' : ''}`
+    : 'Send';
+
+  return (
+    <div className="space-y-6 flex flex-col lg:flex-row lg:items-start gap-6">
+    <Card className="max-w-xl">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Bell className="h-5 w-5" />
+          Send Push Notification
+        </CardTitle>
+        <CardDescription>
+          Send a push notification to all members or specific members.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Audience */}
+        <div className="space-y-2">
+          <Label>Audience</Label>
+          <div className="flex gap-4">
+            <label className="flex items-center gap-2 cursor-pointer text-sm">
+              <input type="radio" checked={targetAll} onChange={() => {
+                setTargetAll(true);
+                setMemberSearch('');
+                setMemberResults([]);
+                setSelectedMembers([]);
+              }} />
+              All members
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer text-sm">
+              <input type="radio" checked={!targetAll} onChange={() => setTargetAll(false)} />
+              Specific members
+            </label>
+          </div>
+        </div>
+
+        {/* Member search */}
+        {!targetAll && (
+          <div className="space-y-2">
+            <Label htmlFor="member-search">Add members</Label>
+            {/* Selected members chips */}
+            {selectedMembers.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {selectedMembers.map(m => (
+                  <span key={m.id} className="flex items-center gap-1 rounded-full border bg-muted px-3 py-1 text-sm">
+                    {m.firstName} {m.lastName}
+                    <button
+                      className="ml-1 text-muted-foreground hover:text-foreground"
+                      onClick={() => removeMember(m.id)}
+                    >✕</button>
+                  </span>
+                ))}
+              </div>
+            )}
+            <div className="relative">
+              <Input
+                id="member-search"
+                placeholder="Search by name or email…"
+                value={memberSearch}
+                onChange={(e) => setMemberSearch(e.target.value)}
+              />
+              {memberResults.length > 0 && (
+                <div className="absolute z-10 mt-1 w-full rounded-md border bg-background shadow-md">
+                  {memberResults.map((m) => (
+                    <button
+                      key={m.id}
+                      className="w-full px-3 py-2 text-left text-sm hover:bg-muted"
+                      onClick={() => addMember(m)}
+                    >
+                      {m.firstName} {m.lastName}
+                      <span className="ml-2 text-muted-foreground">{m.email}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+              {searching && <p className="mt-1 text-xs text-muted-foreground">Searching…</p>}
+            </div>
+          </div>
+        )}
+
+        {/* Title */}
+        <div className="space-y-2">
+          <Label htmlFor="notif-title">Title</Label>
+          <Input
+            id="notif-title"
+            placeholder="e.g. Chamber Update"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            maxLength={100}
+          />
+        </div>
+
+        {/* Body */}
+        <div className="space-y-2">
+          <Label htmlFor="notif-body">Message</Label>
+          <Textarea
+            id="notif-body"
+            placeholder="e.g. Join us this Friday for our monthly networking event!"
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            maxLength={500}
+            rows={4}
+          />
+          <p className="text-xs text-muted-foreground text-right">{body.length}/500</p>
+        </div>
+
+        {result && (
+          <div className="rounded-md bg-muted px-4 py-3 text-sm">
+            Delivered to <strong>{result.sent}</strong> device{result.sent !== 1 ? 's' : ''}
+            {result.failed > 0 && <span className="text-muted-foreground"> ({result.failed} failed)</span>}
+          </div>
+        )}
+
+        <Button
+          onClick={handleSend}
+          disabled={sending || !title.trim() || !body.trim() || (!targetAll && selectedMembers.length === 0)}
+          className="w-full"
+        >
+          {sendLabel}
+        </Button>
+      </CardContent>
+    </Card>
+
+    <Card className="max-w-xl !mt-0">
+      <CardHeader>
+        <CardTitle className="text-base">Event Reminder Settings</CardTitle>
+        <CardDescription>
+          Push notifications are sent to all members when an event is this many hours away.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="flex items-end gap-3">
+          <div className="space-y-2 flex flex-col w-full">
+            <Label 
+              htmlFor="reminder-hours"
+              className="flex flex-col gap-1 text-sm"
+            >
+              Hours before event
+            </Label>
+            <div className="flex w-full items-center gap-2">
+              <Input
+                id="reminder-hours"
+                type="number"
+                min={1}
+                max={168}
+                value={reminderHoursInput}
+                onChange={(e) => setReminderHoursInput(e.target.value)}
+              />
+              <Button
+                onClick={handleSaveSettings}
+                disabled={savingSettings || parseInt(reminderHoursInput, 10) === reminderHours || isNaN(parseInt(reminderHoursInput, 10))}
+                variant="outline"
+              >
+                {savingSettings ? 'Saving…' : 'Save'}
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">Current: {reminderHours}h before event · Max: 168h (7 days)</p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+    </div>
   );
 }
 

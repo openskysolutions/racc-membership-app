@@ -539,13 +539,60 @@ class GoHighLevelService {
   }
 
   /**
+   * Search contacts by a free-text query (name or email fragment).
+   * Returns up to `limit` matching contacts.
+   */
+  async searchContactsByQuery(query: string, limit: number = 20): Promise<any[]> {
+    if (this.developmentMode) {
+      return [];
+    }
+    if (!this.client) throw new Error('GoHighLevel client not initialized');
+
+    try {
+      const response = await this.client.post('/contacts/search', {
+        locationId: this.locationId,
+        pageLimit: limit,
+        filters: [
+          {
+            field: 'email',
+            operator: 'contains',
+            value: query,
+          },
+        ],
+      });
+      const byEmail: any[] = response.data?.contacts ?? [];
+
+      // Also search by name
+      const responseByName = await this.client.post('/contacts/search', {
+        locationId: this.locationId,
+        pageLimit: limit,
+        filters: [
+          {
+            field: 'name',
+            operator: 'contains',
+            value: query,
+          },
+        ],
+      });
+      const byName: any[] = responseByName.data?.contacts ?? [];
+
+      // Merge, deduplicate by id
+      const seen = new Set<string>();
+      return [...byEmail, ...byName].filter((c) => {
+        if (seen.has(c.id)) return false;
+        seen.add(c.id);
+        return true;
+      });
+    } catch (err: any) {
+      console.error('[searchContactsByQuery] error:', err.response?.data || err.message);
+      return [];
+    }
+  }
+
+  /**
    * Update contact tags
    */
   async updateContactTags(contactId: string, tags: string[], action: 'add' | 'remove' = 'add'): Promise<void> {
-    if (this.developmentMode) {
-      console.log(`🚧 DEV MODE: ${action}ing tags for contact ${contactId}:`, tags);
-      return;
-    }
 
     if (!this.client) {
       throw new Error('GoHighLevel client not initialized');

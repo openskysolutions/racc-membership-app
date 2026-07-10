@@ -1,5 +1,7 @@
 import express from 'express';
 import path from 'path';
+import https from 'https';
+import http from 'http';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -60,7 +62,9 @@ app.get('/blog/:slug', async (req, res, next) => {
     const post = body.data || body;
     if (!post || !post.title) return next();
     const description = post.metadata || 'Read this post on the Richfield Area Chamber of Commerce member portal.';
-    const image = post.mainImage || DEFAULT_IMAGE;
+    const image = post.mainImage
+      ? `${SITE_URL}/blog-image/${req.params.slug}.jpg`
+      : DEFAULT_IMAGE;
     const html = buildOgHtml({
       title: post.title || 'Richfield Area Chamber of Commerce',
       description,

@@ -88,6 +88,8 @@ router.get('/users', requireAuth, requireAdmin, async (req, res) => {
       status = '' 
     } = req.query;
 
+    const searchTerm = (search as string).toLowerCase();
+
     // Get users from database (auth fields only)
     const dbUsers = await databaseService.getAllUsers(
       parseInt(limit as string), 
@@ -101,9 +103,12 @@ router.get('/users', requireAuth, requireAdmin, async (req, res) => {
     let filteredUsers = users;
     
     if (search) {
-      const searchTerm = (search as string).toLowerCase();
       filteredUsers = filteredUsers.filter(user => 
-        user.email.toLowerCase().includes(searchTerm)
+        user.email.toLowerCase().includes(searchTerm) ||
+        (user.firstName && user.firstName.toLowerCase().includes(searchTerm)) ||
+        (user.lastName && user.lastName.toLowerCase().includes(searchTerm)) ||
+        (user.firstName && user.lastName && 
+          `${user.firstName} ${user.lastName}`.toLowerCase().includes(searchTerm))
       );
     }
 
