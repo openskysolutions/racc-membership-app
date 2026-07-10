@@ -1,15 +1,29 @@
 import UIKit
 import Capacitor
 import FirebaseCore
+import FirebaseMessaging
 
 @UIApplicationMain
-class AppDelegate: UIResponder, UIApplicationDelegate {
+class AppDelegate: UIResponder, UIApplicationDelegate, MessagingDelegate {
 
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         FirebaseApp.configure()
+        // Set Firebase Messaging delegate so we receive the FCM registration token
+        Messaging.messaging().delegate = self
         return true
+    }
+
+    // Called by Firebase when the FCM registration token is available or refreshed.
+    // Forward it to Capacitor's push plugin as a String (the plugin accepts both
+    // Data/APNs tokens and String tokens, passing the String through unchanged).
+    func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
+        guard let fcmToken = fcmToken else { return }
+        NotificationCenter.default.post(
+            name: .capacitorDidRegisterForRemoteNotifications,
+            object: fcmToken
+        )
     }
 
     func applicationWillResignActive(_ application: UIApplication) {

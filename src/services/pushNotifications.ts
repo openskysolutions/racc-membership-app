@@ -42,9 +42,10 @@ export async function initPushNotifications(): Promise<void> {
   }
 
   // Register with APNs / FCM — fires Token event on success
-  await PushNotifications.register();
 
-  // Remove previous listeners to avoid duplicates on re-login
+  // Remove previous listeners to avoid duplicates on re-login,
+  // then add new ones BEFORE calling register() so we never miss
+  // a synchronously-fired token event (iOS caches tokens).
   await PushNotifications.removeAllListeners();
 
   // Token received → send to our backend
@@ -66,6 +67,8 @@ export async function initPushNotifications(): Promise<void> {
   PushNotifications.addListener('pushNotificationActionPerformed', (action: ActionPerformed) => {
     if (tapHandler) tapHandler(action);
   });
+
+  await PushNotifications.register();
 }
 
 /**
