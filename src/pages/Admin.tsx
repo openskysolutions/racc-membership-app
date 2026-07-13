@@ -1605,6 +1605,8 @@ function NotificationsTab() {
   const [reminderHours, setReminderHours] = useState<number>(24);
   const [reminderHoursInput, setReminderHoursInput] = useState<string>('24');
   const [savingSettings, setSavingSettings] = useState(false);
+  const [deviceCount, setDeviceCount] = useState<number | null>(null);
+  const [fcmConfigured, setFcmConfigured] = useState<boolean | null>(null);
 
   useEffect(() => {
     api.get('/notifications/settings')
@@ -1612,6 +1614,8 @@ function NotificationsTab() {
       .then(d => {
         setReminderHours(d.reminderHours);
         setReminderHoursInput(String(d.reminderHours));
+        setDeviceCount(d.deviceCount ?? null);
+        setFcmConfigured(d.fcmConfigured ?? null);
       })
       .catch(() => {});
   }, []);
@@ -1866,6 +1870,10 @@ function NotificationsTab() {
             </div>
             <p className="text-xs text-muted-foreground">Current: {reminderHours}h before event · Max: 168h (7 days)</p>
           </div>
+        </div>
+        <div className="mt-3 flex gap-4 text-xs text-muted-foreground">
+          <span>Registered devices: <strong>{deviceCount ?? '…'}</strong></span>
+          <span>FCM credentials: <strong className={fcmConfigured === false ? 'text-destructive' : ''}>{fcmConfigured === null ? '…' : fcmConfigured ? '✓ configured' : '✗ missing'}</strong></span>
         </div>
       </CardContent>
     </Card>

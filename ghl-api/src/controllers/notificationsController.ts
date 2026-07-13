@@ -117,7 +117,13 @@ class NotificationsController {
   async getSettings(_req: Request, res: Response) {
     const row = await prisma.appSetting.findUnique({ where: { key: 'eventReminderHours' } });
     const reminderHours = row ? parseInt(row.value, 10) : 24;
-    return res.status(200).json({ reminderHours });
+
+    const deviceCount = await prisma.deviceToken.count();
+
+    const { FCM_PROJECT_ID, FCM_CLIENT_EMAIL, FCM_PRIVATE_KEY } = process.env;
+    const fcmConfigured = !!(FCM_PROJECT_ID && FCM_CLIENT_EMAIL && FCM_PRIVATE_KEY);
+
+    return res.status(200).json({ reminderHours, deviceCount, fcmConfigured });
   }
 
   /**
