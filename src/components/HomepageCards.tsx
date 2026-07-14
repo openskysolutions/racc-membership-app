@@ -43,7 +43,7 @@ export const HomepageCards: React.FC = () => {
     },
     {
       key: 'event',
-      eyebrow: 'Featured Event',
+      eyebrow: 'Upcoming Event',
       title: featuredEvent ? featuredEvent.title : 'Upcoming Events',
       subtitle: featuredEvent
         ? new Date(featuredEvent.startTime).toLocaleDateString('en-US', {
