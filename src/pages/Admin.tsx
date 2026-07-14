@@ -1679,7 +1679,7 @@ function NotificationsTab() {
   const [reminderHours2, setReminderHours2] = useState<number>(24);
   const [reminderHoursInput2, setReminderHoursInput2] = useState<string>('24');
   const [savingSettings, setSavingSettings] = useState(false);
-  const [triggeringReminders, setTriggeringReminders] = useState(false);
+  // const [triggeringReminders, setTriggeringReminders] = useState(false);
   const [deviceCount, setDeviceCount] = useState<number | null>(null);
   const [fcmConfigured, setFcmConfigured] = useState<boolean | null>(null);
 
