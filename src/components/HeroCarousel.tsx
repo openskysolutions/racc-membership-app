@@ -340,13 +340,13 @@ export const HeroCarousel = () => {
               <section 
                 className={cn(
                   `bg-cover bg-center bg-no-repeat ${bgColorClass} bg-opacity-30 bg-blend-multiply`,
-                  'relative h-[400px] md:h-[450px]'
+                  'relative h-[440px] md:h-[490px]'
                 )}
                 style={bgStyle}
               >
                 <div className={cn(
                   "w-full h-full backdrop-blur-[0px] backdrop-brightness-50",
-                  "container grid place-items-top py-12 md:py-12 gap-10 max-w-full overflow-hidden"
+                  "container grid place-items-top pt-12 pb-20 md:pt-12 md:pb-24 gap-10 max-w-full overflow-hidden"
                 )}>
                   {slide.type === 'main' && renderMainSlide()}
                   {slide.type === 'event' && renderEventSlide(slide)}

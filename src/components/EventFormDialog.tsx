@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, MapPin, User, Save, X, AlertCircle, Link, Image, Download, Trash2, Repeat } from 'lucide-react';
+import { Calendar, Clock, MapPin, User, Save, X, AlertCircle, Link, Image, Download, Trash2, Repeat, Star } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { useEventDraftStore } from '@/stores/eventDraftStore';
 import { createCalendarEvent, updateCalendarEvent, getEventCustomFields, deleteCalendarEvent, CalendarEvent, CreateEventPayload, UpdateEventPayload } from '@/services/calendar';
 import { uploadAvatar, validateAvatarFile, createImagePreview, revokeImagePreview, uploadEventCoverImage } from '@/services/avatarUpload';
+import { getFeaturedEventId, setFeaturedEventId } from '@/services/settingsService';
 
 /**
  * Generate RRULE string from recurrence options
@@ -135,6 +136,9 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
   const [coverUploading, setCoverUploading] = useState(false);
   const [downloadUploading, setDownloadUploading] = useState(false);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
+
+  // Featured event state
+  const [isFeatured, setIsFeatured] = useState(false);
   
   // Track previous open state to detect close transition
   const prevOpenRef = React.useRef(open);
@@ -248,6 +252,13 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
           }));
         }).catch(error => {
           console.error('Failed to load custom fields:', error);
+        });
+
+        // Load featured event setting
+        getFeaturedEventId().then(featuredId => {
+          setIsFeatured(featuredId === event.id);
+        }).catch(() => {
+          setIsFeatured(false);
         });
       } else {
         // Creating new event - check for draft first
@@ -742,6 +753,22 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
         }
       }
       
+      // Update featured event setting if editing and the featured state was changed
+      if (isEditing && event) {
+        try {
+          const currentFeaturedId = await getFeaturedEventId();
+          const wasAlreadyFeatured = currentFeaturedId === event.id;
+          if (isFeatured && !wasAlreadyFeatured) {
+            await setFeaturedEventId(event.id);
+          } else if (!isFeatured && wasAlreadyFeatured) {
+            await setFeaturedEventId(null);
+          }
+        } catch (featuredErr) {
+          console.error('Failed to update featured event setting:', featuredErr);
+          // Non-fatal: don't block the dialog from closing
+        }
+      }
+
       // Clear draft after successful submission
       clearDraft();
       
@@ -932,6 +959,23 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
               </div>
             </div>
           </div>
+
+          {/* Featured Event – only shown when editing */}
+          {isEditing && (
+            <div className="flex items-center space-x-2 py-1">
+              <input
+                type="checkbox"
+                id="isFeatured"
+                checked={isFeatured}
+                onChange={(e) => setIsFeatured(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300"
+              />
+              <Label htmlFor="isFeatured" className="text-sm font-normal cursor-pointer flex items-center gap-2">
+                <Star className="h-4 w-4 text-yellow-500" />
+                Feature this event on the homepage
+              </Label>
+            </div>
+          )}
 
           {/* Download File */}
           <div className="space-y-2">

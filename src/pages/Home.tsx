@@ -2,6 +2,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { HeroCarousel } from '@/components/HeroCarousel';
+import { HomepageCards } from '@/components/HomepageCards';
 import Benefits from '@/components/Benefits';
 import MembershipLevels from '@/components/MembershipLevels';
 import CategoryBar from '@/components/CategoryBar';
@@ -19,6 +20,7 @@ const HomePage: React.FC = () => {
   return (
     <div>
       <HeroCarousel />
+      <HomepageCards />
 
       {/* Browse member directory by category */}
       <div className="px-4 sm:px-6 pt-8 pb-0 max-w-full mx-auto">

@@ -17,9 +17,10 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Label } from '@/components/ui/label';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, Edit, Trash2, Search, MoreHorizontal, AlertTriangle, CheckCircle, Clock, Award, LucideRefreshCcw, Star, FileText, Bell, LayoutDashboard, ChevronDown, Calendar } from 'lucide-react';
+import { Users, Edit, Trash2, Search, MoreHorizontal, AlertTriangle, CheckCircle, Clock, Award, LucideRefreshCcw, Star, FileText, Bell, LayoutDashboard, ChevronDown, Calendar, Settings } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { getUpcomingEvents, CalendarEvent } from '@/services/calendar';
+import { getFeaturedEventId, setFeaturedEventId } from '@/services/settingsService';
 import { Textarea } from '@/components/ui/textarea';
 import { RiShieldUserFill } from "react-icons/ri";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -476,6 +477,7 @@ export default function AdminPage() {
     ...(isFullAdmin ? [
       { value: 'blog-posts', label: 'Blog Posts', icon: FileText },
       { value: 'notifications', label: 'Notifications', icon: Bell },
+      { value: 'homepage', label: 'Homepage', icon: Settings },
     ] : []),
   ];
   const activeNavItem = navItems.find(item => item.value === activeTab);
@@ -579,6 +581,10 @@ export default function AdminPage() {
                   <TabsTrigger value="notifications" className="shrink-0 md:w-full md:justify-start px-3 py-2 h-9 md:h-auto rounded-lg gap-2 text-sm font-medium bg-transparent border-0 text-muted-foreground data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-none hover:bg-muted/50 hover:text-foreground transition-colors">
                     <Bell className="h-4 w-4 shrink-0" />
                     <span>Notifications</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="homepage" className="shrink-0 md:w-full md:justify-start px-3 py-2 h-9 md:h-auto rounded-lg gap-2 text-sm font-medium bg-transparent border-0 text-muted-foreground data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-none hover:bg-muted/50 hover:text-foreground transition-colors">
+                    <Settings className="h-4 w-4 shrink-0" />
+                    <span>Homepage</span>
                   </TabsTrigger>
                 </>
               )}
@@ -1468,6 +1474,13 @@ export default function AdminPage() {
           {isFullAdmin && (
             <TabsContent value="notifications" className="space-y-6">
               <NotificationsTab />
+            </TabsContent>
+          )}
+
+          {/* Homepage Tab */}
+          {isFullAdmin && (
+            <TabsContent value="homepage" className="space-y-6">
+              <HomepageTab />
             </TabsContent>
           )}
           </div>
@@ -2394,5 +2407,103 @@ function EditUserForm({
         </Button>
       </div>
     </form>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Homepage Tab — manage the featured event card
+// ---------------------------------------------------------------------------
+const GHL_CALENDAR_ID = '9XpDcFHv3SmCUuHeuOOg';
+
+function HomepageTab() {
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [featuredId, setFeaturedId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [statusMsg, setStatusMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Load upcoming events for the dropdown
+    getUpcomingEvents(GHL_CALENDAR_ID).then(setEvents).catch(() => {});
+    // Load the current featured event id
+    getFeaturedEventId().then(setFeaturedId).catch(() => {});
+  }, []);
+
+  async function handleSave() {
+    setSaving(true);
+    setStatusMsg(null);
+    try {
+      await setFeaturedEventId(featuredId);
+      setStatusMsg('Featured event saved.');
+    } catch {
+      setStatusMsg('Failed to save. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleClear() {
+    setSaving(true);
+    setStatusMsg(null);
+    try {
+      await setFeaturedEventId(null);
+      setFeaturedId(null);
+      setStatusMsg('Featured event cleared.');
+    } catch {
+      setStatusMsg('Failed to clear. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-lg font-semibold">Homepage Cards</h2>
+        <p className="text-sm text-muted-foreground mt-1">
+          Choose which upcoming event appears in the "Featured Event" card on the homepage.
+        </p>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Featured Event</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <label htmlFor="featured-event-select" className="text-sm font-medium">
+              Select event
+            </label>
+            <select
+              id="featured-event-select"
+              value={featuredId ?? ''}
+              onChange={e => setFeaturedId(e.target.value || null)}
+              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
+            >
+              <option value="">— No featured event —</option>
+              {events.map(ev => (
+                <option key={ev.id} value={ev.id}>
+                  {new Date(ev.startTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  {' — '}
+                  {ev.title}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {statusMsg && (
+            <p className="text-sm text-muted-foreground">{statusMsg}</p>
+          )}
+
+          <div className="flex gap-2">
+            <Button onClick={handleSave} disabled={saving}>
+              {saving ? 'Saving…' : 'Save'}
+            </Button>
+            <Button variant="outline" onClick={handleClear} disabled={saving || !featuredId}>
+              Clear
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
