@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Users, UserPlus, ChevronRight } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { getFeaturedEventId } from '@/services/settingsService';
 import EventCoverImage from '@/assets/explosive-event-cover.jpg';
 import { getEventById, getUpcomingEvents } from '@/services/calendar';
