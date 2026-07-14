@@ -37,11 +37,11 @@ const benefits: Array<{
   checks: Record<TierKey, boolean>;
 }> = [
   {
-    label: "Your business featured in the Chamber’s online directory with a customizable profile—add your website, bio, photos, social links, job postings, to help customers easily find and connect with you.",
+    label: "Your business featured in the Chamber's online directory with a customizable profile-add your website, bio, photos, social links, job postings, to help customers easily find and connect with you.",
     checks: { basic: true, enhanced: true, elite: true },
   },
   {
-    label: "1/6 Ad in the Sevier County Magazine + Discounts to upgrade ad size",
+    label: "1/6 Ad in the Sevier County Magazine + Discounts to upgrade ad size- ($250 Value)",
     checks: { basic: true, enhanced: true, elite: true },
   },
   {
@@ -49,7 +49,7 @@ const benefits: Array<{
     checks: { basic: true, enhanced: true, elite: true },
   },
   {
-    label: "$30 booth at the Fall Festival (must register by July 1st)",
+    label: "$30 booth at the Fall Festival (must register by July lst, $35 savings)",
     checks: { basic: true, enhanced: true, elite: true },
   },
   {
@@ -74,11 +74,15 @@ const benefits: Array<{
   //   checks: { basic: false, enhanced: true, elite: true },
   // },
   {
-    label: "One free ticket to luncheons every month (excludes Annual Dinner)",
+    label: "One free ticket to luncheons every month (excludes Annual Dinner) ($187 value)",
     checks: { basic: false, enhanced: true, elite: true },
   },
   {
-    label: "Business featured once a year in Richfield Reaper",
+    label: "Receive one professional promotional video for your business (must sign up to redeem, $150 value)",
+    checks: { basic: false, enhanced: true, elite: true },
+  },
+  {
+    label: "Business featured once a year in Richfield Reaper (must sign up to redeem, $200 value)",
     checks: { basic: false, enhanced: true, elite: true },
   },
   {
@@ -86,11 +90,11 @@ const benefits: Array<{
     checks: { basic: false, enhanced: false, elite: true },
   },
   {
-    label: "Ad on placemats for luncheons",
+    label: "Ad on placemats for luncheons ($300 Value)",
     checks: { basic: false, enhanced: false, elite: true },
   },
   {
-    label: "Free luncheon sponsorship once a year",
+    label: "Free luncheon sponsorship once a year ($100 value)",
     checks: { basic: false, enhanced: false, elite: true },
   },
 ];
