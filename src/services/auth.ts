@@ -1,5 +1,7 @@
 // src/services/auth.service.ts
 
+import { Capacitor } from '@capacitor/core';
+
 interface LoginCredentials {
   email: string;
   password: string;
@@ -79,8 +81,9 @@ export async function exchangeTokenWithCode(code: string, remember: boolean = fa
   const data = await response.json();
   if (!response.ok) throw new Error(data.error_description || 'Token exchange failed');
   
-  // Store token based on "remember me" preference
-  const storage = remember ? localStorage : sessionStorage;
+  // On native iOS/Android, sessionStorage is wiped when the app is killed.
+  // Always use localStorage on native so the token survives app restarts.
+  const storage = (remember || Capacitor.isNativePlatform()) ? localStorage : sessionStorage;
   storage.setItem('token', data.access_token);
   sessionStorage.removeItem('pkce_code_verifier');
   

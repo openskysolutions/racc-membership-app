@@ -75,8 +75,17 @@ function getAuthToken(): string | null {
 /**
  * Enhanced fetch wrapper for RACC API calls with retry logic
  * Automatically handles authentication and base URL
+ *
+ * @param quiet401 - When true, a 401 response is returned as-is instead of
+ *   triggering handle401Redirect(). Use for background polling calls that
+ *   should not force-redirect the user to the login page.
  */
-export async function apiFetch(endpoint: string, init?: RequestInit, retries: number = 2): Promise<Response> {
+export async function apiFetch(
+  endpoint: string,
+  init?: RequestInit,
+  retries: number = 2,
+  { quiet401 = false }: { quiet401?: boolean } = {}
+): Promise<Response> {
   const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`;
   
   const token = getAuthToken();
@@ -113,6 +122,7 @@ export async function apiFetch(endpoint: string, init?: RequestInit, retries: nu
       // Handle authentication errors - throw special error that prevents retry
       if (response.status === 401) {
         console.warn('[Auth] Received 401 Unauthorized response');
+        if (quiet401) return response; // let the caller decide what to do
         handle401Redirect();
         // Throw a special error to break out of retry loop
         throw new Error('UNAUTHORIZED_SESSION_EXPIRED');

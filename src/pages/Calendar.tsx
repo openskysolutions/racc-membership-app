@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Users, Plus, Edit, X, Clock, MapPin } from 'lucide-react';
-import { getCurrentYearEvents, CalendarEvent, getEventCustomFields } from '@/services/calendar';
+import { getCurrentYearEvents, CalendarEvent, getEventCustomFields, getEventById } from '@/services/calendar';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -54,6 +54,48 @@ const CalendarPage: React.FC = () => {
       navigate('/calendar', { replace: true });
     }
   }, [searchParams, navigate]);
+
+  // Deep-link: capture ?event=ID from URL immediately, then open once events load
+  const [pendingEventId, setPendingEventId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const eventId = searchParams.get('event');
+    if (!eventId) return;
+    setPendingEventId(eventId);
+    navigate('/calendar', { replace: true }); // clean up URL right away
+  }, [searchParams, navigate]);
+
+  useEffect(() => {
+    if (!pendingEventId || loading) return;
+
+    const id = pendingEventId;
+    setPendingEventId(null);
+
+    const openEvent = (event: CalendarEvent) => {
+      setSelectedEvent(event);
+      setDialogOpen(true);
+      getEventCustomFields(event.id)
+        .then(fields => {
+          setEventPageUrl(fields?.pageUrl || '');
+          setEventCoverImageUrl(fields?.coverImageUrl || '');
+        })
+        .catch(() => {
+          setEventPageUrl('');
+          setEventCoverImageUrl('');
+        });
+    };
+
+    // First try the already-loaded event list (fast path)
+    const cached = events.find(e => e.id === id);
+    if (cached) {
+      openEvent(cached);
+      return;
+    }
+
+    // Fallback: fetch directly — handles events outside the current year range
+    // (admin selector covers next 12 months, calendar only loads the current year)
+    getEventById(id).then(openEvent).catch(() => {});
+  }, [pendingEventId, events, loading]);
 
   // Fetch events function - extracted so it can be reused
   const fetchEvents = useCallback(async () => {

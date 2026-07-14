@@ -17,7 +17,9 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Label } from '@/components/ui/label';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, Edit, Trash2, Search, MoreHorizontal, AlertTriangle, CheckCircle, Clock, Award, LucideRefreshCcw, Star, FileText, Bell } from 'lucide-react';
+import { Users, Edit, Trash2, Search, MoreHorizontal, AlertTriangle, CheckCircle, Clock, Award, LucideRefreshCcw, Star, FileText, Bell, LayoutDashboard, ChevronDown, Calendar } from 'lucide-react';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { getUpcomingEvents, CalendarEvent } from '@/services/calendar';
 import { Textarea } from '@/components/ui/textarea';
 import { RiShieldUserFill } from "react-icons/ri";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -100,6 +102,9 @@ export default function AdminPage() {
   // Check if user has admin or board member access
   const hasAccess = currentUser && (currentUser.role === 'admin' || currentUser.role === 'moderator' || currentUser.role === 'board_member');
   const isFullAdmin = currentUser?.role === 'admin';
+
+  const [activeTab, setActiveTab] = useState(currentUser?.role === 'admin' ? 'overview' : 'nominations');
+  const [adminNavOpen, setAdminNavOpen] = useState(false);
 
   if (!hasAccess) {
     return (
@@ -460,6 +465,22 @@ export default function AdminPage() {
     }
   };
 
+  const navItems = [
+    ...(isFullAdmin ? [
+      { value: 'overview', label: 'Overview', icon: LayoutDashboard },
+      { value: 'users', label: 'Users', icon: Users },
+    ] : []),
+    { value: 'nominations', label: 'Nominations', icon: Award },
+    { value: 'monthly-results', label: 'Monthly Results', icon: Star },
+    { value: 'yearly-results', label: 'Yearly Results', icon: Star },
+    ...(isFullAdmin ? [
+      { value: 'blog-posts', label: 'Blog Posts', icon: FileText },
+      { value: 'notifications', label: 'Notifications', icon: Bell },
+    ] : []),
+  ];
+  const activeNavItem = navItems.find(item => item.value === activeTab);
+  const ActiveIcon = activeNavItem?.icon;
+
   return (
     <div className="min-h-screen p-6">
       <div className="max-w-7xl mx-auto">
@@ -472,49 +493,98 @@ export default function AdminPage() {
           <p className="text-muted-foreground mt-2">Manage users and system settings</p>
         </div>
 
-        <Tabs defaultValue={isFullAdmin ? "overview" : "nominations"} className="space-y-6" onValueChange={(value) => {
+        <Tabs value={activeTab} className="flex flex-col md:flex-row md:items-start md:gap-8" onValueChange={(value) => {
+          setActiveTab(value);
           if (value === 'nominations') {
             loadNominations();
           }
         }}>
-          <TabsList className={`w-full grid gap-1 ${isFullAdmin ? 'grid-cols-3 md:grid-cols-7 h-auto md:h-10' : 'grid-cols-3 md:inline-flex md:w-auto'}`}>
-            {isFullAdmin && (
-              <>
-                <TabsTrigger value="overview" className="flex-col sm:flex-row bg-transparent border-0 h-10 sm:h-8 py-2 sm:py-0 gap-1 sm:gap-2">
-                  <Users className="h-4 w-4 hidden sm:inline-block" />
-                  <span className="text-xs sm:text-sm">Overview</span>
-                </TabsTrigger>
-                <TabsTrigger value="users" className="flex-col sm:flex-row bg-transparent border-0 h-10 sm:h-8 py-2 sm:py-0 gap-1 sm:gap-2">
-                  <Users className="h-4 w-4 hidden sm:inline-block" />
-                  <span className="text-xs sm:text-sm">Users</span>
-                </TabsTrigger>
-              </>
-            )}
-            <TabsTrigger value="nominations" className="flex-col sm:flex-row bg-transparent border-0 h-10 sm:h-8 py-2 sm:py-0 gap-1 sm:gap-2">
-              <Award className="h-4 w-4 hidden sm:inline-block" />
-              <span className="text-xs sm:text-sm">Nominations</span>
-            </TabsTrigger>
-            <TabsTrigger value="monthly-results" className="flex-col sm:flex-row bg-transparent border-0 h-10 sm:h-8 py-2 sm:py-0 gap-1 sm:gap-2">
-              <Star className="h-4 w-4 hidden sm:inline-block" />
-              <span className="text-xs sm:text-sm">Monthly Results</span>
-            </TabsTrigger>
-            <TabsTrigger value="yearly-results" className="flex-col sm:flex-row bg-transparent border-0 h-10 sm:h-8 py-2 sm:py-0 gap-1 sm:gap-2">
-              <Star className="h-4 w-4 hidden sm:inline-block" />
-              <span className="text-xs sm:text-sm">Yearly Results</span>
-            </TabsTrigger>
-            {isFullAdmin && (
-              <>
-                <TabsTrigger value="blog-posts" className="flex-col sm:flex-row bg-transparent border-0 h-10 sm:h-8 py-2 sm:py-0 gap-1 sm:gap-2" onClick={() => window.location.href = '/admin/posts'}>
-                  <FileText className="h-4 w-4 hidden sm:inline-block" />
-                  <span className="text-xs sm:text-sm">Blog Posts</span>
-                </TabsTrigger>
-                <TabsTrigger value="notifications" className="flex-col sm:flex-row bg-transparent border-0 h-10 sm:h-8 py-2 sm:py-0 gap-1 sm:gap-2">
-                  <Bell className="h-4 w-4 hidden sm:inline-block" />
-                  <span className="text-xs sm:text-sm">Notifications</span>
-                </TabsTrigger>
-              </>
-            )}
-          </TabsList>
+          {/* Mobile nav — bottom sheet trigger */}
+          <Sheet open={adminNavOpen} onOpenChange={setAdminNavOpen}>
+            <button
+              className="md:hidden flex items-center gap-2.5 w-full px-3 py-2.5 mb-4 rounded-lg border bg-card text-sm font-medium text-foreground hover:bg-muted/50 transition-colors"
+              onClick={() => setAdminNavOpen(true)}
+            >
+              {ActiveIcon && <ActiveIcon className="h-4 w-4 shrink-0 text-muted-foreground" />}
+              <span>{activeNavItem?.label ?? 'Menu'}</span>
+              <ChevronDown className="h-4 w-4 ml-auto text-muted-foreground" />
+            </button>
+            <SheetContent side="bottom" className="px-4 pb-8 pt-0 rounded-t-2xl">
+              <SheetHeader className="py-4 mb-2 border-b">
+                <SheetTitle className="text-base text-left">Admin Navigation</SheetTitle>
+              </SheetHeader>
+              <div className="grid grid-cols-2 gap-2.5 pt-4">
+                {navItems.map(item => {
+                  const ItemIcon = item.icon;
+                  return (
+                    <button
+                      key={item.value}
+                      className={`flex flex-col items-center gap-2 p-4 rounded-xl text-sm font-medium transition-colors ${
+                        activeTab === item.value
+                          ? 'bg-muted text-foreground'
+                          : 'text-muted-foreground bg-muted/30 hover:bg-muted hover:text-foreground'
+                      }`}
+                      onClick={() => {
+                        setAdminNavOpen(false);
+                        if (item.value === 'blog-posts') {
+                          window.location.href = '/admin/posts';
+                        } else {
+                          setActiveTab(item.value);
+                          if (item.value === 'nominations') loadNominations();
+                        }
+                      }}
+                    >
+                      <ItemIcon className="h-6 w-6 shrink-0" />
+                      <span className="text-center leading-tight">{item.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </SheetContent>
+          </Sheet>
+
+          {/* Desktop sidebar */}
+          <div className="hidden md:block md:w-52 shrink-0">
+            <TabsList className="flex flex-row md:flex-col w-full bg-transparent p-0 gap-0.5 h-auto overflow-x-auto md:overflow-visible border-b md:border-b-0 md:border-r border-border pb-3 md:pb-0 md:pr-3">
+              {isFullAdmin && (
+                <>
+                  <TabsTrigger value="overview" className="shrink-0 md:w-full md:justify-start px-3 py-2 h-9 md:h-auto rounded-lg gap-2 text-sm font-medium bg-transparent border-0 text-muted-foreground data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-none hover:bg-muted/50 hover:text-foreground transition-colors">
+                    <LayoutDashboard className="h-4 w-4 shrink-0" />
+                    <span>Overview</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="users" className="shrink-0 md:w-full md:justify-start px-3 py-2 h-9 md:h-auto rounded-lg gap-2 text-sm font-medium bg-transparent border-0 text-muted-foreground data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-none hover:bg-muted/50 hover:text-foreground transition-colors">
+                    <Users className="h-4 w-4 shrink-0" />
+                    <span>Users</span>
+                  </TabsTrigger>
+                </>
+              )}
+              <TabsTrigger value="nominations" className="shrink-0 md:w-full md:justify-start px-3 py-2 h-9 md:h-auto rounded-lg gap-2 text-sm font-medium bg-transparent border-0 text-muted-foreground data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-none hover:bg-muted/50 hover:text-foreground transition-colors">
+                <Award className="h-4 w-4 shrink-0" />
+                <span>Nominations</span>
+              </TabsTrigger>
+              <TabsTrigger value="monthly-results" className="shrink-0 md:w-full md:justify-start px-3 py-2 h-9 md:h-auto rounded-lg gap-2 text-sm font-medium bg-transparent border-0 text-muted-foreground data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-none hover:bg-muted/50 hover:text-foreground transition-colors">
+                <Star className="h-4 w-4 shrink-0" />
+                <span>Monthly Results</span>
+              </TabsTrigger>
+              <TabsTrigger value="yearly-results" className="shrink-0 md:w-full md:justify-start px-3 py-2 h-9 md:h-auto rounded-lg gap-2 text-sm font-medium bg-transparent border-0 text-muted-foreground data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-none hover:bg-muted/50 hover:text-foreground transition-colors">
+                <Star className="h-4 w-4 shrink-0" />
+                <span>Yearly Results</span>
+              </TabsTrigger>
+              {isFullAdmin && (
+                <>
+                  <TabsTrigger value="blog-posts" className="shrink-0 md:w-full md:justify-start px-3 py-2 h-9 md:h-auto rounded-lg gap-2 text-sm font-medium bg-transparent border-0 text-muted-foreground data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-none hover:bg-muted/50 hover:text-foreground transition-colors" onClick={() => window.location.href = '/admin/posts'}>
+                    <FileText className="h-4 w-4 shrink-0" />
+                    <span>Blog Posts</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="notifications" className="shrink-0 md:w-full md:justify-start px-3 py-2 h-9 md:h-auto rounded-lg gap-2 text-sm font-medium bg-transparent border-0 text-muted-foreground data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-none hover:bg-muted/50 hover:text-foreground transition-colors">
+                    <Bell className="h-4 w-4 shrink-0" />
+                    <span>Notifications</span>
+                  </TabsTrigger>
+                </>
+              )}
+            </TabsList>
+          </div>
+          <div className="flex-1 min-w-0 w-full">
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-2 md:space-y-6">
@@ -1400,6 +1470,7 @@ export default function AdminPage() {
               <NotificationsTab />
             </TabsContent>
           )}
+          </div>
         </Tabs>
 
         {/* Edit User Dialog */}
@@ -1583,6 +1654,7 @@ function UserTableRow({
 
 // Notifications Tab Component
 type NotifMember = { id: string; firstName?: string; lastName?: string; email: string };
+type NotifPost = { id: string; title: string; slug: string; metadata?: string | null };
 
 function NotificationsTab() {
   const [title, setTitle] = useState('');
@@ -1601,33 +1673,75 @@ function NotificationsTab() {
   // Keep ref in sync so the search effect can read latest without being a dependency
   useEffect(() => { selectedMembersRef.current = selectedMembers; }, [selectedMembers]);
 
-  // Reminder settings
-  const [reminderHours, setReminderHours] = useState<number>(24);
-  const [reminderHoursInput, setReminderHoursInput] = useState<string>('24');
+  // Reminder settings (first reminder stored in days in UI, hours in backend)
+  const [reminderDays, setReminderDays] = useState<number>(7);
+  const [reminderDaysInput, setReminderDaysInput] = useState<string>('7');
+  const [reminderHours2, setReminderHours2] = useState<number>(24);
+  const [reminderHoursInput2, setReminderHoursInput2] = useState<string>('24');
   const [savingSettings, setSavingSettings] = useState(false);
+  const [triggeringReminders, setTriggeringReminders] = useState(false);
   const [deviceCount, setDeviceCount] = useState<number | null>(null);
   const [fcmConfigured, setFcmConfigured] = useState<boolean | null>(null);
+
+  // Sent history
+  interface SentNotification {
+    title: string;
+    body: string;
+    link: string | null;
+    recipient_count: number;
+    sent_at: string;
+  }
+  const [history, setHistory] = useState<SentNotification[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(true);
+
+  // Content link source (event or blog post)
+  const [contentType, setContentType] = useState<'none' | 'event' | 'post'>('none');
+  const [calEvents, setCalEvents] = useState<CalendarEvent[]>([]);
+  const [calEventsLoading, setCalEventsLoading] = useState(false);
+  const [eventSearch, setEventSearch] = useState('');
+  const [selectedCalEvent, setSelectedCalEvent] = useState<CalendarEvent | null>(null);
+  const [posts, setPosts] = useState<NotifPost[]>([]);
+  const [postsLoading, setPostsLoading] = useState(false);
+  const [postSearch, setPostSearch] = useState('');
+  const [selectedPost, setSelectedPost] = useState<NotifPost | null>(null);
+  const contentLink = selectedCalEvent
+    ? `/calendar?event=${selectedCalEvent.id}`
+    : selectedPost
+    ? `/blog/${selectedPost.slug}`
+    : undefined;
 
   useEffect(() => {
     api.get('/notifications/settings')
       .then(r => r.json())
       .then(d => {
-        setReminderHours(d.reminderHours);
-        setReminderHoursInput(String(d.reminderHours));
+        const days = Math.round((d.reminderHours ?? 168) / 24);
+        setReminderDays(days);
+        setReminderDaysInput(String(days));
+        setReminderHours2(d.reminderHours2 ?? 24);
+        setReminderHoursInput2(String(d.reminderHours2 ?? 24));
         setDeviceCount(d.deviceCount ?? null);
         setFcmConfigured(d.fcmConfigured ?? null);
       })
       .catch(() => {});
+
+    api.get('/notifications/history')
+      .then(r => r.json())
+      .then(d => setHistory(d))
+      .catch(() => {})
+      .finally(() => setHistoryLoading(false));
   }, []);
 
   async function handleSaveSettings() {
-    const val = parseInt(reminderHoursInput, 10);
-    if (isNaN(val) || val < 1 || val > 168) return;
+    const days = parseInt(reminderDaysInput, 10);
+    const val2 = parseInt(reminderHoursInput2, 10);
+    if (isNaN(days) || days < 1 || days > 30) return;
+    if (isNaN(val2) || val2 < 1 || val2 > 336) return;
     setSavingSettings(true);
     try {
-      const res = await api.put('/notifications/settings', { reminderHours: val });
+      const res = await api.put('/notifications/settings', { reminderHours: days * 24, reminderHours2: val2 });
       if (!res.ok) throw new Error();
-      setReminderHours(val);
+      setReminderDays(days);
+      setReminderHours2(val2);
       toast.success('Settings saved');
     } catch {
       toast.error('Failed to save settings');
@@ -1637,7 +1751,7 @@ function NotificationsTab() {
   }
 
   useEffect(() => {
-    if (!targetAll) {
+    if (targetAll) {
       setMemberResults([]);
       return;
     }
@@ -1679,6 +1793,53 @@ function NotificationsTab() {
     setSelectedMembers(prev => prev.filter(m => m.id !== id));
   }
 
+  // Lazy-load upcoming events when the event content type is chosen
+  useEffect(() => {
+    if (contentType !== 'event' || calEvents.length > 0) return;
+    setCalEventsLoading(true);
+    getUpcomingEvents('9XpDcFHv3SmCUuHeuOOg')
+      .then(setCalEvents)
+      .catch(() => {})
+      .finally(() => setCalEventsLoading(false));
+  }, [contentType]);
+
+  // Lazy-load published blog posts when the post content type is chosen
+  useEffect(() => {
+    if (contentType !== 'post' || posts.length > 0) return;
+    setPostsLoading(true);
+    api.get('/posts?limit=200')
+      .then(r => r.json())
+      .then(d => setPosts(d.data ?? []))
+      .catch(() => {})
+      .finally(() => setPostsLoading(false));
+  }, [contentType]);
+
+  function handleContentTypeChange(type: 'none' | 'event' | 'post') {
+    setContentType(type);
+    setSelectedCalEvent(null);
+    setSelectedPost(null);
+    setEventSearch('');
+    setPostSearch('');
+    if (type === 'none') { setTitle(''); setBody(''); }
+  }
+
+  function selectCalEvent(event: CalendarEvent) {
+    setSelectedCalEvent(event);
+    setEventSearch('');
+    const dateStr = new Date(event.startTime).toLocaleDateString('en-US', {
+      weekday: 'long', month: 'long', day: 'numeric',
+    });
+    setTitle(event.title);
+    setBody(`Join us for "${event.title}" on ${dateStr}. Tap to view details.`);
+  }
+
+  function selectPost(post: NotifPost) {
+    setSelectedPost(post);
+    setPostSearch('');
+    setTitle(post.title);
+    setBody(post.metadata?.trim() || `Check out our latest news: "${post.title}"`);
+  }
+
   async function handleSend() {
     if (!title.trim() || !body.trim()) return;
     if (!targetAll && selectedMembers.length === 0) return;
@@ -1686,6 +1847,7 @@ function NotificationsTab() {
     setResult(null);
     try {
       const payload: Record<string, any> = { title: title.trim(), body: body.trim() };
+      if (contentLink) payload.link = contentLink;
       if (!targetAll) payload.emails = selectedMembers.map(m => m.email);
       const res = await api.post('/notifications/send', payload);
       if (!res.ok) throw new Error('Request failed');
@@ -1697,11 +1859,22 @@ function NotificationsTab() {
         setBody('');
         setSelectedMembers([]);
         setMemberSearch('');
+        setContentType('none');
+        setSelectedCalEvent(null);
+        setSelectedPost(null);
+        // Refresh history
+        api.get('/notifications/history').then(r => r.json()).then(d => setHistory(d)).catch(() => {});
+      } else if (data.failed > 0) {
+        toast.warning(`Notification failed: ${data.failed} device${data.failed !== 1 ? 's' : ''} could not be reached. Check backend logs for the FCM error code.`);
       } else {
         toast.info('No registered devices found');
       }
-    } catch {
-      toast.error('Failed to send notification');
+    } catch (err: any) {
+      if (err?.message === 'UNAUTHORIZED_SESSION_EXPIRED') {
+        toast.error('Your session has expired. Please sign in again to send notifications.');
+      } else {
+        toast.error('Failed to send notification');
+      }
     } finally {
       setSending(false);
     }
@@ -1716,8 +1889,9 @@ function NotificationsTab() {
     : 'Send';
 
   return (
-    <div className="space-y-6 flex flex-col lg:flex-row lg:items-start gap-6">
-    <Card className="max-w-xl">
+    <div className="space-y-6">
+    <div className="flex flex-col lg:flex-row lg:items-start gap-6">
+    <Card className="flex-1 max-w-full">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Bell className="h-5 w-5" />
@@ -1792,6 +1966,97 @@ function NotificationsTab() {
           </div>
         )}
 
+        {/* Content link (optional) */}
+        <div className="space-y-2">
+          <Label>Link to content <span className="text-muted-foreground font-normal text-xs">(optional — auto-fills title &amp; message)</span></Label>
+          <div className="flex flex-wrap gap-4">
+            {(['none', 'event', 'post'] as const).map(type => (
+              <label key={type} className="flex items-center gap-2 cursor-pointer text-sm">
+                <input type="radio" checked={contentType === type} onChange={() => handleContentTypeChange(type)} />
+                {type === 'none' ? 'None' : type === 'event' ? 'Event' : 'Blog Post'}
+              </label>
+            ))}
+          </div>
+
+          {contentType === 'event' && (
+            <div>
+              {selectedCalEvent ? (
+                <div className="flex items-center gap-2 rounded-lg border bg-muted px-3 py-2 text-sm">
+                  <Calendar className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <span className="flex-1 truncate font-medium">{selectedCalEvent.title}</span>
+                  <span className="text-muted-foreground text-xs shrink-0">
+                    {new Date(selectedCalEvent.startTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </span>
+                  <button onClick={() => { setSelectedCalEvent(null); setTitle(''); setBody(''); }} className="text-muted-foreground hover:text-foreground">✕</button>
+                </div>
+              ) : (
+                <div className="relative">
+                  <Input
+                    placeholder={calEventsLoading ? 'Loading events…' : 'Search upcoming events…'}
+                    value={eventSearch}
+                    onChange={e => setEventSearch(e.target.value)}
+                    disabled={calEventsLoading}
+                  />
+                  {eventSearch && (
+                    <div className="absolute z-10 mt-1 w-full rounded-md border bg-background shadow-md max-h-52 overflow-y-auto">
+                      {calEvents
+                        .filter(e => e.title.toLowerCase().includes(eventSearch.toLowerCase()))
+                        .slice(0, 8)
+                        .map(e => (
+                          <button key={e.id} className="w-full px-3 py-2 text-left text-sm hover:bg-muted flex items-center justify-between gap-2" onClick={() => selectCalEvent(e)}>
+                            <span className="truncate">{e.title}</span>
+                            <span className="text-muted-foreground text-xs shrink-0">
+                              {new Date(e.startTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                            </span>
+                          </button>
+                        ))}
+                      {calEvents.filter(e => e.title.toLowerCase().includes(eventSearch.toLowerCase())).length === 0 && (
+                        <p className="px-3 py-2 text-sm text-muted-foreground">No matching events</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {contentType === 'post' && (
+            <div>
+              {selectedPost ? (
+                <div className="flex items-center gap-2 rounded-lg border bg-muted px-3 py-2 text-sm">
+                  <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <span className="flex-1 truncate font-medium">{selectedPost.title}</span>
+                  <button onClick={() => { setSelectedPost(null); setTitle(''); setBody(''); }} className="text-muted-foreground hover:text-foreground">✕</button>
+                </div>
+              ) : (
+                <div className="relative">
+                  <Input
+                    placeholder={postsLoading ? 'Loading posts…' : 'Search blog posts…'}
+                    value={postSearch}
+                    onChange={e => setPostSearch(e.target.value)}
+                    disabled={postsLoading}
+                  />
+                  {postSearch && (
+                    <div className="absolute z-10 mt-1 w-full rounded-md border bg-background shadow-md max-h-52 overflow-y-auto">
+                      {posts
+                        .filter(p => p.title.toLowerCase().includes(postSearch.toLowerCase()))
+                        .slice(0, 8)
+                        .map(p => (
+                          <button key={p.id} className="w-full px-3 py-2 text-left text-sm hover:bg-muted" onClick={() => selectPost(p)}>
+                            {p.title}
+                          </button>
+                        ))}
+                      {posts.filter(p => p.title.toLowerCase().includes(postSearch.toLowerCase())).length === 0 && (
+                        <p className="px-3 py-2 text-sm text-muted-foreground">No matching posts</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
         {/* Title */}
         <div className="space-y-2">
           <Label htmlFor="notif-title">Title</Label>
@@ -1835,46 +2100,135 @@ function NotificationsTab() {
       </CardContent>
     </Card>
 
-    <Card className="max-w-xl !mt-0">
+    <Card className="flex-1 max-w-full !mt-0">
       <CardHeader>
-        <CardTitle className="text-base">Event Reminder Settings</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <Clock className="h-5 w-5" />
+          Event Reminder Settings
+        </CardTitle>
         <CardDescription>
-          Push notifications are sent to all members when an event is this many hours away.
+          Two push notifications are sent automatically before each event. Configure how far in advance each reminder fires.
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="flex items-end gap-3">
-          <div className="space-y-2 flex flex-col w-full">
-            <Label 
-              htmlFor="reminder-hours"
-              className="flex flex-col gap-1 text-sm"
-            >
-              Hours before event
+        <div className="space-y-4">
+          {/* First reminder */}
+          <div className="space-y-1.5">
+            <Label htmlFor="reminder-days" className="text-sm font-medium">
+              First reminder — days before event
             </Label>
-            <div className="flex w-full items-center gap-2">
-              <Input
-                id="reminder-hours"
-                type="number"
-                min={1}
-                max={168}
-                value={reminderHoursInput}
-                onChange={(e) => setReminderHoursInput(e.target.value)}
-              />
-              <Button
-                onClick={handleSaveSettings}
-                disabled={savingSettings || parseInt(reminderHoursInput, 10) === reminderHours || isNaN(parseInt(reminderHoursInput, 10))}
-                variant="outline"
-              >
-                {savingSettings ? 'Saving…' : 'Save'}
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground">Current: {reminderHours}h before event · Max: 168h (7 days)</p>
+            <p className="text-xs text-muted-foreground">e.g. 7 = one week out, 30 = one month out</p>
+            <Input
+              id="reminder-days"
+              type="number"
+              min={1}
+              max={30}
+              value={reminderDaysInput}
+              onChange={(e) => setReminderDaysInput(e.target.value)}
+              className="max-w-[120px]"
+            />
           </div>
+
+          {/* Second reminder */}
+          <div className="space-y-1.5">
+            <Label htmlFor="reminder-hours-2" className="text-sm font-medium">
+              Second reminder — hours before event
+            </Label>
+            <p className="text-xs text-muted-foreground">Sent closer to the event (e.g. 24 h = same day)</p>
+            <Input
+              id="reminder-hours-2"
+              type="number"
+              min={1}
+              max={336}
+              value={reminderHoursInput2}
+              onChange={(e) => setReminderHoursInput2(e.target.value)}
+              className="max-w-[120px]"
+            />
+          </div>
+
+          <Button
+            onClick={handleSaveSettings}
+            disabled={
+              savingSettings ||
+              (parseInt(reminderDaysInput, 10) === reminderDays &&
+                parseInt(reminderHoursInput2, 10) === reminderHours2) ||
+              isNaN(parseInt(reminderDaysInput, 10)) ||
+              isNaN(parseInt(reminderHoursInput2, 10))
+            }
+            variant="outline"
+          >
+            {savingSettings ? 'Saving…' : 'Save Settings'}
+          </Button>
+          <Button
+            variant="outline"
+            disabled={triggeringReminders}
+            onClick={async () => {
+              setTriggeringReminders(true);
+              try {
+                const res = await api.post('/notifications/trigger-reminders', {});
+                const data = await res.json();
+                if (res.ok) {
+                  if (data.totalSent > 0) {
+                    toast.success(`Reminders sent — ${data.totalSent} notification${data.totalSent !== 1 ? 's' : ''} delivered.`);
+                  } else {
+                    toast.info('No upcoming events found in the reminder windows. No notifications sent.');
+                  }
+                } else {
+                  toast.error(data?.error ?? 'Trigger failed');
+                }
+              } catch {
+                toast.error('Failed to trigger reminders');
+              } finally {
+                setTriggeringReminders(false);
+              }
+            }}
+            className="ml-3"
+          >
+            {triggeringReminders ? 'Running…' : 'Test Reminders Now'}
+          </Button>
         </div>
-        <div className="mt-3 flex gap-4 text-xs text-muted-foreground">
+        <div className="mt-4 flex gap-4 text-xs text-muted-foreground">
           <span>Registered devices: <strong>{deviceCount ?? '…'}</strong></span>
           <span>FCM credentials: <strong className={fcmConfigured === false ? 'text-destructive' : ''}>{fcmConfigured === null ? '…' : fcmConfigured ? '✓ configured' : '✗ missing'}</strong></span>
         </div>
+      </CardContent>
+    </Card>
+    </div>
+
+    {/* Sent Notifications History */}
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Bell className="h-4 w-4" />
+          Sent Notifications
+        </CardTitle>
+        <CardDescription>History of all notifications sent to members.</CardDescription>
+      </CardHeader>
+      <CardContent className="p-0">
+        {historyLoading ? (
+          <p className="text-sm text-muted-foreground px-4 py-6">Loading…</p>
+        ) : history.length === 0 ? (
+          <p className="text-sm text-muted-foreground px-4 py-6">No notifications sent yet.</p>
+        ) : (
+          <div className="divide-y">
+            {history.map((n, i) => (
+              <div key={i} className="px-4 py-3 hover:bg-muted/30 transition-colors">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-sm leading-snug">{n.title}</p>
+                    <p className="text-sm text-muted-foreground mt-0.5 leading-snug">{n.body}</p>
+                  </div>
+                  <span className="shrink-0 text-xs font-medium text-muted-foreground bg-muted rounded-full px-2 py-0.5 whitespace-nowrap">
+                    {n.recipient_count} {n.recipient_count === 1 ? 'recipient' : 'recipients'}
+                  </span>
+                </div>
+                <p className="text-[11px] text-muted-foreground/70 mt-1.5">
+                  {new Date(n.sent_at).toLocaleString()}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
     </div>

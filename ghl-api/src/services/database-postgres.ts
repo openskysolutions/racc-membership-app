@@ -45,8 +45,10 @@ class DatabaseService {
         } : undefined,
         max: 5, // Increased to handle concurrent requests when marking winners
         min: 1,
-        idleTimeoutMillis: 10000,
-        connectionTimeoutMillis: 2000,
+        idleTimeoutMillis: 30000,        // Remove idle connections after 30s
+        connectionTimeoutMillis: 10000,  // 10s to connect (was 2s — too tight for DO)
+        keepAlive: true,                 // TCP keepalive prevents DO network from silently killing idle connections
+        keepAliveInitialDelayMillis: 10000,
       });
 
       // Test connection

@@ -14,6 +14,19 @@ export type NotificationTapHandler = (notification: ActionPerformed) => void;
 let tapHandler: NotificationTapHandler | null = null;
 
 /**
+ * When the app is launched cold (killed state) by tapping a notification,
+ * the Capacitor event can fire before the React app has registered the tap handler.
+ * We store the link here so App.tsx can pick it up on mount.
+ */
+let pendingDeepLink: string | null = null;
+
+export function consumePendingDeepLink(): string | null {
+  const link = pendingDeepLink;
+  pendingDeepLink = null;
+  return link;
+}
+
+/**
  * Set a callback that fires when the user taps a push notification.
  * The `notification.notification.data.link` field will contain a route path
  * like "/events/123" that the app can navigate to.
@@ -65,6 +78,10 @@ export async function initPushNotifications(): Promise<void> {
 
   // User tapped a notification
   PushNotifications.addListener('pushNotificationActionPerformed', (action: ActionPerformed) => {
+    // Store the link immediately — before calling tapHandler — so cold-start
+    // scenarios where tapHandler isn't set yet don't lose the deep link.
+    const link = action.notification?.data?.link as string | undefined;
+    if (link) pendingDeepLink = link;
     if (tapHandler) tapHandler(action);
   });
 

@@ -55,7 +55,7 @@ export interface SendNotificationOptions {
 
 /**
  * Send a push notification to every registered device for the given user IDs.
- * Silently removes any tokens that FCM reports as invalid/unregistered.
+ * Also saves a Notification inbox record for each user.
  */
 export async function sendToUsers(
   userIds: number[],
@@ -63,8 +63,20 @@ export async function sendToUsers(
 ): Promise<{ sent: number; failed: number }> {
   const tokens = await prisma.deviceToken.findMany({
     where: { userId: { in: userIds } },
-    select: { id: true, token: true },
+    select: { id: true, token: true, userId: true },
   });
+
+  // Save inbox records for every targeted user (regardless of push delivery)
+  if (userIds.length > 0) {
+    await prisma.notification.createMany({
+      data: userIds.map(userId => ({
+        userId,
+        title: options.title,
+        body: options.body,
+        link: options.link ?? null,
+      })),
+    });
+  }
 
   if (tokens.length === 0) return { sent: 0, failed: 0 };
 
@@ -73,13 +85,30 @@ export async function sendToUsers(
 
 /**
  * Broadcast a notification to ALL registered device tokens (admin use).
+ * Also saves a Notification inbox record for every user.
  */
 export async function sendToAll(
   options: SendNotificationOptions
 ): Promise<{ sent: number; failed: number }> {
   const tokens = await prisma.deviceToken.findMany({
-    select: { id: true, token: true },
+    select: { id: true, token: true, userId: true },
   });
+
+  console.log(`[FCM] sendToAll: found ${tokens.length} device token(s) for ${[...new Set(tokens.map(t => t.userId))].length} user(s)`);
+  tokens.forEach(t => console.log(`[FCM]   tokenId=${t.id} userId=${t.userId} token=...${t.token.slice(-8)}`));
+
+  // Save inbox records for all users that have at least one device token
+  const uniqueUserIds = [...new Set(tokens.map(t => t.userId))];
+  if (uniqueUserIds.length > 0) {
+    await prisma.notification.createMany({
+      data: uniqueUserIds.map(userId => ({
+        userId,
+        title: options.title,
+        body: options.body,
+        link: options.link ?? null,
+      })),
+    });
+  }
 
   if (tokens.length === 0) return { sent: 0, failed: 0 };
 
@@ -117,9 +146,14 @@ async function sendToTokens(
     response.responses.forEach((r, idx) => {
       if (r.success) {
         sent++;
+        console.log(`[FCM] ✅ Delivered — tokenId=${batch[idx].id} token=...${batch[idx].token.slice(-8)}`);
       } else {
         failed++;
         const code = r.error?.code;
+        console.error(`[FCM] ❌ Delivery failed — code: ${code}, message: ${r.error?.message}, tokenId: ${batch[idx].id} token=...${batch[idx].token.slice(-8)}`);
+        // Only delete tokens that are definitively invalid on the device side.
+        // Do NOT delete on third-party-auth-error — that is a server-side APNs
+        // credentials problem and the device token itself is still valid.
         if (
           code === 'messaging/registration-token-not-registered' ||
           code === 'messaging/invalid-registration-token'

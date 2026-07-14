@@ -25,10 +25,11 @@ model User {
   updatedAt     DateTime  @updatedAt
 
   // Relations
-  sessions Session[]
-  votes    Vote[]
-  jobs     Job[]
-  deviceTokens DeviceToken[]
+  sessions      Session[]
+  votes         Vote[]
+  jobs          Job[]
+  deviceTokens  DeviceToken[]
+  notifications Notification[]
 
   @@index([email])
   @@index([ghlContactId])
@@ -326,4 +327,33 @@ model AppSetting {
   updatedAt DateTime @updatedAt
 
   @@map("app_settings")
+}
+
+// Notification inbox — one record per user per sent notification
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  title     String
+  body      String
+  link      String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, isRead])
+  @@map("notifications")
+}
+
+// Tracks which event reminder slots have already been sent (persistent dedup)
+model EventReminderLog {
+  id        Int      @id @default(autoincrement())
+  eventId   String   // GHL event ID
+  slot      String   // "1" or "2" — which reminder slot
+  sentAt    DateTime @default(now())
+
+  @@unique([eventId, slot])
+  @@index([sentAt])
+  @@map("event_reminder_logs")
 }

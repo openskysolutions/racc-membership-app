@@ -293,9 +293,10 @@ class AuthSessionService {
       status: 'active'
     };
     
-    // 5. Create session
+    // 5. Create session — admins get a 7-day TTL to avoid frequent re-logins
     const accessToken = this.generateAccessToken(memberId);
-    const session = await this.createSession(memberId, accessToken, 24 * 3600); // 24 hours
+    const sessionTtl = user.role === 'admin' ? 7 * 24 * 3600 : 24 * 3600;
+    const session = await this.createSession(memberId, accessToken, sessionTtl);
     
     // 6. Store user info in session
     session.user = userData;

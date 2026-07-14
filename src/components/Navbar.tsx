@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { NotificationBell } from "@/components/NotificationBell";
 import {
   NavigationMenu,
   NavigationMenuList,
@@ -129,6 +130,7 @@ export const Navbar = () => {
             >
               Nominations
             </Button>
+            {isAuthenticated && <NotificationBell />}
             {!isAuthenticated &&
               <>
                 {/* {(import.meta.env.DEV || isNative) && ( */}
@@ -161,7 +163,7 @@ export const Navbar = () => {
             }
             <DropdownMenu>
               <DropdownMenuTrigger
-                className={`rounded-full flex items-center h-9 px-1 py-1 ${isAuthenticated ? 'gap-2 pl-3 rounded-lg hover:bg-neutral-300/40 dark:hover:bg-neutral-300/20' : ''} transition-colors`}
+                className={`rounded-full flex items-center h-9 px-1 py-1 ${isAuthenticated ? 'gap-2 pl-0 rounded-lg hover:bg-neutral-300/40 dark:hover:bg-neutral-300/20' : ''} transition-colors`}
               >
                 <span className="text-sm font-semibold">{user?.name}</span>
                 <Avatar className="h-8 w-auto">
@@ -242,7 +244,8 @@ export const Navbar = () => {
           </div>
 
           {/* mobile */}
-          <span className="flex md:hidden absolute right-4 z-10">
+          <span className="flex md:hidden absolute right-4 z-10 items-center gap-1">
+            {isAuthenticated && <NotificationBell />}
             <Sheet open={isOpen} onOpenChange={setIsOpen}>
               <SheetTrigger asChild>
                 <button 

@@ -942,8 +942,9 @@ router.post('/login', async (req, res) => {
     // Enrich user with profile data from GoHighLevel
     const user = await enrichUserWithGhlData(dbUser);
 
-    // Create session
-    const session = await authSessionService.createSession(user.id, 'access_token', 24 * 3600);
+    // Create session — admins get a 7-day TTL to avoid frequent re-logins
+    const sessionTtl = user.role === 'admin' ? 7 * 24 * 3600 : 24 * 3600;
+    const session = await authSessionService.createSession(user.id, 'access_token', sessionTtl);
 
     res.json({
       message: 'Login successful',

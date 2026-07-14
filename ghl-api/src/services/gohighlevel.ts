@@ -1366,6 +1366,25 @@ class GoHighLevelService {
   }
 
   /**
+   * List all calendars for the configured location.
+   */
+  async getCalendars(): Promise<{ id: string; name: string }[]> {
+    if (!this.client) throw new Error('GoHighLevel client not initialized');
+    try {
+      const response = await this.client.get('/calendars/', {
+        params: { locationId: this.locationId }
+      });
+      return (response.data?.calendars ?? response.data ?? []).map((c: any) => ({
+        id: c.id,
+        name: c.name ?? c.id,
+      }));
+    } catch (error: any) {
+      console.error('[GHL] Failed to fetch calendars:', error.response?.data ?? error.message);
+      throw new Error(`Failed to fetch calendars: ${error.message}`);
+    }
+  }
+
+  /**
    * Get calendar events from GoHighLevel using the exact format that works in Stoplight
    */
   async getCalendarEvents(calendarId: string, startDate?: Date, endDate?: Date): Promise<any[]> {
@@ -1391,12 +1410,15 @@ class GoHighLevelService {
       console.log(`Using timestamps - Start: ${startTimestamp}, End: ${endTimestamp}`);
       
       // Use the exact format that worked in Stoplight
-      const params = {
+      const params: Record<string, any> = {
         locationId: this.locationId,
-        calendarId: calendarId,
         startTime: startTimestamp,
         endTime: endTimestamp
       };
+      // Only include calendarId if a specific calendar is requested
+      if (calendarId) {
+        params.calendarId = calendarId;
+      }
 
       console.log(`🔄 Making request to /calendars/events with params:`, params);
       

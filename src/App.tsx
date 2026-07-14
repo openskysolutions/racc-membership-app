@@ -7,7 +7,8 @@ import { StatusBar } from '@capacitor/status-bar';
 import { isNativeApp } from '@/lib/platform';
 import { Toaster } from '@/components/ui/sonner';
 import { SessionMonitor } from '@/components/SessionMonitor';
-import { initPushNotifications, onNotificationTap } from '@/services/pushNotifications';
+import { initPushNotifications, onNotificationTap, consumePendingDeepLink } from '@/services/pushNotifications';
+import { openNotificationBell } from '@/components/NotificationBell';
 import { useNavigate } from 'react-router-dom';
 
 import "@/App.css";
@@ -34,13 +35,26 @@ function App() {
     fetchLocationIfNeeded();
   }, [fetchLocationIfNeeded]);
 
+  // On mount: consume any deep link stored before the tap handler was registered (cold start)
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const pendingLink = consumePendingDeepLink();
+    if (pendingLink) navigate(pendingLink);
+  }, [isAuthenticated, navigate]);
+
   // Initialize push notifications once the user is authenticated
   useEffect(() => {
     if (!isAuthenticated) return;
 
     onNotificationTap((action) => {
       const link = action.notification?.data?.link as string | undefined;
-      if (link) navigate(link);
+      if (link) {
+        // Navigate directly to the linked content
+        navigate(link);
+      } else {
+        // No specific destination — open the notification inbox
+        openNotificationBell?.();
+      }
     });
 
     initPushNotifications().catch((err) =>
