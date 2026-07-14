@@ -94,9 +94,6 @@ export async function sendToAll(
     select: { id: true, token: true, userId: true },
   });
 
-  console.log(`[FCM] sendToAll: found ${tokens.length} device token(s) for ${[...new Set(tokens.map(t => t.userId))].length} user(s)`);
-  tokens.forEach(t => console.log(`[FCM]   tokenId=${t.id} userId=${t.userId} token=...${t.token.slice(-8)}`));
-
   // Save inbox records for all users that have at least one device token
   const uniqueUserIds = [...new Set(tokens.map(t => t.userId))];
   if (uniqueUserIds.length > 0) {
@@ -146,11 +143,9 @@ async function sendToTokens(
     response.responses.forEach((r, idx) => {
       if (r.success) {
         sent++;
-        console.log(`[FCM] ✅ Delivered — tokenId=${batch[idx].id} token=...${batch[idx].token.slice(-8)}`);
       } else {
         failed++;
         const code = r.error?.code;
-        console.error(`[FCM] ❌ Delivery failed — code: ${code}, message: ${r.error?.message}, tokenId: ${batch[idx].id} token=...${batch[idx].token.slice(-8)}`);
         // Only delete tokens that are definitively invalid on the device side.
         // Do NOT delete on third-party-auth-error — that is a server-side APNs
         // credentials problem and the device token itself is still valid.

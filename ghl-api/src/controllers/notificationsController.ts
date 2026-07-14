@@ -35,7 +35,6 @@ class NotificationsController {
       update: { userId, platform },
     });
 
-    console.log(`[Push] Token registered — userId=${userId} platform=${platform} token=...${token.slice(-8)}`);
     return res.status(200).json({ ok: true });
   }
 

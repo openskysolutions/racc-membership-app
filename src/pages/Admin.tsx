@@ -2159,7 +2159,7 @@ function NotificationsTab() {
           >
             {savingSettings ? 'Saving…' : 'Save Settings'}
           </Button>
-          <Button
+          {/* <Button
             variant="outline"
             disabled={triggeringReminders}
             onClick={async () => {
@@ -2185,7 +2185,7 @@ function NotificationsTab() {
             className="ml-3"
           >
             {triggeringReminders ? 'Running…' : 'Test Reminders Now'}
-          </Button>
+          </Button> */}
         </div>
         <div className="mt-4 flex gap-4 text-xs text-muted-foreground">
           <span>Registered devices: <strong>{deviceCount ?? '…'}</strong></span>
