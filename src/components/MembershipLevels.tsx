@@ -35,7 +35,6 @@ const MembershipLevels: React.FC = () => {
               <li>• Discounted quarterly education courses</li>
               <li>• Networking opportunities at lunches</li>
               <li>• Sponsorship opportunities</li>
-              <li>• Member listing Cover image, website link, business bio, address map</li>
             </ul>
             <Button
               size="sm"
@@ -61,7 +60,6 @@ const MembershipLevels: React.FC = () => {
             <div className="text-3xl font-bold mb-4">$550<span className="text-sm font-normal">/year</span></div>
             <ul className="text-left space-y-2 text-sm mb-6 flex-grow">
               <li>• All Basic benefits</li>
-              <li>• Upgraded listing in Chamber Directory to include link to your business website</li>
               <li>• One free ticket to luncheons every month (excludes Annual Dinner)</li>
               <li>• Business featured once a year in Richfield Reaper</li>
             </ul>
@@ -86,7 +84,6 @@ const MembershipLevels: React.FC = () => {
             <div className="text-3xl font-bold mb-4">$900<span className="text-sm font-normal">/year</span></div>
             <ul className="text-left space-y-2 text-sm mb-6 flex-grow">
               <li>• All Enhanced benefits</li>
-              <li>• Upgraded directory listing to include links to your social media pages</li>
               <li>• Business Spotlight once a year on Radio</li>
               <li>• Free luncheon sponsorship once a year</li>
               <li>• Ad on placemats for luncheons</li>

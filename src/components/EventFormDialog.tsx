@@ -120,7 +120,7 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
   onEventDeleted,
   source = 'calendar' // Default to 'calendar' for backward compatibility
 }) => {
-  const { user } = useAuthStore();
+  const { user, role } = useAuthStore();
   const { saveDraft, getDraft, clearDraft } = useEventDraftStore();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -960,8 +960,8 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
             </div>
           </div>
 
-          {/* Featured Event – only shown when editing */}
-          {isEditing && (
+          {/* Featured Event – only shown when editing as admin */}
+          {isEditing && role === 'admin' && (
             <div className="flex items-center space-x-2 py-1">
               <input
                 type="checkbox"

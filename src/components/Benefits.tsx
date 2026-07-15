@@ -65,14 +65,9 @@ const benefits: Array<{
     checks: { basic: true, enhanced: true, elite: true },
   },
   {
-    label:
-      "Listing in Chamber Directory to include link to your business website, Cover image, business bio, address map, address map",
+    label: "Chamber Travels: $100 Off Deposit",
     checks: { basic: true, enhanced: true, elite: true },
   },
-  // {
-  //   label: "Business announced as new member on Chamber social media pages",
-  //   checks: { basic: false, enhanced: true, elite: true },
-  // },
   {
     label: "One free ticket to luncheons every month (excludes Annual Dinner) ($187 value)",
     checks: { basic: false, enhanced: true, elite: true },
