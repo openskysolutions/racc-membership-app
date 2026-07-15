@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, MapPin, User, Save, X, AlertCircle, Link, Image, Download, Trash2, Repeat, Star } from 'lucide-react';
+import { Calendar, Clock, MapPin, User, Save, X, AlertCircle, Link, Image, Download, Trash2, Repeat } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuthStore } from '@/stores/authStore';
 import { useEventDraftStore } from '@/stores/eventDraftStore';
-import { createCalendarEvent, updateCalendarEvent, getEventCustomFields, deleteCalendarEvent, CalendarEvent, CreateEventPayload, UpdateEventPayload } from '@/services/calendar';
+import { createCalendarEvent, updateCalendarEvent, getEventCustomFields, deleteCalendarEvent, getEventFlags, updateEventFlags, CalendarEvent, CreateEventPayload, UpdateEventPayload } from '@/services/calendar';
 import { uploadAvatar, validateAvatarFile, createImagePreview, revokeImagePreview, uploadEventCoverImage } from '@/services/avatarUpload';
 import { getFeaturedEventId, setFeaturedEventId } from '@/services/settingsService';
 
@@ -139,6 +139,9 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
 
   // Featured event state
   const [isFeatured, setIsFeatured] = useState(false);
+
+  // Event flags state
+  const [excludeFromReminders, setExcludeFromReminders] = useState(false);
   
   // Track previous open state to detect close transition
   const prevOpenRef = React.useRef(open);
@@ -259,6 +262,13 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
           setIsFeatured(featuredId === event.id);
         }).catch(() => {
           setIsFeatured(false);
+        });
+
+        // Load event flags
+        getEventFlags(event.id).then(flags => {
+          setExcludeFromReminders(flags.excludeFromReminders);
+        }).catch(() => {
+          setExcludeFromReminders(false);
         });
       } else {
         // Creating new event - check for draft first
@@ -767,6 +777,14 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
           console.error('Failed to update featured event setting:', featuredErr);
           // Non-fatal: don't block the dialog from closing
         }
+
+        // Update event flags
+        try {
+          await updateEventFlags(event.id, { excludeFromReminders });
+        } catch (flagErr) {
+          console.error('Failed to update event flags:', flagErr);
+          // Non-fatal: don't block the dialog from closing
+        }
       }
 
       // Clear draft after successful submission
@@ -960,23 +978,6 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
             </div>
           </div>
 
-          {/* Featured Event – only shown when editing as admin */}
-          {isEditing && role === 'admin' && (
-            <div className="flex items-center space-x-2 py-1">
-              <input
-                type="checkbox"
-                id="isFeatured"
-                checked={isFeatured}
-                onChange={(e) => setIsFeatured(e.target.checked)}
-                className="h-4 w-4 rounded border-gray-300"
-              />
-              <Label htmlFor="isFeatured" className="text-sm font-normal cursor-pointer flex items-center gap-2">
-                <Star className="h-4 w-4 text-yellow-500" />
-                Feature this event on the homepage
-              </Label>
-            </div>
-          )}
-
           {/* Download File */}
           <div className="space-y-2">
             <Label className="flex items-center gap-2">
@@ -1059,8 +1060,40 @@ const EventFormDialog: React.FC<EventFormDialogProps> = ({
 
           {/* Date and Time */}
           <div className="space-y-4">
+            {/* Featured Event – only shown when editing as admin */}
+            {isEditing && role === 'admin' && (
+              <div className="flex items-center space-x-2 py-1">
+                <input
+                  type="checkbox"
+                  id="isFeatured"
+                  checked={isFeatured}
+                  onChange={(e) => setIsFeatured(e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300"
+                />
+                <Label htmlFor="isFeatured" className="text-sm font-normal cursor-pointer flex items-center gap-2">
+                  Feature this event on the homepage
+                </Label>
+              </div>
+            )}
+
+            {/* Exclude from reminders – only shown when editing as admin */}
+            {isEditing && role === 'admin' && (
+              <div className="flex items-center space-x-2 py-1 !mt-0">
+                <input
+                  type="checkbox"
+                  id="excludeFromReminders"
+                  checked={excludeFromReminders}
+                  onChange={(e) => setExcludeFromReminders(e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300"
+                />
+                <Label htmlFor="excludeFromReminders" className="text-sm font-normal cursor-pointer">
+                  Exclude this event from reminder emails
+                </Label>
+              </div>
+            )}
+
             {/* Multi-day checkbox */}
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 py-1 !mt-0">
               <input
                 type="checkbox"
                 id="isMultiDay"

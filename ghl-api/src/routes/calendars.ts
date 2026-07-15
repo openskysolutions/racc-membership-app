@@ -10,7 +10,8 @@ const {
   getSlots,
   getAppointmentNotes, createAppointmentNote, updateAppointmentNote, deleteAppointmentNote,
   fetchCalendarResources, createCalendarResource, getCalendarResource, updateCalendarResource, deleteCalendarResource,
-  getEventNotification, createEventNotification, findEventNotification, updateEventNotification, deleteEventNotification
+  getEventNotification, createEventNotification, findEventNotification, updateEventNotification, deleteEventNotification,
+  getEventFlags, updateEventFlags
 } = require('@/controllers/calendarsController');
 
 const router = express.Router();
@@ -35,6 +36,8 @@ router.delete('/appointments/:id', requireAuth, deleteEvent); // Delete appointm
 router.get('/appointments/:id/custom-fields', getAppointmentCustomFields); // Lazy load custom fields
 router.post('/appointments/:id/custom-fields', requireAuth, updateAppointmentCustomFields); // Update only custom fields
 router.post('/appointments/:id/recurring-series-custom-fields', requireAuth, updateRecurringSeriesCustomFields); // Update custom fields for entire recurring series
+router.get('/appointments/:id/flags', getEventFlags);
+router.put('/appointments/:id/flags', requireAuth, requireAdmin, updateEventFlags);
 
 // Other routes can be added as needed...
 

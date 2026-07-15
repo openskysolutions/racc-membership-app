@@ -43,10 +43,18 @@ export async function initPushNotifications(): Promise<void> {
   if (!Capacitor.isNativePlatform()) return;
 
   // Request / check permission
-  let permStatus = await PushNotifications.checkPermissions();
+  // Wrapped in try-catch: on Android, requestPermissions() can throw a native
+  // exception (e.g. if Firebase is not fully initialized yet).
+  let permStatus: { receive: string };
+  try {
+    permStatus = await PushNotifications.checkPermissions();
 
-  if (permStatus.receive === 'prompt') {
-    permStatus = await PushNotifications.requestPermissions();
+    if (permStatus.receive === 'prompt') {
+      permStatus = await PushNotifications.requestPermissions();
+    }
+  } catch (err) {
+    console.warn('[Push] Permission check/request failed (Android):', err);
+    return;
   }
 
   if (permStatus.receive !== 'granted') {

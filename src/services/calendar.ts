@@ -520,6 +520,23 @@ export async function deleteCalendarEvent(eventId: string, deleteType?: 'single'
   }
 }
 
+export interface EventFlag {
+  eventId: string;
+  excludeFromReminders: boolean;
+}
+
+export async function getEventFlags(eventId: string): Promise<EventFlag> {
+  const response = await api.get(`/calendars/appointments/${eventId}/flags`);
+  if (!response.ok) throw new Error(`Failed to fetch event flags: ${response.statusText}`);
+  return response.json();
+}
+
+export async function updateEventFlags(eventId: string, flags: { excludeFromReminders: boolean }): Promise<EventFlag> {
+  const response = await api.put(`/calendars/appointments/${eventId}/flags`, flags);
+  if (!response.ok) throw new Error(`Failed to update event flags: ${response.statusText}`);
+  return response.json();
+}
+
 /**
  * Get custom fields for a calendar event (lazy load)
  * @param eventId - The event/appointment ID

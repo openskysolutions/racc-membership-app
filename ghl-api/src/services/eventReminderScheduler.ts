@@ -96,6 +96,17 @@ async function sendReminderForWindow(
     const eventId: string = event.id;
     if (!eventId) continue;
 
+    // Skip events flagged to exclude from reminders
+    try {
+      const flag = await prisma.eventFlag.findUnique({ where: { eventId } });
+      if (flag?.excludeFromReminders) {
+        console.log(`[EventReminder] Slot ${slot}: skipping event ${eventId} (excludeFromReminders)`);
+        continue;
+      }
+    } catch {
+      // DB error — allow send rather than suppressing
+    }
+
     // Check persistent DB dedup — skip if already sent
     if (await alreadySent(eventId, slot)) {
       console.log(`[EventReminder] Slot ${slot}: already sent for event ${eventId}, skipping`);

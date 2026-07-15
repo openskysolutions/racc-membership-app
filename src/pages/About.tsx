@@ -7,6 +7,34 @@ import { useNavigate } from 'react-router-dom';
 import cn from 'classnames';
 import { Separator } from '@radix-ui/react-dropdown-menu';
 
+export const MissionVision: React.FC = () => (
+  <div className="grid md:grid-cols-2 gap-8 my-8 mx-auto max-w-6xl px-3 md:px-6">
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-2xl">Our Mission</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-muted-foreground">
+          To promote and support the growth and prosperity of businesses in the Richfield area through 
+          networking opportunities, advocacy, education, and community engagement.
+        </p>
+      </CardContent>
+    </Card>
+    
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-2xl">Our Vision</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-muted-foreground">
+          To be the leading voice for business in our community, fostering an environment where 
+          businesses thrive and contribute to the economic vitality of the Richfield area.
+        </p>
+      </CardContent>
+    </Card>
+  </div>
+);
+
 const AboutPage: React.FC = () => {
   const navigate = useNavigate();
 
@@ -21,31 +49,7 @@ const AboutPage: React.FC = () => {
     </div>
 
     {/* Mission & Vision */}
-    <div className="grid md:grid-cols-2 gap-8 mb-8">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl">Our Mission</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">
-            To promote and support the growth and prosperity of businesses in the Richfield area through 
-            networking opportunities, advocacy, education, and community engagement.
-          </p>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl">Our Vision</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">
-            To be the leading voice for business in our community, fostering an environment where 
-            businesses thrive and contribute to the economic vitality of the Richfield area.
-          </p>
-        </CardContent>
-      </Card>
-    </div>
+    <MissionVision />
 
     {/* Board of Directors Section */}
     <Card className="mb-8 bg-slate-200 dark:bg-slate-600/50 border-slate-100 dark:border-slate-600/50">

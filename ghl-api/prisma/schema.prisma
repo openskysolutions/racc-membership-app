@@ -357,3 +357,12 @@ model EventReminderLog {
   @@index([sentAt])
   @@map("event_reminder_logs")
 }
+
+// Per-event flags stored locally (not synced to GoHighLevel)
+model EventFlag {
+  eventId              String   @id     // GHL event/appointment ID
+  excludeFromReminders Boolean  @default(false)
+  updatedAt            DateTime @updatedAt
+
+  @@map("event_flags")
+}

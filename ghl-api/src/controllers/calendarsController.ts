@@ -1,5 +1,6 @@
 const { HighLevel } = require('@gohighlevel/api-client');
 const { ghlService } = require('@/services/gohighlevel');
+const { prisma } = require('@/lib/prisma');
 const client = new HighLevel({ privateIntegrationToken: process.env.PRIVATE_INTEGRATION_TOKEN });
 const svc = client.calendars;
 
@@ -534,6 +535,39 @@ async function updateRecurringSeriesCustomFields(req, res, next) {
   }
 }
 
+async function getEventFlags(req, res, next) {
+  try {
+    const { id } = req.params;
+    const flag = await prisma.eventFlag.findUnique({ where: { eventId: id } });
+    res.json({
+      eventId: id,
+      excludeFromReminders: flag?.excludeFromReminders ?? false,
+    });
+  } catch (err) {
+    console.error('Error fetching event flags:', err);
+    next(err);
+  }
+}
+
+async function updateEventFlags(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { excludeFromReminders } = req.body;
+    if (typeof excludeFromReminders !== 'boolean') {
+      return res.status(400).json({ error: 'excludeFromReminders must be a boolean' });
+    }
+    const flag = await prisma.eventFlag.upsert({
+      where: { eventId: id },
+      update: { excludeFromReminders },
+      create: { eventId: id, excludeFromReminders },
+    });
+    return res.json(flag);
+  } catch (err) {
+    console.error('Error updating event flags:', err);
+    next(err);
+  }
+}
+
 module.exports = { 
   listCalendars, getCalendarById, createCalendar, updateCalendar, deleteCalendar,
   // Groups
@@ -551,5 +585,7 @@ module.exports = {
   // Calendar Resources
   fetchCalendarResources, createCalendarResource, getCalendarResource, updateCalendarResource, deleteCalendarResource,
   // Event Notifications
-  getEventNotification, createEventNotification, findEventNotification, updateEventNotification, deleteEventNotification
+  getEventNotification, createEventNotification, findEventNotification, updateEventNotification, deleteEventNotification,
+  // Event Flags
+  getEventFlags, updateEventFlags
 };
