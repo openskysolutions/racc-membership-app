@@ -11,7 +11,7 @@ interface BoardMember {
 
 const BoardMembers: React.FC = () => {
   // Load board member images from website instead of bundling in app
-  const BASE_URL = 'https://members.richfieldareachamber.com';
+  const BASE_URL = 'https://richfieldareachamber.com';
 
   const executiveBoard: BoardMember[] = [
     { name: "Katie Lindsay", title: "President", business: "Richfield Monuments", photo: `${BASE_URL}/images/board/KatieLindsay.jpg` },

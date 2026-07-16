@@ -231,7 +231,7 @@ export function generateConfirmationEmail(params: ConfirmationEmailParams): stri
             <!-- Header -->
             <div class="header">
                 <div class="logo-section">
-                    <img src="https://members.richfieldareachamber.com/assets/racc-logo-BHZqyYn3.png" alt="Richfield Area Chamber of Commerce Logo" class="logo">
+                    <img src="https://richfieldareachamber.com/assets/racc-logo-BHZqyYn3.png" alt="Richfield Area Chamber of Commerce Logo" class="logo">
                 </div>
                 <h1>Welcome</h1>
                 <p class="greeting">to Richfield Area Chamber of Commerce!</p>

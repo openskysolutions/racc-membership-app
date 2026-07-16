@@ -10,7 +10,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const port = process.env.FRONTEND_PORT || 3001;
 const API_BASE = `http://localhost:${process.env.PORT || 3000}/api`;
-const SITE_URL = 'https://members.richfieldareachamber.com';
+const SITE_URL = 'https://richfieldareachamber.com';
 const DEFAULT_IMAGE = `${SITE_URL}/images/og-image.png`;
 
 // Detect social media / link-preview crawlers

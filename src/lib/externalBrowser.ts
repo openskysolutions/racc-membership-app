@@ -6,7 +6,7 @@
 import { Browser } from '@capacitor/browser';
 import { isNativeApp } from '@/lib/platform';
 
-const BASE_URL = 'https://members.richfieldareachamber.com';
+const BASE_URL = 'https://richfieldareachamber.com';
 
 /**
  * Open a URL in an external browser (mobile) or handle navigation (web)

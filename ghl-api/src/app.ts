@@ -11,7 +11,7 @@ const app = express();
 // Configure CORS to allow frontend access
 app.use(cors({
   origin: [
-    'https://members.richfieldareachamber.com',
+    'https://richfieldareachamber.com',
     'http://localhost:5173',
     'http://localhost:5174',
     'http://localhost:5175',

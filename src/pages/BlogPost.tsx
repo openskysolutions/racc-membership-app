@@ -31,7 +31,7 @@ function makeFormLinksExternal(html: string): string {
     return html;
   }
   
-  const baseUrl = 'https://members.richfieldareachamber.com';
+  const baseUrl = 'https://richfieldareachamber.com';
   
   // Replace relative /forms/ URLs with full external URLs and add target="_blank"
   return html.replace(

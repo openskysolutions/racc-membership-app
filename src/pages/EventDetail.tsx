@@ -36,7 +36,7 @@ const GHL_CALENDAR_ID = '9XpDcFHv3SmCUuHeuOOg';
 const GHL_LOCATION_ID = '5FAB1z0AhuVlEdqOzjVX';
 
 // Production URL for shareable links
-const PRODUCTION_URL = 'https://members.richfieldareachamber.com';
+const PRODUCTION_URL = 'https://richfieldareachamber.com';
 
 const EventDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
