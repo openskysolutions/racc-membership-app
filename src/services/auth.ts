@@ -15,7 +15,7 @@ interface AuthResponse {
     email: string;
     firstName?: string;
     lastName?: string;
-    businessName?: string;
+    businessName?: string | null;
     phone?: string;
     website?: string;
     role: string;
@@ -26,6 +26,10 @@ interface AuthResponse {
     avatarUrl?: string;
     createdAt?: string;
     updatedAt?: string;
+    // Business identity fields (populated at login from GHL)
+    ghlBusinessId?: string | null;
+    isMainContact?: boolean;
+    isBusinessProfileEditor?: boolean;
   };
   token: string;
 }

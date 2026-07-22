@@ -287,6 +287,24 @@ class GoHighLevelService {
   }
 
   /**
+   * Delete a GHL Contact by ID.
+   * Used for rollback when business creation fails after contact creation.
+   */
+  async deleteContact(contactId: string): Promise<void> {
+    if (this.developmentMode) {
+      console.log(`🚧 DEV MODE: Mock deleteContact ${contactId}`);
+      return;
+    }
+    if (!this.client) throw new Error('GoHighLevel client not initialized');
+    try {
+      await this.client.delete(`/contacts/${contactId}`);
+    } catch (error: any) {
+      console.error(`❌ Failed to delete contact ${contactId}:`, error.response?.data ?? error.message);
+      throw new Error(`Failed to delete contact: ${error.message}`);
+    }
+  }
+
+  /**
    * Check if a user is active (has "active" tag) in GoHighLevel
    */
   async isUserActive(email: string): Promise<{ isActive: boolean; contact?: any; reason?: string }> {
@@ -539,6 +557,15 @@ class GoHighLevelService {
   }
 
   /**
+   * Fetch all contacts that are associated with a GHL Business (businessId is set).
+   * Uses the GET /contacts/ endpoint which returns businessId on each contact.
+   */
+  async getAllContactsWithBusinessId(maxContacts = 2000): Promise<any[]> {
+    const all = await this.getAllContacts(maxContacts);
+    return all.filter((c: any) => !!c.businessId);
+  }
+
+  /**
    * Search contacts by a free-text query (name or email fragment).
    * Returns up to `limit` matching contacts.
    */
@@ -587,6 +614,18 @@ class GoHighLevelService {
       console.error('[searchContactsByQuery] error:', err.response?.data || err.message);
       return [];
     }
+  }
+
+  /**
+   * Set custom fields on a contact using the GHL { id, field_value } array format.
+   * Use this instead of updateContact() when you only need to write custom fields.
+   */
+  async setContactCustomFields(contactId: string, fields: Array<{ id: string; field_value: string }>): Promise<void> {
+    if (this.developmentMode) return;
+    if (!this.client) throw new Error('GoHighLevel client not initialized');
+    await this.client.put(`/contacts/${contactId}`, { customFields: fields }, {
+      headers: { 'Version': '2021-07-28' },
+    });
   }
 
   /**
@@ -1026,59 +1065,51 @@ class GoHighLevelService {
    * Get all contacts from GoHighLevel (no filtering)
    * @returns Promise<any[]> Array of all contacts
    */
-  async getAllContacts(): Promise<any[]> {
+  async getAllContacts(maxContacts = 5000): Promise<any[]> {
     if (this.developmentMode) {
-      console.log(`🚧 DEV MODE: Mock fetching all contacts`);
-      // Return mock data for development
-      return [
-        {
-          id: '1',
-          firstName: 'John',
-          lastName: 'Doe',
-          email: 'john.doe@example.com',
-          phone: '(435) 555-0101',
-          tags: ['member'],
-          dateAdded: '2023-01-15T00:00:00.000Z',
-          customFields: [
-            { id: 'memberSince', value: '2023-01-15' },
-            { id: 'specialties', value: 'Business Development, Marketing' }
-          ]
-        },
-        {
-          id: '2',
-          firstName: 'Jane',
-          lastName: 'Smith',
-          email: 'jane.smith@example.com',
-          phone: '(435) 555-0102',
-          tags: ['active', 'board'],
-          dateAdded: '2022-11-20T00:00:00.000Z',
-          customFields: [
-            { id: 'memberSince', value: '2022-11-20' },
-            { id: 'specialties', value: 'Real Estate, Investment' }
-          ]
-        }
-      ];
+      return [];
     }
 
     if (!this.client) {
       throw new Error('GoHighLevel client not initialized');
     }
 
-    try {
-      console.log(`🔍 Fetching all contacts from GoHighLevel...`);
-      // Fetch all contacts for the location
-      const response = await this.client.get(`/contacts/?locationId=${this.locationId}`);
+    // Use POST /contacts/search with pageLimit=100 — returns full contact objects
+    // including tags[]. Much faster than GET /contacts/ (100/page vs 20/page).
+    const pageSize = 100;
+    let page = 1;
+    let allContacts: any[] = [];
 
-      if (response.data && response.data.contacts) {
-        console.log(`📊 Retrieved ${response.data.contacts.length} total contacts from GoHighLevel`);
-        return response.data.contacts;
+    while (allContacts.length < maxContacts) {
+      try {
+        const response = await this.client.post('/contacts/search', {
+          locationId: this.locationId,
+          pageLimit: pageSize,
+          page,
+        });
+        const batch: any[] = response.data?.contacts ?? [];
+        const total: number = response.data?.total ?? 0;
+        allContacts = allContacts.concat(batch);
+        if (batch.length < pageSize || allContacts.length >= total) break;
+        page++;
+      } catch (err: any) {
+        console.error('[getAllContacts] error:', err.response?.data || err.message);
+        break;
       }
-      
-      return [];
-    } catch (error: any) {
-      console.error('Failed to fetch all contacts:', error);
-      throw new Error(`Failed to fetch contacts: ${error.message}`);
     }
+
+    // Deduplicate by contact ID — GHL page-based search can return the same
+    // contact on multiple pages if contacts are modified between fetches.
+    const seen = new Set<string>();
+    const deduped = allContacts.filter(c => {
+      if (!c.id || seen.has(c.id)) return false;
+      seen.add(c.id);
+      return true;
+    });
+    if (deduped.length !== allContacts.length) {
+      console.warn(`[getAllContacts] deduplicated ${allContacts.length} → ${deduped.length} contacts`);
+    }
+    return deduped;
   }
 
   /**
@@ -2235,6 +2266,370 @@ class GoHighLevelService {
       // Don't throw - just log the error and continue without custom fields
     }
   }
+
+  // ─── Businesses API (v3) ─────────────────────────────────────────────────
+  // GHL Businesses are sub-account-level entities. Each Contact in GHL can be
+  // associated with a Business via its `businessId` field. The chamber admin
+  // manages these relationships in GHL; the app only reads them.
+  //
+  // The `main-contact` tag on a Contact (set in GHL) grants that user permission
+  // to edit the business profile from within the app. This mirrors how the
+  // `admin` and `board member` tags work for role-based permissions today.
+  //
+  // All Businesses API calls require `Version: v3` — overridden per-request
+  // since the shared axios client defaults to an older version.
+
+  /**
+   * List all businesses for this location.
+   * This is the data source for the member directory.
+   */
+  async getBusinesses(limit = 100, skip = 0): Promise<any[]> {
+    if (this.developmentMode) {
+      console.log('🚧 DEV MODE: Mock getBusinesses');
+      return [
+        {
+          id: 'mock_business_1',
+          name: 'Johnson Real Estate Group',
+          phone: '(435) 555-0101',
+          email: 'info@johnsonrealestate.com',
+          website: 'https://johnsonrealestate.com',
+          address: '123 Main St',
+          city: 'Richfield',
+          state: 'UT',
+          postalCode: '84701',
+          country: 'US',
+          description: 'Leading commercial real estate expert in Richfield.',
+          locationId: this.locationId,
+          createdAt: '2020-01-15T00:00:00.000Z',
+          updatedAt: '2024-01-15T00:00:00.000Z',
+        },
+        {
+          id: 'mock_business_2',
+          name: 'Davis Construction LLC',
+          phone: '(435) 555-0102',
+          email: 'info@davisconstruction.com',
+          website: 'https://davisconstruction.com',
+          address: '456 Oak Ave',
+          city: 'Richfield',
+          state: 'UT',
+          postalCode: '84701',
+          country: 'US',
+          description: 'Quality construction services for Central Utah.',
+          locationId: this.locationId,
+          createdAt: '2021-03-22T00:00:00.000Z',
+          updatedAt: '2024-03-22T00:00:00.000Z',
+        },
+      ];
+    }
+
+    if (!this.client) throw new Error('GoHighLevel client not initialized');
+
+    try {
+      const response = await this.client.get('/businesses/', {
+        params: { locationId: this.locationId, limit, skip },
+        headers: { Version: 'v3' },
+      });
+      return response.data?.businesses ?? [];
+    } catch (error: any) {
+      console.error('❌ Failed to fetch businesses:', error.response?.data ?? error.message);
+      throw new Error(`Failed to fetch businesses: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get a single business by its GHL Business ID.
+   */
+  async getBusinessById(businessId: string): Promise<any> {
+    if (this.developmentMode) {
+      console.log(`🚧 DEV MODE: Mock getBusinessById ${businessId}`);
+      return {
+        id: businessId,
+        name: 'Mock Business',
+        phone: '(435) 555-0000',
+        email: 'info@mockbusiness.com',
+        website: 'https://mockbusiness.com',
+        address: '1 Mock St',
+        city: 'Richfield',
+        state: 'UT',
+        postalCode: '84701',
+        country: 'US',
+        description: 'A mock business for development.',
+        locationId: this.locationId,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+    }
+
+    if (!this.client) throw new Error('GoHighLevel client not initialized');
+
+    try {
+      const response = await this.client.get(`/businesses/${businessId}`, {
+        headers: { Version: 'v3' },
+      });
+      return response.data?.business ?? response.data;
+    } catch (error: any) {
+      console.error(`❌ Failed to fetch business ${businessId}:`, error.response?.data ?? error.message);
+      throw new Error(`Failed to fetch business: ${error.message}`);
+    }
+  }
+
+  /**
+   * Update a GHL Business record.
+   * Called when a main-contact team member edits their company's profile in the app.
+   * Only the fields supported by the GHL Business object are written here;
+   * extended fields (avatar, tagline, social links, etc.) are written to BusinessProfile in Postgres.
+   */
+  async updateBusiness(
+    businessId: string,
+    data: {
+      name?: string;
+      phone?: string;
+      email?: string;
+      website?: string;
+      address?: string;
+      city?: string;
+      state?: string;
+      postalCode?: string;
+      country?: string;
+      description?: string;
+    }
+  ): Promise<any> {
+    if (this.developmentMode) {
+      console.log(`🚧 DEV MODE: Mock updateBusiness ${businessId}`, data);
+      return { ...data, id: businessId };
+    }
+
+    if (!this.client) throw new Error('GoHighLevel client not initialized');
+
+    // Remove undefined fields
+    const payload = Object.fromEntries(
+      Object.entries(data).filter(([, v]) => v !== undefined)
+    );
+
+    try {
+      const response = await this.client.put(`/businesses/${businessId}`, payload, {
+        headers: { Version: 'v3' },
+      });
+      return response.data?.buiseness ?? response.data?.business ?? response.data;
+    } catch (error: any) {
+      console.error(`❌ Failed to update business ${businessId}:`, error.response?.data ?? error.message);
+      throw new Error(`Failed to update business: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get all GHL Contacts associated with a given Business.
+   * Used to list team members on the business profile page and to resolve
+   * a user's businessId + isMainContact at login time.
+   *
+   * A contact has the `main-contact` tag if the chamber admin designated them
+   * as the primary contact in GHL. The app reads this tag to grant edit
+   * permissions on the business profile — consistent with how `admin` and
+   * `board member` tags work for role-based access today.
+   */
+  async getContactsByBusinessId(businessId: string, limit = 100): Promise<any[]> {
+    if (this.developmentMode) {
+      console.log(`🚧 DEV MODE: Mock getContactsByBusinessId ${businessId}`);
+      return [
+        {
+          id: 'mock_contact_1',
+          firstName: 'Sarah',
+          lastName: 'Johnson',
+          email: 'sarah@johnsonrealestate.com',
+          businessId,
+          tags: ['active', 'main-contact'],          // set by chamber admin in GHL
+        },
+        {
+          id: 'mock_contact_2',
+          firstName: 'Tom',
+          lastName: 'Johnson',
+          email: 'tom@johnsonrealestate.com',
+          businessId,
+          tags: ['active', 'business-profile-editor'], // granted by main contact in app
+        },
+        {
+          id: 'mock_contact_3',
+          firstName: 'Lisa',
+          lastName: 'Johnson',
+          email: 'lisa@johnsonrealestate.com',
+          businessId,
+          tags: ['active'],                           // team member, no edit access
+        },
+      ];
+    }
+
+    if (!this.client) throw new Error('GoHighLevel client not initialized');
+
+    try {
+      const response = await this.client.get(`/contacts/business/${businessId}`, {
+        params: { locationId: this.locationId, limit },
+        headers: { Version: 'v3' },
+      });
+      return response.data?.contacts ?? [];
+    } catch (error: any) {
+      console.error(
+        `❌ Failed to fetch contacts for business ${businessId}:`,
+        error.response?.data ?? error.message
+      );
+      throw new Error(`Failed to fetch business contacts: ${error.message}`);
+    }
+  }
+
+  /**
+   * Resolve a contact's associated business and permissions from GHL.
+   * Called during auth enrichment at login.
+   *
+   * Permission model (both tags set/managed in GHL by the chamber admin or main contact):
+   *   - `main-contact`            → set by chamber admin in GHL; one per business.
+   *                                 Grants business profile edit + team editor management.
+   *   - `business-profile-editor` → set by the main contact in the app (or chamber admin in GHL).
+   *                                 Grants business profile edit only.
+   *                                 Multiple contacts per business can hold this tag.
+   *
+   * The main contact implicitly has editor access regardless of whether they
+   * also carry the `business-profile-editor` tag.
+   */
+  async resolveContactBusiness(contactId: string): Promise<{
+    businessId: string | null;
+    businessName: string | null;
+    isMainContact: boolean;
+    isBusinessProfileEditor: boolean;
+  }> {
+    if (this.developmentMode) {
+      console.log(`🚧 DEV MODE: Mock resolveContactBusiness ${contactId}`);
+      return {
+        businessId: 'mock_business_1',
+        businessName: 'Mock Business',
+        isMainContact: true,
+        isBusinessProfileEditor: true,
+      };
+    }
+
+    try {
+      const contact = await this.getContact(contactId);
+      const businessId: string | null = contact?.businessId ?? null;
+      const tags: string[] = Array.isArray(contact?.tags) ? contact.tags : [];
+
+      const isMainContact = tags.includes('main-contact');
+      // Main contact always has editor access; explicit editor tag also grants it
+      const isBusinessProfileEditor = isMainContact || tags.includes('business-profile-editor');
+
+      let businessName: string | null = null;
+      if (businessId) {
+        try {
+          const business = await this.getBusinessById(businessId);
+          businessName = business?.name ?? null;
+        } catch {
+          // Non-fatal: business name unavailable, businessId still valid
+        }
+      }
+
+      return { businessId, businessName, isMainContact, isBusinessProfileEditor };
+    } catch (error: any) {
+      console.error(`❌ Failed to resolve business for contact ${contactId}:`, error.message);
+      return { businessId: null, businessName: null, isMainContact: false, isBusinessProfileEditor: false };
+    }
+  }
+
+  /**
+   * Grant or revoke the `business-profile-editor` tag on a team member contact.
+   * Called by the main-contact-only team management UI in the app.
+   * Writes directly to GHL via the existing updateContactTags method.
+   *
+   * The caller (backend route) must verify:
+   *   1. The requesting user has isMainContact === true in their session
+   *   2. The target contactId belongs to the same ghlBusinessId as the requesting user
+   *      (use getContactsByBusinessId to verify membership before calling this)
+   */
+  async setBusinessProfileEditor(contactId: string, grant: boolean): Promise<void> {
+    if (this.developmentMode) {
+      console.log(`🚧 DEV MODE: Mock setBusinessProfileEditor ${contactId} grant=${grant}`);
+      return;
+    }
+    await this.updateContactTags(
+      contactId,
+      ['business-profile-editor'],
+      grant ? 'add' : 'remove'
+    );
+    console.log(`✅ ${grant ? 'Granted' : 'Revoked'} business-profile-editor for contact ${contactId}`);
+  }
+
+  /**
+   * Create a new GHL Business record for this location.
+   * Uses POST /businesses/ (v3 API).
+   * Response shape: response.data?.business ?? response.data
+   */
+  async createBusiness(data: {
+    name: string;
+    phone?: string;
+    email?: string;
+    website?: string;
+    address?: string;
+    city?: string;
+    state?: string;
+    postalCode?: string;
+    country?: string;
+    description?: string;
+  }): Promise<any> {
+    if (this.developmentMode) {
+      console.log('🚧 DEV MODE: Mock createBusiness', data);
+      return {
+        id: `mock_business_${Date.now()}`,
+        ...data,
+        locationId: this.locationId,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+    }
+
+    if (!this.client) throw new Error('GoHighLevel client not initialized');
+
+    try {
+      const response = await this.client.post('/businesses/', {
+        ...data,
+        locationId: this.locationId,
+      }, {
+        headers: { Version: 'v3' },
+      });
+      return response.data?.business ?? response.data;
+    } catch (error: any) {
+      console.error('❌ Failed to create business:', error.response?.data ?? error.message);
+      throw new Error(`Failed to create business: ${error.message}`);
+    }
+  }
+
+  /**
+   * Link a GHL Contact to a GHL Business by setting the contact's businessId field.
+   * Tries v2 first (PUT /contacts/:id with { businessId }).
+   * Falls back to v3 if v2 returns an error, since some GHL accounts
+   * require the v3 version header for this field.
+   * Does not throw on failure — callers handle association failure gracefully.
+   */
+  async linkContactToBusiness(contactId: string, businessId: string): Promise<void> {
+    if (this.developmentMode) {
+      console.log(`🚧 DEV MODE: Mock linkContactToBusiness ${contactId} → ${businessId}`);
+      return;
+    }
+
+    if (!this.client) throw new Error('GoHighLevel client not initialized');
+
+    // Try v2 first
+    try {
+      await this.client.put(`/contacts/${contactId}`, { businessId });
+      return;
+    } catch (errV2: any) {
+      const status = errV2.response?.status;
+      const body = JSON.stringify(errV2.response?.data ?? {});
+      console.warn(`⚠️  v2 linkContactToBusiness failed (HTTP ${status}): ${body} — retrying with v3`);
+    }
+
+    // Fall back to v3
+    await this.client.put(`/contacts/${contactId}`, { businessId }, {
+      headers: { Version: 'v3' },
+    });
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
 
   /**
    * Get the configured location ID

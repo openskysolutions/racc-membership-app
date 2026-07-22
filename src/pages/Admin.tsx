@@ -3,9 +3,9 @@
  * Only accessible to users with admin role
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuthStore } from '@/stores/authStore';
-import { adminService, User, AdminStats } from '@/services/admin';
+import { adminService, User } from '@/services/admin';
 import { api } from '@/services/apiClient';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,11 +13,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, Edit, Trash2, Search, MoreHorizontal, AlertTriangle, CheckCircle, Clock, Award, LucideRefreshCcw, Star, FileText, Bell, LayoutDashboard, ChevronDown, Calendar, Settings } from 'lucide-react';
+import { Users, Edit, Trash2, Search, MoreHorizontal, AlertTriangle, CheckCircle, Clock, Award, LucideRefreshCcw, Star, FileText, Bell, ChevronDown, Calendar, Settings, Building2, Contact } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { getUpcomingEvents, CalendarEvent } from '@/services/calendar';
 import { getFeaturedEventId, setFeaturedEventId } from '@/services/settingsService';
@@ -48,22 +48,51 @@ interface Nomination {
 export default function AdminPage() {
   const { user: currentUser } = useAuthStore();
   const [users, setUsers] = useState<User[]>([]);
-  const [stats, setStats] = useState<AdminStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [roleFilter, setRoleFilter] = useState('all');
+  const [userSort, setUserSort] = useState('firstName');
+
+  // Business membership sub-tab state
+  const [membershipSubTab, setMembershipSubTab] = useState('businesses');
+  const [ghlBusinesses, setGhlBusinesses] = useState<any[]>([]);
+  const [bizLoading, setBizLoading] = useState(false);
+  const [bizLoadingMore, setBizLoadingMore] = useState(false);
+  const [bizTotal, setBizTotal] = useState(0);
+  const [bizHasMore, setBizHasMore] = useState(false);
+  const [bizOffset, setBizOffset] = useState(0);
+  const bizObserverTarget = useRef<HTMLDivElement>(null);
+  const [businessSearch, setBusinessSearch] = useState('');
+  const [businessTierFilter, setBusinessTierFilter] = useState('all');
+  const [ghlContacts, setGhlContacts] = useState<any[]>([]);
+  const [contactsLoading, setContactsLoading] = useState(false);
+  const [contactsLoadingMore, setContactsLoadingMore] = useState(false);
+  const [contactsTotal, setContactsTotal] = useState(0);
+  const [contactsHasMore, setContactsHasMore] = useState(false);
+  const [contactsOffset, setContactsOffset] = useState(0);
+  const contactsObserverTarget = useRef<HTMLDivElement>(null);
+  const [contactSearch, setContactSearch] = useState('');
+  const [contactTagFilter, setContactTagFilter] = useState('all');
+  const [contactSort, setContactSort] = useState('firstName');
+  const [tierUpdating, setTierUpdating] = useState<string | null>(null);
+  const [tagUpdating, setTagUpdating] = useState<string | null>(null);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [nominationToDelete, setNominationToDelete] = useState<Nomination | null>(null);
   const [showDeleteNominationDialog, setShowDeleteNominationDialog] = useState(false);
-  const [pagination, setPagination] = useState({
-    total: 0,
-    limit: 25,
-    offset: 0,
-    hasMore: false
+  const [showAddMembershipDialog, setShowAddMembershipDialog] = useState(false);
+  const [addMembershipLoading, setAddMembershipLoading] = useState(false);
+  const [addMembershipForm, setAddMembershipForm] = useState({
+    contact: { firstName: '', lastName: '', email: '', phone: '', title: '', isMainContact: true },
+    business: { name: '', email: '', phone: '', website: '', address: '', city: '', state: '', postalCode: '', membershipTier: '', memberSince: new Date().toISOString().split('T')[0] },
   });
+  const [usersTotal, setUsersTotal] = useState(0);
+  const [usersHasMore, setUsersHasMore] = useState(false);
+  const [usersOffset, setUsersOffset] = useState(0);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const usersObserverTarget = useRef<HTMLDivElement>(null);
 
   // Nominations state - separate for management tab
   const [nominations, setNominations] = useState<Nomination[]>([]);
@@ -104,7 +133,7 @@ export default function AdminPage() {
   const hasAccess = currentUser && (currentUser.role === 'admin' || currentUser.role === 'moderator' || currentUser.role === 'board_member');
   const isFullAdmin = currentUser?.role === 'admin';
 
-  const [activeTab, setActiveTab] = useState(currentUser?.role === 'admin' ? 'overview' : 'nominations');
+  const [activeTab, setActiveTab] = useState(currentUser?.role === 'admin' ? 'users' : 'nominations');
   const [adminNavOpen, setAdminNavOpen] = useState(false);
 
   if (!hasAccess) {
@@ -125,14 +154,20 @@ export default function AdminPage() {
     );
   }
 
-  // Load data
+  // Initial load
   useEffect(() => {
-    loadData();
-  }, [searchTerm, statusFilter, roleFilter, pagination.offset]);
-
-  useEffect(() => {
-    loadStats();
+    loadData(0, false);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Reset and reload when filters change
+  useEffect(() => {
+    setUsersOffset(0);
+    loadData(0, false);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm, statusFilter, roleFilter, userSort]);
+
+  // IntersectionObserver effects are defined after loadData/loadBusinesses/loadContacts below.
 
   useEffect(() => {
     loadBusinessNominations();
@@ -179,38 +214,204 @@ export default function AdminPage() {
     return years;
   };
 
-  const loadData = async () => {
+  const loadData = useCallback(async (offset: number, append: boolean) => {
     try {
-      setLoading(true);
+      if (append) {
+        setLoadingMore(true);
+      } else {
+        setLoading(true);
+      }
       const response = await adminService.getUsers({
-        limit: pagination.limit,
-        offset: pagination.offset,
+        limit: 25,
+        offset,
         search: searchTerm,
         role: roleFilter === 'all' ? '' : roleFilter,
-        status: statusFilter === 'all' ? '' : statusFilter
+        status: statusFilter === 'all' ? '' : statusFilter,
+        sort: (userSort && userSort !== 'default') ? userSort : undefined
       });
       
-      setUsers(response.users);
-      setPagination(prev => ({
-        ...prev,
-        total: response.pagination.total,
-        hasMore: response.pagination.hasMore
-      }));
+      if (append) {
+        setUsers(prev => [...prev, ...response.users]);
+      } else {
+        setUsers(response.users);
+      }
+      setUsersTotal(response.pagination.total);
+      setUsersHasMore(response.pagination.hasMore);
+      setUsersOffset(offset + response.users.length);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to load users");
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
+  }, [searchTerm, roleFilter, statusFilter, userSort]);
+
+  const loadBusinesses = useCallback(async (offset: number, append: boolean) => {
+    if (append) setBizLoadingMore(true); else setBizLoading(true);
+    try {
+      const params = new URLSearchParams({ limit: '25', offset: String(offset) });
+      if (businessSearch) params.set('search', businessSearch);
+      if (businessTierFilter !== 'all') params.set('tier', businessTierFilter);
+      const res = await api.get(`/admin/businesses?${params}`);
+      if (res.ok) {
+        const d = await res.json();
+        const batch = d.businesses || [];
+        if (append) setGhlBusinesses(prev => [...prev, ...batch]); else setGhlBusinesses(batch);
+        setBizTotal(d.total ?? batch.length);
+        const newOffset = offset + batch.length;
+        setBizOffset(newOffset);
+        setBizHasMore(newOffset < (d.total ?? batch.length));
+      }
+    } catch { /* non-fatal */ }
+    finally { setBizLoading(false); setBizLoadingMore(false); }
+  }, [businessSearch, businessTierFilter]);
+
+  const loadContacts = useCallback(async (offset: number, append: boolean, refresh = false) => {
+    if (append) setContactsLoadingMore(true); else setContactsLoading(true);
+    try {
+      const params = new URLSearchParams({ limit: '25', offset: String(offset) });
+      if (contactSearch) params.set('search', contactSearch);
+      if (contactTagFilter !== 'all') params.set('tag', contactTagFilter);
+      if (contactSort && contactSort !== 'default') params.set('sort', contactSort);
+      if (refresh) params.set('refresh', 'true');
+      const res = await api.get(`/admin/contacts?${params}`);
+      if (res.ok) {
+        const d = await res.json();
+        const batch = d.contacts || [];
+        if (append) setGhlContacts(prev => [...prev, ...batch]); else setGhlContacts(batch);
+        setContactsTotal(d.total ?? batch.length);
+        const newOffset = offset + batch.length;
+        setContactsOffset(newOffset);
+        setContactsHasMore(newOffset < (d.total ?? batch.length));
+      }
+    } catch { /* non-fatal */ }
+    finally { setContactsLoading(false); setContactsLoadingMore(false); }
+  }, [contactSearch, contactTagFilter, contactSort]);
+
+  // Reset businesses list when filters change
+  useEffect(() => {
+    setBizOffset(0);
+    setGhlBusinesses([]);
+    loadBusinesses(0, false);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [businessSearch, businessTierFilter]);
+
+  // Reset contacts list when filters change
+  useEffect(() => {
+    setContactsOffset(0);
+    setGhlContacts([]);
+    loadContacts(0, false);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contactSearch, contactTagFilter, contactSort]);
+
+  // IntersectionObserver for app-users infinite scroll — must be after loadData is defined
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && usersHasMore && !loadingMore && !loading) {
+          loadData(usersOffset, true);
+        }
+      },
+      { threshold: 0.1 }
+    );
+    if (usersObserverTarget.current) observer.observe(usersObserverTarget.current);
+    return () => { if (usersObserverTarget.current) observer.unobserve(usersObserverTarget.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [usersHasMore, loadingMore, loading, usersOffset, loadData]);
+
+  // IntersectionObserver for businesses infinite scroll
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && bizHasMore && !bizLoadingMore && !bizLoading) {
+          loadBusinesses(bizOffset, true);
+        }
+      },
+      { threshold: 0.1 }
+    );
+    if (bizObserverTarget.current) observer.observe(bizObserverTarget.current);
+    return () => { if (bizObserverTarget.current) observer.unobserve(bizObserverTarget.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bizHasMore, bizLoadingMore, bizLoading, bizOffset, loadBusinesses]);
+
+  // IntersectionObserver for contacts infinite scroll
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && contactsHasMore && !contactsLoadingMore && !contactsLoading) {
+          loadContacts(contactsOffset, true);
+        }
+      },
+      { threshold: 0.1 }
+    );
+    if (contactsObserverTarget.current) observer.observe(contactsObserverTarget.current);
+    return () => { if (contactsObserverTarget.current) observer.unobserve(contactsObserverTarget.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contactsHasMore, contactsLoadingMore, contactsLoading, contactsOffset, loadContacts]);
+
+  const handleSetTier = async (businessId: string, tier: string | null) => {
+    setTierUpdating(businessId);
+    try {
+      const res = await api.patch(`/admin/businesses/${businessId}/tier`, { tier: tier === 'none' ? null : tier });
+      if (res.ok) { toast.success('Tier updated'); loadBusinesses(0, false); }
+      else { toast.error('Failed to update tier'); }
+    } catch { toast.error('Failed to update tier'); }
+    finally { setTierUpdating(null); }
   };
 
-  const loadStats = async () => {
+  const handleSetMainContact = async (contactId: string) => {
+    setTagUpdating(`${contactId}-main-contact`);
     try {
-      const statsData = await adminService.getStats();
-      setStats(statsData);
-    } catch (error) {
-      console.error('Failed to load stats:', error);
-    }
+      const res = await api.post(`/admin/contacts/${contactId}/set-main-contact`, {});
+      if (res.ok) { toast.success('Main contact updated'); loadContacts(0, false); }
+      else { toast.error('Failed to set main contact'); }
+    } catch { toast.error('Failed to set main contact'); }
+    finally { setTagUpdating(null); }
   };
+
+  const handleAddMembership = async () => {
+    const { contact, business } = addMembershipForm;
+    if (!contact.firstName || !contact.lastName || !contact.email || !business.name || !business.membershipTier) {
+      toast.error('First name, last name, email, business name, and membership tier are required');
+      return;
+    }
+    setAddMembershipLoading(true);
+    try {
+      const body: any = {
+        contact: { firstName: contact.firstName, lastName: contact.lastName, email: contact.email },
+        business: { name: business.name },
+      };
+      if (contact.phone) body.contact.phone = contact.phone;
+      if (contact.title) body.contact.title = contact.title;
+      body.contact.isMainContact = contact.isMainContact;
+      if (business.email) body.business.email = business.email;
+      if (business.phone) body.business.phone = business.phone;
+      if (business.website) body.business.website = business.website;
+      if (business.address) body.business.address = business.address;
+      if (business.city) body.business.city = business.city;
+      if (business.state) body.business.state = business.state;
+      if (business.postalCode) body.business.postalCode = business.postalCode;
+      if (business.membershipTier) body.business.membershipTier = business.membershipTier;
+      if (business.memberSince) body.business.memberSince = business.memberSince;
+
+      const res = await api.post('/admin/memberships', body);
+      const data = await res.json();
+      if (res.ok) {
+        toast.success(`Membership created${data.emailSent === false ? ' (invite email failed)' : ''}`);
+        setShowAddMembershipDialog(false);
+        setAddMembershipForm({
+          contact: { firstName: '', lastName: '', email: '', phone: '', title: '', isMainContact: true },
+          business: { name: '', email: '', phone: '', website: '', address: '', city: '', state: '', postalCode: '', membershipTier: '', memberSince: new Date().toISOString().split('T')[0] },
+        });
+        loadBusinesses(0, false);
+        loadContacts(0, false);
+      } else {
+        toast.error(data.error || 'Failed to create membership');
+      }
+    } catch { toast.error('Failed to create membership'); }
+    finally { setAddMembershipLoading(false); }
+  };
+
 
   // Load business nominations for monthly results
   const loadBusinessNominations = async () => {
@@ -396,8 +597,7 @@ export default function AdminPage() {
       await adminService.updateUser(editingUser.id, updates);
       toast.success("User updated successfully");
       setEditingUser(null);
-      loadData();
-      loadStats();
+      loadData(0, false);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to update user");
     }
@@ -407,8 +607,7 @@ export default function AdminPage() {
     try {
       await adminService.updateUserStatus(userId, status, reason);
       toast.success(`User status updated to ${status}`);
-      loadData();
-      loadStats();
+      loadData(0, false);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to update status");
     }
@@ -431,8 +630,7 @@ export default function AdminPage() {
       await new Promise(resolve => setTimeout(resolve, 0));
       
       // Then reload data
-      await loadData();
-      await loadStats();
+      await loadData(0, false);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to delete user");
     }
@@ -468,7 +666,6 @@ export default function AdminPage() {
 
   const navItems = [
     ...(isFullAdmin ? [
-      { value: 'overview', label: 'Overview', icon: LayoutDashboard },
       { value: 'users', label: 'Users', icon: Users },
     ] : []),
     { value: 'nominations', label: 'Nominations', icon: Award },
@@ -484,7 +681,7 @@ export default function AdminPage() {
   const ActiveIcon = activeNavItem?.icon;
 
   return (
-    <div className="min-h-screen p-6">
+    <div className="min-h-screen px-3 py-6 md:px-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -499,6 +696,11 @@ export default function AdminPage() {
           setActiveTab(value);
           if (value === 'nominations') {
             loadNominations();
+          }
+          if (value === 'users') {
+            // Auto-load whichever sub-tab is currently active
+            if (membershipSubTab === 'businesses') loadBusinesses(0, false);
+            else if (membershipSubTab === 'contacts') loadContacts(0, false);
           }
         }}>
           {/* Mobile nav — bottom sheet trigger */}
@@ -549,16 +751,10 @@ export default function AdminPage() {
           <div className="hidden md:block md:w-52 shrink-0">
             <TabsList className="flex flex-row md:flex-col w-full bg-transparent p-0 gap-0.5 h-auto overflow-x-auto md:overflow-visible border-b md:border-b-0 md:border-r border-border pb-3 md:pb-0 md:pr-3">
               {isFullAdmin && (
-                <>
-                  <TabsTrigger value="overview" className="shrink-0 md:w-full md:justify-start px-3 py-2 h-9 md:h-auto rounded-lg gap-2 text-sm font-medium bg-transparent border-0 text-muted-foreground data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-none hover:bg-muted/50 hover:text-foreground transition-colors">
-                    <LayoutDashboard className="h-4 w-4 shrink-0" />
-                    <span>Overview</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="users" className="shrink-0 md:w-full md:justify-start px-3 py-2 h-9 md:h-auto rounded-lg gap-2 text-sm font-medium bg-transparent border-0 text-muted-foreground data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-none hover:bg-muted/50 hover:text-foreground transition-colors">
+                <TabsTrigger value="users" className="shrink-0 md:w-full md:justify-start px-3 py-2 h-9 md:h-auto rounded-lg gap-2 text-sm font-medium bg-transparent border-0 text-muted-foreground data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-none hover:bg-muted/50 hover:text-foreground transition-colors">
                     <Users className="h-4 w-4 shrink-0" />
                     <span>Users</span>
                   </TabsTrigger>
-                </>
               )}
               <TabsTrigger value="nominations" className="shrink-0 md:w-full md:justify-start px-3 py-2 h-9 md:h-auto rounded-lg gap-2 text-sm font-medium bg-transparent border-0 text-muted-foreground data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-none hover:bg-muted/50 hover:text-foreground transition-colors">
                 <Award className="h-4 w-4 shrink-0" />
@@ -592,121 +788,281 @@ export default function AdminPage() {
           </div>
           <div className="flex-1 min-w-0 w-full">
 
-          {/* Overview Tab */}
-          <TabsContent value="overview" className="space-y-2 md:space-y-6">
-            {stats && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 md:gap-6">
-                <Card className='p-0'>
-                  <CardHeader className="flex flex-row items-center justify-between h-full space-y-0 p-4">
-                    <CardTitle className="flex text-sm font-medium gap-3 items-center">
-                      <Users className="h-4 w-4 text-muted-foreground" />
-                      Total Users
-                    </CardTitle>
-                    <div className="text-2xl font-bold">{stats.users.total}</div>
-                  </CardHeader>
-                </Card>
-                
-                <Card className='p-0'>
-                  <CardHeader className="flex flex-row items-center justify-between h-full space-y-0 p-4">
-                    <CardTitle className="flex text-sm font-medium gap-3 items-center">
-                      <CheckCircle className="h-4 w-4 text-green-600" />
-                      Active Users
-                    </CardTitle>
-                    <div className="text-2xl font-bold text-green-600">{stats.users.active}</div>
-                  </CardHeader>
-                </Card>
-
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between h-full space-y-0 p-4">
-                    <CardTitle className="flex text-sm font-medium gap-3 items-center">
-                      <Clock className="h-4 w-4 text-yellow-600" />
-                      Pending Users
-                    </CardTitle>
-                    <div className="text-2xl font-bold text-yellow-600">{stats.users.pending}</div>
-                  </CardHeader>
-                </Card>
-
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between h-full space-y-0 p-4">
-                    <CardTitle className="flex text-sm font-medium gap-3 items-center">
-                      <AlertTriangle className="h-4 w-4 text-red-600" />
-                      Suspended Users
-                    </CardTitle>
-                    <div className="text-2xl font-bold text-red-600">{stats.users.suspended}</div>
-                  </CardHeader>
-                </Card>
-              </div>
-            )}
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 md:gap-6">
-              {/* Users by Role */}
-              {stats && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Users by Role</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span>Admins</span>
-                      <Badge className={getRoleBadgeColor('admin')}>{stats.users.byRole.admin}</Badge>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>Moderators</span>
-                      <Badge className={getRoleBadgeColor('moderator')}>{stats.users.byRole.moderator}</Badge>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>Board Members</span>
-                      <Badge className={getRoleBadgeColor('board_member')}>{stats.users.byRole.board_member}</Badge>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>Members</span>
-                      <Badge className={getRoleBadgeColor('member')}>{stats.users.byRole.member}</Badge>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Users by Membership Tier - calculated from loaded users */}
-              {users.length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Users by Membership Tier</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span>Elite</span>
-                      <Badge className={getTierBadgeColor('elite')}>
-                        {users.filter(u => u.membershipTier === 'elite').length}
-                      </Badge>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>Enhanced</span>
-                      <Badge className={getTierBadgeColor('enhanced')}>
-                        {users.filter(u => u.membershipTier === 'enhanced').length}
-                      </Badge>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>Standard</span>
-                      <Badge className={getTierBadgeColor('standard')}>
-                        {users.filter(u => u.membershipTier === 'standard').length}
-                      </Badge>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          </TabsContent>
-
-          {/* Users Tab */}
+          {/* Users Tab — 3 sub-tabs: Business Memberships, Contacts, App Users */}
           <TabsContent value="users" className="space-y-6">
+            <Tabs value={membershipSubTab} onValueChange={(v) => {
+              setMembershipSubTab(v);
+              if (v === 'businesses') loadBusinesses(0, false);
+              else if (v === 'contacts') loadContacts(0, false);
+              else if (v === 'app-users') { setUsersOffset(0); loadData(0, false); }
+            }}>
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <TabsList className="h-9">
+                  <TabsTrigger value="businesses" className="gap-1.5 text-sm">
+                    <Building2 className="h-3.5 w-3.5" />
+                    <span className="md:hidden">Businesses</span>
+                    <span className="hidden md:inline">Business Memberships</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="contacts" className="gap-1.5 text-sm">
+                    <Contact className="h-3.5 w-3.5" />GHL Contacts
+                  </TabsTrigger>
+                  <TabsTrigger value="app-users" className="gap-1.5 text-sm">
+                    <Users className="h-3.5 w-3.5" />App Users
+                  </TabsTrigger>
+                </TabsList>
+                {isFullAdmin && (
+                  <Button size="sm" onClick={() => setShowAddMembershipDialog(true)}>
+                    + Add New Membership
+                  </Button>
+                )}
+              </div>
+
+              {/* ── Business Memberships sub-tab ── */}
+              <TabsContent value="businesses" className="mt-4 space-y-4">
+                <Card>
+                  <CardHeader className="px-3 md:px-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle>Business Memberships</CardTitle>
+                        <CardDescription>GHL Business records and membership tiers</CardDescription>
+                      </div>
+                      {bizTotal > 0 && (
+                        <Badge variant="secondary" className="text-sm">{bizTotal}</Badge>
+                      )}
+                    </div>
+                  </CardHeader>
+                  <CardContent className="px-3 md:px-6">
+                    <div className="flex flex-col sm:flex-row gap-3 mb-4">
+                      <div className="flex-1 relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input placeholder="Search businesses..." value={businessSearch} onChange={e => setBusinessSearch(e.target.value)} className="pl-10" />
+                      </div>
+                      <Select value={businessTierFilter} onValueChange={v => { setBusinessTierFilter(v); }}>
+                        <SelectTrigger className="w-44"><SelectValue placeholder="Filter by tier" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Tiers</SelectItem>
+                          <SelectItem value="elite">Elite</SelectItem>
+                          <SelectItem value="enhanced">Enhanced</SelectItem>
+                          <SelectItem value="basic">Basic</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button variant="outline" size="sm" onClick={() => { setBizOffset(0); setGhlBusinesses([]); loadBusinesses(0, false); }}><LucideRefreshCcw className="h-4 w-4" /></Button>
+                    </div>
+                    {bizLoading ? (
+                      <div className="py-8 text-center text-muted-foreground">Loading...</div>
+                    ) : ghlBusinesses.length === 0 ? (
+                      <div className="py-8 text-center text-muted-foreground">No businesses found. <Button variant="link" size="sm" onClick={() => loadBusinesses(0, false)}>Load</Button></div>
+                    ) : (
+                      <div className="divide-y rounded-lg border">
+                        {/* Desktop column headers */}
+                        <div className="hidden lg:grid lg:grid-cols-[minmax(0,1fr)_80px_130px_80px_80px_36px] gap-x-4 px-4 py-2 bg-muted/40 text-xs font-medium text-muted-foreground rounded-t-lg">
+                          <span>Business / Contact</span>
+                          <span>City</span>
+                          <span>Member Since</span>
+                          <span>App Users</span>
+                          <span>Tier</span>
+                          <span></span>
+                        </div>
+                        {ghlBusinesses.map(biz => (
+                          <div key={biz.id} className="hover:bg-muted/30">
+                            {/* Desktop row */}
+                            <div className="hidden lg:grid lg:grid-cols-[minmax(0,1fr)_80px_130px_80px_80px_36px] gap-x-4 items-center px-4 py-3">
+                              <div className="min-w-0">
+                                <div className="text-sm font-medium text-foreground truncate">{biz.businessName}</div>
+                                <div className="text-xs text-muted-foreground truncate">Contact: {biz.mainContactName || '—'}</div>
+                              </div>
+                              <span className="text-xs text-muted-foreground">{biz.city || '—'}</span>
+                              <span className="text-xs text-muted-foreground">{biz.memberSince ? new Date(biz.memberSince).toLocaleDateString() : '—'}</span>
+                              <span className="text-xs text-muted-foreground">{biz.appUserCount ?? 0}</span>
+                              <span>{biz.membershipTier ? <Badge variant="secondary" className="text-xs">{biz.membershipTier}</Badge> : <span className="text-xs italic text-muted-foreground/50">—</span>}</span>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0" disabled={tierUpdating === biz.id}><MoreHorizontal className="h-4 w-4" /></Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuLabel>Set Tier</DropdownMenuLabel>
+                                  {['elite','enhanced','standard','basic'].map(t => (
+                                    <DropdownMenuItem key={t} onClick={() => handleSetTier(biz.id, t)} className={biz.membershipTier === t ? 'font-semibold' : ''}>{t.charAt(0).toUpperCase() + t.slice(1)}</DropdownMenuItem>
+                                  ))}
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem onClick={() => handleSetTier(biz.id, 'none')} className="text-destructive">Remove Tier</DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem onClick={() => window.open(`/members/${biz.id}`, '_blank')}>View Profile</DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                            {/* Mobile row */}
+                            <div className="lg:hidden flex items-start justify-between gap-3 px-4 py-3">
+                              <div className="min-w-0 flex-1">
+                                <div className="font-medium text-sm">{biz.businessName}</div>
+                                <div className="text-xs text-muted-foreground mt-0.5">Contact: {biz.mainContactName || '—'}</div>
+                                <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1 text-xs text-muted-foreground">
+                                  <span>{biz.city || '—'}</span>
+                                  <span>Since {biz.memberSince ? new Date(biz.memberSince).toLocaleDateString() : '—'}</span>
+                                  <span>{biz.appUserCount ?? 0} app users</span>
+                                  {biz.membershipTier
+                                    ? <Badge variant="secondary" className="text-xs">{biz.membershipTier}</Badge>
+                                    : <span className="italic text-muted-foreground/50">No tier</span>}
+                                </div>
+                              </div>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0 shrink-0" disabled={tierUpdating === biz.id}><MoreHorizontal className="h-4 w-4" /></Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuLabel>Set Tier</DropdownMenuLabel>
+                                  {['elite','enhanced','standard','basic'].map(t => (
+                                    <DropdownMenuItem key={t} onClick={() => handleSetTier(biz.id, t)} className={biz.membershipTier === t ? 'font-semibold' : ''}>{t.charAt(0).toUpperCase() + t.slice(1)}</DropdownMenuItem>
+                                  ))}
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem onClick={() => handleSetTier(biz.id, 'none')} className="text-destructive">Remove Tier</DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem onClick={() => window.open(`/members/${biz.id}`, '_blank')}>View Profile</DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                          </div>
+                        ))}
+                        {bizLoadingMore && <div className="py-4 text-center text-xs text-muted-foreground">Loading more...</div>}
+                        <div ref={bizObserverTarget} className="h-1" />
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* ── Contacts sub-tab ── */}
+              <TabsContent value="contacts" className="mt-4 space-y-4">
+                <Card>
+                  <CardHeader className="px-3 md:px-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle>GHL Contacts</CardTitle>
+                        <CardDescription>Contacts linked to a GHL Business</CardDescription>
+                      </div>
+                      {contactsTotal > 0 && (
+                        <Badge variant="secondary" className="text-sm">{contactsTotal}</Badge>
+                      )}
+                    </div>
+                  </CardHeader>
+                  <CardContent className="px-3 md:px-6">
+                    <div className="flex flex-col lg:flex-row gap-3 mb-4">
+                      <div className="flex-1 relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input placeholder="Search by name or email..." value={contactSearch} onChange={e => setContactSearch(e.target.value)} className="pl-10" />
+                      </div>
+                      <div className="flex gap-3">
+                        <Select value={contactTagFilter} onValueChange={setContactTagFilter}>
+                          <SelectTrigger className="flex-1 min-w-[150px] lg:flex-none lg:w-52"><SelectValue placeholder="Filter by tag" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Contacts</SelectItem>
+                            <SelectItem value="main-contact">Main Contact</SelectItem>
+                            <SelectItem value="business-profile-editor">Profile Editor</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Select value={contactSort} onValueChange={setContactSort}>
+                          <SelectTrigger className="flex-1 min-w-[130px] lg:flex-none lg:w-44"><SelectValue placeholder="Sort by..." /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="default">Default order</SelectItem>
+                            <SelectItem value="firstName">First name A–Z</SelectItem>
+                            <SelectItem value="businessName">Business A–Z</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Button variant="outline" size="sm" onClick={() => { setContactsOffset(0); setGhlContacts([]); loadContacts(0, false, true); }}><LucideRefreshCcw className="h-4 w-4" /></Button>
+                      </div>
+                    </div>
+                    {contactsLoading ? (
+                      <div className="py-8 text-center text-muted-foreground">Loading...</div>
+                    ) : ghlContacts.length === 0 ? (
+                      <div className="py-8 text-center text-muted-foreground">No contacts found. <Button variant="link" size="sm" onClick={() => loadContacts(0, false)}>Load</Button></div>
+                    ) : (
+                      <div className="divide-y rounded-lg border">
+                        {/* Desktop column headers */}
+                        <div className="hidden lg:grid lg:grid-cols-[minmax(0,1fr)_120px_minmax(0,1fr)_100px_100px_36px] gap-x-4 px-4 py-2 bg-muted/40 text-xs font-medium text-muted-foreground rounded-t-lg">
+                          <span>Name / Email</span>
+                          <span>Phone</span>
+                          <span>Business</span>
+                          <span>Main Contact</span>
+                          <span>App User</span>
+                          <span></span>
+                        </div>
+                        {ghlContacts.map(c => (
+                          <div key={c.id} className="hover:bg-muted/30">
+                            {/* Desktop row */}
+                            <div className="hidden lg:grid lg:grid-cols-[minmax(0,1fr)_120px_minmax(0,1fr)_100px_100px_36px] gap-x-4 items-center px-4 py-3">
+                              <div className="min-w-0">
+                                <div className="text-sm font-medium text-foreground capitalize truncate">
+                                  {c.firstName || c.lastName ? `${c.firstName ?? ''} ${c.lastName ?? ''}`.trim().toLowerCase() : <span className="italic text-muted-foreground text-xs normal-case">No name</span>}
+                                </div>
+                                <div className="text-xs text-muted-foreground truncate">{c.email || '—'}</div>
+                              </div>
+                              <span className="text-xs text-muted-foreground">{c.phone || '—'}</span>
+                              <span className="text-xs text-muted-foreground truncate">{c.businessName || '—'}</span>
+                              <span>{c.isMainContact ? <Badge variant="secondary" className="text-xs whitespace-nowrap">main contact</Badge> : <span className="text-xs text-muted-foreground/50">—</span>}</span>
+                              <span>{c.hasAppAccount ? <span className="inline-flex items-center gap-1 text-xs text-green-700"><CheckCircle className="h-3.5 w-3.5" />Yes</span> : <span className="text-xs text-muted-foreground/50">—</span>}</span>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0" disabled={tagUpdating?.startsWith(c.id)}><MoreHorizontal className="h-4 w-4" /></Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                  <DropdownMenuItem onClick={() => handleSetMainContact(c.id)} disabled={c.isMainContact}>Set as Main Contact</DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                            {/* Mobile row */}
+                            <div className="lg:hidden flex items-start justify-between gap-3 px-4 py-3">
+                              <div className="min-w-0 flex-1">
+                                <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                                  <span className="font-medium text-sm capitalize">
+                                    {c.firstName || c.lastName ? `${c.firstName ?? ''} ${c.lastName ?? ''}`.trim().toLowerCase() : <span className="italic text-muted-foreground text-xs normal-case">No name</span>}
+                                  </span>
+                                  {c.isMainContact && <Badge variant="secondary" className="text-xs">Main Contact</Badge>}
+                                  {c.hasAppAccount && <span className="inline-flex items-center gap-1 text-xs text-green-700"><CheckCircle className="h-3.5 w-3.5" /></span>}
+                                </div>
+                                <div className="text-xs text-muted-foreground mt-0.5 truncate">{c.email || '—'}</div>
+                                <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5 text-xs text-muted-foreground">
+                                  <span>{c.phone || '—'}</span>
+                                  <span className="truncate">{c.businessName || '—'}</span>
+                                </div>
+                              </div>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0 shrink-0" disabled={tagUpdating?.startsWith(c.id)}><MoreHorizontal className="h-4 w-4" /></Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                  <DropdownMenuItem onClick={() => handleSetMainContact(c.id)} disabled={c.isMainContact}>Set as Main Contact</DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                          </div>
+                        ))}
+                        {contactsLoadingMore && <div className="py-4 text-center text-xs text-muted-foreground">Loading more...</div>}
+                        <div ref={contactsObserverTarget} className="h-1" />
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* ── App Users sub-tab (existing users table) ── */}
+              <TabsContent value="app-users" className="mt-4 space-y-6">
             {/* Filters */}
             <Card>
-              <CardHeader>
-                <CardTitle>User Management</CardTitle>
-                <CardDescription>Search and manage user accounts</CardDescription>
+              <CardHeader className="px-3 md:px-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Registered Users</CardTitle>
+                    <CardDescription>Search and manage user accounts</CardDescription>
+                  </div>
+                  {usersTotal > 0 && (
+                    <Badge variant="secondary" className="text-sm">{usersTotal}</Badge>
+                  )}
+                </div>
               </CardHeader>
-              <CardContent>
-                <div className="flex flex-col sm:flex-row gap-4">
+              <CardContent className="px-3 md:px-6">
+                <div className="flex flex-col xl:flex-row gap-4">
                   <div className="flex-1">
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -718,115 +1074,80 @@ export default function AdminPage() {
                       />
                     </div>
                   </div>
-                  <Select value={roleFilter} onValueChange={setRoleFilter}>
-                    <SelectTrigger className="w-full sm:w-48">
-                      <SelectValue placeholder="Filter by role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Roles</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="moderator">Moderator</SelectItem>
-                      <SelectItem value="board_member">Board Member</SelectItem>
-                      <SelectItem value="member">Member</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-full sm:w-48">
-                      <SelectValue placeholder="Filter by status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Statuses</SelectItem>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="suspended">Suspended</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="flex flex-wrap gap-4">
+                    <Select value={roleFilter} onValueChange={setRoleFilter}>
+                      <SelectTrigger className="flex-1 min-w-[130px] xl:flex-none xl:w-48">
+                        <SelectValue placeholder="Filter by role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Roles</SelectItem>
+                        <SelectItem value="admin">Admin</SelectItem>
+                        <SelectItem value="moderator">Moderator</SelectItem>
+                        <SelectItem value="board_member">Board Member</SelectItem>
+                        <SelectItem value="member">Member</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                      <SelectTrigger className="flex-1 min-w-[130px] xl:flex-none xl:w-48">
+                        <SelectValue placeholder="Filter by status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Statuses</SelectItem>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="suspended">Suspended</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select value={userSort} onValueChange={setUserSort}>
+                      <SelectTrigger className="flex-1 min-w-[130px] xl:flex-none xl:w-44">
+                        <SelectValue placeholder="Sort by..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="default">Default order</SelectItem>
+                        <SelectItem value="firstName">First name A–Z</SelectItem>
+                        <SelectItem value="businessName">Business A–Z</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Users Table */}
+            {/* Users List */}
             <Card>
               <CardContent className="p-0">
                 {loading ? (
                   <div className="p-8 text-center">Loading users...</div>
                 ) : (
-                  <div className="overflow-x-auto rounded-lg">
-                    <table key={`users-table-${users.length}`} className="w-full">
-                      <thead className="bg-card">
-                        <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                            User
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                            Role & Status
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                            Membership
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                            Joined
-                          </th>
-                          <th className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                            Actions
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {users.map((user, index) => (
-                          <UserTableRow 
-                            key={`user-row-${user.id}-${index}`} 
-                            user={user} 
-                            currentUser={currentUser}
-                            onEdit={setEditingUser}
-                            onDelete={(u) => {
-                              setUserToDelete(u);
-                              setShowDeleteDialog(true);
-                            }}
-                            onUpdateStatus={handleUpdateStatus}
-                            getRoleBadgeColor={getRoleBadgeColor}
-                            getStatusBadgeColor={getStatusBadgeColor}
-                            getTierBadgeColor={getTierBadgeColor}
-                          />
-                        ))}
-                      </tbody>
-                    </table>
-
+                  <div className="divide-y rounded-lg">
+                    {users.map((user, index) => (
+                      <UserListItem
+                        key={`user-row-${user.id}-${index}`}
+                        user={user}
+                        currentUser={currentUser}
+                        onEdit={setEditingUser}
+                        onDelete={(u) => { setUserToDelete(u); setShowDeleteDialog(true); }}
+                        onUpdateStatus={handleUpdateStatus}
+                        getRoleBadgeColor={getRoleBadgeColor}
+                        getStatusBadgeColor={getStatusBadgeColor}
+                        getTierBadgeColor={getTierBadgeColor}
+                      />
+                    ))}
                     {users.length === 0 && !loading && (
-                      <div className="p-8 text-center text-gray-500">
-                        No users found matching your criteria.
-                      </div>
+                      <div className="p-8 text-center text-gray-500">No users found matching your criteria.</div>
                     )}
+                    {loadingMore && (
+                      <div className="p-4 text-center text-sm text-muted-foreground">Loading more users...</div>
+                    )}
+                    <div ref={usersObserverTarget} className="h-1" />
                   </div>
                 )}
               </CardContent>
             </Card>
 
-            {/* Pagination */}
-            {pagination.total > pagination.limit && (
-              <div className="flex justify-between items-center">
-                <div className="text-sm text-gray-700">
-                  Showing {pagination.offset + 1} to {Math.min(pagination.offset + pagination.limit, pagination.total)} of {pagination.total} users
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => setPagination(prev => ({ ...prev, offset: Math.max(0, prev.offset - prev.limit) }))}
-                    disabled={pagination.offset === 0}
-                  >
-                    Previous
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => setPagination(prev => ({ ...prev, offset: prev.offset + prev.limit }))}
-                    disabled={!pagination.hasMore}
-                  >
-                    Next
-                  </Button>
-                </div>
-              </div>
-            )}
-          </TabsContent>
+              </TabsContent>{/* end app-users */}
+            </Tabs>{/* end membership sub-tabs */}
+          </TabsContent>{/* end users outer tab */}
 
           {/* Nominations Tab */}
           <TabsContent value="nominations" className="space-y-6">
@@ -1505,6 +1826,111 @@ export default function AdminPage() {
           </DialogContent>
         </Dialog>
 
+        {/* Add New Membership Dialog */}
+        <Dialog open={showAddMembershipDialog} onOpenChange={setShowAddMembershipDialog}>
+          <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
+            <DialogHeader className="flex-shrink-0">
+              <DialogTitle>Add New Membership</DialogTitle>
+              <DialogDescription>Create a GHL Contact and Business, link them, and send an invite email.</DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-6 py-2 overflow-y-auto flex-1 pr-1">
+              {/* Contact section */}
+              <div>
+                <h3 className="text-sm font-semibold mb-3">Contact (Person)</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="">
+                    <Label>First Name <span className="text-destructive">*</span></Label>
+                    <Input value={addMembershipForm.contact.firstName} onChange={e => setAddMembershipForm(f => ({ ...f, contact: { ...f.contact, firstName: e.target.value } }))} />
+                  </div>
+                  <div className="">
+                    <Label>Last Name <span className="text-destructive">*</span></Label>
+                    <Input value={addMembershipForm.contact.lastName} onChange={e => setAddMembershipForm(f => ({ ...f, contact: { ...f.contact, lastName: e.target.value } }))} />
+                  </div>
+                  <div className="col-span-2">
+                    <Label>Email <span className="text-destructive">*</span></Label>
+                    <Input type="email" value={addMembershipForm.contact.email} onChange={e => setAddMembershipForm(f => ({ ...f, contact: { ...f.contact, email: e.target.value } }))} />
+                  </div>
+                  <div className="col-span-2">
+                    <Label>Phone</Label>
+                    <Input value={addMembershipForm.contact.phone} onChange={e => setAddMembershipForm(f => ({ ...f, contact: { ...f.contact, phone: e.target.value } }))} />
+                  </div>
+                  <div className="col-span-2">
+                    <Label>Title</Label>
+                    <Input placeholder="e.g. Owner" value={addMembershipForm.contact.title} onChange={e => setAddMembershipForm(f => ({ ...f, contact: { ...f.contact, title: e.target.value } }))} />
+                  </div>
+                  <div className="col-span-2 flex items-center gap-2">
+                    <Checkbox id="isMainContact" checked={addMembershipForm.contact.isMainContact} onCheckedChange={v => setAddMembershipForm(f => ({ ...f, contact: { ...f.contact, isMainContact: !!v } }))} />
+                    <Label htmlFor="isMainContact" className="cursor-pointer">Set as Main Contact for this business</Label>
+                  </div>
+                </div>
+              </div>
+              {/* Business section */}
+              <div>
+                <h3 className="text-sm font-semibold mb-3">Business</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="col-span-2">
+                    <Label>Business Name <span className="text-destructive">*</span></Label>
+                    <Input value={addMembershipForm.business.name} onChange={e => setAddMembershipForm(f => ({ ...f, business: { ...f.business, name: e.target.value } }))} />
+                  </div>
+                  <div className="">
+                    <Label>Business Email</Label>
+                    <Input type="email" value={addMembershipForm.business.email} onChange={e => setAddMembershipForm(f => ({ ...f, business: { ...f.business, email: e.target.value } }))} />
+                  </div>
+                  <div className="">
+                    <Label>Business Phone</Label>
+                    <Input value={addMembershipForm.business.phone} onChange={e => setAddMembershipForm(f => ({ ...f, business: { ...f.business, phone: e.target.value } }))} />
+                  </div>
+                  <div className="col-span-2">
+                    <Label>Website</Label>
+                    <Input placeholder="https://" value={addMembershipForm.business.website} onChange={e => setAddMembershipForm(f => ({ ...f, business: { ...f.business, website: e.target.value } }))} />
+                  </div>
+                  <div className="col-span-2">
+                    <Label>Address</Label>
+                    <Input value={addMembershipForm.business.address} onChange={e => setAddMembershipForm(f => ({ ...f, business: { ...f.business, address: e.target.value } }))} />
+                  </div>
+                  <div className="col-span-2 grid grid-cols-3 gap-3">
+                    <div className="">
+                      <Label>City</Label>
+                      <Input value={addMembershipForm.business.city} onChange={e => setAddMembershipForm(f => ({ ...f, business: { ...f.business, city: e.target.value } }))} />
+                    </div>
+                    <div className="">
+                      <Label>State</Label>
+                      <Input value={addMembershipForm.business.state} onChange={e => setAddMembershipForm(f => ({ ...f, business: { ...f.business, state: e.target.value } }))} />
+                    </div>
+                    <div className="">
+                      <Label>Postal Code</Label>
+                      <Input value={addMembershipForm.business.postalCode} onChange={e => setAddMembershipForm(f => ({ ...f, business: { ...f.business, postalCode: e.target.value } }))} />
+                    </div>
+                  </div>
+                  <div className="col-span-2 grid grid-cols-2 gap-3">
+                    <div className="">
+                      <Label>Membership Start Date</Label>
+                      <Input type="date" value={addMembershipForm.business.memberSince} onChange={e => setAddMembershipForm(f => ({ ...f, business: { ...f.business, memberSince: e.target.value } }))} />
+                    </div>
+                    <div className="">
+                      <Label>Membership Tier <span className="text-destructive">*</span></Label>
+                      <Select value={addMembershipForm.business.membershipTier || ''} onValueChange={v => setAddMembershipForm(f => ({ ...f, business: { ...f.business, membershipTier: v } }))}>
+                        <SelectTrigger><SelectValue placeholder="Select tier" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="elite">Elite</SelectItem>
+                          <SelectItem value="enhanced">Enhanced</SelectItem>
+                          <SelectItem value="basic">Basic</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <DialogFooter className="flex-shrink-0 pt-2 border-t">
+              <Button variant="outline" onClick={() => setShowAddMembershipDialog(false)} disabled={addMembershipLoading}>Cancel</Button>
+              <Button onClick={handleAddMembership} disabled={addMembershipLoading}>
+                {addMembershipLoading ? 'Creating...' : 'Create Membership'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         {/* Delete User Dialog */}
         <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
           <AlertDialogContent>
@@ -1554,8 +1980,8 @@ export default function AdminPage() {
   );
 }
 
-// User Table Row Component - Separate component to ensure proper re-rendering
-function UserTableRow({ 
+// User List Item Component - responsive div-based layout, no table
+function UserListItem({ 
   user, 
   currentUser, 
   onEdit, 
@@ -1577,91 +2003,63 @@ function UserTableRow({
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   return (
-    <tr className="bg-card hover:bg-background/80">
-      <td className="px-6 py-4 whitespace-nowrap">
-        <div>
+    <div className="flex items-start justify-between gap-3 px-4 py-3 hover:bg-muted/30">
+      <div className="min-w-0 flex-1">
+        {(user.firstName || user.lastName) && (
           <div className="text-sm font-medium text-foreground">
             {user.firstName} {user.lastName}
           </div>
-          <div className="text-sm text-accent">{user.email}</div>
-          {user.businessName && (
-            <div className="text-sm text-accent">{user.businessName}</div>
+        )}
+        <div className="text-sm text-muted-foreground truncate">{user.email}</div>
+        {user.businessName && (
+          <div className="text-xs text-muted-foreground truncate">{user.businessName}</div>
+        )}
+        <div className="flex flex-wrap gap-1.5 mt-1.5">
+          <Badge className={getRoleBadgeColor(user.role)}>{user.role}</Badge>
+          <Badge className={getStatusBadgeColor(user.status)}>{user.status}</Badge>
+          {user.membershipTier && (
+            <Badge className={getTierBadgeColor(user.membershipTier)}>{user.membershipTier}</Badge>
           )}
+          {user.ghlContactId
+            ? <span className="inline-flex items-center gap-0.5 text-xs text-green-700"><CheckCircle className="h-3 w-3" />GHL contact</span>
+            : <span className="text-xs text-muted-foreground/50">no GHL contact</span>}
+          {user.ghlBusinessId
+            ? <span className="inline-flex items-center gap-0.5 text-xs text-green-700"><CheckCircle className="h-3 w-3" />GHL business</span>
+            : <span className="text-xs text-muted-foreground/50">no GHL business</span>}
+          <span className="text-xs text-muted-foreground self-center">
+            {new Date(user.createdAt).toLocaleDateString()}
+          </span>
         </div>
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap">
-        <div className="space-y-1">
-          <Badge className={getRoleBadgeColor(user.role)}>
-            {user.role}
-          </Badge>
-          <Badge className={getStatusBadgeColor(user.status)}>
-            {user.status}
-          </Badge>
-        </div>
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap">
-        <Badge className={getTierBadgeColor(user.membershipTier || 'standard')}>
-          {user.membershipTier || 'standard'}
-        </Badge>
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-accent">
-        {new Date(user.createdAt).toLocaleDateString()}
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-        <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen} modal={false}>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem onClick={() => {
-              setDropdownOpen(false);
-              onEdit(user);
-            }}>
-              <Edit className="mr-2 h-4 w-4" />
-              Edit User
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem 
-              onClick={() => {
-                setDropdownOpen(false);
-                onUpdateStatus(user.id, 'active');
-              }}
-              disabled={user.status === 'active'}
-            >
-              <CheckCircle className="mr-2 h-4 w-4" />
-              Activate
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              onClick={() => {
-                setDropdownOpen(false);
-                onUpdateStatus(user.id, 'suspended');
-              }}
-              disabled={user.status === 'suspended' || user.id === currentUser?.id}
-            >
-              <AlertTriangle className="mr-2 h-4 w-4" />
-              Suspend
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem 
-              className="text-red-600"
-              disabled={currentUser && currentUser.id && currentUser.id.toString() === user.id.toString()}
-              onClick={() => {
-                setDropdownOpen(false);
-                if (currentUser?.id !== user.id) {
-                  onDelete(user);
-                }
-              }}
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete User
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </td>
-    </tr>
+      </div>
+      <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen} modal={false}>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" className="h-8 w-8 p-0 shrink-0">
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+          <DropdownMenuItem onClick={() => { setDropdownOpen(false); onEdit(user); }}>
+            <Edit className="mr-2 h-4 w-4" />Edit User
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => { setDropdownOpen(false); onUpdateStatus(user.id, 'active'); }} disabled={user.status === 'active'}>
+            <CheckCircle className="mr-2 h-4 w-4" />Activate
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => { setDropdownOpen(false); onUpdateStatus(user.id, 'suspended'); }} disabled={user.status === 'suspended' || user.id === currentUser?.id}>
+            <AlertTriangle className="mr-2 h-4 w-4" />Suspend
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            className="text-red-600"
+            disabled={currentUser?.id === user.id}
+            onClick={() => { setDropdownOpen(false); if (currentUser?.id !== user.id) onDelete(user); }}
+          >
+            <Trash2 className="mr-2 h-4 w-4" />Delete User
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
   );
 }
 
@@ -2267,7 +2665,7 @@ function EditUserForm({
     website: user.website || '',
     role: user.role,
     status: user.status,
-    membershipTier: user.membershipTier || 'standard',
+    membershipTier: user.membershipTier || 'basic',
     paymentStatus: user.paymentStatus || 'pending'
   });
 
@@ -2371,12 +2769,12 @@ function EditUserForm({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="membershipTier">Membership Tier</Label>
-          <Select value={formData.membershipTier} onValueChange={(value: 'standard' | 'enhanced' | 'elite') => setFormData(prev => ({ ...prev, membershipTier: value }))}>
+          <Select value={formData.membershipTier} onValueChange={(value: 'basic' | 'enhanced' | 'elite') => setFormData(prev => ({ ...prev, membershipTier: value }))}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="standard">Standard</SelectItem>
+              <SelectItem value="basic">Basic</SelectItem>
               <SelectItem value="enhanced">Enhanced</SelectItem>
               <SelectItem value="elite">Elite</SelectItem>
             </SelectContent>

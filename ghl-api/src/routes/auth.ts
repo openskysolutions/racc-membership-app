@@ -131,7 +131,10 @@ router.post('/authorize', async (req, res) => {
         firstName: user.firstName,
         lastName: user.lastName,
         membershipTier: user.membershipTier,
-        status: user.status
+        status: user.status,
+        ghlBusinessId: user.ghlBusinessId ?? null,
+        isMainContact: user.isMainContact ?? false,
+        isBusinessProfileEditor: user.isBusinessProfileEditor ?? false
       }
     });
 
@@ -241,7 +244,10 @@ router.post('/token', async (req, res) => {
         phone: user.phone,
         membershipTier: user.membershipTier,
         status: user.status,
-        role: user.role
+        role: user.role,
+        ghlBusinessId: user.ghlBusinessId ?? null,
+        isMainContact: user.isMainContact ?? false,
+        isBusinessProfileEditor: user.isBusinessProfileEditor ?? false
       }
     });
 
@@ -340,7 +346,10 @@ router.post('/session', async (req, res) => {
           phone: user.phone,
           membershipTier: user.membershipTier,
           status: user.status,
-          role: user.role
+          role: user.role,
+          ghlBusinessId: user.ghlBusinessId ?? null,
+          isMainContact: user.isMainContact ?? false,
+          isBusinessProfileEditor: user.isBusinessProfileEditor ?? false
         }
       });
     }
@@ -494,7 +503,10 @@ router.post('/check-session', async (req, res) => {
         phone: user.phone,
         membershipTier: user.membershipTier,
         status: user.status,
-        role: user.role
+        role: user.role,
+        ghlBusinessId: user.ghlBusinessId ?? null,
+        isMainContact: user.isMainContact ?? false,
+        isBusinessProfileEditor: user.isBusinessProfileEditor ?? false
       },
       session: {
         sessionId: session.id,
@@ -587,6 +599,9 @@ router.get('/profile', async (req, res) => {
       membershipTier: user.membershipTier,
       emailVerified: user.emailVerified,
       ghlContactId: user.ghlContactId,
+      ghlBusinessId: user.ghlBusinessId ?? null,
+      isMainContact: user.isMainContact ?? false,
+      isBusinessProfileEditor: user.isBusinessProfileEditor ?? false,
       avatarUrl: user.avatarUrl,
       tags: user.tags || [], // Include tags from GoHighLevel
       createdAt: user.createdAt,
@@ -692,19 +707,19 @@ router.post('/logout', async (req, res) => {
 // Membership tier configurations
 const MEMBERSHIP_TIERS = {
   standard: {
-    name: 'Standard Membership',
+    name: 'Basic Membership',
     price: 50.00,
     currency: 'USD',
     description: 'Access to basic member benefits and networking events'
   },
-  premium: {
-    name: 'Premium Membership',
+  enhanced: {
+    name: 'Enhanced Membership',
     price: 100.00,
     currency: 'USD',
-    description: 'Full access to all member benefits, premium events, and business resources'
+    description: 'Full access to all member benefits, enhanced events, and business resources'
   },
-  corporate: {
-    name: 'Corporate Membership',
+  elite: {
+    name: 'Elite Membership',
     price: 200.00,
     currency: 'USD',
     description: 'Corporate package with multiple member access and premium business services'
@@ -735,7 +750,7 @@ router.post('/register', async (req, res) => {
       businessName, 
       phone, 
       website,
-      membershipTier = 'standard'
+      membershipTier = 'basic'
     } = req.body;
 
     // Validate required fields - only email and password are required
@@ -881,7 +896,10 @@ router.post('/register', async (req, res) => {
         role: enrichedUser.role,
         status: enrichedUser.status,
         membershipTier: enrichedUser.membershipTier,
-        ghlContactId: enrichedUser.ghlContactId
+        ghlContactId: enrichedUser.ghlContactId,
+        ghlBusinessId: enrichedUser.ghlBusinessId ?? null,
+        isMainContact: enrichedUser.isMainContact ?? false,
+        isBusinessProfileEditor: enrichedUser.isBusinessProfileEditor ?? false
       },
       payment: {
         required: true,
@@ -956,7 +974,10 @@ router.post('/login', async (req, res) => {
         businessName: user.businessName,
         role: user.role,
         status: user.status,
-        membershipTier: user.membershipTier
+        membershipTier: user.membershipTier,
+        ghlBusinessId: user.ghlBusinessId ?? null,
+        isMainContact: user.isMainContact ?? false,
+        isBusinessProfileEditor: user.isBusinessProfileEditor ?? false
       },
       session: {
         sessionId: session.id,
@@ -1494,7 +1515,10 @@ router.post('/register-existing', async (req, res) => {
         role: enrichedUser.role,
         status: enrichedUser.status,
         membershipTier: enrichedUser.membershipTier,
-        ghlContactId: enrichedUser.ghlContactId
+        ghlContactId: enrichedUser.ghlContactId,
+        ghlBusinessId: enrichedUser.ghlBusinessId ?? null,
+        isMainContact: enrichedUser.isMainContact ?? false,
+        isBusinessProfileEditor: enrichedUser.isBusinessProfileEditor ?? false
       },
       payment: {
         required: true,

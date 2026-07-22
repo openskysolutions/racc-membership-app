@@ -15,6 +15,7 @@ interface User {
   status: string;
   emailVerified: boolean;
   ghlContactId?: string | null;
+  ghlBusinessId?: string | null;
   lastLoginAt?: Date | string | null;
   passwordResetToken?: string | null;
   passwordResetTokenExpiry?: Date | string | null;
@@ -107,7 +108,7 @@ class DatabaseService {
    */
   async updateUser(id: number, updates: Partial<User>): Promise<User> {
     // Filter allowed fields
-    const allowedFields = ['email', 'passwordHash', 'role', 'status', 'emailVerified', 'ghlContactId', 'lastLoginAt', 'passwordResetToken', 'passwordResetTokenExpiry'];
+    const allowedFields = ['email', 'passwordHash', 'role', 'status', 'emailVerified', 'ghlContactId', 'ghlBusinessId', 'lastLoginAt', 'passwordResetToken', 'passwordResetTokenExpiry'];
     const data: any = {};
 
     Object.entries(updates).forEach(([key, value]) => {
@@ -348,6 +349,7 @@ class DatabaseService {
       status: user.status,
       emailVerified: user.emailVerified,
       ghlContactId: user.ghlContactId,
+      ghlBusinessId: user.ghlBusinessId ?? null,
       lastLoginAt: user.lastLoginAt?.toISOString() || null,
       createdAt: user.createdAt?.toISOString(),
       updatedAt: user.updatedAt?.toISOString(),

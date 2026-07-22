@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Member Directory — Feature Behavior Review</title>
+  <style>
+    @page {
+      size: letter;
+      margin: 0.85in 0.9in;
+    }
+
+    body {
+      font-family: Calibri, 'Segoe UI', Arial, sans-serif;
+      font-size: 11pt;
+      color: #111827;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px 48px;
+      line-height: 1.3;
+    }
+
+    /* Keep headings attached to the content that follows */
+    h2, h3 {
+      page-break-after: avoid;
+      break-after: avoid;
+    }
+
+    p {
+      margin-top: 0.5em;
+    }
+
+    /* Never break inside a callout box */
+    div[style*="border-left"] {
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+
+    /* Never orphan the open-question dashed box */
+    div[style*="border: 2px dashed"] {
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+
+    /* Each major section starts on a new page (except the first) */
+    h2:not(:first-of-type) {
+      padding-top: 0;
+      margin-top: 0;
+    }
+
+    hr {
+      page-break-after: always;
+      break-after: page;
+      border-width: 0;
+    }
+
+    /* Keep table rows from splitting mid-row */
+    tr {
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+
+    /* Don't orphan the last footer line */
+    p:last-child {
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+
+    /* Screen-only: restore screen padding */
+    @media screen {
+      body { padding: 40px 48px; }
+    }
+
+    @media print {
+      body { padding: 30px; max-width: 100%; }
+      /* Ensure background colors print */
+      * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Cover -->
+  <div class="cover" style="background: #1a56a4; color: #ffffff; border-radius: 8px; padding: 40px 48px 36px; margin-bottom: 32px;">
+    <p style="font-size: 9pt; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; opacity: .75; margin: 0 0 10px;">Richfield Area Chamber of Commerce — Membership App</p>
+    <h1 style="font-size: 26pt; font-weight: 800; margin: 0 0 12px; color: #ffffff;">Business-Centric Member Directory</h1>
+    <p style="font-size: 11pt; opacity: .9; margin: 0 0 24px; color: #ffffff;">Feature behavior review for client sign-off. This document describes how the updated member directory and profile system will work from the perspective of chamber staff, member businesses, and app users.</p>
+    <p style="font-size: 9pt; opacity: .7; margin: 0; color: #ffffff;">Version 1.0 &nbsp;·&nbsp; July 2026 &nbsp;·&nbsp; Feature: 003-company-based-membership</p>
+  </div>
+
+  <!-- 1. What's changing -->
+  <h2 style="font-size: 14pt; font-weight: 700; color: #1a56a4; border-bottom: 2px solid #dbeafe; padding-bottom: 6px; margin-top: 24px;">What Is Changing and Why</h2>
+
+  <p>Today, the member directory is built on top of <em>individual contacts</em> in GoHighLevel. This means that when you look up a member in the app, you are really seeing a person's contact record — with a business name field typed in by hand.</p>
+  <p>The updated system flips this: the <strong>business</strong> is the member. Each card in the member directory represents a GHL <em>Business</em> record — the company that holds the chamber membership. The people who work there (and who log into the app) are connected to that business inside GoHighLevel.</p>
+
+  <div style="background: #dbeafe; border-left: 4px solid #1a56a4; padding: 12px 16px; margin: 16px 0; border-radius: 0 4px 4px 0;">
+    <p style="margin: 0; font-weight: 700;">What stays the same from the chamber's perspective</p>
+    <p style="margin: 6px 0 0;">The public-facing labels do not change. Visitors still see the "Member Directory." Listings still show business names, logos, and contact details. The app's navigation and overall look remain the same.</p>
+  </div>
+
+  <h3 style="font-size: 11pt; font-weight: 700; margin-top: 24px;">Old model vs. new model at a glance</h3>
+  <table border="1" cellpadding="8" cellspacing="0" style="width: 100%; border-collapse: collapse; font-size: 10pt;">
+    <thead>
+      <tr style="background: #f3f4f6;">
+        <th style="text-align: left; padding: 6px 10px; border: 1px solid #d1d5db;">Aspect</th>
+        <th style="text-align: left; padding: 6px 10px; border: 1px solid #d1d5db;">Current (contact-based)</th>
+        <th style="text-align: left; padding: 6px 10px; border: 1px solid #d1d5db;">Updated (business-based)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">What represents a "member"</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">A GHL Contact record</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">A GHL Business record</td>
+      </tr>
+      <tr style="background: #f9fafb;">
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">What an app user is</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">The same GHL Contact</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">A GHL Contact linked <em>to</em> a Business</td>
+      </tr>
+      <tr>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Multiple staff per member</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Not supported cleanly</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Multiple contacts can be linked to one Business in GHL</td>
+      </tr>
+      <tr style="background: #f9fafb;">
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Who can edit the member profile</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">The one contact whose ID matches</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Any user associated with that member business who is either the main contact or a business profile editor, or any chamber/app admin</td>
+      </tr>
+      <tr>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Member directory card</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Contact's name + typed "business name" field</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">The GHL Business record's name and contact details</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <hr />
+  <!-- 2. Two separate edit surfaces -->
+  <h2 style="font-size: 14pt; font-weight: 700; color: #1a56a4; border-bottom: 2px solid #dbeafe; padding-bottom: 6px; margin-top: 24px;">Two Separate Edit Surfaces</h2>
+  <p>After this change, there are two clearly distinct pages in the app for editing information:</p>
+
+  <table border="1" cellpadding="10" cellspacing="0" style="width: 100%; border-collapse: collapse; font-size: 10pt; page-break-inside: avoid; break-inside: avoid;">
+    <thead>
+      <tr style="background: #f3f4f6;">
+        <th style="text-align: left; padding: 10px; border: 1px solid #d1d5db; width: 50%;">My Profile <span style="font-size: 8pt; background: #dbeafe; color: #1a56a4; padding: 2px 6px; border-radius: 4px; font-weight: 600; margin-left: 6px;">Personal</span></th>
+        <th style="text-align: left; padding: 10px; border: 1px solid #d1d5db; width: 50%;">Member Business Profile <span style="font-size: 8pt; background: #d1fae5; color: #065f46; padding: 2px 6px; border-radius: 4px; font-weight: 600; margin-left: 6px;">Business</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="padding: 10px; border: 1px solid #d1d5db; vertical-align: top;">
+          Stores information about <strong>the person</strong> logged in. Always editable by any logged-in user — no special permission needed.
+          <ul style="margin: 8px 0 0; padding-left: 18px;">
+            <li>First and last name</li>
+            <li>Personal email (displayed, not editable — affects login)</li>
+            <li>Personal phone</li>
+            <li>Job title (e.g. "Owner", "Marketing Director")</li>
+            <li>Short personal bio</li>
+            <li>Personal LinkedIn profile</li>
+            <li>Personal headshot / avatar</li>
+          </ul>
+        </td>
+        <td style="padding: 10px; border: 1px solid #d1d5db; vertical-align: top;">
+          Stores information about <strong>the business</strong>. Only editable by designated staff members (see permissions below).
+          <ul style="margin: 8px 0 0; padding-left: 18px;">
+            <li>Business name</li>
+            <li>Business email, phone, website</li>
+            <li>Business address</li>
+            <li>Tagline and extended description (bio)</li>
+            <li>Business logo and cover image</li>
+            <li>Social media links (Facebook, Instagram, X, LinkedIn)</li>
+            <li>Membership tier and member-since date</li>
+            <li>Coupon codes (Elite tier)</li>
+            <li>Business categories</li>
+          </ul>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div style="background: #d1fae5; border-left: 4px solid #0e9f6e; padding: 12px 16px; margin: 16px 0; border-radius: 0 4px 4px 0;">
+    <p style="margin: 0; font-weight: 700;">No data re-entry required from members</p>
+    <p style="margin: 6px 0 0;">All existing profile data (photos, bios, social links, etc.) already stored in GoHighLevel will be automatically migrated to the new Business Profile records. Members will not need to fill anything in again.</p>
+  </div>
+
+  <!-- 3. Roles and permissions -->
+  <h2 style="font-size: 14pt; font-weight: 700; color: #1a56a4; border-bottom: 2px solid #dbeafe; padding-bottom: 6px; margin-top: 24px;">Roles and Permissions</h2>
+  <p>There are five levels of access. The chamber admin controls the top two levels from within GoHighLevel. The "main contact" for each business controls the fourth level from within the app.</p>
+
+  <table border="1" cellpadding="8" cellspacing="0" style="width: 100%; border-collapse: collapse; font-size: 10pt;">
+    <thead>
+      <tr style="background: #f3f4f6;">
+        <th style="text-align: left; padding: 8px 10px; border: 1px solid #d1d5db;">Role</th>
+        <th style="text-align: center; padding: 8px 10px; border: 1px solid #d1d5db;">Edit business profile</th>
+        <th style="text-align: center; padding: 8px 10px; border: 1px solid #d1d5db;">Add team members</th>
+        <th style="text-align: center; padding: 8px 10px; border: 1px solid #d1d5db;">Grant / revoke editor role</th>
+        <th style="text-align: left; padding: 8px 10px; border: 1px solid #d1d5db;">How it's assigned</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;"><strong>Chamber admin</strong></td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db; text-align: center; color: #0e9f6e; font-weight: 700;">✓ Yes</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db; text-align: center; color: #0e9f6e; font-weight: 700;">✓ Yes</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db; text-align: center; color: #0e9f6e; font-weight: 700;">✓ Yes</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;">GHL account access</td>
+      </tr>
+      <tr style="background: #f9fafb;">
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;"><strong>App admin</strong></td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db; text-align: center; color: #0e9f6e; font-weight: 700;">✓ Yes</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db; text-align: center; color: #0e9f6e; font-weight: 700;">✓ Yes</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db; text-align: center; color: #0e9f6e; font-weight: 700;">✓ Yes</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;">App <code>admin</code> role</td>
+      </tr>
+      <tr>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;"><strong>Main contact</strong></td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db; text-align: center; color: #0e9f6e; font-weight: 700;">✓ Yes</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db; text-align: center; color: #0e9f6e; font-weight: 700;">✓ Yes</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db; text-align: center; color: #0e9f6e; font-weight: 700;">✓ Yes</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;">Chamber admin applies <code>main-contact</code> tag in GHL</td>
+      </tr>
+      <tr style="background: #f9fafb;">
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;"><strong>Business profile editor</strong></td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db; text-align: center; color: #0e9f6e; font-weight: 700;">✓ Yes</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db; text-align: center; color: #0e9f6e; font-weight: 700;">✓ Yes</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db; text-align: center; color: #9ca3af;">— No</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;">Main contact grants access via the app (or chamber admin via GHL tag)</td>
+      </tr>
+      <tr>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;"><strong>Other team member</strong></td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db; text-align: center; color: #9ca3af;">— No</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db; text-align: center; color: #9ca3af;">— No</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db; text-align: center; color: #9ca3af;">— No</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;">Linked to the business in GHL but no edit tag applied</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <hr />
+
+  <h3 style="font-size: 11pt; font-weight: 700; margin-top: 24px;">How the main contact works</h3>
+  <p>Each business has <strong>exactly one main contact</strong> — the person primarily responsible for the membership. The chamber admin designates this person by applying a <code>main-contact</code> tag to their GHL Contact record. This is done entirely within GoHighLevel; no action is required in the app.</p>
+  <p>The main contact:</p>
+  <ul>
+    <li>Always has permission to edit the Member Business Profile.</li>
+    <li>Can view a "Manage Team" panel on their business profile page showing all staff linked to their business in GHL.</li>
+    <li>Can grant or revoke the "Business Profile Editor" role for any of their team members, directly from within the app.</li>
+    <li>Cannot reassign or remove their own main-contact status — only the chamber admin can do that in GHL.</li>
+  </ul>
+
+  <h3 style="font-size: 11pt; font-weight: 700; margin-top: 24px;">How the business profile editor role works</h3>
+  <p>The main contact can designate any colleague linked to their business as a <strong>business profile editor</strong>. That person can then edit the Member Business Profile just like the main contact can, and can also add new team members to the business. There is no limit to how many people can hold this role for one business.</p>
+  <p>Only the main contact and app admins can grant or revoke the Business Profile Editor role for team members. Revoking access takes effect immediately.</p>
+
+  <div style="background: #dbeafe; border-left: 4px solid #1a56a4; padding: 12px 16px; margin: 16px 0; border-radius: 0 4px 4px 0;">
+    <p style="margin: 0; font-weight: 700;">Permission changes take effect at next login</p>
+    <p style="margin: 6px 0 0;">When the chamber admin changes a contact's <code>main-contact</code> status in GHL, that change takes effect the next time the affected person logs into the app. Editor grants made by the main contact within the app take effect immediately.</p>
+  </div>
+
+  <!-- 4. Member directory -->
+  <h2 style="font-size: 14pt; font-weight: 700; color: #1a56a4; border-bottom: 2px solid #dbeafe; padding-bottom: 6px; margin-top: 24px;">Member Directory</h2>
+  <p>The member directory page continues to show the same grid of member cards. The visible layout does not change for app visitors.</p>
+
+  <h3 style="font-size: 11pt; font-weight: 700; margin-top: 24px;">What changes behind the scenes</h3>
+  <ul>
+    <li>Each card now represents a <strong>GHL Business record</strong> instead of a contact record.</li>
+    <li>The business name, contact details, and address on each card come directly from the GHL Business object.</li>
+    <li>Extended data (logo, cover image, tagline, social links, etc.) comes from the new Business Profile record in the app's database.</li>
+  </ul>
+
+  <h3 style="font-size: 11pt; font-weight: 700; margin-top: 24px;">How a business appears in the directory</h3>
+  <p>A business is listed in the member directory when the chamber admin has created a Business record in GoHighLevel and a Business Profile record exists in the app with a membership tier set. The chamber admin sets or changes the membership tier through the admin panel in the app (same as today).</p>
+
+  <h3 style="font-size: 11pt; font-weight: 700; margin-top: 24px;">Filtering and search</h3>
+  <p>Filtering by business category, membership tier, and keyword search continues to work exactly as it does today.</p>
+
+  <hr />
+
+  <!-- 5. Member business profile page -->
+  <h2 style="font-size: 14pt; font-weight: 700; color: #1a56a4; border-bottom: 2px solid #dbeafe; padding-bottom: 6px; margin-top: 24px;">Member Business Profile Page</h2>
+  <p>Clicking on a member card opens the business profile page. This page shows all information about that business.</p>
+
+  <h3 style="font-size: 11pt; font-weight: 700; margin-top: 24px;">Viewing the profile (all logged-in users)</h3>
+  <ul>
+    <li>Business name, description, tagline, address, phone, email, website</li>
+    <li>Business logo and cover banner image</li>
+    <li>Social media links</li>
+    <li>Business categories</li>
+    <li>Membership information (tier and member-since date — can be hidden by the business)</li>
+    <li>Job openings posted by that business</li>
+  </ul>
+
+  <h3 style="font-size: 11pt; font-weight: 700; margin-top: 24px;">Editing the profile (main contact and business profile editors only)</h3>
+  <p>When a user with edit permission views their own business's profile, an <strong>"Edit Profile"</strong> button appears. Clicking it enables an inline edit form covering all of the fields listed above. Changes are saved back to GoHighLevel and to the app's database simultaneously.</p>
+
+  <h3 style="font-size: 11pt; font-weight: 700; margin-top: 24px;">Manage Team panel (users with edit permission)</h3>
+  <p>Any user with business profile edit permission — the main contact, business profile editors, and app admins — sees a <strong>"Manage Team"</strong> section on the business profile page. This section lists every GHL Contact linked to the business and allows adding new team members. Controls to grant or revoke the Business Profile Editor role are visible only to the main contact and app admins.</p>
+
+  <h4 style="font-size: 10.5pt; font-weight: 700; margin-top: 16px; color: #374151;">Adding a new team member</h4>
+  <p>Clicking <strong>"Add Team Member"</strong> opens a form. On submit, the app performs these steps in order:</p>
+  <ol style="margin-top: 4px;">
+    <li>Create a new GHL Contact record with the provided contact fields</li>
+    <li>Link the contact to the business by setting their <code>businessId</code> in GHL</li>
+    <li>Apply the <code>active</code> tag to the contact — required for app login</li>
+    <li>Set the contact's <code>renewal_date</code> custom field to today's date — required for app login</li>
+    <li>Apply the same membership package tag the business currently holds (e.g. <code>enhanced membership package</code>) — so the new team member inherits the business's tier</li>
+    <li>If the "Grant Business Profile Editor access" toggle is on (main contacts and app admins only): apply the <code>business-profile-editor</code> tag</li>
+    <li>Send an invite email to the new team member (see below)</li>
+  </ol>
+  <p>The new person appears in the Manage Team list immediately.</p>
+
+  <hr />
+
+  <p style="margin-top: 16px;">The form includes the following fields:</p>
+  <table border="1" cellpadding="6" cellspacing="0" style="width: 100%; border-collapse: collapse; font-size: 10pt; margin-top: 8px;">
+    <thead>
+      <tr style="background: #f3f4f6;">
+        <th style="text-align: left; padding: 6px 10px; border: 1px solid #d1d5db;">Field</th>
+        <th style="text-align: left; padding: 6px 10px; border: 1px solid #d1d5db;">Required?</th>
+        <th style="text-align: left; padding: 6px 10px; border: 1px solid #d1d5db;">Notes</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">First name</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Required</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Stored on the GHL Contact record</td>
+      </tr>
+      <tr style="background: #f9fafb;">
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Last name</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Required</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Stored on the GHL Contact record</td>
+      </tr>
+      <tr>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Email address</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Required</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Becomes the team member's app login email; must be unique in GHL</td>
+      </tr>
+      <tr style="background: #f9fafb;">
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Phone number</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Optional</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Stored on the GHL Contact record</td>
+      </tr>
+      <tr>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Job title</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Optional</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">e.g. "Sales Manager" — stored on the GHL Contact record</td>
+      </tr>
+      <tr style="background: #f9fafb;">
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Grant Business Profile Editor access</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Optional</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Toggle — if on, the <code>business-profile-editor</code> tag is applied to the new contact in GHL immediately. <strong>Visible only to the main contact and app admins.</strong></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h4 style="font-size: 10.5pt; font-weight: 700; margin-top: 16px; color: #374151;">Managing editor access for existing team members</h4>
+  <p>For each person already linked to the business, the full team list is visible to any user with edit permission. The toggle to grant or revoke the <code>business-profile-editor</code> tag is available only to the main contact and app admins. Changes take effect immediately.</p>
+  <p>The main contact always appears in the list but their editor access cannot be toggled — it derives from the <code>main-contact</code> tag, which only the chamber admin controls in GoHighLevel.</p>
+
+  <h4 style="font-size: 10.5pt; font-weight: 700; margin-top: 16px; color: #374151;">Invite email sent to new team members</h4>
+  <p>After a new team member is created, the app automatically sends them an invite email. The email contains a <strong>"Connect Your Account"</strong> button that links to the Connect Account page with their email address pre-filled in the URL:</p>
+  <p style="font-family: monospace; font-size: 9pt; background: #f3f4f6; padding: 8px 12px; border-radius: 4px; word-break: break-all;">https://richfieldareachamber.com/connect-account?email=their.email%40example.com</p>
+  <p>When the new team member clicks the link, the Connect Account page opens with their email address already filled in and locked. They then set a password to complete their app account setup.</p>
+
+  <!-- 6. My Profile -->
+  <h2 style="font-size: 14pt; font-weight: 700; color: #1a56a4; border-bottom: 2px solid #dbeafe; padding-bottom: 6px; margin-top: 24px;">My Profile Page</h2>
+  <p>The personal "My Profile" page (accessible from the avatar menu) becomes a leaner, person-focused page. All business-related fields move to the Member Business Profile.</p>
+
+  <h3 style="font-size: 11pt; font-weight: 700; margin-top: 24px;">What remains on My Profile</h3>
+  <ul>
+    <li>First and last name</li>
+    <li>Personal email address (displayed but not editable here — changing it would affect login)</li>
+    <li>Personal phone number</li>
+    <li>Job title (e.g. "Owner", "Sales Manager")</li>
+    <li>Short personal bio</li>
+    <li>Personal LinkedIn URL</li>
+    <li>Personal headshot / avatar</li>
+    <li>Password change</li>
+  </ul>
+
+  <hr />
+
+  <p>&nbsp;</p>
+
+  <h3 style="font-size: 11pt; font-weight: 700; margin-top: 24px;">My Business card</h3>
+  <p>A prominent <strong>"My Business"</strong> card is added to the My Profile page. It shows the name of the business the logged-in user belongs to and provides a direct link to the Member Business Profile page. If the user has edit permission, the card also shows an "Edit Member Business Profile" shortcut button.</p>
+
+  <div style="background: #dbeafe; border-left: 4px solid #1a56a4; padding: 12px 16px; margin: 16px 0; border-radius: 0 4px 4px 0;">
+    <p style="margin: 0; font-weight: 700;">Users without a linked business</p>
+    <p style="margin: 6px 0 0;">If a contact has not yet been linked to a Business in GoHighLevel, the "My Business" card will show a placeholder explaining that the chamber admin needs to link them to their business record.</p>
+  </div>
+
+  <!-- 7. Chamber admin responsibilities -->
+  <h2 style="font-size: 14pt; font-weight: 700; color: #1a56a4; border-bottom: 2px solid #dbeafe; padding-bottom: 6px; margin-top: 24px;">Chamber Admin Responsibilities</h2>
+  <p>The following tasks are performed by the chamber admin. None of these require any changes to the current GoHighLevel workflow — the admin simply uses existing GHL tools.</p>
+
+  <table border="1" cellpadding="8" cellspacing="0" style="width: 100%; border-collapse: collapse; font-size: 10pt;">
+    <thead>
+      <tr style="background: #f3f4f6;">
+        <th style="text-align: left; padding: 8px 10px; border: 1px solid #d1d5db;">Task</th>
+        <th style="text-align: left; padding: 8px 10px; border: 1px solid #d1d5db;">Where it's done</th>
+        <th style="text-align: left; padding: 8px 10px; border: 1px solid #d1d5db;">Notes</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;">Create a new member business</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;">GoHighLevel → Businesses</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;">Fill in the business name, phone, email, website, and address in GHL</td>
+      </tr>
+      <tr style="background: #f9fafb;">
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;">Link a contact to a business</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;">GoHighLevel → Contact record</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;">Set the "Business" field on the Contact to associate them with the right GHL Business</td>
+      </tr>
+      <tr>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;">Designate a main contact</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;">GoHighLevel → apply <code>main-contact</code> tag to the Contact</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;">One per business; takes effect on that user's next app login</td>
+      </tr>
+      <tr style="background: #f9fafb;">
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;">Grant/revoke editor for any contact</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;">GoHighLevel → apply/remove <code>business-profile-editor</code> tag</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;">The main contact can also do this from within the app</td>
+      </tr>
+      <tr>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;">Set membership tier</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;">App → Admin panel</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;">Controls which features are available to that business (and whether they appear in the directory)</td>
+      </tr>
+      <tr style="background: #f9fafb;">
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;">Hide/show a business from the directory</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;">App → Admin panel → set/clear membership tier</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;">A business with no tier set does not appear in the public directory</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <hr />
+
+  <!-- 7b. Admin — User & Membership Management -->
+  <h2 style="font-size: 14pt; font-weight: 700; color: #1a56a4; border-bottom: 2px solid #dbeafe; padding-bottom: 6px; margin-top: 24px;">Admin — User &amp; Membership Management</h2>
+  <p>The admin panel's <strong>Users</strong> section is redesigned into three separate tabs, each sourcing data from a different place. App admins also gain an <strong>"Add New Membership"</strong> button to create a complete member record — contact, business, and association — directly from the app without switching to GoHighLevel.</p>
+
+  <h3 style="font-size: 11pt; font-weight: 700; margin-top: 24px;">Three-tab overview</h3>
+  <table border="1" cellpadding="8" cellspacing="0" style="width: 100%; border-collapse: collapse; font-size: 10pt;">
+    <thead>
+      <tr style="background: #f3f4f6;">
+        <th style="text-align: left; padding: 8px 10px; border: 1px solid #d1d5db;">Tab</th>
+        <th style="text-align: left; padding: 8px 10px; border: 1px solid #d1d5db;">Data source</th>
+        <th style="text-align: left; padding: 8px 10px; border: 1px solid #d1d5db;">What it shows</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;"><strong>Business Memberships</strong></td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;">GHL Businesses API</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;">Every GHL Business record for this location — one row per business, with tier and member-since info from the local <code>BusinessProfile</code> table</td>
+      </tr>
+      <tr style="background: #f9fafb;">
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;"><strong>Contacts</strong></td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;">GHL Contacts API (filtered)</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;">GHL Contact records that have a <code>businessId</code> set — showing which people are associated with a business and what roles they hold</td>
+      </tr>
+      <tr>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;"><strong>App Users</strong></td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;">App database</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;">People who have registered an account in the app — with indicators for whether they are linked to a GHL Contact and GHL Business</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3 style="font-size: 11pt; font-weight: 700; margin-top: 24px;">Business Memberships tab</h3>
+  <p>Lists every GHL Business in the chamber's account. This is the primary view for tracking who is a member and at what tier.</p>
+  <ul>
+    <li><strong>Search:</strong> by business name</li>
+    <li><strong>Filter by tier:</strong> Basic, Enhanced, Elite, or No tier set (not yet shown in directory)</li>
+    <li><strong>Filter by city / state:</strong> narrows to a specific geographic area</li>
+  </ul>
+  <p>Each row shows: business name, membership tier, city, member-since date, number of GHL Contacts linked to the business, and an action menu. Actions available per row:</p>
+  <ul>
+    <li>Set or change membership tier (writes to local <code>BusinessProfile</code>)</li>
+    <li>View the business's public profile in the app</li>
+    <li>Open the business record in GoHighLevel (external link)</li>
+  </ul>
+
+  <h3 style="font-size: 11pt; font-weight: 700; margin-top: 24px;">Contacts tab</h3>
+  <p>Lists GHL Contact records that are associated with a business. Contacts <em>without</em> a <code>businessId</code> are excluded from this view — they would appear as unlinked contacts in GoHighLevel and do not have a member relationship.</p>
+  <ul>
+    <li><strong>Search:</strong> by contact name or email address</li>
+    <li><strong>Filter by business:</strong> show only contacts belonging to a specific business</li>
+    <li><strong>Filter by role tag:</strong> Main Contact, Business Profile Editor, or No special role</li>
+  </ul>
+  <p>Each row shows: contact name, email, phone, linked business name, and any role tags (<code>main-contact</code>, <code>business-profile-editor</code>). A visual indicator shows whether this contact has a corresponding app user account.</p>
+  <p>Actions available per row:</p>
+  <ul>
+    <li>Apply or remove the <code>main-contact</code> tag (calls GHL tag update API)</li>
+    <li>Apply or remove the <code>business-profile-editor</code> tag</li>
+    <li>Open the contact record in GoHighLevel (external link)</li>
+  </ul>
+
+  <hr />
+
+  <h3 style="font-size: 11pt; font-weight: 700; margin-top: 24px;">App Users tab</h3>
+  <p>Lists people who have created an account in the app — the same table that exists in the admin panel today. Search and filter options carry over from the current implementation:</p>
+  <ul>
+    <li><strong>Search:</strong> by name, email, or business name</li>
+    <li><strong>Filter by role:</strong> Admin, Moderator, Board Member, Member</li>
+    <li><strong>Filter by status:</strong> Active, Pending, Suspended</li>
+  </ul>
+  <p>Each row shows: name, email, app role, account status, membership tier (from linked business), and date joined. A visual indicator shows whether the account is linked to a GHL Contact and whether that contact is linked to a GHL Business.</p>
+
+  <h3 style="font-size: 11pt; font-weight: 700; margin-top: 24px;">Add New Membership</h3>
+  <p>An <strong>"Add New Membership"</strong> button appears at the top of the Users admin section. It is visible to app admins only. Clicking it opens a form divided into two sections:</p>
+
+  <table border="1" cellpadding="8" cellspacing="0" style="width: 100%; border-collapse: collapse; font-size: 10pt; margin-top: 8px;">
+    <thead>
+      <tr style="background: #f3f4f6;">
+        <th colspan="3" style="text-align: left; padding: 8px 10px; border: 1px solid #d1d5db; background: #dbeafe; color: #1a56a4;">Section A — Contact (Primary Person)</th>
+      </tr>
+      <tr style="background: #f3f4f6;">
+        <th style="text-align: left; padding: 6px 10px; border: 1px solid #d1d5db;">Field</th>
+        <th style="text-align: left; padding: 6px 10px; border: 1px solid #d1d5db;">Required?</th>
+        <th style="text-align: left; padding: 6px 10px; border: 1px solid #d1d5db;">Notes</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">First name</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Required</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Stored on the GHL Contact record</td>
+      </tr>
+      <tr style="background: #f9fafb;">
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Last name</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Required</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Stored on the GHL Contact record</td>
+      </tr>
+      <tr>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Email address</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Required</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Will become their app login email if they register</td>
+      </tr>
+      <tr style="background: #f9fafb;">
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Phone number</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Optional</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Stored on the GHL Contact record</td>
+      </tr>
+      <tr>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Job title</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Optional</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">e.g. "Owner" — stored on GHL Contact <code>title</code> field</td>
+      </tr>
+      <tr style="background: #f9fafb;">
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Mark as main contact</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Optional</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Toggle — if on, applies the <code>main-contact</code> tag to this contact in GHL</td>
+      </tr>
+      <tr>
+        <th colspan="3" style="text-align: left; padding: 8px 10px; border: 1px solid #d1d5db; background: #dbeafe; color: #1a56a4;">Section B — Business</th>
+      </tr>
+      <tr style="background: #f9fafb;">
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Business name</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Required</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Stored on the GHL Business record</td>
+      </tr>
+      <tr>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Business email</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Optional</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Stored on the GHL Business record</td>
+      </tr>
+      <tr style="background: #f9fafb;">
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Business phone</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Optional</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Stored on the GHL Business record</td>
+      </tr>
+      <tr>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Website</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Optional</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Stored on the GHL Business record</td>
+      </tr>
+      <tr style="background: #f9fafb;">
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Street address</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Optional</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Stored on the GHL Business record (address, city, state, zip)</td>
+      </tr>
+      <tr>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Membership tier</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Optional</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Dropdown: Basic, Enhanced, Elite — sets the <code>BusinessProfile.membershipTier</code> and makes the business appear in the member directory. Can be left unset and assigned later.</td>
+      </tr>
+      <tr style="background: #f9fafb;">
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Member since</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Optional</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Date picker — stored in <code>BusinessProfile.memberSince</code></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <hr />
+
+  <p style="margin-top: 12px;">On submit, the app performs these steps <strong>in order</strong> and rolls back on failure:</p>
+  <ol>
+    <li>Create the GHL Contact (<code>POST /contacts</code>) with the contact section fields</li>
+    <li>Create the GHL Business (<code>POST /businesses/</code>) with the business section fields</li>
+    <li>Associate the contact with the business by updating the contact's <code>businessId</code> in GHL</li>
+    <li>Apply the <code>active</code> tag to the contact</li>
+    <li>Set the contact's <code>renewal_date</code> custom field to today's date (or the Member Since date if one was provided) — this is required for the contact to be able to log into the app</li>
+    <li>If a membership tier was selected, apply the matching membership package tag (<code>basic membership package</code>, <code>enhanced membership package</code>, or <code>elite membership package</code>) — this is what makes the business appear in the member directory</li>
+    <li>If "Mark as main contact" is on, apply the <code>main-contact</code> tag to the GHL Contact</li>
+    <li>If a membership tier was selected, upsert the local <code>BusinessProfile</code> row with that tier and member-since date</li>
+    <li>Send an invite email to the new contact with a <strong>"Connect Your Account"</strong> link that pre-fills their email address on the Connect Account page:<br /><span style="font-family: monospace; font-size: 9pt;">https://richfieldareachamber.com/connect-account?email=their.email%40example.com</span></li>
+  </ol>
+
+  <p>&nbsp;</p>
+
+  <div style="background: #fef3c7; border-left: 4px solid #b45309; padding: 12px 16px; margin: 16px 0; border-radius: 0 4px 4px 0;">
+    <p style="margin: 0; font-weight: 700;">Tags required for app login</p>
+    <p style="margin: 6px 0 0;">A GHL contact must have the <code>active</code> tag <em>and</em> a <code>renewal_date</code> custom field that is no more than 13 months old before they can log into the app. The "Add New Membership" form sets both automatically. If either is missing, the contact will receive an "Account not active" error when they try to log in.</p>
+  </div>
+  <p>After the form is saved, the new business appears in the <strong>Business Memberships</strong> tab and the new contact appears in the <strong>Contacts</strong> tab immediately.</p>
+
+  <div style="background: #dbeafe; border-left: 4px solid #1a56a4; padding: 12px 16px; margin: 16px 0; border-radius: 0 4px 4px 0;">
+    <p style="margin: 0; font-weight: 700;">Existing workflow in GoHighLevel still works</p>
+    <p style="margin: 6px 0 0;">The chamber admin can continue to create businesses and contacts directly in GoHighLevel as before. The app reads from GHL on every page load, so any records created in GHL will automatically appear in the admin tabs without any additional action in the app.</p>
+  </div>
+
+  <div style="background: #dbeafe; border-left: 4px solid #1a56a4; padding: 12px 16px; margin: 16px 0; border-radius: 0 4px 4px 0;">
+    <p style="margin: 0;">The chamber admin can hide the membership tier label from a business's public profile. That preference is set by the business itself via the Privacy toggle on the Member Business Profile edit form.</p>
+  </div>
+
+  <hr />
+
+  <!-- 9. Data migration -->
+  <h2 style="font-size: 14pt; font-weight: 700; color: #1a56a4; border-bottom: 2px solid #dbeafe; padding-bottom: 6px; margin-top: 24px;">Data Migration</h2>
+  <p>All existing member profile data will be automatically migrated when this feature goes live. <strong>No action is required from member businesses.</strong></p>
+
+  <h3 style="font-size: 11pt; font-weight: 700; margin-top: 24px;">What gets migrated automatically</h3>
+  <ul>
+    <li>Business logos (avatar images) and cover photos</li>
+    <li>Taglines and extended business descriptions (bios)</li>
+    <li>Social media links (Facebook, Instagram, X / Twitter, LinkedIn)</li>
+    <li>Member-since dates and membership tier assignments</li>
+    <li>Coupon codes</li>
+    <li>Specialties and organization type</li>
+    <li>Business category selections</li>
+    <li>GHL Business records created from existing contact data and contacts linked to their business automatically</li>
+  </ul>
+
+  <h3 style="font-size: 11pt; font-weight: 700; margin-top: 24px;">What the development team does before go-live (automated)</h3>
+  <p>GHL Business records are created automatically by a one-time migration script. The script reads every active contact in GoHighLevel, groups them by business name, and creates a GHL Business record for each unique business — then links each contact to their business. <strong>No manual data entry is needed for this step.</strong></p>
+  <p>The script also reviews the existing contact data and flags any contacts that have no business name, so those edge cases can be handled separately.</p>
+
+  <h3 style="font-size: 11pt; font-weight: 700; margin-top: 24px;">What the chamber admin needs to do before go-live</h3>
+  <ol>
+    <li>Review the migration script's output and confirm the business records and contact groupings look correct. If any business name was misspelled or inconsistently entered across contacts, correct it in GoHighLevel before the script runs.</li>
+  </ol>
+  <p>That's it. <code>main-contact</code> tags are already applied to the appropriate contacts. Additional business profile editors can be granted by each main contact from within the app at any time after go-live — no pre-launch action needed.</p>
+
+  <div style="background: #fef3c7; border-left: 4px solid #b45309; padding: 12px 16px; margin: 16px 0; border-radius: 0 4px 4px 0;">
+    <p style="margin: 0; font-weight: 700;">What happens to contacts not linked to a business?</p>
+    <p style="margin: 6px 0 0;">Any active contact that had no business name on their GHL record will be flagged in the migration script output. These contacts can still log in and use the app — they will see a "My Business" card on their profile that says their account hasn't been linked to a business yet. The chamber admin can link them manually in GoHighLevel at any time.</p>
+  </div>
+
+  <p style="text-align: center; color: #6b7280; font-size: 9pt; margin-top: 48px; border-top: 1px solid #e5e7eb; padding-top: 20px;">Richfield Area Chamber of Commerce — Membership App &nbsp;·&nbsp; For internal review only</p>
+
+</body>
+</html>
+ 

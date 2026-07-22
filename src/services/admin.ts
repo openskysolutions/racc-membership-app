@@ -18,8 +18,9 @@ export interface User {
   status: 'active' | 'pending' | 'suspended';
   emailVerified: boolean;
   ghlContactId?: string;
+  ghlBusinessId?: string;
   paymentStatus?: 'pending' | 'paid' | 'failed' | 'cancelled';
-  membershipTier?: 'standard' | 'enhanced' | 'elite';
+  membershipTier?: 'basic' | 'enhanced' | 'elite';
   createdAt: string;
   updatedAt?: string;
 }
@@ -62,6 +63,7 @@ class AdminService {
     search?: string;
     role?: string;
     status?: string;
+    sort?: string;
   } = {}): Promise<{
     users: User[];
     pagination: {
@@ -78,6 +80,7 @@ class AdminService {
     if (params.search) searchParams.set('search', params.search);
     if (params.role) searchParams.set('role', params.role);
     if (params.status) searchParams.set('status', params.status);
+    if (params.sort) searchParams.set('sort', params.sort);
 
     const response = await fetch(`${API_BASE_URL}/admin/users?${searchParams}`, {
       method: 'GET',

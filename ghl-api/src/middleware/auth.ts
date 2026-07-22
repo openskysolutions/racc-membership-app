@@ -48,11 +48,16 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     // Map database user to request user format
     req.user = {
       id: String(dbUser.id),
-      name: dbUser.email.split('@')[0], // Use email prefix as name if no name field
+      name: dbUser.email.split('@')[0],
       email: dbUser.email,
       role: dbUser.role,
       status: dbUser.status,
-      ghlContactId: dbUser.ghlContactId || undefined
+      ghlContactId: dbUser.ghlContactId || undefined,
+      ghlBusinessId: (dbUser as any).ghlBusinessId || undefined,
+      // isMainContact / isBusinessProfileEditor come from the session cache (set at login).
+      // Falls back to false on cache miss (server restart) — user must re-login to restore.
+      isMainContact: session?.user?.isMainContact ?? false,
+      isBusinessProfileEditor: session?.user?.isBusinessProfileEditor ?? false,
     };
     req.session = session;
     

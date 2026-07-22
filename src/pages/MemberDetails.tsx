@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Mail, Phone, Globe, Calendar, Shield, Edit, Save, X, ExternalLink, Briefcase, Plus, Facebook, Instagram, Twitter, Linkedin, Tag } from 'lucide-react';
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
+import { ArrowLeft, Mail, Phone, Globe, Calendar, Shield, Edit, Save, X, ExternalLink, Briefcase, Plus, Facebook, Instagram, Twitter, Linkedin, Tag, Users, UserCheck, UserX, Loader2 } from 'lucide-react';
 import BusinessCategorySelector from '@/components/BusinessCategorySelector';
 import { useBusinessCategories, getSubcategoryName, getCategoryForSubcategory } from '@/hooks/useBusinessCategories';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -49,6 +49,7 @@ interface MemberFormData {
 const MemberDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuthStore();
   const { triggerMemberRefresh } = useMembersStore();
   const { categories } = useBusinessCategories();
@@ -59,8 +60,22 @@ const MemberDetailsPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [updating, setUpdating] = useState(false);
+
+  // Auto-enter edit mode when ?edit=true is in the URL
+  const editParam = searchParams.get('edit');
+  React.useEffect(() => {
+    if (editParam === 'true') setIsEditing(true);
+  }, [editParam]);
   const [companyJobs, setCompanyJobs] = useState<Job[]>([]);
   const [loadingJobs, setLoadingJobs] = useState(false);
+
+  // Team management state
+  const [team, setTeam] = useState<any[]>([]);
+  const [teamLoading, setTeamLoading] = useState(false);
+  const [showAddTeamMember, setShowAddTeamMember] = useState(false);
+  const [addingTeamMember, setAddingTeamMember] = useState(false);
+  const [newMemberForm, setNewMemberForm] = useState({ firstName: '', lastName: '', email: '', phone: '', title: '', grantEditorAccess: false });
+  const [togglingEditor, setTogglingEditor] = useState<string | null>(null);
 
   // Business categories state
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -105,7 +120,7 @@ const MemberDetailsPage: React.FC = () => {
       try {
         fetchingRef.current = true;
         setLoading(true);
-        const response = await api.get(`/members/${id}`);
+        const response = await api.get(`/businesses/${id}`);
 
         if (!response.ok) {
           if (response.status === 404) {
@@ -125,19 +140,9 @@ const MemberDetailsPage: React.FC = () => {
 
         setMember(memberData);
 
-        // Load categories (may already be embedded in member response)
+        // Categories are embedded in the business response
         if (memberData.categories) {
           setSelectedCategories(memberData.categories);
-        } else {
-          try {
-            const catRes = await api.get(`/members/${memberData.id}/categories`);
-            if (catRes.ok) {
-              const catData = await catRes.json();
-              setSelectedCategories(catData.categories || []);
-            }
-          } catch {
-            // non-fatal
-          }
         }
 
         // Initialize form data
@@ -218,7 +223,10 @@ const MemberDetailsPage: React.FC = () => {
     return (firstName + lastName).toUpperCase() || member.email.charAt(0).toUpperCase();
   };
 
-  const canEdit = user && member && (user.ghlContactId === member.id || user.role === 'admin');
+  const canEdit = user && member && (
+    (user.isBusinessProfileEditor && user.ghlBusinessId === member.id) ||
+    user.role === 'admin'
+  );
 
   // Debug logging for authorization - helps troubleshoot edit button visibility
   if (user && member) {
@@ -239,24 +247,64 @@ const MemberDetailsPage: React.FC = () => {
   }
 
   // Check if member has Enhanced or Elite membership (case-insensitive and includes partial matches)
-  // Note: All members now have enhanced/elite-level access regardless of actual tier
-  const hasEnhancedOrElite = member?.tags && (
-      // Give everyone elite access for now, but keep tag-checking logic for future reference/rollback
-    member?.tags.some(tag => tag.toLowerCase().includes('basic')) ||
-    member?.tags.some(tag => tag.toLowerCase().includes('enhanced')) || 
-    member?.tags.some(tag => tag.toLowerCase().includes('elite')) ||
-    member?.tags.some(tag => tag.toLowerCase() === 'admin')
-  );
+  // Derive from membershipTier on the BusinessMember (set during migration).
+  // Per original intent: all paid tiers get 'enhanced/elite'-level UI access.
+  const tier = (member as any)?.membershipTier?.toLowerCase() ?? null;
+  const hasEnhancedOrElite = !!(tier && ['basic', 'standard', 'enhanced', 'elite'].includes(tier));
+  const hasElite = hasEnhancedOrElite; // all paying members treated as elite for UI purposes
 
-  // Check if member has Elite membership only (case-insensitive and includes partial matches)
-  // Note: All members now have elite-level access regardless of actual tier
-  const hasElite = member?.tags && (
-      // Give everyone elite access for now, but keep tag-checking logic for future reference/rollback
-      member?.tags.some(tag => tag.toLowerCase().includes('basic')) ||
-      member?.tags.some(tag => tag.toLowerCase().includes('enhanced')) ||
-      member?.tags.some(tag => tag.toLowerCase().includes('elite')) ||
-      member?.tags.some(tag => tag.toLowerCase() === 'admin')
-  );
+  // Load team members when canEdit is true
+  useEffect(() => {
+    if (!member || !canEdit) return;
+    const loadTeam = async () => {
+      setTeamLoading(true);
+      try {
+        const res = await api.get(`/businesses/${member.id}/team`);
+        if (res.ok) {
+          const data = await res.json();
+          setTeam(data.team || []);
+        }
+      } catch { /* non-fatal */ }
+      finally { setTeamLoading(false); }
+    };
+    loadTeam();
+  }, [member?.id, canEdit]);
+
+  const handleToggleEditor = async (contactId: string, currentlyEditor: boolean, isMainContact: boolean) => {
+    if (!member || isMainContact) return;
+    setTogglingEditor(contactId);
+    try {
+      const method = currentlyEditor ? 'delete' : 'post';
+      const res = await api[method](`/businesses/${member.id}/team/${contactId}/editor`, {});
+      if (res.ok) {
+        setTeam(prev => prev.map(m => m.id === contactId ? { ...m, isEditor: !currentlyEditor } : m));
+        toast.success(currentlyEditor ? 'Editor access revoked' : 'Editor access granted');
+      }
+    } catch { toast.error('Failed to update editor access'); }
+    finally { setTogglingEditor(null); }
+  };
+
+  const handleAddTeamMember = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!member) return;
+    setAddingTeamMember(true);
+    try {
+      const res = await api.post(`/businesses/${member.id}/team`, newMemberForm);
+      if (res.ok) {
+        const data = await res.json();
+        toast.success(`${newMemberForm.firstName} added${data.emailSent ? ' — invite email sent' : ' (email failed to send)'}`);
+        setNewMemberForm({ firstName: '', lastName: '', email: '', phone: '', title: '', grantEditorAccess: false });
+        setShowAddTeamMember(false);
+        // Refresh team list
+        const teamRes = await api.get(`/businesses/${member.id}/team`);
+        if (teamRes.ok) { const d = await teamRes.json(); setTeam(d.team || []); }
+      } else {
+        const err = await res.json();
+        toast.error(err.error || 'Failed to add team member');
+      }
+    } catch { toast.error('Failed to add team member'); }
+    finally { setAddingTeamMember(false); }
+  };
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -287,8 +335,27 @@ const MemberDetailsPage: React.FC = () => {
     setUpdating(true);
 
     try {
-      // Save profile fields to GHL
-      const response = await api.put(`/members/${member.id}`, formData);
+      // Save profile fields to GHL Business + BusinessProfile
+      const response = await api.patch(`/businesses/${member.id}`, {
+        businessName: formData.businessName || formData.companyName,
+        email: formData.email,
+        phone: formData.phone,
+        website: formData.website,
+        address1: formData.address1,
+        city: formData.city,
+        state: formData.state,
+        postalCode: formData.postalCode,
+        bio: formData.bio,
+        tagline: formData.tagline,
+        coverImage: formData.coverImage,
+        facebookUrl: formData.facebookUrl,
+        instagramUrl: formData.instagramUrl,
+        twitterUrl: formData.twitterUrl,
+        linkedinUrl: formData.linkedinUrl,
+        hideMembershipTier: formData.hideMembershipTier,
+        couponCodes: (() => { try { return formData.coupon_codes ? JSON.parse(formData.coupon_codes) : []; } catch { return []; } })(),
+        categories: selectedCategories,
+      });
 
       if (!response.ok) {
         throw new Error(`Failed to update member: ${response.statusText}`);
@@ -297,16 +364,6 @@ const MemberDetailsPage: React.FC = () => {
       const updatedMember: Member = await response.json();
       setMember({ ...updatedMember, categories: selectedCategories });
       setIsEditing(false);
-
-      // Save business categories to local DB (fire alongside profile save)
-      try {
-        const catResponse = await api.put(`/members/${member.id}/categories`, { categories: selectedCategories });
-        if (!catResponse.ok) {
-          console.warn('Categories save returned non-OK status:', catResponse.status);
-        }
-      } catch (catErr) {
-        console.warn('Failed to save categories:', catErr);
-      }
 
       // Trigger refresh of members directory so changes appear immediately
       triggerMemberRefresh();
@@ -400,9 +457,9 @@ const MemberDetailsPage: React.FC = () => {
           <Button
             variant="default"
             onClick={() => setIsEditing(true)}
-            className="px-3 h-8"
+            className="px-3 h-8 mt-0.5"
           >
-            Edit Profile
+            Edit Business Profile
             <Edit className="h-4 w-4" />
           </Button>
         )}
@@ -462,6 +519,7 @@ const MemberDetailsPage: React.FC = () => {
         {canEdit && isEditing && hasElite && (
           <CoverImageUpload
             contactId={member?.id || ''}
+            businessId={member?.id || ''}
             fallbackText={''}
             currentCoverImage={member?.coverImage}
             onCoverImageUpdated={(newCoverImageUrl: string) => {
@@ -674,11 +732,11 @@ const MemberDetailsPage: React.FC = () => {
 
                     <div className="flex flex-wrap gap-2">
                       <Badge className={`bg-neutral-300/20 text-neutral-500 dark:text-neutral-100 border-neutral-500 dark:border-neutral-300`}>
-                        {member.role.charAt(0).toUpperCase() + member.role.slice(1)}
+                        {(member.role ?? 'member').charAt(0).toUpperCase() + (member.role ?? 'member').slice(1)}
                       </Badge>
 
                       <Badge variant="outline" className="text-teal-600 border-teal-600 bg-teal-600/20 dark:text-teal-300 dark:border-teal-300 dark:bg-teal-300/10">
-                        {member.status.charAt(0).toUpperCase() + member.status.slice(1)}
+                        {(member.status ?? 'active').charAt(0).toUpperCase() + (member.status ?? 'active').slice(1)}
                       </Badge>
 
                       {user?.id === member.id && (
@@ -694,27 +752,29 @@ const MemberDetailsPage: React.FC = () => {
                   <div className="space-y-4 flex flex-col">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label htmlFor="firstName" className="block text-sm font-medium mb-1">
-                          First Name *
+                        <label htmlFor="businessName" className="block text-sm font-medium mb-1">
+                          Business Name
                         </label>
                         <Input
-                          id="firstName"
-                          name="firstName"
-                          value={formData.firstName}
+                          id="businessName"
+                          name="businessName"
+                          value={formData.businessName}
                           onChange={handleFormChange}
-                          required
                         />
                       </div>
+
                       <div>
-                        <label htmlFor="lastName" className="block text-sm font-medium mb-1">
-                          Last Name *
+                        <label htmlFor="website" className="block text-sm font-medium mb-1">
+                          Website
+                          {/* <span className="text-xs text-muted-foreground ml-2">(Enhanced/Elite only)</span> */}
                         </label>
                         <Input
-                          id="lastName"
-                          name="lastName"
-                          value={formData.lastName}
+                          id="website"
+                          name="website"
+                          type="url"
+                          value={formData.website}
                           onChange={handleFormChange}
-                          required
+                          placeholder="https://example.com"
                         />
                       </div>
                     </div>
@@ -746,6 +806,64 @@ const MemberDetailsPage: React.FC = () => {
                       </div>
                     </div>
 
+                    <h3 className="font-semibold mb-3">
+                      Address Information
+                      {/* <span className="text-xs text-muted-foreground ml-2 font-normal">(Enhanced/Elite only)</span> */}
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label htmlFor="address1" className="block text-sm font-medium mb-1">
+                          Street Address
+                        </label>
+                        <Input
+                          id="address1"
+                          name="address1"
+                          value={formData.address1}
+                          onChange={handleFormChange}
+                          placeholder="123 Main Street"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="city" className="block text-sm font-medium mb-1">
+                          City
+                        </label>
+                        <Input
+                          id="city"
+                          name="city"
+                          value={formData.city}
+                          onChange={handleFormChange}
+                          placeholder="City"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label htmlFor="state" className="block text-sm font-medium mb-1">
+                          State
+                        </label>
+                        <Input
+                          id="state"
+                          name="state"
+                          value={formData.state}
+                          onChange={handleFormChange}
+                          placeholder="UT"
+                          maxLength={2}
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="postalCode" className="block text-sm font-medium mb-1">
+                          ZIP Code
+                        </label>
+                        <Input
+                          id="postalCode"
+                          name="postalCode"
+                          value={formData.postalCode}
+                          onChange={handleFormChange}
+                          placeholder="12345"
+                        />
+                      </div>
+                    </div>
+
                     <div>
                       <label htmlFor="tagline" className="block text-sm font-medium mb-1">
                         Tagline
@@ -770,21 +888,6 @@ const MemberDetailsPage: React.FC = () => {
                           <BioEditor
                             value={formData.bio}
                             onChange={(val) => setFormData(prev => ({ ...prev, bio: val }))}
-                          />
-                        </div>
-
-                        <div>
-                          <label htmlFor="website" className="block text-sm font-medium mb-1">
-                            Website
-                            {/* <span className="text-xs text-muted-foreground ml-2">(Enhanced/Elite only)</span> */}
-                          </label>
-                          <Input
-                            id="website"
-                            name="website"
-                            type="url"
-                            value={formData.website}
-                            onChange={handleFormChange}
-                            placeholder="https://example.com"
                           />
                         </div>
 
@@ -843,64 +946,6 @@ const MemberDetailsPage: React.FC = () => {
                             />
                           </div>
                         </div>
-
-                        <h3 className="font-semibold mb-3">
-                          Address Information
-                          {/* <span className="text-xs text-muted-foreground ml-2 font-normal">(Enhanced/Elite only)</span> */}
-                        </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <label htmlFor="address1" className="block text-sm font-medium mb-1">
-                              Street Address
-                            </label>
-                            <Input
-                              id="address1"
-                              name="address1"
-                              value={formData.address1}
-                              onChange={handleFormChange}
-                              placeholder="123 Main Street"
-                            />
-                          </div>
-                          <div>
-                            <label htmlFor="city" className="block text-sm font-medium mb-1">
-                              City
-                            </label>
-                            <Input
-                              id="city"
-                              name="city"
-                              value={formData.city}
-                              onChange={handleFormChange}
-                              placeholder="City"
-                            />
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <label htmlFor="state" className="block text-sm font-medium mb-1">
-                              State
-                            </label>
-                            <Input
-                              id="state"
-                              name="state"
-                              value={formData.state}
-                              onChange={handleFormChange}
-                              placeholder="UT"
-                              maxLength={2}
-                            />
-                          </div>
-                          <div>
-                            <label htmlFor="postalCode" className="block text-sm font-medium mb-1">
-                              ZIP Code
-                            </label>
-                            <Input
-                              id="postalCode"
-                              name="postalCode"
-                              value={formData.postalCode}
-                              onChange={handleFormChange}
-                              placeholder="12345"
-                            />
-                          </div>
-                        </div>
                       </>
                     )}
 
@@ -924,18 +969,6 @@ const MemberDetailsPage: React.FC = () => {
                         </p>
                       </div>
                     )}
-
-                    <div>
-                      <label htmlFor="businessName" className="block text-sm font-medium mb-1">
-                        Business Name
-                      </label>
-                      <Input
-                        id="businessName"
-                        name="businessName"
-                        value={formData.businessName}
-                        onChange={handleFormChange}
-                      />
-                    </div>
                     {/* Business Categories */}
                     {canEdit && (
                       <div>
@@ -973,7 +1006,7 @@ const MemberDetailsPage: React.FC = () => {
                       variant='default'
                       className='self-center w-1/2 sm:w-1/3'
                     >
-                      Update Profile
+                      Update BusinessProfile
                       {updating ? '...' : <Save className="h-4 w-4" />}
                     </Button>
                   </div>
@@ -1045,7 +1078,7 @@ const MemberDetailsPage: React.FC = () => {
                           <div>
                             <p className="text-sm font-medium">Membership Tier</p>
                             <p className="text-sm text-muted-foreground">
-                              {capitalizeFirst((member as any).membershipTier || 'Standard')}
+                              {capitalizeFirst((member as any).membershipTier || 'Basic')}
                               {(member as any).hideMembershipTier && (
                                 <span className="ml-2 text-xs text-muted-foreground/60">(hidden from others)</span>
                               )}
@@ -1058,7 +1091,103 @@ const MemberDetailsPage: React.FC = () => {
                 )}
               </CardContent>
             </Card>
-                          {/* Company Job Listings */}
+
+            {/* Team Management — visible to editors of this business */}
+            {canEdit && (
+              <Card className="mt-6">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Users className="h-5 w-5" />
+                      Team Members
+                    </CardTitle>
+                    <Button size="sm" onClick={() => setShowAddTeamMember(v => !v)}>
+                      <Plus className="h-4 w-4 mr-1" />
+                      Add Member
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Add team member form */}
+                  {showAddTeamMember && (
+                    <form onSubmit={handleAddTeamMember} className="border rounded-lg p-4 space-y-3 bg-muted/30">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-xs font-medium">First Name *</label>
+                          <Input value={newMemberForm.firstName} onChange={e => setNewMemberForm(p => ({...p, firstName: e.target.value}))} required />
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium">Last Name *</label>
+                          <Input value={newMemberForm.lastName} onChange={e => setNewMemberForm(p => ({...p, lastName: e.target.value}))} required />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium">Email *</label>
+                        <Input type="email" value={newMemberForm.email} onChange={e => setNewMemberForm(p => ({...p, email: e.target.value}))} required />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-xs font-medium">Phone</label>
+                          <Input value={newMemberForm.phone} onChange={e => setNewMemberForm(p => ({...p, phone: e.target.value}))} />
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium">Title</label>
+                          <Input value={newMemberForm.title} onChange={e => setNewMemberForm(p => ({...p, title: e.target.value}))} />
+                        </div>
+                      </div>
+                      {(user?.isMainContact || user?.role === 'admin') && (
+                        <label className="flex items-center gap-2 text-sm cursor-pointer">
+                          <input type="checkbox" checked={newMemberForm.grantEditorAccess} onChange={e => setNewMemberForm(p => ({...p, grantEditorAccess: e.target.checked}))} className="rounded" />
+                          Grant profile edit access
+                        </label>
+                      )}
+                      <div className="flex gap-2 justify-end">
+                        <Button type="button" variant="outline" size="sm" onClick={() => setShowAddTeamMember(false)}>Cancel</Button>
+                        <Button type="submit" size="sm" disabled={addingTeamMember}>
+                          {addingTeamMember ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Add & Send Invite'}
+                        </Button>
+                      </div>
+                    </form>
+                  )}
+
+                  {/* Team list */}
+                  {teamLoading ? (
+                    <div className="flex justify-center py-4"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+                  ) : team.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No team members found.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {team.map(member => (
+                        <div key={member.id} className="flex items-center justify-between p-3 rounded-lg border">
+                          <div className="flex items-center gap-3">
+                            <div>
+                              <p className="text-sm font-medium">{member.firstName} {member.lastName}</p>
+                              <p className="text-xs text-muted-foreground">{member.title || member.email}</p>
+                            </div>
+                            {member.isMainContact && <Badge variant="secondary" className="text-xs">Main Contact</Badge>}
+                            {member.isEditor && !member.isMainContact && <Badge variant="outline" className="text-xs">Editor</Badge>}
+                          </div>
+                          {(user?.isMainContact || user?.role === 'admin') && !member.isMainContact && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 px-2"
+                              disabled={togglingEditor === member.id}
+                              onClick={() => handleToggleEditor(member.id, member.isEditor, member.isMainContact)}
+                            >
+                              {togglingEditor === member.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : member.isEditor ? <UserX className="h-3.5 w-3.5 text-destructive" /> : <UserCheck className="h-3.5 w-3.5 text-green-600" />}
+                              <span className="ml-1 text-xs">{member.isEditor ? 'Revoke' : 'Grant'}</span>
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+              {/* Company Job Listings */}
               <Card className="mt-6">
                 <CardHeader>
                   <div className="flex items-center justify-between">

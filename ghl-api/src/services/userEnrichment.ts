@@ -4,6 +4,7 @@
  */
 
 import { ghlService } from './gohighlevel';
+import { databaseService } from './database';
 
 /**
  * Extract membership tier from tags (lightweight)
@@ -76,6 +77,7 @@ interface DatabaseUser {
   status: string;
   emailVerified: boolean;
   ghlContactId?: string | null;
+  ghlBusinessId?: string | null;
   lastLoginAt?: string | Date | null;
   createdAt?: string | Date;
   updatedAt?: string | Date;
@@ -92,6 +94,7 @@ export interface EnrichedUser {
   status: string;
   emailVerified: boolean;
   ghlContactId?: string | null;
+  ghlBusinessId?: string | null;
   lastLoginAt?: string | Date | null;
   createdAt?: string | Date;
   updatedAt?: string | Date;
@@ -106,7 +109,11 @@ export interface EnrichedUser {
   membershipTier?: string;
   tags?: string[];
   avatarUrl?: string;
-  
+
+  // Business identity (resolved from GHL at login)
+  isMainContact?: boolean;
+  isBusinessProfileEditor?: boolean;
+
   // Computed fields
   isActive?: boolean;
 }
@@ -129,6 +136,7 @@ export async function enrichUserWithGhlData(
     status: dbUser.status,
     emailVerified: dbUser.emailVerified,
     ghlContactId: dbUser.ghlContactId,
+    ghlBusinessId: dbUser.ghlBusinessId ?? null,
     lastLoginAt: dbUser.lastLoginAt,
     createdAt: dbUser.createdAt,
     updatedAt: dbUser.updatedAt
@@ -167,6 +175,30 @@ export async function enrichUserWithGhlData(
       enrichedUser.isActive = contact.tags?.some((tag: string) => 
         tag.toLowerCase() === 'active'
       ) || false;
+
+      // Resolve business identity from contact
+      const contactBusinessId: string | null = contact.businessId ?? null;
+      const tags: string[] = Array.isArray(contact.tags) ? contact.tags : [];
+      enrichedUser.isMainContact = tags.includes('main-contact') || tags.includes('main contact');
+      enrichedUser.isBusinessProfileEditor = enrichedUser.isMainContact || tags.includes('business-profile-editor') || tags.includes('business profile editor');
+
+      // Sync ghlBusinessId to DB if it changed
+      if (contactBusinessId && dbUser.id && contactBusinessId !== dbUser.ghlBusinessId) {
+        try {
+          await databaseService.updateUser(dbUser.id, { ghlBusinessId: contactBusinessId } as any);
+          enrichedUser.ghlBusinessId = contactBusinessId;
+        } catch (syncErr) {
+          console.error(`Failed to sync ghlBusinessId for user ${dbUser.id}:`, syncErr);
+          // Non-fatal — use the value from GHL anyway
+          enrichedUser.ghlBusinessId = contactBusinessId;
+        }
+      } else if (contactBusinessId) {
+        enrichedUser.ghlBusinessId = contactBusinessId;
+      }
+
+      // Business name comes from the GHL contact's companyName/businessName field above.
+      // We intentionally skip calling getBusinessById here to avoid N parallel GHL API
+      // calls when enriching a full user list (which would cause 429 rate-limit errors).
     }
   } catch (error) {
     console.error(`Failed to enrich user ${dbUser.id} with GHL data:`, error);

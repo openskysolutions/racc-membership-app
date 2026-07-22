@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   uploadCoverImage, 
+  updateBusinessCoverImage,
   updateContactCoverImage, 
   validateCoverImageFile, 
   createImagePreview, 
@@ -13,6 +14,7 @@ import {
 interface CoverImageUploadProps {
   currentCoverImage?: string;
   contactId: string;
+  businessId?: string;   // if provided, saves via PATCH /businesses/:id instead of contact endpoint
   fallbackText: string;
   onCoverImageUpdated: (newCoverImageUrl: string) => void;
   size?: 'sm' | 'md' | 'lg';
@@ -22,6 +24,7 @@ interface CoverImageUploadProps {
 const CoverImageUpload: React.FC<CoverImageUploadProps> = ({
   currentCoverImage,
   contactId,
+  businessId,
   // fallbackText,
   onCoverImageUpdated,
   size = 'lg',
@@ -71,10 +74,14 @@ const CoverImageUpload: React.FC<CoverImageUploadProps> = ({
 
     try {
       // Upload to GoHighLevel media storage
-      const uploadResult = await uploadCoverImage(file, contactId);
+      const uploadResult = await uploadCoverImage(file, businessId || contactId);
       
-      // Update contact with new coverImage URL
-      await updateContactCoverImage(contactId, uploadResult.mediaUrl);
+      // Save the new URL: use business endpoint when businessId provided, else legacy contact endpoint
+      if (businessId) {
+        await updateBusinessCoverImage(businessId, uploadResult.mediaUrl);
+      } else {
+        await updateContactCoverImage(contactId, uploadResult.mediaUrl);
+      }
       
       // Clean up preview
       if (previewUrl) {

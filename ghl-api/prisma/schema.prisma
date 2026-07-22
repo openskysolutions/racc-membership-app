@@ -17,6 +17,9 @@ model User {
   status        String    @default("pending")
   emailVerified Boolean   @default(false)
   ghlContactId  String?   @unique
+  ghlBusinessId String?             // Cached from GHL Contact's businessId field (synced at login)
+  isMainContact             Boolean   @default(false) // Cached from GHL tag 'main-contact'
+  isBusinessProfileEditor   Boolean   @default(false) // Cached from GHL tag 'business-profile-editor'
   lastLoginAt   DateTime?
   hideMembershipTier        Boolean   @default(false)
   passwordResetToken        String?
@@ -157,19 +160,46 @@ model JobApplication {
   @@map("job_applications")
 }
 
-// Member business categories - stores up to 3 subcategory selections per GHL contact
-// Keyed by ghlContactId (not userId) because not all GHL contacts have portal accounts
+// Member business categories - stores subcategory selections per GHL business.
+// ghlContactId is retained for backward compat; ghlBusinessId is added now and
+// populated by the Phase 9 migration script. ghlContactId will be dropped in Phase 10.
 model MemberCategory {
-  id           Int      @id @default(autoincrement())
-  ghlContactId String   // GoHighLevel contact ID
-  subcategory  String   // Subcategory id, e.g. "restaurants", "hvac"
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id            Int      @id @default(autoincrement())
+  ghlContactId  String?  // Legacy — kept until Phase 9 migration script backfills ghlBusinessId
+  ghlBusinessId String?  // New — GoHighLevel Business ID; populated by Phase 9 script
+  subcategory   String   // Subcategory id, e.g. "restaurants", "hvac"
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  @@unique([ghlContactId, subcategory])
   @@index([ghlContactId])
+  @@index([ghlBusinessId])
   @@index([subcategory])
   @@map("member_categories")
+}
+
+// Extended business profile data that GHL Business objects don't support as native fields.
+// One row per GHL Business. Mirrors the pattern used for MemberCategory.
+model BusinessProfile {
+  id               Int      @id @default(autoincrement())
+  ghlBusinessId    String   @unique   // FK to GHL Business id
+  avatar           String?            // logo / profile photo URL
+  coverImage       String?            // cover/banner image URL
+  tagline          String?
+  bio              String?  @db.Text  // extended description beyond GHL's description field
+  membershipTier   String?            // 'elite' | 'enhanced' | 'basic' | 'standard'
+  memberSince      String?            // ISO date string
+  couponCodes      String[] @default([])
+  specialties      String[] @default([])
+  organizationType String?
+  facebookUrl      String?
+  instagramUrl     String?
+  twitterUrl       String?
+  linkedinUrl      String?            // business LinkedIn
+  hideMembershipTier Boolean @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@map("business_profiles")
 }
 
 // Business category definitions — single source of truth for the category tree

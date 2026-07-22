@@ -13,32 +13,17 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { BioDisplay, BioEditor } from '@/components/BioField';
-import { capitalizeFirst } from '@/lib/utils';
-import { Mail, Phone, Globe, Calendar, Shield, User, Edit, Save, X, AlertTriangle, Lock, Facebook, Instagram, Twitter, Linkedin } from 'lucide-react';
+import { Mail, Phone, User, Edit, Save, X, AlertTriangle, Lock, Linkedin, Link as LinkIcon } from 'lucide-react';
 import { api } from '@/services/apiClient';
 import type { Member } from '@/types/member';
 import AvatarUpload from '@/components/AvatarUpload';
-import { CouponCodesInput } from '@/components/ui/coupon-codes-input';
 import { PasswordInput } from '@/components/ui/password-input';
 import { toast } from 'sonner';
 import DeleteAccountDialog from '@/components/DeleteAccountDialog';
 
 interface ExtendedUpdateProfileRequest extends UpdateProfileRequest {
   bio?: string;
-  tagline?: string;
-  companyName?: string;
-  email?: string;
-  coverImage?: string;
-  couponCodes?: string[];
-  // Flat address fields to match backend
-  address1?: string;
-  city?: string;
-  state?: string;
-  postalCode?: string;
-  // Social media links
-  facebookUrl?: string;
-  instagramUrl?: string;
-  twitterUrl?: string;
+  title?: string;
   linkedinUrl?: string;
 }
 
@@ -49,25 +34,10 @@ const ProfilePage: React.FC = () => {
   const [formData, setFormData] = useState<ExtendedUpdateProfileRequest>({
     firstName: '',
     lastName: '',
-    businessName: '',
-    companyName: '',
     phone: '',
-    website: '',
     bio: '',
-    tagline: '',
-    email: '',
-    coverImage: '',
-    couponCodes: [],
-    // Flat address fields
-    address1: '',
-    city: '',
-    state: '',
-    postalCode: '',
-    // Social media links
-    facebookUrl: '',
-    instagramUrl: '',
-    twitterUrl: '',
-    linkedinUrl: ''
+    title: '',
+    linkedinUrl: '',
   });
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
@@ -108,25 +78,10 @@ const ProfilePage: React.FC = () => {
         setFormData({
           firstName: profileData.firstName || '',
           lastName: profileData.lastName || '',
-          businessName: profileData.businessName || '',
-          companyName: profileData.companyName || '',
           phone: profileData.phone || '',
-          website: profileData.website || '',
-          bio: profileData.bio || '',
-          tagline: profileData.tagline || '',
-          email: profileData.email || '',
-          coverImage: profileData.coverImage || '',
-          couponCodes: profileData.couponCodes || [],
-          // Flat address fields
-          address1: profileData.address1 || '',
-          city: profileData.city || '',
-          state: profileData.state || '',
-          postalCode: profileData.postalCode || '',
-          // Social media links
-          facebookUrl: profileData.facebookUrl || '',
-          instagramUrl: profileData.instagramUrl || '',
-          twitterUrl: profileData.twitterUrl || '',
-          linkedinUrl: profileData.linkedinUrl || ''
+          bio: (profileData as any).bio || '',
+          title: (profileData as any).title || '',
+          linkedinUrl: (profileData as any).linkedinUrl || '',
         });
 
       } catch (error) {
@@ -148,13 +103,6 @@ const ProfilePage: React.FC = () => {
     }));
   };
 
-  const handleCouponCodesChange = (codes: string[]) => {
-    setFormData(prev => ({
-      ...prev,
-      couponCodes: codes
-    }));
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user?.ghlContactId) return;
@@ -162,7 +110,14 @@ const ProfilePage: React.FC = () => {
     setUpdating(true);
 
     try {
-      const response = await api.put(`/members/${user.ghlContactId}`, formData);
+      const response = await api.put(`/members/${user.ghlContactId}`, {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        phone: formData.phone,
+        bio: formData.bio,
+        title: (formData as any).title,
+        linkedinUrl: formData.linkedinUrl,
+      });
       
       if (!response.ok) {
         throw new Error(`Failed to update profile: ${response.statusText}`);
@@ -185,25 +140,10 @@ const ProfilePage: React.FC = () => {
       setFormData({
         firstName: profile.firstName || '',
         lastName: profile.lastName || '',
-        businessName: profile.businessName || '',
-        companyName: profile.companyName || '',
         phone: profile.phone || '',
-        website: profile.website || '',
         bio: (profile as any).bio || '',
-        tagline: (profile as any).tagline || '',
-        email: profile.email || '',
-        coverImage: (profile as any).coverImage || '',
-        couponCodes: (profile as any).couponCodes || [],
-        // Flat address fields
-        address1: profile.address1 || '',
-        city: profile.city || '',
-        state: profile.state || '',
-        postalCode: profile.postalCode || '',
-        // Social media links
-        facebookUrl: (profile as any).facebookUrl || '',
-        instagramUrl: (profile as any).instagramUrl || '',
-        twitterUrl: (profile as any).twitterUrl || '',
-        linkedinUrl: (profile as any).linkedinUrl || ''
+        title: (profile as any).title || '',
+        linkedinUrl: (profile as any).linkedinUrl || '',
       });
     }
     setIsEditing(false);
@@ -274,7 +214,7 @@ const ProfilePage: React.FC = () => {
 
   const getRoleIcon = (role: string) => {
     switch (role) {
-      case 'admin': return <Shield className="h-4 w-4" />;
+      case 'admin': return <User className="h-4 w-4" />;
       case 'moderator': return <User className="h-4 w-4" />;
       case 'board_member': return <User className="h-4 w-4" />;
       default: return <User className="h-4 w-4" />;
@@ -400,14 +340,8 @@ const ProfilePage: React.FC = () => {
             
             <div className="flex-1">
               <CardTitle className="text-2xl mb-0 sm:text-nowrap">
-                {profile?.businessName || (profile ? formatMemberName(profile) : 'Your Profile')}
+                {profile ? formatMemberName(profile) : 'Your Profile'}
               </CardTitle>
-              
-              {profile?.businessName && (
-                <p className="text-lg text-muted-foreground mb-2">
-                  {formatMemberName(profile)}
-                </p>
-              )}
               
               <div className="flex flex-wrap gap-2">
                 <Badge variant="outline" className="text-green-700 border-green-300">
@@ -486,32 +420,30 @@ const ProfilePage: React.FC = () => {
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="phone" className="block text-sm font-medium mb-1">
-                    Phone Number
-                  </label>
-                  <Input
-                    id="phone"
-                    name="phone"
-                    type="tel"
-                    value={formData.phone}
-                    onChange={handleChange}
-                  />
-                </div>
-                <div>
-                  <label htmlFor="email" className="block text-sm font-medium mb-1">
-                    Email Address *
-                  </label>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    value={formData.email || ''}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
+              <div>
+                <label htmlFor="phone" className="block text-sm font-medium mb-1">
+                  Phone Number
+                </label>
+                <Input
+                  id="phone"
+                  name="phone"
+                  type="tel"
+                  value={formData.phone}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div>
+                <label htmlFor="title" className="block text-sm font-medium mb-1">
+                  Title / Position
+                </label>
+                <Input
+                  id="title"
+                  name="title"
+                  value={(formData as any).title || ''}
+                  onChange={handleChange}
+                  placeholder="e.g. Owner, Manager"
+                />
               </div>
 
               <div>
@@ -525,167 +457,19 @@ const ProfilePage: React.FC = () => {
               </div>
 
               <div>
-                <label htmlFor="tagline" className="block text-sm font-medium mb-1">
-                  Tagline
+                <label htmlFor="linkedinUrl" className="flex items-center gap-1 text-sm font-medium mb-1">
+                  <Linkedin className="h-3.5 w-3.5" /> LinkedIn
                 </label>
                 <Input
-                  id="tagline"
-                  name="tagline"
-                  value={formData.tagline || ''}
+                  id="linkedinUrl"
+                  name="linkedinUrl"
+                  type="url"
+                  value={formData.linkedinUrl || ''}
                   onChange={handleChange}
-                  placeholder="A short catchphrase or slogan..."
+                  placeholder="https://linkedin.com/in/yourprofile"
                 />
               </div>
 
-              <div>
-                <label htmlFor="coupon_codes" className="block text-sm font-medium mb-1">
-                  Coupon Codes
-                </label>
-                <CouponCodesInput
-                  id="coupon_codes"
-                  name="coupon_codes"
-                  value={formData.couponCodes || []}
-                  onChange={handleCouponCodesChange}
-                  placeholder="Add coupon codes..."
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="businessName" className="block text-sm font-medium mb-1">
-                    Business Name
-                  </label>
-                  <Input
-                    id="businessName"
-                    name="businessName"
-                    value={formData.businessName}
-                    onChange={handleChange}
-                  />
-                </div>
-                <div>
-                  <label htmlFor="website" className="block text-sm font-medium mb-1">
-                    Website
-                  </label>
-                  <Input
-                    id="website"
-                    name="website"
-                    type="url"
-                    value={formData.website}
-                    onChange={handleChange}
-                    placeholder="https://example.com"
-                  />
-                </div>
-              </div>
-
-              <h3 className="font-semibold mb-1">Social Media Links</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="facebookUrl" className="flex items-center gap-1 text-sm font-medium mb-1">
-                    <Facebook className="h-3.5 w-3.5" /> Facebook
-                  </label>
-                  <Input
-                    id="facebookUrl"
-                    name="facebookUrl"
-                    type="url"
-                    value={formData.facebookUrl || ''}
-                    onChange={handleChange}
-                    placeholder="https://facebook.com/yourpage"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="instagramUrl" className="flex items-center gap-1 text-sm font-medium mb-1">
-                    <Instagram className="h-3.5 w-3.5" /> Instagram
-                  </label>
-                  <Input
-                    id="instagramUrl"
-                    name="instagramUrl"
-                    type="url"
-                    value={formData.instagramUrl || ''}
-                    onChange={handleChange}
-                    placeholder="https://instagram.com/yourhandle"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="twitterUrl" className="flex items-center gap-1 text-sm font-medium mb-1">
-                    <Twitter className="h-3.5 w-3.5" /> X / Twitter
-                  </label>
-                  <Input
-                    id="twitterUrl"
-                    name="twitterUrl"
-                    type="url"
-                    value={formData.twitterUrl || ''}
-                    onChange={handleChange}
-                    placeholder="https://x.com/yourhandle"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="linkedinUrl" className="flex items-center gap-1 text-sm font-medium mb-1">
-                    <Linkedin className="h-3.5 w-3.5" /> LinkedIn
-                  </label>
-                  <Input
-                    id="linkedinUrl"
-                    name="linkedinUrl"
-                    type="url"
-                    value={formData.linkedinUrl || ''}
-                    onChange={handleChange}
-                    placeholder="https://linkedin.com/in/yourprofile"
-                  />
-                </div>
-              </div>
-
-              <h3 className="font-semibold mb-3">Address Information</h3>              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="address1" className="block text-sm font-medium mb-1">
-                    Street Address
-                  </label>
-                  <Input
-                    id="address1"
-                    name="address1"
-                    value={formData.address1 || ''}
-                    onChange={handleChange}
-                    placeholder="123 Main Street"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="city" className="block text-sm font-medium mb-1">
-                    City
-                  </label>
-                  <Input
-                    id="city"
-                    name="city"
-                    value={formData.city || ''}
-                    onChange={handleChange}
-                    placeholder="City"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="state" className="block text-sm font-medium mb-1">
-                    State
-                  </label>
-                  <Input
-                    id="state"
-                    name="state"
-                    value={formData.state || ''}
-                    onChange={handleChange}
-                    placeholder="UT"
-                    maxLength={2}
-                  />
-                </div>
-                <div>
-                  <label htmlFor="postalCode" className="block text-sm font-medium mb-1">
-                    ZIP Code
-                  </label>
-                  <Input
-                    id="postalCode"
-                    name="postalCode"
-                    value={formData.postalCode || ''}
-                    onChange={handleChange}
-                    placeholder="12345"
-                  />
-                </div>
-              </div>
               <Button
                 onClick={handleSubmit}
                 disabled={updating}
@@ -706,28 +490,6 @@ const ProfilePage: React.FC = () => {
                     About
                   </h3>
                   <BioDisplay text={(profile as any).bio} />
-                </div>
-              )}
-
-              {/* Tagline */}
-              {(profile as any)?.tagline && (
-                <div>
-                  <h3 className="font-semibold mb-2">Tagline</h3>
-                  <p className="text-muted-foreground italic">"{(profile as any).tagline}"</p>
-                </div>
-              )}
-
-              {/* Coupon Codes */}
-              {(profile as any)?.couponCodes && (profile as any).couponCodes.length > 0 && (
-                <div>
-                  <h3 className="font-semibold mb-2">Coupon Codes</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {(profile as any).couponCodes.map((code: string, index: number) => (
-                      <Badge key={index} variant="secondary">
-                        {code}
-                      </Badge>
-                    ))}
-                  </div>
                 </div>
               )}
 
@@ -758,46 +520,7 @@ const ProfilePage: React.FC = () => {
                       </a>
                     </div>
                   )}
-                  
-                  {profile?.website && (
-                    <div className="flex items-center gap-3">
-                      <Globe className="h-4 w-4 text-muted-foreground" />
-                      <a 
-                        href={profile.website}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary hover:underline flex-1 truncate"
-                      >
-                        {profile.website.replace(/^https?:\/\//, '')}
-                      </a>
-                    </div>
-                  )}
 
-                  {/* Social Media Links */}
-                  {(profile as any)?.facebookUrl && (
-                    <div className="flex items-center gap-3">
-                      <Facebook className="h-4 w-4 text-muted-foreground" />
-                      <a href={(profile as any).facebookUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex-1 truncate">
-                        Facebook
-                      </a>
-                    </div>
-                  )}
-                  {(profile as any)?.instagramUrl && (
-                    <div className="flex items-center gap-3">
-                      <Instagram className="h-4 w-4 text-muted-foreground" />
-                      <a href={(profile as any).instagramUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex-1 truncate">
-                        Instagram
-                      </a>
-                    </div>
-                  )}
-                  {(profile as any)?.twitterUrl && (
-                    <div className="flex items-center gap-3">
-                      <Twitter className="h-4 w-4 text-muted-foreground" />
-                      <a href={(profile as any).twitterUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex-1 truncate">
-                        X / Twitter
-                      </a>
-                    </div>
-                  )}
                   {(profile as any)?.linkedinUrl && (
                     <div className="flex items-center gap-3">
                       <Linkedin className="h-4 w-4 text-muted-foreground" />
@@ -806,34 +529,6 @@ const ProfilePage: React.FC = () => {
                       </a>
                     </div>
                   )}
-                </div>
-              </div>
-
-              {/* Membership Information */}
-              <div>
-                <h3 className="font-semibold mb-3 flex items-center gap-2">
-                  Membership
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="flex items-center gap-3">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm font-medium">Member Since</p>
-                      <p className="text-sm text-muted-foreground">
-                        {profile?.memberSince ? new Date(profile.memberSince).toLocaleDateString() : 'Unknown'}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-3">
-                    <Shield className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm font-medium">Membership Tier</p>
-                      <p className="text-sm text-muted-foreground">
-                        {capitalizeFirst((profile as any)?.membershipTier || 'Standard')}
-                      </p>
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>
@@ -912,6 +607,37 @@ const ProfilePage: React.FC = () => {
             </form>
           </CardContent>
         </Card>
+      )}
+
+      {/* My Business card */}
+      {user?.ghlBusinessId && (
+        <div className="max-w-4xl mx-auto mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <LinkIcon className="h-5 w-5" />
+                My Business
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex items-center justify-between gap-4">
+              <div>
+                <p className="font-medium">{user.businessName || 'Your business'}</p>
+                <p className="text-sm text-muted-foreground">View and manage your business listing in the member directory</p>
+              </div>
+              <div className="flex gap-2 shrink-0">
+                {(user.isBusinessProfileEditor || user.isMainContact || user.role === 'admin') ? (
+                  <Button size="sm" asChild>
+                    <a href={`/members/${user.ghlBusinessId}?edit=true`}>Edit Business Profile</a>
+                  </Button>
+                ) : (
+                  <Button variant="outline" size="sm" asChild>
+                    <a href={`/members/${user.ghlBusinessId}`}>View Business Profile</a>
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
 
       {/* Danger Zone - Delete Account */}

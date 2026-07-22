@@ -5,7 +5,7 @@
 
 import nodemailer from 'nodemailer';
 import sgMail from '@sendgrid/mail';
-import { generateConfirmationEmail, generateConfirmationEmailText } from '@/templates/emails';
+import { generateConfirmationEmail, generateConfirmationEmailText, generateInviteEmail, generateInviteEmailText } from '@/templates/emails';
 
 interface EmailConfig {
   provider: 'gmail' | 'sendgrid' | 'mailgun' | 'smtp';
@@ -204,6 +204,21 @@ class EmailService {
       html,
       text,
     });
+  }
+
+  async sendInviteEmail(to: string, firstName: string, businessName: string): Promise<boolean> {
+    const connectUrl = `https://richfieldareachamber.com/connect-account?email=${encodeURIComponent(to)}`;
+    const subject = `You've been added to ${businessName} — Richfield Area Chamber of Commerce`;
+    const html = generateInviteEmail({ firstName, businessName, connectUrl });
+    const text = generateInviteEmailText({ firstName, businessName, connectUrl });
+
+    try {
+      return await this.sendEmail({ to, subject, html, text });
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      console.error(`❌ Failed to send invite email to ${to}:`, errorMsg);
+      return false;
+    }
   }
 
   private stripHtml(html: string): string {

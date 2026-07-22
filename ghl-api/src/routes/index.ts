@@ -15,6 +15,7 @@ import postAuthorsRoutes from '@/routes/post-authors';
 import postsRoutes from '@/routes/posts';
 import formsRoutes from '@/routes/forms';
 import businessCategoriesRoutes from '@/routes/business-categories';
+import businessesRoutes from '@/routes/businesses';
 import notificationsRoutes from '@/routes/notifications';
 import settingsRoutes from '@/routes/settings';
 
@@ -31,6 +32,7 @@ router.use('/auth', authRoutes); // Enhanced auth routes with registration
 router.use('/webhooks', webhookRoutes); // Payment and subscription webhooks
 router.use('/nominations', nominationsRoutes);
 router.use('/members', membersRoutes);
+router.use('/businesses', businessesRoutes);
 router.use('/business-categories', businessCategoriesRoutes);
 router.use('/events', eventsRoutes);
 router.use('/moderation', moderationRoutes);

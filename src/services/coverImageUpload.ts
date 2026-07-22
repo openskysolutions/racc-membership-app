@@ -70,6 +70,17 @@ function fileToBase64(file: File): Promise<string> {
 }
 
 /**
+ * Update business cover image URL via PATCH /businesses/:id
+ */
+export async function updateBusinessCoverImage(businessId: string, coverImageUrl: string): Promise<void> {
+  const response = await api.patch(`/businesses/${businessId}`, { coverImage: coverImageUrl });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(`Failed to update business cover image: ${response.statusText} - ${errorData.message || ''}`);
+  }
+}
+
+/**
  * Update contact coverImage URL in GoHighLevel custom field
  * @param contactId - The GoHighLevel contact ID
  * @param coverImageUrl - The uploaded coverImage URL

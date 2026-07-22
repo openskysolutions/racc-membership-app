@@ -106,11 +106,11 @@ const MembersPage: React.FC = () => {
       // Add filters if present
       if (debouncedSearchTerm) params.append('search', debouncedSearchTerm);
       if (roleFilter !== 'all') params.append('role', roleFilter);
-      if (categoryFilter) params.append('category', categoryFilter);
+      if (categoryFilter) params.append('categoryId', categoryFilter);
 
       if (forceRefresh) params.append('refresh', 'true');
 
-      const response = await api.get(`/members?${params.toString()}`);
+      const response = await api.get(`/businesses?${params.toString()}`);
       
       if (!response.ok) {
         throw new Error(`Failed to fetch members: ${response.statusText}`);
@@ -199,7 +199,8 @@ const MembersPage: React.FC = () => {
   useEffect(() => {
     setCurrentOffset(0);
     loadMembers(0, false);
-  }, [debouncedSearchTerm, roleFilter, sortBy, loadMembers]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearchTerm, roleFilter, sortBy, categoryFilter]);
 
   // Refresh when member data is updated (e.g., after editing a profile)
   useEffect(() => {

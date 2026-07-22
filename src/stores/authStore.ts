@@ -10,7 +10,12 @@ interface AuthState {
   checkAuth: () => Promise<void>;
   setUser: (user: any) => void;
   role: string | null;
-  lastValidated: number | null; // Timestamp of last validation
+  lastValidated: number | null;
+  // Business identity (populated from auth response)
+  ghlBusinessId: string | null;
+  businessName: string | null;
+  isMainContact: boolean;
+  isBusinessProfileEditor: boolean;
 }
 
 const VALIDATION_TTL = 5 * 60 * 1000; // 5 minutes - revalidate after this time
@@ -23,10 +28,14 @@ export const useAuthStore = create<AuthState>()(
       isLoading: true,
       role: null,
       lastValidated: null,
+      ghlBusinessId: null,
+      businessName: null,
+      isMainContact: false,
+      isBusinessProfileEditor: false,
 
       handleLogout: async () => {
         await logout();
-        set({ user: null, isAuthenticated: false, role: null, lastValidated: null });
+        set({ user: null, isAuthenticated: false, role: null, lastValidated: null, ghlBusinessId: null, businessName: null, isMainContact: false, isBusinessProfileEditor: false });
       },
 
       setUser: (user: any) => {
@@ -35,6 +44,10 @@ export const useAuthStore = create<AuthState>()(
           isAuthenticated: true, 
           isLoading: false, 
           role: user?.role || null,
+          ghlBusinessId: user?.ghlBusinessId ?? null,
+          businessName: user?.businessName ?? null,
+          isMainContact: user?.isMainContact ?? false,
+          isBusinessProfileEditor: user?.isBusinessProfileEditor ?? false,
           lastValidated: Date.now()
         });
       },
@@ -70,10 +83,14 @@ export const useAuthStore = create<AuthState>()(
             isAuthenticated: true, 
             isLoading: false, 
             role: userData.role || null,
+            ghlBusinessId: userData.ghlBusinessId ?? null,
+            businessName: userData.businessName ?? null,
+            isMainContact: userData.isMainContact ?? false,
+            isBusinessProfileEditor: userData.isBusinessProfileEditor ?? false,
             lastValidated: Date.now()
           });
         } catch (error) {
-          set({ user: null, isAuthenticated: false, isLoading: false, role: null, lastValidated: null });
+          set({ user: null, isAuthenticated: false, isLoading: false, role: null, lastValidated: null, ghlBusinessId: null, businessName: null, isMainContact: false, isBusinessProfileEditor: false });
         }
       }
     }),
@@ -83,6 +100,10 @@ export const useAuthStore = create<AuthState>()(
         user: state.user, 
         isAuthenticated: state.isAuthenticated,
         role: state.role,
+        ghlBusinessId: state.ghlBusinessId,
+        businessName: state.businessName,
+        isMainContact: state.isMainContact,
+        isBusinessProfileEditor: state.isBusinessProfileEditor,
         lastValidated: state.lastValidated
       }), // Only persist these fields
     }

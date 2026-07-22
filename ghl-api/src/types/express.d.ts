@@ -12,6 +12,9 @@ declare global {
         role: string;
         status: string;
         ghlContactId?: string;
+        ghlBusinessId?: string;
+        isMainContact?: boolean;
+        isBusinessProfileEditor?: boolean;
       };
       session?: {
         id: string;
