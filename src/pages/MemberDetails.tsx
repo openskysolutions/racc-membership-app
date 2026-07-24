@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Mail, Phone, Globe, Calendar, Shield, Edit, Save, X, ExternalLink, Briefcase, Plus, Facebook, Instagram, Twitter, Linkedin, Tag, Users, UserCheck, UserX, Loader2 } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, Globe, Calendar, 
+  // Shield, 
+  Edit, Save, X, ExternalLink, Briefcase, Plus, Facebook, Instagram, Twitter, Linkedin, Tag, Users, UserCheck, UserX, Loader2 } from 'lucide-react';
 import BusinessCategorySelector from '@/components/BusinessCategorySelector';
 import { useBusinessCategories, getSubcategoryName, getCategoryForSubcategory } from '@/hooks/useBusinessCategories';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -10,7 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { CouponCodesInput } from '@/components/ui/coupon-codes-input';
 import { toast } from 'sonner';
-import { capitalizeFirst } from '@/lib/utils';
+// import { capitalizeFirst } from '@/lib/utils';
 import { api } from '@/services/apiClient';
 import { useAuthStore } from '@/stores/authStore';
 import { useMembersStore } from '@/stores/membersStore';
@@ -987,7 +989,7 @@ const MemberDetailsPage: React.FC = () => {
                     )}
 
                     {/* Privacy Settings */}
-                    <div>
+                    {/* <div>
                       <h3 className="font-semibold mb-2">Privacy</h3>
                       <label className="flex items-center gap-3 cursor-pointer">
                         <input
@@ -998,7 +1000,7 @@ const MemberDetailsPage: React.FC = () => {
                         />
                         <span className="text-sm">Hide membership tier from my public profile</span>
                       </label>
-                    </div>
+                    </div> */}
 
                     <Button
                       onClick={handleSave}
@@ -1072,7 +1074,7 @@ const MemberDetailsPage: React.FC = () => {
                         </div>
                       </div>
 
-                      {(canEdit || !(member as any).hideMembershipTier) && (
+                      {/* {(canEdit || !(member as any).hideMembershipTier) && (
                         <div className="flex items-center gap-3">
                           <Shield className="h-4 w-4 text-muted-foreground" />
                           <div>
@@ -1085,7 +1087,7 @@ const MemberDetailsPage: React.FC = () => {
                             </p>
                           </div>
                         </div>
-                      )}
+                      )} */}
                     </div>
                   </div>
                 )}

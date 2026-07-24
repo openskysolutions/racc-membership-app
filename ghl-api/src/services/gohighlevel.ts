@@ -2337,6 +2337,74 @@ class GoHighLevelService {
   }
 
   /**
+   * Fetch all business records with their custom-field properties via the
+   * Objects API search endpoint (2 API calls for ~145 records vs 145 individual
+   * calls for the old getBusinesses approach). Returns records normalized to the
+   * same shape as getBusinessById: native fields at top level + customFields array.
+   */
+  async getAllBusinessRecords(): Promise<any[]> {
+    if (this.developmentMode) {
+      console.log('🚧 DEV MODE: Mock getAllBusinessRecords');
+      return [
+        {
+          id: 'mock_business_1',
+          name: 'Johnson Real Estate Group',
+          phone: '(435) 555-0101',
+          email: 'info@johnsonrealestate.com',
+          website: 'https://johnsonrealestate.com',
+          address: '123 Main St',
+          city: 'Richfield',
+          state: 'UT',
+          postalCode: '84701',
+          country: 'US',
+          description: null,
+          customFields: [
+            { key: 'membership_tier', valueString: 'basic_membership_package' },
+            { key: 'membership_status', valueString: 'active' },
+          ],
+        },
+      ];
+    }
+
+    if (!this.client) throw new Error('GoHighLevel client not initialized');
+
+    const NATIVE_KEYS = new Set(['name', 'email', 'phone', 'website', 'address', 'city', 'state', 'postalcode', 'country', 'description']);
+
+    const all: any[] = [];
+    let page = 1;
+    while (true) {
+      const response = await this.client.post(
+        '/objects/business/records/search',
+        { locationId: this.locationId, pageLimit: 100, page },
+        { headers: { Version: '2021-07-28' } }
+      );
+      const records: any[] = response.data.records ?? response.data.data ?? [];
+      for (const record of records) {
+        const p = record.properties ?? {};
+        all.push({
+          id: record.id,
+          name: p.name ?? null,
+          phone: p.phone ?? null,
+          email: p.email ?? null,
+          website: p.website ?? null,
+          address: p.address ?? null,
+          city: p.city ?? null,
+          state: p.state ?? null,
+          postalCode: p.postalcode ?? null,
+          country: p.country ?? null,
+          description: p.description ?? null,
+          customFields: Object.entries(p)
+            .filter(([k]) => !NATIVE_KEYS.has(k))
+            .map(([k, v]) => ({ key: k, valueString: v != null ? String(v) : null })),
+        });
+      }
+      if (records.length < 100) break;
+      page++;
+    }
+    return all;
+  }
+
+  /**
    * Get a single business by its GHL Business ID.
    */
   async getBusinessById(businessId: string): Promise<any> {
@@ -2414,6 +2482,48 @@ class GoHighLevelService {
     } catch (error: any) {
       console.error(`❌ Failed to update business ${businessId}:`, error.response?.data ?? error.message);
       throw new Error(`Failed to update business: ${error.message}`);
+    }
+  }
+
+  /**
+   * Write custom field values to a GHL Business record using the Objects API.
+   * Endpoint: PUT /objects/business/records/:id?locationId=...
+   * Body: { properties: { fieldKey: value, ... } }
+   * fieldKey is the short key without the "business." prefix (e.g. "tagline", "logo_url").
+   * Date fields should be passed as "YYYY-MM-DD" strings.
+   */
+  async updateBusinessProperties(
+    businessId: string,
+    properties: Record<string, string | null>
+  ): Promise<void> {
+    if (this.developmentMode) {
+      console.log(`🚧 DEV MODE: Mock updateBusinessProperties ${businessId}`, properties);
+      return;
+    }
+    if (!this.client) throw new Error('GoHighLevel client not initialized');
+
+    // Remove null/undefined values — GHL rejects them
+    const clean: Record<string, string> = {};
+    for (const [k, v] of Object.entries(properties)) {
+      if (v !== null && v !== undefined) clean[k] = v;
+    }
+    if (Object.keys(clean).length === 0) return;
+
+    try {
+      await this.client.put(
+        `/objects/business/records/${businessId}`,
+        { properties: clean },
+        {
+          params: { locationId: this.locationId },
+          headers: { Version: '2021-07-28' },
+        }
+      );
+    } catch (error: any) {
+      console.error(
+        `❌ Failed to update business properties ${businessId}:`,
+        error.response?.data ?? error.message
+      );
+      throw new Error(`Failed to update business properties: ${error.message}`);
     }
   }
 

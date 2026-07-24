@@ -1,6 +1,9 @@
 /**
  * Businesses Routes
- * Member directory backed by GHL Business records + local BusinessProfile table.
+ * Member directory backed by GHL Business records.
+ * Extended profile data (logo, tagline, social links, etc.) is stored as
+ * custom fields directly on the GHL Business object via the Objects API.
+ * The MemberCategory table remains in Postgres (no GHL equivalent).
  *
  * Public:
  *   GET  /businesses               — member directory listing
@@ -19,7 +22,7 @@ import { requireAuth } from '@/middleware/auth';
 import { ghlService } from '@/services/gohighlevel';
 import { emailService } from '@/services/emailService';
 import { prisma } from '@/lib/prisma';
-import { contactsCache } from '@/services/contactsCache';
+import { contactsCache, businessesCache } from '@/services/contactsCache';
 
 const router = express.Router();
 
@@ -27,18 +30,34 @@ const router = express.Router();
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** Merge a GHL Business object with its local BusinessProfile row. */
-async function buildBusinessMember(business: any) {
-  const profile = await prisma.businessProfile.findUnique({
-    where: { ghlBusinessId: business.id },
-  });
+/**
+ * Read a custom field value from a GHL Business object's customFields array.
+ * GHL returns { key, valueString } for text/select fields and { key, valueDate }
+ * for date fields. Returns null when the field is not set.
+ */
+function getBusinessProp(business: any, key: string): string | null {
+  const field = (business.customFields ?? []).find((f: any) => f.key === key);
+  return field?.valueString ?? field?.valueDate ?? null;
+}
 
-  const categories = profile
-    ? await prisma.memberCategory.findMany({
-        where: { ghlBusinessId: business.id },
-        select: { subcategory: true },
-      }).then(rows => rows.map(r => r.subcategory))
-    : [];
+/**
+ * Parse the membership_tier GHL value to our short slug.
+ * GHL stores "enhanced_membership_package"; we expose "enhanced".
+ */
+function parseTierSlug(raw: string | null): string | null {
+  if (!raw) return null;
+  return raw.replace('_membership_package', '') || null;
+}
+
+/** Build the standard member response shape from a GHL Business object. */
+async function buildBusinessMember(business: any) {
+  const categories = await prisma.memberCategory.findMany({
+    where: { ghlBusinessId: business.id },
+    select: { subcategory: true },
+  }).then(rows => rows.map(r => r.subcategory));
+
+  let couponCodes: string[] = [];
+  try { couponCodes = JSON.parse(getBusinessProp(business, 'coupon_codes') ?? '[]'); } catch { couponCodes = []; }
 
   return {
     id: business.id,
@@ -51,20 +70,20 @@ async function buildBusinessMember(business: any) {
     state: business.state ?? null,
     postalCode: business.postalCode ?? null,
     country: business.country ?? null,
-    bio: profile?.bio ?? business.description ?? null,
-    tagline: profile?.tagline ?? null,
-    avatar: profile?.avatar ?? null,
-    coverImage: profile?.coverImage ?? null,
-    membershipTier: profile?.membershipTier ?? null,
-    memberSince: profile?.memberSince ?? null,
-    couponCodes: profile?.couponCodes ?? [],
-    specialties: profile?.specialties ?? [],
-    organizationType: profile?.organizationType ?? null,
-    facebookUrl: profile?.facebookUrl ?? null,
-    instagramUrl: profile?.instagramUrl ?? null,
-    twitterUrl: profile?.twitterUrl ?? null,
-    linkedinUrl: profile?.linkedinUrl ?? null,
-    hideMembershipTier: profile?.hideMembershipTier ?? false,
+    bio: business.description ?? null,
+    tagline: getBusinessProp(business, 'tagline'),
+    avatar: getBusinessProp(business, 'logo_url'),
+    coverImage: getBusinessProp(business, 'cover_image_url'),
+    membershipTier: parseTierSlug(getBusinessProp(business, 'membership_tier')),
+    memberSince: getBusinessProp(business, 'membership_start_date'),
+    couponCodes,
+    specialties: [],
+    organizationType: getBusinessProp(business, 'organization_type'),
+    facebookUrl: getBusinessProp(business, 'facebook_url'),
+    instagramUrl: getBusinessProp(business, 'instagram_url'),
+    twitterUrl: getBusinessProp(business, 'twitter_url'),
+    linkedinUrl: getBusinessProp(business, 'linkedin_url'),
+    hideMembershipTier: getBusinessProp(business, 'hide_membership_tier') === 'true',
     categories,
   };
 }
@@ -84,6 +103,8 @@ function isMainContactOrAdmin(req: Request): boolean {
   return u.role === 'admin' || !!u.isMainContact;
 }
 
+
+
 // ---------------------------------------------------------------------------
 // GET /businesses
 // ---------------------------------------------------------------------------
@@ -91,24 +112,21 @@ router.get('/', async (req: Request, res: Response) => {
   try {
     const { search, tier, city, categoryId } = req.query as Record<string, string>;
 
-    // Fetch all GHL businesses (paginate internally up to 500)
-    let allBusinesses: any[] = [];
-    let skip = 0;
-    while (true) {
-      const batch = await ghlService.getBusinesses(100, skip);
-      allBusinesses = allBusinesses.concat(batch);
-      if (batch.length < 100) break;
-      skip += 100;
-    }
+    // Fetch all business records with properties via Objects API (2 calls for ~145 records)
+    const allBusinesses = await ghlService.getAllBusinessRecords();
 
-    // Join with BusinessProfile — only include businesses that have an active profile
-    const profiles = await prisma.businessProfile.findMany({
-      where: { membershipTier: { not: null } },
+    // Active members = businesses with membership_tier set, status active,
+    // and a renewal date within the last 13 months.
+    const now = new Date();
+    const cutoff = new Date(now);
+    cutoff.setMonth(cutoff.getMonth() - 13);
+
+    let active = allBusinesses.filter(b => {
+      if (!getBusinessProp(b, 'membership_tier')) return false;
+      if (getBusinessProp(b, 'membership_status') !== 'active') return false;
+      const renewal = getBusinessProp(b, 'renewal_date');
+      return !!renewal && new Date(renewal) >= cutoff;
     });
-    const profileMap = new Map(profiles.map(p => [p.ghlBusinessId, p]));
-
-    // Keep only businesses with a membershipTier set (active members)
-    let active = allBusinesses.filter(b => profileMap.has(b.id));
 
     // Apply filters
     if (search) {
@@ -116,7 +134,7 @@ router.get('/', async (req: Request, res: Response) => {
       active = active.filter(b => b.name?.toLowerCase().includes(q));
     }
     if (tier) {
-      active = active.filter(b => profileMap.get(b.id)?.membershipTier === tier);
+      active = active.filter(b => parseTierSlug(getBusinessProp(b, 'membership_tier')) === tier);
     }
     if (city) {
       const q = city.toLowerCase();
@@ -145,11 +163,27 @@ router.get('/', async (req: Request, res: Response) => {
       catsByBusiness.get(row.ghlBusinessId)!.push(row.subcategory);
     }
 
+    // Build team members map from contacts cache (falls back to live API if cold)
+    const businessIdSet = new Set(businessIds);
+    const allContacts: any[] = contactsCache.get() ?? await ghlService.getAllContacts();
+    const teamByBusiness = new Map<string, Array<{ firstName: string | null; lastName: string | null; email: string | null; title: string | null }>>();
+    for (const c of allContacts) {
+      if (!c.businessId || !businessIdSet.has(c.businessId)) continue;
+      if (!teamByBusiness.has(c.businessId)) teamByBusiness.set(c.businessId, []);
+      teamByBusiness.get(c.businessId)!.push({
+        firstName: c.firstName ?? null,
+        lastName: c.lastName ?? null,
+        email: c.email ?? null,
+        title: c.title ?? null,
+      });
+    }
+
     // Sort alphabetically by business name before building response
     active.sort((a, b) => (a.name ?? '').localeCompare(b.name ?? ''));
 
     const members = active.map(b => {
-      const profile = profileMap.get(b.id);
+      let couponCodes: string[] = [];
+      try { couponCodes = JSON.parse(getBusinessProp(b, 'coupon_codes') ?? '[]'); } catch { couponCodes = []; }
       return {
         id: b.id,
         businessName: b.name,
@@ -161,21 +195,22 @@ router.get('/', async (req: Request, res: Response) => {
         state: b.state ?? null,
         postalCode: b.postalCode ?? null,
         country: b.country ?? null,
-        bio: profile?.bio ?? b.description ?? null,
-        tagline: profile?.tagline ?? null,
-        avatar: profile?.avatar ?? null,
-        coverImage: profile?.coverImage ?? null,
-        membershipTier: profile?.membershipTier ?? null,
-        memberSince: profile?.memberSince ?? null,
-        couponCodes: profile?.couponCodes ?? [],
-        specialties: profile?.specialties ?? [],
-        organizationType: profile?.organizationType ?? null,
-        facebookUrl: profile?.facebookUrl ?? null,
-        instagramUrl: profile?.instagramUrl ?? null,
-        twitterUrl: profile?.twitterUrl ?? null,
-        linkedinUrl: profile?.linkedinUrl ?? null,
-        hideMembershipTier: profile?.hideMembershipTier ?? false,
+        bio: b.description ?? null,
+        tagline: getBusinessProp(b, 'tagline'),
+        avatar: getBusinessProp(b, 'logo_url'),
+        coverImage: getBusinessProp(b, 'cover_image_url'),
+        membershipTier: parseTierSlug(getBusinessProp(b, 'membership_tier')),
+        memberSince: getBusinessProp(b, 'membership_start_date'),
+        couponCodes,
+        specialties: [],
+        organizationType: getBusinessProp(b, 'organization_type'),
+        facebookUrl: getBusinessProp(b, 'facebook_url'),
+        instagramUrl: getBusinessProp(b, 'instagram_url'),
+        twitterUrl: getBusinessProp(b, 'twitter_url'),
+        linkedinUrl: getBusinessProp(b, 'linkedin_url'),
+        hideMembershipTier: getBusinessProp(b, 'hide_membership_tier') === 'true',
         categories: catsByBusiness.get(b.id) ?? [],
+        teamMembers: teamByBusiness.get(b.id) ?? [],
       };
     });
 
@@ -215,16 +250,16 @@ router.patch('/:id', requireAuth, async (req: Request, res: Response) => {
       // GHL Business native fields
       businessName, name, email, phone, website, address1, address,
       city, state, postalCode, country,
-      // Extended / BusinessProfile fields
+      // Extended profile fields — written to GHL business custom properties
       tagline, avatar, coverImage, bio,
-      couponCodes, specialties, organizationType,
+      couponCodes, organizationType,
       facebookUrl, instagramUrl, twitterUrl, linkedinUrl,
       hideMembershipTier,
       // Categories (MemberCategory table, keyed by ghlBusinessId)
       categories,
     } = req.body;
 
-    // Split into GHL fields and local profile fields
+    // Split into GHL native fields and custom property fields
     const ghlFields: Record<string, any> = {};
     if (businessName !== undefined) ghlFields.name = businessName;
     if (name !== undefined) ghlFields.name = name;
@@ -237,35 +272,28 @@ router.patch('/:id', requireAuth, async (req: Request, res: Response) => {
     if (state !== undefined) ghlFields.state = state;
     if (postalCode !== undefined) ghlFields.postalCode = postalCode;
     if (country !== undefined) ghlFields.country = country;
-    if (bio !== undefined) ghlFields.description = bio; // sync bio to GHL description
+    if (bio !== undefined) ghlFields.description = bio; // bio maps to GHL native description
 
-    const profileFields: Record<string, any> = {};
-    if (tagline !== undefined) profileFields.tagline = tagline;
-    if (avatar !== undefined) profileFields.avatar = avatar;
-    if (coverImage !== undefined) profileFields.coverImage = coverImage;
-    if (bio !== undefined) profileFields.bio = bio;
-    if (couponCodes !== undefined) profileFields.couponCodes = couponCodes;
-    if (specialties !== undefined) profileFields.specialties = specialties;
-    if (organizationType !== undefined) profileFields.organizationType = organizationType;
-    if (facebookUrl !== undefined) profileFields.facebookUrl = facebookUrl;
-    if (instagramUrl !== undefined) profileFields.instagramUrl = instagramUrl;
-    if (twitterUrl !== undefined) profileFields.twitterUrl = twitterUrl;
-    if (linkedinUrl !== undefined) profileFields.linkedinUrl = linkedinUrl;
-    if (hideMembershipTier !== undefined) profileFields.hideMembershipTier = hideMembershipTier;
+    const customProps: Record<string, string | null> = {};
+    if (tagline !== undefined) customProps.tagline = tagline ?? null;
+    if (avatar !== undefined) customProps.logo_url = avatar ?? null;
+    if (coverImage !== undefined) customProps.cover_image_url = coverImage ?? null;
+    if (couponCodes !== undefined) customProps.coupon_codes = JSON.stringify(couponCodes ?? []);
+    if (organizationType !== undefined) customProps.organization_type = organizationType ?? null;
+    if (facebookUrl !== undefined) customProps.facebook_url = facebookUrl ?? null;
+    if (instagramUrl !== undefined) customProps.instagram_url = instagramUrl ?? null;
+    if (twitterUrl !== undefined) customProps.twitter_url = twitterUrl ?? null;
+    if (linkedinUrl !== undefined) customProps.linkedin_url = linkedinUrl ?? null;
+    if (hideMembershipTier !== undefined) customProps.hide_membership_tier = String(hideMembershipTier);
 
-    // Write to GHL if any native fields changed
+    // Write to GHL
     if (Object.keys(ghlFields).length > 0) {
       await ghlService.updateBusiness(id, ghlFields);
     }
-
-    // Upsert BusinessProfile if any extended fields changed
-    if (Object.keys(profileFields).length > 0) {
-      await prisma.businessProfile.upsert({
-        where: { ghlBusinessId: id },
-        create: { ghlBusinessId: id, ...profileFields },
-        update: profileFields,
-      });
+    if (Object.keys(customProps).length > 0) {
+      await ghlService.updateBusinessProperties(id, customProps);
     }
+    businessesCache.invalidate();
 
     // Update categories (MemberCategory table, keyed by ghlBusinessId)
     if (categories !== undefined && Array.isArray(categories)) {
@@ -381,9 +409,9 @@ router.post('/:id/team', requireAuth, async (req: Request, res: Response) => {
     await ghlService.updateContactTags(contactId, ['active'], 'add');
 
     // 4. Set Membership Start Date and Renewal Date from main contact's GHL record.
-    //    Fall back to profile.memberSince / today if the main contact can't be read.
-    const profile = await prisma.businessProfile.findUnique({ where: { ghlBusinessId: id } });
-    const fallbackDate = profile?.memberSince ?? new Date().toISOString();
+    //    Fall back to business's membership_start_date custom field / today.
+    const bizRecord = await ghlService.getBusinessById(id).catch(() => null);
+    const fallbackDate = getBusinessProp(bizRecord, 'membership_start_date') ?? new Date().toISOString();
 
     let membershipStartDate: string = fallbackDate;
     let renewalDate: string = fallbackDate;
@@ -410,8 +438,10 @@ router.post('/:id/team', requireAuth, async (req: Request, res: Response) => {
     ]);
 
     // 5. Apply membership tier tag if business has one
-    if (profile?.membershipTier) {
-      await ghlService.updateContactTags(contactId, [`${profile.membershipTier} membership package`], 'add');
+    const bizTierRaw = getBusinessProp(bizRecord, 'membership_tier');
+    if (bizTierRaw) {
+      const tierSlug = parseTierSlug(bizTierRaw);
+      if (tierSlug) await ghlService.updateContactTags(contactId, [`${tierSlug} membership package`], 'add');
     }
 
     // 6. Grant editor access if requested and caller has permission

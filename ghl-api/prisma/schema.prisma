@@ -179,22 +179,23 @@ model MemberCategory {
 
 // Extended business profile data that GHL Business objects don't support as native fields.
 // One row per GHL Business. Mirrors the pattern used for MemberCategory.
+
 model BusinessProfile {
   id               Int      @id @default(autoincrement())
-  ghlBusinessId    String   @unique   // FK to GHL Business id
-  avatar           String?            // logo / profile photo URL
-  coverImage       String?            // cover/banner image URL
+  ghlBusinessId    String   @unique
+  avatar           String?
+  coverImage       String?
   tagline          String?
-  bio              String?  @db.Text  // extended description beyond GHL's description field
-  membershipTier   String?            // 'elite' | 'enhanced' | 'basic' | 'standard'
-  memberSince      String?            // ISO date string
+  bio              String?  @db.Text
+  membershipTier   String?
+  memberSince      String?
   couponCodes      String[] @default([])
   specialties      String[] @default([])
   organizationType String?
   facebookUrl      String?
   instagramUrl     String?
   twitterUrl       String?
-  linkedinUrl      String?            // business LinkedIn
+  linkedinUrl      String?
   hideMembershipTier Boolean @default(false)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt

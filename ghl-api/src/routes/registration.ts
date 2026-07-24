@@ -13,19 +13,19 @@ const router = express.Router();
 // Membership tier configurations
 const MEMBERSHIP_TIERS = {
   standard: {
-    name: 'Standard Membership',
+    name: 'Basic Membership',
     price: 50.00,
     currency: 'USD',
     description: 'Access to basic member benefits and networking events'
   },
   premium: {
-    name: 'Premium Membership',
+    name: 'Enhanced Membership',
     price: 100.00,
     currency: 'USD',
     description: 'Full access to all member benefits, premium events, and business resources'
   },
   corporate: {
-    name: 'Corporate Membership',
+    name: 'Elite Membership',
     price: 200.00,
     currency: 'USD',
     description: 'Corporate package with multiple member access and premium business services'

@@ -22,6 +22,12 @@ interface Member extends BaseMember {
   specialties?: string[];
   membershipTier?: 'elite' | 'enhanced' | 'basic';
   categories?: string[]; // subcategory ids from local DB
+  teamMembers?: Array<{
+    firstName?: string | null;
+    lastName?: string | null;
+    email?: string | null;
+    title?: string | null;
+  }>;
   address?: {
     street: string;
     city: string;
@@ -30,22 +36,6 @@ interface Member extends BaseMember {
   };
 }
 
-// Custom debounce hook
-function useDebounce<T>(value: T, delay: number): T {
-  const [debouncedValue, setDebouncedValue] = useState<T>(value);
-
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [value, delay]);
-
-  return debouncedValue;
-}
 
 const MembersPage: React.FC = () => {
   const navigate = useNavigate();
@@ -72,97 +62,89 @@ const MembersPage: React.FC = () => {
   
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
+  const [loadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [hasMore, setHasMore] = useState(true);
+  const [hasMore] = useState(false);
   const [totalMembers, setTotalMembers] = useState(0);
   
-  // Debounce search term to avoid triggering API calls on every keystroke
-  const debouncedSearchTerm = useDebounce(searchTerm, 500);
-  
-  // Pagination state
-  const [currentOffset, setCurrentOffset] = useState(0);
-  const pageSize = 20; // Load 20 members at a time
-
-  // Load members with pagination
-  const loadMembers = useCallback(async (offset = 0, append = false, forceRefresh = false) => {
-    if (append) {
-      setLoadingMore(true);
-    } else {
-      setLoading(true);
-      // Don't clear members immediately to prevent input unfocus
-      // setMembers([]); // Clear existing members for fresh load
-    }
-    
+  // Load members once — all filtering/sorting is done client-side
+  const loadMembers = useCallback(async (_offset = 0, _append = false, forceRefresh = false) => {
+    setLoading(true);
     try {
-      // Build query parameters
-      const params = new URLSearchParams({
-        source: 'MembersPage',
-        limit: pageSize.toString(),
-        offset: offset.toString(),
-        sortBy: sortBy
-      });
-
-      // Add filters if present
-      if (debouncedSearchTerm) params.append('search', debouncedSearchTerm);
-      if (roleFilter !== 'all') params.append('role', roleFilter);
-      if (categoryFilter) params.append('categoryId', categoryFilter);
-
+      const params = new URLSearchParams({ source: 'MembersPage' });
       if (forceRefresh) params.append('refresh', 'true');
-
       const response = await api.get(`/businesses?${params.toString()}`);
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch members: ${response.statusText}`);
-      }
-      
+      if (!response.ok) throw new Error(`Failed to fetch members: ${response.statusText}`);
       const data = await response.json();
-      const newMembers = data.members || [];
-      
-      if (append) {
-        setMembers(prev => [...prev, ...newMembers]);
-      } else {
-        setMembers(newMembers);
-      }
-      
+      setMembers(data.members || []);
       setTotalMembers(data.total || 0);
-      setHasMore(data.hasMore || false);
-      setCurrentOffset(offset + newMembers.length);
-      
     } catch (err) {
       console.error('Error fetching members:', err);
       setError(err instanceof Error ? err.message : 'Failed to load members');
     } finally {
       setLoading(false);
-      setLoadingMore(false);
     }
-  }, [debouncedSearchTerm, roleFilter, pageSize, sortBy, categoryFilter]);
+  }, []);
 
   // Refresh function to force reload
   const refreshMembers = useCallback(() => {
-    setCurrentOffset(0);
     loadMembers(0, false, true);
   }, [loadMembers]);
 
-  // Load more members for infinite scroll
-  const loadMore = useCallback(() => {
-    if (!hasMore || loadingMore) return;
-    loadMembers(currentOffset, true);
-  }, [hasMore, loadingMore, currentOffset, loadMembers]);
+  // No-op: all members loaded at once, no infinite scroll needed
+  const loadMore = useCallback(() => {}, []);
 
-  // Filter members on client side (only specialty filter since backend doesn't support it yet)
-  // Sorting is now done server-side to prevent list jumping during infinite scroll
+  // All filtering and sorting is done client-side — no API reload on filter change
   const filteredMembers = useMemo(() => {
-    let filtered = members.filter(member => {
-      // Specialty filter (client-side only since API doesn't support this yet)
-      const matchesSpecialty = specialtyFilter === 'all' || 
-        member.specialties?.includes(specialtyFilter);
+    let filtered = [...members];
 
-      return matchesSpecialty;
+    if (searchTerm) {
+      const q = searchTerm.toLowerCase();
+      filtered = filtered.filter(m => {
+        if (m.businessName?.toLowerCase().includes(q)) return true;
+        if (m.email?.toLowerCase().includes(q)) return true;
+        if (m.city?.toLowerCase().includes(q)) return true;
+        // Category names
+        if (m.categories?.some(id => getSubcategoryName(id, categories).toLowerCase().includes(q))) return true;
+        // Team member names, emails, titles
+        if (m.teamMembers?.some(t =>
+          `${t.firstName ?? ''} ${t.lastName ?? ''}`.toLowerCase().includes(q) ||
+          t.email?.toLowerCase().includes(q) ||
+          t.title?.toLowerCase().includes(q)
+        )) return true;
+        return false;
+      });
+    }
+
+    if (roleFilter !== 'all') {
+      filtered = filtered.filter(m => m.membershipTier === roleFilter);
+    }
+
+    if (specialtyFilter !== 'all') {
+      filtered = filtered.filter(m => m.specialties?.includes(specialtyFilter));
+    }
+
+    if (categoryFilter) {
+      const topCat = categories.find(c => c.id === categoryFilter);
+      if (topCat) {
+        const subIds = new Set(topCat.subcategories.map(s => s.id));
+        filtered = filtered.filter(m => (m as any).categories?.some((c: string) => subIds.has(c)));
+      }
+    }
+
+    filtered.sort((a, b) => {
+      if (sortBy === 'memberSince') {
+        return (b.memberSince ?? '').localeCompare(a.memberSince ?? '');
+      }
+      if (sortBy === 'membershipTier') {
+        const order: Record<string, number> = { elite: 0, enhanced: 1, basic: 2 };
+        return (order[a.membershipTier ?? ''] ?? 3) - (order[b.membershipTier ?? ''] ?? 3);
+      }
+      return (a.businessName ?? '').localeCompare(b.businessName ?? '');
     });
 
     return filtered;
-  }, [members, specialtyFilter]);
+  }, [members, searchTerm, roleFilter, specialtyFilter, categoryFilter, sortBy, categories]);
 
   // Intersection observer target for scroll pagination
   const observerTarget = useRef<HTMLDivElement>(null);
@@ -195,12 +177,7 @@ const MembersPage: React.FC = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run on mount to avoid infinite loops
 
-  // Reset and reload when search/role/sort filters change (using debounced search)
-  useEffect(() => {
-    setCurrentOffset(0);
-    loadMembers(0, false);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearchTerm, roleFilter, sortBy, categoryFilter]);
+  // Filters are applied client-side — no reload needed on filter change
 
   // Refresh when member data is updated (e.g., after editing a profile)
   useEffect(() => {
@@ -424,7 +401,7 @@ const MembersPage: React.FC = () => {
             {/* <p className="text-sm text-muted-foreground">
               Showing {filteredMembers.length} of {totalMembers} members
             </p> */}
-            {(debouncedSearchTerm || roleFilter !== 'all' || specialtyFilter !== 'all' || sortBy !== 'businessName' || categoryFilter) && (
+            {(searchTerm || roleFilter !== 'all' || specialtyFilter !== 'all' || sortBy !== 'businessName' || categoryFilter) && (
               <Button
                 variant="outline"
                 size="sm"

@@ -65,6 +65,8 @@ export default function AdminPage() {
   const bizObserverTarget = useRef<HTMLDivElement>(null);
   const [businessSearch, setBusinessSearch] = useState('');
   const [businessTierFilter, setBusinessTierFilter] = useState('all');
+  const [businessStatusFilter, setBusinessStatusFilter] = useState('all');
+  const [businessRenewalFilter, setBusinessRenewalFilter] = useState('all');
   const [ghlContacts, setGhlContacts] = useState<any[]>([]);
   const [contactsLoading, setContactsLoading] = useState(false);
   const [contactsLoadingMore, setContactsLoadingMore] = useState(false);
@@ -252,6 +254,8 @@ export default function AdminPage() {
       const params = new URLSearchParams({ limit: '25', offset: String(offset) });
       if (businessSearch) params.set('search', businessSearch);
       if (businessTierFilter !== 'all') params.set('tier', businessTierFilter);
+      if (businessStatusFilter !== 'all') params.set('status', businessStatusFilter);
+      if (businessRenewalFilter !== 'all') params.set('renewal', businessRenewalFilter);
       const res = await api.get(`/admin/businesses?${params}`);
       if (res.ok) {
         const d = await res.json();
@@ -264,7 +268,7 @@ export default function AdminPage() {
       }
     } catch { /* non-fatal */ }
     finally { setBizLoading(false); setBizLoadingMore(false); }
-  }, [businessSearch, businessTierFilter]);
+  }, [businessSearch, businessTierFilter, businessStatusFilter, businessRenewalFilter]);
 
   const loadContacts = useCallback(async (offset: number, append: boolean, refresh = false) => {
     if (append) setContactsLoadingMore(true); else setContactsLoading(true);
@@ -294,7 +298,7 @@ export default function AdminPage() {
     setGhlBusinesses([]);
     loadBusinesses(0, false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [businessSearch, businessTierFilter]);
+  }, [businessSearch, businessTierFilter, businessStatusFilter, businessRenewalFilter]);
 
   // Reset contacts list when filters change
   useEffect(() => {
@@ -371,28 +375,25 @@ export default function AdminPage() {
 
   const handleAddMembership = async () => {
     const { contact, business } = addMembershipForm;
-    if (!contact.firstName || !contact.lastName || !contact.email || !business.name || !business.membershipTier) {
-      toast.error('First name, last name, email, business name, and membership tier are required');
+    if (!contact.firstName || !contact.lastName || !contact.email || !contact.phone ||
+        !business.name || !business.email || !business.phone || !business.memberSince || !business.membershipTier) {
+      toast.error('First name, last name, email, phone, business name, business email, business phone, start date, and membership tier are required');
       return;
     }
     setAddMembershipLoading(true);
     try {
       const body: any = {
-        contact: { firstName: contact.firstName, lastName: contact.lastName, email: contact.email },
-        business: { name: business.name },
+        contact: { firstName: contact.firstName, lastName: contact.lastName, email: contact.email, phone: contact.phone },
+        business: { name: business.name, email: business.email, phone: business.phone, memberSince: business.memberSince },
       };
-      if (contact.phone) body.contact.phone = contact.phone;
       if (contact.title) body.contact.title = contact.title;
       body.contact.isMainContact = contact.isMainContact;
-      if (business.email) body.business.email = business.email;
-      if (business.phone) body.business.phone = business.phone;
       if (business.website) body.business.website = business.website;
       if (business.address) body.business.address = business.address;
       if (business.city) body.business.city = business.city;
       if (business.state) body.business.state = business.state;
       if (business.postalCode) body.business.postalCode = business.postalCode;
-      if (business.membershipTier) body.business.membershipTier = business.membershipTier;
-      if (business.memberSince) body.business.memberSince = business.memberSince;
+      body.business.membershipTier = business.membershipTier;
 
       const res = await api.post('/admin/memberships', body);
       const data = await res.json();
@@ -832,21 +833,41 @@ export default function AdminPage() {
                     </div>
                   </CardHeader>
                   <CardContent className="px-3 md:px-6">
-                    <div className="flex flex-col sm:flex-row gap-3 mb-4">
-                      <div className="flex-1 relative">
+                    <div className="flex flex-col xl:flex-row gap-3 mb-4">
+                      <div className="relative xl:flex-1">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input placeholder="Search businesses..." value={businessSearch} onChange={e => setBusinessSearch(e.target.value)} className="pl-10" />
                       </div>
-                      <Select value={businessTierFilter} onValueChange={v => { setBusinessTierFilter(v); }}>
-                        <SelectTrigger className="w-44"><SelectValue placeholder="Filter by tier" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All Tiers</SelectItem>
-                          <SelectItem value="elite">Elite</SelectItem>
-                          <SelectItem value="enhanced">Enhanced</SelectItem>
-                          <SelectItem value="basic">Basic</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Button variant="outline" size="sm" onClick={() => { setBizOffset(0); setGhlBusinesses([]); loadBusinesses(0, false); }}><LucideRefreshCcw className="h-4 w-4" /></Button>
+                      <div className="flex flex-wrap gap-3">
+                        <Select value={businessTierFilter} onValueChange={v => { setBusinessTierFilter(v); }}>
+                          <SelectTrigger className="w-40 xl:w-40 flex-1 xl:flex-none"><SelectValue placeholder="Filter by tier" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Tiers</SelectItem>
+                            <SelectItem value="elite">Elite</SelectItem>
+                            <SelectItem value="enhanced">Enhanced</SelectItem>
+                            <SelectItem value="basic">Basic</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Select value={businessStatusFilter} onValueChange={v => { setBusinessStatusFilter(v); }}>
+                          <SelectTrigger className="w-40 xl:w-40 flex-1 xl:flex-none"><SelectValue placeholder="Filter by status" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Statuses</SelectItem>
+                            <SelectItem value="active">Active</SelectItem>
+                            <SelectItem value="inactive">Inactive</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Select value={businessRenewalFilter} onValueChange={v => { setBusinessRenewalFilter(v); }}>
+                          <SelectTrigger className="w-44 xl:w-44 flex-1 xl:flex-none"><SelectValue placeholder="Filter by renewal" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Renewals</SelectItem>
+                            <SelectItem value="expired">Expired</SelectItem>
+                            <SelectItem value="expiring">Expiring (60 days)</SelectItem>
+                            <SelectItem value="current">Current</SelectItem>
+                            <SelectItem value="none">No Date Set</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Button variant="outline" size="sm" className="h-10" onClick={() => { setBizOffset(0); setGhlBusinesses([]); loadBusinesses(0, false); }}><LucideRefreshCcw className="h-4 w-4" /></Button>
+                      </div>
                     </div>
                     {bizLoading ? (
                       <div className="py-8 text-center text-muted-foreground">Loading...</div>
@@ -858,12 +879,15 @@ export default function AdminPage() {
                         <div className="hidden lg:grid lg:grid-cols-[minmax(0,1fr)_80px_130px_80px_80px_36px] gap-x-4 px-4 py-2 bg-muted/40 text-xs font-medium text-muted-foreground rounded-t-lg">
                           <span>Business / Contact</span>
                           <span>City</span>
-                          <span>Member Since</span>
+                          <span>Renewal Date</span>
                           <span>App Users</span>
                           <span>Tier</span>
                           <span></span>
                         </div>
-                        {ghlBusinesses.map(biz => (
+                        {ghlBusinesses.map(biz => {
+                          const renewalCutoff = new Date(); renewalCutoff.setMonth(renewalCutoff.getMonth() - 13);
+                          const isRenewalExpired = biz.renewalDate && new Date(biz.renewalDate) < renewalCutoff;
+                          return (
                           <div key={biz.id} className="hover:bg-muted/30">
                             {/* Desktop row */}
                             <div className="hidden lg:grid lg:grid-cols-[minmax(0,1fr)_80px_130px_80px_80px_36px] gap-x-4 items-center px-4 py-3">
@@ -872,7 +896,9 @@ export default function AdminPage() {
                                 <div className="text-xs text-muted-foreground truncate">Contact: {biz.mainContactName || '—'}</div>
                               </div>
                               <span className="text-xs text-muted-foreground">{biz.city || '—'}</span>
-                              <span className="text-xs text-muted-foreground">{biz.memberSince ? new Date(biz.memberSince).toLocaleDateString() : '—'}</span>
+                              <span className={`text-xs ${isRenewalExpired ? 'text-red-500 font-medium' : 'text-muted-foreground'}`}>
+                                {biz.renewalDate ? new Date(biz.renewalDate).toLocaleDateString() : '—'}
+                              </span>
                               <span className="text-xs text-muted-foreground">{biz.appUserCount ?? 0}</span>
                               <span>{biz.membershipTier ? <Badge variant="secondary" className="text-xs">{biz.membershipTier}</Badge> : <span className="text-xs italic text-muted-foreground/50">—</span>}</span>
                               <DropdownMenu>
@@ -898,7 +924,9 @@ export default function AdminPage() {
                                 <div className="text-xs text-muted-foreground mt-0.5">Contact: {biz.mainContactName || '—'}</div>
                                 <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1 text-xs text-muted-foreground">
                                   <span>{biz.city || '—'}</span>
-                                  <span>Since {biz.memberSince ? new Date(biz.memberSince).toLocaleDateString() : '—'}</span>
+                                  <span className={isRenewalExpired ? 'text-red-500 font-medium' : ''}>
+                                    Renewal: {biz.renewalDate ? new Date(biz.renewalDate).toLocaleDateString() : '—'}
+                                  </span>
                                   <span>{biz.appUserCount ?? 0} app users</span>
                                   {biz.membershipTier
                                     ? <Badge variant="secondary" className="text-xs">{biz.membershipTier}</Badge>
@@ -922,7 +950,8 @@ export default function AdminPage() {
                               </DropdownMenu>
                             </div>
                           </div>
-                        ))}
+                          );
+                        })}
                         {bizLoadingMore && <div className="py-4 text-center text-xs text-muted-foreground">Loading more...</div>}
                         <div ref={bizObserverTarget} className="h-1" />
                       </div>
@@ -1834,36 +1863,6 @@ export default function AdminPage() {
               <DialogDescription>Create a GHL Contact and Business, link them, and send an invite email.</DialogDescription>
             </DialogHeader>
             <div className="grid gap-6 py-2 overflow-y-auto flex-1 pr-1">
-              {/* Contact section */}
-              <div>
-                <h3 className="text-sm font-semibold mb-3">Contact (Person)</h3>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="">
-                    <Label>First Name <span className="text-destructive">*</span></Label>
-                    <Input value={addMembershipForm.contact.firstName} onChange={e => setAddMembershipForm(f => ({ ...f, contact: { ...f.contact, firstName: e.target.value } }))} />
-                  </div>
-                  <div className="">
-                    <Label>Last Name <span className="text-destructive">*</span></Label>
-                    <Input value={addMembershipForm.contact.lastName} onChange={e => setAddMembershipForm(f => ({ ...f, contact: { ...f.contact, lastName: e.target.value } }))} />
-                  </div>
-                  <div className="col-span-2">
-                    <Label>Email <span className="text-destructive">*</span></Label>
-                    <Input type="email" value={addMembershipForm.contact.email} onChange={e => setAddMembershipForm(f => ({ ...f, contact: { ...f.contact, email: e.target.value } }))} />
-                  </div>
-                  <div className="col-span-2">
-                    <Label>Phone</Label>
-                    <Input value={addMembershipForm.contact.phone} onChange={e => setAddMembershipForm(f => ({ ...f, contact: { ...f.contact, phone: e.target.value } }))} />
-                  </div>
-                  <div className="col-span-2">
-                    <Label>Title</Label>
-                    <Input placeholder="e.g. Owner" value={addMembershipForm.contact.title} onChange={e => setAddMembershipForm(f => ({ ...f, contact: { ...f.contact, title: e.target.value } }))} />
-                  </div>
-                  <div className="col-span-2 flex items-center gap-2">
-                    <Checkbox id="isMainContact" checked={addMembershipForm.contact.isMainContact} onCheckedChange={v => setAddMembershipForm(f => ({ ...f, contact: { ...f.contact, isMainContact: !!v } }))} />
-                    <Label htmlFor="isMainContact" className="cursor-pointer">Set as Main Contact for this business</Label>
-                  </div>
-                </div>
-              </div>
               {/* Business section */}
               <div>
                 <h3 className="text-sm font-semibold mb-3">Business</h3>
@@ -1873,11 +1872,11 @@ export default function AdminPage() {
                     <Input value={addMembershipForm.business.name} onChange={e => setAddMembershipForm(f => ({ ...f, business: { ...f.business, name: e.target.value } }))} />
                   </div>
                   <div className="">
-                    <Label>Business Email</Label>
+                    <Label>Business Email <span className="text-destructive">*</span></Label>
                     <Input type="email" value={addMembershipForm.business.email} onChange={e => setAddMembershipForm(f => ({ ...f, business: { ...f.business, email: e.target.value } }))} />
                   </div>
                   <div className="">
-                    <Label>Business Phone</Label>
+                    <Label>Business Phone <span className="text-destructive">*</span></Label>
                     <Input value={addMembershipForm.business.phone} onChange={e => setAddMembershipForm(f => ({ ...f, business: { ...f.business, phone: e.target.value } }))} />
                   </div>
                   <div className="col-span-2">
@@ -1904,7 +1903,7 @@ export default function AdminPage() {
                   </div>
                   <div className="col-span-2 grid grid-cols-2 gap-3">
                     <div className="">
-                      <Label>Membership Start Date</Label>
+                      <Label>Membership Start Date <span className="text-destructive">*</span></Label>
                       <Input type="date" value={addMembershipForm.business.memberSince} onChange={e => setAddMembershipForm(f => ({ ...f, business: { ...f.business, memberSince: e.target.value } }))} />
                     </div>
                     <div className="">
@@ -1918,6 +1917,36 @@ export default function AdminPage() {
                         </SelectContent>
                       </Select>
                     </div>
+                  </div>
+                </div>
+              </div>
+              {/* Contact section */}
+              <div>
+                <h3 className="text-sm font-semibold mb-3">Contact (Person)</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="">
+                    <Label>First Name <span className="text-destructive">*</span></Label>
+                    <Input value={addMembershipForm.contact.firstName} onChange={e => setAddMembershipForm(f => ({ ...f, contact: { ...f.contact, firstName: e.target.value } }))} />
+                  </div>
+                  <div className="">
+                    <Label>Last Name <span className="text-destructive">*</span></Label>
+                    <Input value={addMembershipForm.contact.lastName} onChange={e => setAddMembershipForm(f => ({ ...f, contact: { ...f.contact, lastName: e.target.value } }))} />
+                  </div>
+                  <div className="col-span-2">
+                    <Label>Email <span className="text-destructive">*</span></Label>
+                    <Input type="email" value={addMembershipForm.contact.email} onChange={e => setAddMembershipForm(f => ({ ...f, contact: { ...f.contact, email: e.target.value } }))} />
+                  </div>
+                  <div className="col-span-2">
+                    <Label>Phone <span className="text-destructive">*</span></Label>
+                    <Input value={addMembershipForm.contact.phone} onChange={e => setAddMembershipForm(f => ({ ...f, contact: { ...f.contact, phone: e.target.value } }))} />
+                  </div>
+                  <div className="col-span-2">
+                    <Label>Title</Label>
+                    <Input placeholder="e.g. Owner" value={addMembershipForm.contact.title} onChange={e => setAddMembershipForm(f => ({ ...f, contact: { ...f.contact, title: e.target.value } }))} />
+                  </div>
+                  <div className="col-span-2 flex items-center gap-2">
+                    <Checkbox id="isMainContact" checked={addMembershipForm.contact.isMainContact} onCheckedChange={v => setAddMembershipForm(f => ({ ...f, contact: { ...f.contact, isMainContact: !!v } }))} />
+                    <Label htmlFor="isMainContact" className="cursor-pointer">Set as Main Contact for this business</Label>
                   </div>
                 </div>
               </div>

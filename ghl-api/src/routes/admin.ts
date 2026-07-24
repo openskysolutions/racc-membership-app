@@ -567,25 +567,12 @@ router.get('/stats', requireAuth, requireAdmin, async (req, res) => {
  */
 router.get('/businesses', requireAuth, requireAdmin, async (req, res) => {
   try {
-    const { search, tier, city, state, limit = '500', offset = '0' } = req.query as Record<string, string>;
+    const { search, tier, city, state, status, renewal, limit = '500', offset = '0' } = req.query as Record<string, string>;
     const lim = parseInt(limit) || 500;
     const off = parseInt(offset) || 0;
 
-    // Fetch all GHL businesses — use cache when warm, paginate from GHL when cold
-    let allBusinesses: any[];
-    if (businessesCache.isFresh()) {
-      allBusinesses = businessesCache.get()!;
-    } else {
-      allBusinesses = [];
-      let skip = 0;
-      while (true) {
-        const batch = await ghlService.getBusinesses(100, skip);
-        allBusinesses = allBusinesses.concat(batch);
-        if (batch.length < 100) break;
-        skip += 100;
-      }
-      businessesCache.set(allBusinesses);
-    }
+    // Fetch all business records with custom fields via Objects API
+    let allBusinesses = await ghlService.getAllBusinessRecords();
 
     // Apply filters
     if (search) {
@@ -597,12 +584,40 @@ router.get('/businesses', requireAuth, requireAdmin, async (req, res) => {
       );
     }
 
-    const profiles = await prisma.businessProfile.findMany();
-    const profileMap = new Map(profiles.map(p => [p.ghlBusinessId, p]));
+    if (tier) {
+      allBusinesses = allBusinesses.filter((b: any) => {
+        const raw = (b.customFields ?? []).find((f: any) => f.key === 'membership_tier');
+        const val: string | null = raw?.valueString ?? null;
+        const slug = val ? val.replace('_membership_package', '') : null;
+        return slug === tier;
+      });
+    }
+    if (city) allBusinesses = allBusinesses.filter((b: any) => b.city?.toLowerCase().includes(city.toLowerCase()));
+    if (state) allBusinesses = allBusinesses.filter((b: any) => b.state?.toLowerCase() === state.toLowerCase());
 
-    if (tier) allBusinesses = allBusinesses.filter(b => profileMap.get(b.id)?.membershipTier === tier);
-    if (city) allBusinesses = allBusinesses.filter(b => b.city?.toLowerCase().includes(city.toLowerCase()));
-    if (state) allBusinesses = allBusinesses.filter(b => b.state?.toLowerCase() === state.toLowerCase());
+    if (status && status !== 'all') {
+      allBusinesses = allBusinesses.filter((b: any) => {
+        const s = (b.customFields ?? []).find((f: any) => f.key === 'membership_status')?.valueString ?? null;
+        return status === 'active' ? s === 'active' : s !== 'active';
+      });
+    }
+
+    if (renewal && renewal !== 'all') {
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      const cutoff = new Date(today); cutoff.setMonth(cutoff.getMonth() - 13);
+      const in60 = new Date(today); in60.setDate(in60.getDate() + 60);
+      allBusinesses = allBusinesses.filter((b: any) => {
+        const raw = (b.customFields ?? []).find((f: any) => f.key === 'renewal_date')?.valueString ?? null;
+        if (!raw) return renewal === 'none';
+        const d = new Date(raw);
+        if (renewal === 'expired') return d < cutoff;
+        if (renewal === 'expiring') return d >= today && d <= in60;
+        if (renewal === 'current') return d > in60;
+        return true;
+      });
+    }
+
+    allBusinesses.sort((a: any, b: any) => (a.name ?? '').localeCompare(b.name ?? ''));
 
     const total = allBusinesses.length;
     const page = allBusinesses.slice(off, off + lim);
@@ -623,20 +638,29 @@ router.get('/businesses', requireAuth, requireAdmin, async (req, res) => {
     }
 
     const mainContactMap = new Map<string, string>();
+    const firstContactMap = new Map<string, string>();
     for (const c of contactsCache.get()!) {
+      const bizId = c.businessId || c.business_id;
+      if (!bizId) continue;
+      const name = (c.firstName || c.lastName)
+        ? `${c.firstName ?? ''} ${c.lastName ?? ''}`.trim()
+        : (c.email ?? null);
+      if (!name) continue;
+      // Track first contact per business as fallback
+      if (!firstContactMap.has(bizId)) firstContactMap.set(bizId, name);
+      // Prefer contacts tagged as main contact
       const isMain = Array.isArray(c.tags) &&
         (c.tags.includes('main contact') || c.tags.includes('main-contact'));
-      if (isMain && (c.businessId || c.business_id)) {
-        const bizId = c.businessId || c.business_id;
-        const name = (c.firstName || c.lastName)
-          ? `${c.firstName ?? ''} ${c.lastName ?? ''}`.trim()
-          : (c.email ?? null);
-        if (name) mainContactMap.set(bizId, name);
-      }
+      if (isMain) mainContactMap.set(bizId, name);
     }
 
-    const businesses = page.map((b) => {
-      const profile = profileMap.get(b.id);
+    const businesses = page.map((b: any) => {
+      const tierRaw = (b.customFields ?? []).find((f: any) => f.key === 'membership_tier');
+      const tierVal: string | null = tierRaw?.valueString ?? null;
+      const membershipTier = tierVal ? tierVal.replace('_membership_package', '') : null;
+      const memberSince = (b.customFields ?? []).find((f: any) => f.key === 'membership_start_date')?.valueString ?? null;
+      const renewalDate = (b.customFields ?? []).find((f: any) => f.key === 'renewal_date')?.valueString ?? null;
+      const membershipStatus = (b.customFields ?? []).find((f: any) => f.key === 'membership_status')?.valueString ?? null;
       return {
         id: b.id,
         businessName: b.name,
@@ -644,10 +668,12 @@ router.get('/businesses', requireAuth, requireAdmin, async (req, res) => {
         phone: b.phone ?? null,
         city: b.city ?? null,
         state: b.state ?? null,
-        membershipTier: profile?.membershipTier ?? null,
-        memberSince: profile?.memberSince ?? null,
+        membershipTier,
+        memberSince,
+        renewalDate,
+        membershipStatus,
         appUserCount: userCountMap.get(b.id) ?? 0,
-        mainContactName: mainContactMap.get(b.id) ?? null,
+        mainContactName: mainContactMap.get(b.id) ?? firstContactMap.get(b.id) ?? null,
       };
     });
 
@@ -664,7 +690,7 @@ router.get('/businesses', requireAuth, requireAdmin, async (req, res) => {
  */
 router.patch('/businesses/:id/tier', requireAuth, requireAdmin, async (req, res) => {
   const { id } = req.params;
-  const { tier, memberSince } = req.body;
+  const { tier, memberSince, renewalDate } = req.body;
 
   const validTiers = ['basic', 'enhanced', 'elite', null];
   if (!validTiers.includes(tier)) {
@@ -685,14 +711,23 @@ router.patch('/businesses/:id/tier', requireAuth, requireAdmin, async (req, res)
   };
 
   try {
-    // 1. Save tier to DB
-    const data: any = { membershipTier: tier ?? null };
-    if (memberSince !== undefined) data.memberSince = memberSince;
-    await prisma.businessProfile.upsert({
-      where: { ghlBusinessId: id },
-      create: { ghlBusinessId: id, ...data },
-      update: data,
-    });
+    // 1. Write tier and memberSince to GHL business custom properties
+    const ghlTierValue = tier ? `${tier}_membership_package` : null;
+    const bizProps: Record<string, string | null> = {
+      membership_tier: ghlTierValue,
+      membership_status: tier ? 'active' : null,
+    };
+    if (memberSince !== undefined) bizProps.membership_start_date = memberSince ?? null;
+    // renewal_date: use explicitly passed value, default to today when activating,
+    // or clear when removing a tier
+    if (renewalDate !== undefined) {
+      bizProps.renewal_date = renewalDate ?? null;
+    } else if (tier) {
+      bizProps.renewal_date = new Date().toISOString().split('T')[0];
+    } else {
+      bizProps.renewal_date = null;
+    }
+    await ghlService.updateBusinessProperties(id, bizProps);
 
     // 2. Update GHL tags on ALL contacts associated with this business
     // Get contacts from cache first, fall back to direct GHL fetch
@@ -985,10 +1020,11 @@ router.post('/memberships', requireAuth, requireAdmin, async (req, res) => {
 
   if (businessData.membershipTier) {
     try {
-      await prisma.businessProfile.upsert({
-        where: { ghlBusinessId: businessId! },
-        create: { ghlBusinessId: businessId!, membershipTier: businessData.membershipTier, memberSince: businessData.memberSince ?? null },
-        update: { membershipTier: businessData.membershipTier, memberSince: businessData.memberSince ?? null },
+      await ghlService.updateBusinessProperties(businessId!, {
+        membership_tier: `${businessData.membershipTier}_membership_package`,
+        membership_start_date: businessData.memberSince ?? null,
+        renewal_date: today,
+        membership_status: 'active',
       });
     } catch (e: any) { console.error('Step 8 failed:', e.message); }
   }
