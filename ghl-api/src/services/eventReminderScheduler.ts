@@ -123,7 +123,7 @@ async function sendReminderForWindow(
       day: 'numeric',
       hour: 'numeric',
       minute: '2-digit',
-      timeZone: 'America/Chicago',
+      timeZone: 'America/Denver',
     });
 
     const title = event.title || 'Upcoming Chamber Event';

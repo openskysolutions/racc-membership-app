@@ -35,6 +35,19 @@ export function onNotificationTap(handler: NotificationTapHandler) {
   tapHandler = handler;
 }
 
+// Register the tap listener at module load time on native platforms.
+// This captures cold-start notification taps that arrive before the user
+// has authenticated and initPushNotifications() has been called.
+function handleTapAction(action: ActionPerformed) {
+  const link = action.notification?.data?.link as string | undefined;
+  if (link) pendingDeepLink = link;
+  if (tapHandler) tapHandler(action);
+}
+
+if (Capacitor.isNativePlatform()) {
+  PushNotifications.addListener('pushNotificationActionPerformed', handleTapAction);
+}
+
 /**
  * Initialize push notifications for the current session.
  * Call this once after the user has authenticated.
@@ -65,9 +78,10 @@ export async function initPushNotifications(): Promise<void> {
   // Register with APNs / FCM — fires Token event on success
 
   // Remove previous listeners to avoid duplicates on re-login,
-  // then add new ones BEFORE calling register() so we never miss
-  // a synchronously-fired token event (iOS caches tokens).
+  // then immediately re-add the tap listener so no cold-start events are missed
+  // during the re-registration window.
   await PushNotifications.removeAllListeners();
+  PushNotifications.addListener('pushNotificationActionPerformed', handleTapAction);
 
   // Token received → send to our backend
   PushNotifications.addListener('registration', async (token: Token) => {
@@ -82,15 +96,6 @@ export async function initPushNotifications(): Promise<void> {
   // Capacitor will display it as a local notification automatically on iOS.
   PushNotifications.addListener('pushNotificationReceived', (notification: PushNotificationSchema) => {
     console.log('[Push] Received in foreground:', notification.title);
-  });
-
-  // User tapped a notification
-  PushNotifications.addListener('pushNotificationActionPerformed', (action: ActionPerformed) => {
-    // Store the link immediately — before calling tapHandler — so cold-start
-    // scenarios where tapHandler isn't set yet don't lose the deep link.
-    const link = action.notification?.data?.link as string | undefined;
-    if (link) pendingDeepLink = link;
-    if (tapHandler) tapHandler(action);
   });
 
   await PushNotifications.register();

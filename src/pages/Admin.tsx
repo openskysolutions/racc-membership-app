@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
 import { adminService, User } from '@/services/admin';
 import { api } from '@/services/apiClient';
@@ -24,6 +25,7 @@ import { getFeaturedEventId, setFeaturedEventId } from '@/services/settingsServi
 import { Textarea } from '@/components/ui/textarea';
 import { RiShieldUserFill } from "react-icons/ri";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { toast } from 'sonner';
 
 interface Nomination {
@@ -47,6 +49,7 @@ interface Nomination {
 
 export default function AdminPage() {
   const { user: currentUser } = useAuthStore();
+  const navigate = useNavigate();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -78,6 +81,8 @@ export default function AdminPage() {
   const [contactTagFilter, setContactTagFilter] = useState('all');
   const [contactSort, setContactSort] = useState('firstName');
   const [tierUpdating, setTierUpdating] = useState<string | null>(null);
+  const [pendingTierChange, setPendingTierChange] = useState<{ bizId: string; bizName: string; currentTier: string } | null>(null);
+  const [dialogSelectedTier, setDialogSelectedTier] = useState<string>('none');
   const [tagUpdating, setTagUpdating] = useState<string | null>(null);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
@@ -906,14 +911,9 @@ export default function AdminPage() {
                                   <Button variant="ghost" size="sm" className="h-7 w-7 p-0" disabled={tierUpdating === biz.id}><MoreHorizontal className="h-4 w-4" /></Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
-                                  <DropdownMenuLabel>Set Tier</DropdownMenuLabel>
-                                  {['elite','enhanced','standard','basic'].map(t => (
-                                    <DropdownMenuItem key={t} onClick={() => handleSetTier(biz.id, t)} className={biz.membershipTier === t ? 'font-semibold' : ''}>{t.charAt(0).toUpperCase() + t.slice(1)}</DropdownMenuItem>
-                                  ))}
+                                  <DropdownMenuItem onClick={() => setTimeout(() => { setPendingTierChange({ bizId: biz.id, bizName: biz.businessName, currentTier: biz.membershipTier || 'none' }); setDialogSelectedTier(biz.membershipTier || 'none'); }, 0)}>Change Tier</DropdownMenuItem>
                                   <DropdownMenuSeparator />
-                                  <DropdownMenuItem onClick={() => handleSetTier(biz.id, 'none')} className="text-destructive">Remove Tier</DropdownMenuItem>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem onClick={() => window.open(`/members/${biz.id}`, '_blank')}>View Profile</DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => navigate(`/members/${biz.id}`)}>View Profile</DropdownMenuItem>
                                 </DropdownMenuContent>
                               </DropdownMenu>
                             </div>
@@ -938,14 +938,9 @@ export default function AdminPage() {
                                   <Button variant="ghost" size="sm" className="h-7 w-7 p-0 shrink-0" disabled={tierUpdating === biz.id}><MoreHorizontal className="h-4 w-4" /></Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
-                                  <DropdownMenuLabel>Set Tier</DropdownMenuLabel>
-                                  {['elite','enhanced','standard','basic'].map(t => (
-                                    <DropdownMenuItem key={t} onClick={() => handleSetTier(biz.id, t)} className={biz.membershipTier === t ? 'font-semibold' : ''}>{t.charAt(0).toUpperCase() + t.slice(1)}</DropdownMenuItem>
-                                  ))}
+                                  <DropdownMenuItem onClick={() => setTimeout(() => { setPendingTierChange({ bizId: biz.id, bizName: biz.businessName, currentTier: biz.membershipTier || 'none' }); setDialogSelectedTier(biz.membershipTier || 'none'); }, 0)}>Change Tier</DropdownMenuItem>
                                   <DropdownMenuSeparator />
-                                  <DropdownMenuItem onClick={() => handleSetTier(biz.id, 'none')} className="text-destructive">Remove Tier</DropdownMenuItem>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem onClick={() => window.open(`/members/${biz.id}`, '_blank')}>View Profile</DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => navigate(`/members/${biz.id}`)}>View Profile</DropdownMenuItem>
                                 </DropdownMenuContent>
                               </DropdownMenu>
                             </div>
@@ -1982,6 +1977,57 @@ export default function AdminPage() {
           </AlertDialogContent>
         </AlertDialog>
 
+        {/* Tier Change Dialog */}
+        <Dialog open={!!pendingTierChange} onOpenChange={(open) => { if (!open) setPendingTierChange(null); }}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Change Membership Tier</DialogTitle>
+              <DialogDescription>
+                Select a tier for <strong>{pendingTierChange?.bizName}</strong>.
+              </DialogDescription>
+            </DialogHeader>
+            <RadioGroup value={dialogSelectedTier} onValueChange={setDialogSelectedTier} className="space-y-2 py-1">
+              {[
+                { value: 'elite', label: 'Elite' },
+                { value: 'enhanced', label: 'Enhanced' },
+                { value: 'basic', label: 'Basic' },
+                { value: 'none', label: 'Remove Tier' },
+              ].map(({ value, label }) => (
+                <label
+                  key={value}
+                  htmlFor={`tier-${value}`}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-md border border-border cursor-pointer transition-colors ${
+                    dialogSelectedTier === value
+                      ? value === 'none' ? 'bg-destructive/10' : 'bg-primary/10'
+                      : 'hover:bg-muted/50'
+                  }`}
+                >
+                  <RadioGroupItem value={value} id={`tier-${value}`} />
+                  <span className={`text-sm font-medium ${value === 'none' ? 'text-destructive' : ''}`}>{label}</span>
+                  {value === pendingTierChange?.currentTier && (
+                    <span className="ml-auto text-xs text-muted-foreground">current</span>
+                  )}
+                </label>
+              ))}
+            </RadioGroup>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setPendingTierChange(null)}>Cancel</Button>
+              <Button
+                variant={dialogSelectedTier === 'none' ? 'destructive' : 'default'}
+                disabled={dialogSelectedTier === pendingTierChange?.currentTier}
+                onClick={() => {
+                  if (pendingTierChange) {
+                    handleSetTier(pendingTierChange.bizId, dialogSelectedTier);
+                    setPendingTierChange(null);
+                  }
+                }}
+              >
+                Confirm
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         {/* Delete Nomination Dialog */}
         <AlertDialog open={showDeleteNominationDialog} onOpenChange={setShowDeleteNominationDialog}>
           <AlertDialogContent>
@@ -2030,65 +2076,100 @@ function UserListItem({
   getTierBadgeColor: (tier: string) => string;
 }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [pendingStatus, setPendingStatus] = useState<'active' | 'suspended' | null>(null);
+
+  const userName = [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email;
 
   return (
-    <div className="flex items-start justify-between gap-3 px-4 py-3 hover:bg-muted/30">
-      <div className="min-w-0 flex-1">
-        {(user.firstName || user.lastName) && (
-          <div className="text-sm font-medium text-foreground">
-            {user.firstName} {user.lastName}
-          </div>
-        )}
-        <div className="text-sm text-muted-foreground truncate">{user.email}</div>
-        {user.businessName && (
-          <div className="text-xs text-muted-foreground truncate">{user.businessName}</div>
-        )}
-        <div className="flex flex-wrap gap-1.5 mt-1.5">
-          <Badge className={getRoleBadgeColor(user.role)}>{user.role}</Badge>
-          <Badge className={getStatusBadgeColor(user.status)}>{user.status}</Badge>
-          {user.membershipTier && (
-            <Badge className={getTierBadgeColor(user.membershipTier)}>{user.membershipTier}</Badge>
+    <>
+      <div className="flex items-start justify-between gap-3 px-4 py-3 hover:bg-muted/30">
+        <div className="min-w-0 flex-1">
+          {(user.firstName || user.lastName) && (
+            <div className="text-sm font-medium text-foreground">
+              {user.firstName} {user.lastName}
+            </div>
           )}
-          {user.ghlContactId
-            ? <span className="inline-flex items-center gap-0.5 text-xs text-green-700"><CheckCircle className="h-3 w-3" />GHL contact</span>
-            : <span className="text-xs text-muted-foreground/50">no GHL contact</span>}
-          {user.ghlBusinessId
-            ? <span className="inline-flex items-center gap-0.5 text-xs text-green-700"><CheckCircle className="h-3 w-3" />GHL business</span>
-            : <span className="text-xs text-muted-foreground/50">no GHL business</span>}
-          <span className="text-xs text-muted-foreground self-center">
-            {new Date(user.createdAt).toLocaleDateString()}
-          </span>
+          <div className="text-sm text-muted-foreground truncate">{user.email}</div>
+          {user.businessName && (
+            <div className="text-xs text-muted-foreground truncate">{user.businessName}</div>
+          )}
+          <div className="flex flex-wrap gap-1.5 mt-1.5">
+            <Badge className={getRoleBadgeColor(user.role)}>{user.role}</Badge>
+            <Badge className={getStatusBadgeColor(user.status)}>{user.status}</Badge>
+            {user.membershipTier && (
+              <Badge className={getTierBadgeColor(user.membershipTier)}>{user.membershipTier}</Badge>
+            )}
+            {user.ghlContactId
+              ? <span className="inline-flex items-center gap-0.5 text-xs text-green-700"><CheckCircle className="h-3 w-3" />GHL contact</span>
+              : <span className="text-xs text-muted-foreground/50">no GHL contact</span>}
+            {user.ghlBusinessId
+              ? <span className="inline-flex items-center gap-0.5 text-xs text-green-700"><CheckCircle className="h-3 w-3" />GHL business</span>
+              : <span className="text-xs text-muted-foreground/50">no GHL business</span>}
+            <span className="text-xs text-muted-foreground self-center">
+              {new Date(user.createdAt).toLocaleDateString()}
+            </span>
+          </div>
         </div>
+        <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen} modal={false}>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-8 w-8 p-0 shrink-0">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuItem onClick={() => { setDropdownOpen(false); onEdit(user); }}>
+              <Edit className="mr-2 h-4 w-4" />Edit User
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() => { setDropdownOpen(false); setTimeout(() => setPendingStatus('active'), 0); }}
+              disabled={user.status === 'active'}
+            >
+              <CheckCircle className="mr-2 h-4 w-4" />Activate
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => { setDropdownOpen(false); setTimeout(() => setPendingStatus('suspended'), 0); }}
+              disabled={user.status === 'suspended' || user.id === currentUser?.id}
+            >
+              <AlertTriangle className="mr-2 h-4 w-4" />Suspend
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className="text-red-600"
+              disabled={currentUser?.id === user.id}
+              onClick={() => { setDropdownOpen(false); if (currentUser?.id !== user.id) onDelete(user); }}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />Delete User
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
-      <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen} modal={false}>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="h-8 w-8 p-0 shrink-0">
-            <MoreHorizontal className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-          <DropdownMenuItem onClick={() => { setDropdownOpen(false); onEdit(user); }}>
-            <Edit className="mr-2 h-4 w-4" />Edit User
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => { setDropdownOpen(false); onUpdateStatus(user.id, 'active'); }} disabled={user.status === 'active'}>
-            <CheckCircle className="mr-2 h-4 w-4" />Activate
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => { setDropdownOpen(false); onUpdateStatus(user.id, 'suspended'); }} disabled={user.status === 'suspended' || user.id === currentUser?.id}>
-            <AlertTriangle className="mr-2 h-4 w-4" />Suspend
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            className="text-red-600"
-            disabled={currentUser?.id === user.id}
-            onClick={() => { setDropdownOpen(false); if (currentUser?.id !== user.id) onDelete(user); }}
-          >
-            <Trash2 className="mr-2 h-4 w-4" />Delete User
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
+
+      <AlertDialog open={!!pendingStatus} onOpenChange={(open) => { if (!open) setPendingStatus(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {pendingStatus === 'active' ? 'Activate User' : 'Suspend User'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingStatus === 'active'
+                ? <>Are you sure you want to activate <strong>{userName}</strong>? They will regain access to the app.</>
+                : <>Are you sure you want to suspend <strong>{userName}</strong>? They will lose access to the app.</>}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => { if (pendingStatus) onUpdateStatus(user.id, pendingStatus); setPendingStatus(null); }}
+              className={pendingStatus === 'suspended' ? 'bg-amber-600 hover:bg-amber-700' : ''}
+            >
+              Confirm
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
 
