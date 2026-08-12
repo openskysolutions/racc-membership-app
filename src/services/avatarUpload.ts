@@ -130,13 +130,14 @@ function fileToBase64(file: File): Promise<string> {
  */
 export async function updateContactAvatar(contactId: string, avatarUrl: string): Promise<void> {
   try {
-    const response = await api.put(`/members/${contactId}/avatar`, {
-      avatarUrl: avatarUrl
+    // contactId here is the GHL Business ID — save avatar as logo_url on the business record
+    const response = await api.patch(`/businesses/${contactId}`, {
+      avatar: avatarUrl
     });
     
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(`Failed to update contact avatar: ${response.statusText} - ${errorData.message || ''}`);
+      throw new Error(`Failed to update avatar: ${response.statusText} - ${errorData.message || ''}`);
     }
   } catch (error: any) {
     console.error('Error updating contact avatar:', error);

@@ -2471,16 +2471,39 @@ class GoHighLevelService {
 
     if (!this.client) throw new Error('GoHighLevel client not initialized');
 
-    // Remove undefined fields
-    const payload = Object.fromEntries(
-      Object.entries(data).filter(([, v]) => v !== undefined)
+    // Map to the Objects API property keys (postalCode → postalcode to match read-side)
+    const raw: Record<string, any> = {
+      name:        data.name,
+      phone:       data.phone,
+      email:       data.email,
+      website:     data.website,
+      address:     data.address,
+      city:        data.city,
+      state:       data.state,
+      postalcode:  data.postalCode,  // Objects API uses lowercase key
+      country:     data.country,
+      description: data.description,
+    };
+
+    // Remove undefined values
+    const properties = Object.fromEntries(
+      Object.entries(raw).filter(([, v]) => v !== undefined && v !== null)
     );
 
+    if (Object.keys(properties).length === 0) return null;
+
     try {
-      const response = await this.client.put(`/businesses/${businessId}`, payload, {
-        headers: { Version: 'v3' },
-      });
-      return response.data?.buiseness ?? response.data?.business ?? response.data;
+      // Use the same Objects API endpoint as updateBusinessProperties so all writes
+      // go to the same backing store that getAllBusinessRecords reads from.
+      const response = await this.client.put(
+        `/objects/business/records/${businessId}`,
+        { properties },
+        {
+          params: { locationId: this.locationId },
+          headers: { Version: '2021-07-28' },
+        }
+      );
+      return response.data;
     } catch (error: any) {
       console.error(`❌ Failed to update business ${businessId}:`, error.response?.data ?? error.message);
       throw new Error(`Failed to update business: ${error.message}`);

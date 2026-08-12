@@ -127,17 +127,14 @@ const CoverImageUpload: React.FC<CoverImageUploadProps> = ({
   // const displayCoverImage = previewUrl || currentCoverImage;
 
   return (
-    <div className="flex flex-col space-y-4">
-      {/* CoverImage with Upload Button */}
-      <div className="relative bottom-6 sm:bottom-10 -right-4 sm:right-0">
-        {/* <img src={displayCoverImage} alt={fallbackText} className={`rounded ${sizeClasses[size]} object-cover`} /> */}
-        
-        {/* Upload Button Overlay */}
+    <>
+      {/* Camera button — absolute in hero bottom-right corner */}
+      <div className="absolute bottom-4 right-4 z-50">
         <Button
           type="button"
           variant="secondary"
           size="sm"
-          className={`absolute -bottom-1 -right-1 rounded-full ${buttonSizeClasses[size]} p-0 shadow-lg border-2 border-white bg-white/20 hover:bg-neutral-500/70 ${!uploading ? 'animate-pulse' : ''}`}
+          className={`relative flex items-center gap-2 rounded-full ${buttonSizeClasses[size]} p-0 shadow-lg border-2 border-white bg-white/20 hover:bg-neutral-500/70 ${!uploading ? 'animate-pulse' : ''}`}
           onClick={handleButtonClick}
           disabled={disabled || uploading}
         >
@@ -146,7 +143,9 @@ const CoverImageUpload: React.FC<CoverImageUploadProps> = ({
           ) : (
             <Camera className="!h-5 !w-5 text-white" />
           )}
-          <span className="absolute right-12 text-sm text-white">{currentCoverImage ? 'Edit Cover Image' : 'Add Cover Image'}</span>
+          <span className="absolute right-12 text-sm text-white whitespace-nowrap">
+            {currentCoverImage ? 'Edit Cover Image' : 'Add Cover Image'}
+          </span>
         </Button>
 
         {/* Remove Preview Button */}
@@ -173,44 +172,15 @@ const CoverImageUpload: React.FC<CoverImageUploadProps> = ({
         disabled={disabled || uploading}
       />
 
-      {/* Upload Instructions */}
-      {!previewUrl && !uploading && (
-        <div className="text-center">
-          {/* <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleButtonClick}
-            disabled={disabled}
-            className="text-xs"
-          >
-            <Upload className="h-3 w-3 mr-1" />
-            Upload Photo
-          </Button> */}
-          {/* <p className="text-xs text-muted-foreground mt-1">
-            JPEG, PNG (max 5MB)
-          </p> */}
-        </div>
-      )}
-
-      {/* Loading State */}
-      {uploading && (
-        <div className="text-center">
-          <p className="text-sm text-muted-foreground">
-            Uploading coverImage...
-          </p>
-        </div>
-      )}
-
-      {/* Error Display */}
+      {/* Error display — anchored above the button */}
       {error && (
-        <Alert variant="destructive" className="w-full max-w-sm">
-          <AlertDescription className="text-sm">
-            {error}
-          </AlertDescription>
-        </Alert>
+        <div className="absolute bottom-16 right-4 z-50 max-w-xs">
+          <Alert variant="destructive" className="p-2">
+            <AlertDescription className="text-xs">{error}</AlertDescription>
+          </Alert>
+        </div>
       )}
-    </div>
+    </>
   );
 };
 
