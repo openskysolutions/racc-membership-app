@@ -982,8 +982,8 @@ const MemberDetailsPage: React.FC = () => {
                           selected={selectedCategories}
                           onChange={setSelectedCategories}
                         />
-                        <p className="mt-2 text-xs text-muted-foreground">
-                          Select up to 3 subcategories. Saved with your profile.
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Choose up to 3 subcategories that best describe your business.
                         </p>
                       </div>
                     )}
@@ -1006,10 +1006,10 @@ const MemberDetailsPage: React.FC = () => {
                       onClick={handleSave}
                       disabled={updating}
                       variant='default'
-                      className='self-center w-1/2 sm:w-1/3'
+                      className='self-center min-w-1/2 sm:w-1/3'
                     >
                       Update BusinessProfile
-                      {updating ? '...' : <Save className="h-4 w-4" />}
+                      {updating ? '...' : ''}
                     </Button>
                   </div>
                 ) : (

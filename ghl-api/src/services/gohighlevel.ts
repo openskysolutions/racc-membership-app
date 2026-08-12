@@ -355,55 +355,59 @@ class GoHighLevelService {
         };
       }
 
-      // Check renewal date - look in multiple possible locations
+      // Check renewal date via the linked business record (primary source of truth)
       console.log(`🔍 [RENEWAL CHECK] Starting renewal date validation for ${email}`);
       let renewDate: Date | null = null;
       let renewDateSource: string = '';
-      
-      // 1. Check in customFields/customField array by specific ID
-      // GoHighLevel returns customFields (plural) from search API, customField from get API
-      const customFieldsArray = contact.customFields || contact.customField;
-      
-      if (customFieldsArray && Array.isArray(customFieldsArray)) {
-        const fieldName = contact.customFields ? 'customFields' : 'customField';
-        console.log(`🔍 Searching ${fieldName} array for renewal date (ID: J3yL94KqDhUnjurcIG8G)`);
-        console.log(`📋 ${fieldName} array contents:`, JSON.stringify(customFieldsArray, null, 2));
-        
-        const renewDateField = customFieldsArray.find((field: any) => 
-          field.id === 'J3yL94KqDhUnjurcIG8G'
-        );
-        
-        if (renewDateField && renewDateField.value) {
-          renewDate = new Date(renewDateField.value);
-          renewDateSource = `${fieldName} array by ID`;
-          console.log(`✅ Found renewal date in ${fieldName} array by ID: ${renewDateField.value}`);
-          console.log(`📋 Field structure:`, JSON.stringify(renewDateField, null, 2));
-        } else if (renewDateField) {
-          console.log(`⚠️ Found field with ID J3yL94KqDhUnjurcIG8G but no value:`, JSON.stringify(renewDateField, null, 2));
-        } else {
-          console.log(`❌ No field found with ID J3yL94KqDhUnjurcIG8G in ${fieldName} array`);
+
+      // 1. Primary: look up renewal_date on the GHL Business Object linked to this contact
+      const businessId = contact.businessId;
+      if (businessId) {
+        console.log(`🏢 Contact has businessId: ${businessId} — fetching business renewal date`);
+        try {
+          const business = await this.getBusinessById(businessId);
+          const renewalProp = (business?.customFields ?? []).find(
+            (f: any) => f.key === 'renewal_date'
+          );
+          const renewalValue = renewalProp?.valueString ?? renewalProp?.valueDate ?? null;
+          if (renewalValue) {
+            renewDate = new Date(renewalValue);
+            renewDateSource = 'business record renewal_date';
+            console.log(`✅ Found renewal date on business record: ${renewalValue}`);
+          } else {
+            console.log(`⚠️ Business record found but no renewal_date property set`);
+            console.log(`📋 Business customFields:`, JSON.stringify(business?.customFields ?? [], null, 2));
+          }
+        } catch (bizErr: any) {
+          console.warn(`⚠️ Failed to fetch business record ${businessId}: ${bizErr.message}`);
+        }
+      } else {
+        console.log(`⚠️ Contact has no businessId — will fall back to contact-level renewal date`);
+      }
+
+      // 2. Fallback: check contact's own customField array (search API returns customFields plural)
+      if (!renewDate) {
+        const customFieldsArray = contact.customFields || contact.customField;
+        if (customFieldsArray && Array.isArray(customFieldsArray)) {
+          const fieldName = contact.customFields ? 'customFields' : 'customField';
+          console.log(`🔍 Fallback: searching contact ${fieldName} array for renewal date (ID: J3yL94KqDhUnjurcIG8G)`);
+          const renewDateField = customFieldsArray.find((field: any) =>
+            field.id === 'J3yL94KqDhUnjurcIG8G'
+          );
+          if (renewDateField?.value) {
+            renewDate = new Date(renewDateField.value);
+            renewDateSource = `contact ${fieldName} array by ID`;
+            console.log(`✅ Found renewal date in contact ${fieldName} array: ${renewDateField.value}`);
+          }
         }
       }
-      
-      // 2. Check if renewal_date is a direct property on contact (fallback)
+
+      // 3. Fallback: direct property on contact
       if (!renewDate && (contact.renewal_date || contact.renewalDate)) {
         const dateValue = contact.renewal_date || contact.renewalDate;
         renewDate = new Date(dateValue);
-        renewDateSource = 'direct property';
-        console.log(`📅 Found renewal date as direct property: ${dateValue}`);
-      }
-      
-      // 3. Check in customFields object if it's not an array (fallback, format: {field_name: 'field_value'})
-      if (!renewDate && contact.customFields && !Array.isArray(contact.customFields)) {
-        const dateValue = contact.customFields['renewal_date'] || 
-                         contact.customFields['contact.renewal_date'] ||
-                         contact.customFields['J3yL94KqDhUnjurcIG8G'];
-        
-        if (dateValue) {
-          renewDate = new Date(dateValue);
-          renewDateSource = 'customFields object';
-          console.log(`📅 Found renewal date in customFields object: ${dateValue}`);
-        }
+        renewDateSource = 'contact direct property';
+        console.log(`📅 Found renewal date as contact direct property: ${dateValue}`);
       }
       
       // Check if renewal date is within 13 months (393 days) from now
@@ -414,14 +418,12 @@ class GoHighLevelService {
       // If no renewal date found or date is invalid/expired, return membership_expired
       if (!renewDate || isNaN(renewDate.getTime())) {
         console.log(`❌ No valid renewal date found for ${email}`);
-        console.log(`🔍 Checked locations: customField array (ID: J3yL94KqDhUnjurcIG8G), direct properties, customFields object`);
+        console.log(`🔍 Checked locations: business record renewal_date, contact customField array, contact direct properties`);
         console.log(`📋 Contact data structure:`, {
+          businessId: contact.businessId,
           hasCustomField: !!contact.customField,
           customFieldIsArray: Array.isArray(contact.customField),
-          customFieldLength: contact.customField?.length,
-          customFieldArraySample: contact.customField?.slice(0, 3),
           hasCustomFields: !!contact.customFields,
-          customFieldsKeys: contact.customFields ? Object.keys(contact.customFields) : [],
           directProperties: Object.keys(contact).filter(k => k.toLowerCase().includes('renew'))
         });
         return { 
