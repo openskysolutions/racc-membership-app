@@ -1197,7 +1197,7 @@ const MemberDetailsPage: React.FC = () => {
                       <Briefcase className="h-5 w-5" />
                       Job Openings
                     </CardTitle>
-                    {user && (user.role === 'admin' || user.status === 'active') && (
+                    {canEdit && (
                       <Button asChild size="sm">
                         <Link to="/jobs/new">
                           <Plus className="h-4 w-4 mr-0" />

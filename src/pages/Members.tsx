@@ -10,7 +10,7 @@ import { api } from '@/services/apiClient';
 import type { Member as BaseMember } from '@/types/member';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
-import { useMembersStore } from '@/stores/membersStore';
+import { useMembersStore, MEMBERS_CACHE_TTL } from '@/stores/membersStore';
 import cn from 'classnames';
 import { isNativeApp } from '@/lib/platform';
 import CategoryBar from '@/components/CategoryBar';
@@ -57,18 +57,32 @@ const MembersPage: React.FC = () => {
     setViewMode,
     setSortBy,
     setCategoryFilter,
-    resetFilters
+    resetFilters,
+    cachedMembers,
+    cachedTotal,
+    cacheTimestamp,
+    setCachedMembers,
   } = useMembersStore();
   
-  const [members, setMembers] = useState<Member[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Seed local state from the persisted cache so the directory renders instantly
+  const [members, setMembers] = useState<Member[]>(() => cachedMembers as Member[]);
+  const [loading, setLoading] = useState(() => cachedMembers.length === 0);
   const [loadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasMore] = useState(false);
-  const [totalMembers, setTotalMembers] = useState(0);
+  const [totalMembers, setTotalMembers] = useState(() => cachedTotal);
   
-  // Load members once — all filtering/sorting is done client-side
+  // Load members — skips the network call when the cache is still fresh
   const loadMembers = useCallback(async (_offset = 0, _append = false, forceRefresh = false) => {
+    const isFresh = cacheTimestamp > 0 && Date.now() - cacheTimestamp < MEMBERS_CACHE_TTL;
+    if (!forceRefresh && isFresh && cachedMembers.length > 0) {
+      // Cache is valid — use it and skip the network request
+      setMembers(cachedMembers as Member[]);
+      setTotalMembers(cachedTotal);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
       const params = new URLSearchParams({ source: 'MembersPage' });
@@ -76,15 +90,19 @@ const MembersPage: React.FC = () => {
       const response = await api.get(`/businesses?${params.toString()}`);
       if (!response.ok) throw new Error(`Failed to fetch members: ${response.statusText}`);
       const data = await response.json();
-      setMembers(data.members || []);
-      setTotalMembers(data.total || 0);
+      const freshMembers = data.members || [];
+      const freshTotal = data.total || 0;
+      setMembers(freshMembers);
+      setTotalMembers(freshTotal);
+      setCachedMembers(freshMembers, freshTotal);
     } catch (err) {
       console.error('Error fetching members:', err);
       setError(err instanceof Error ? err.message : 'Failed to load members');
     } finally {
       setLoading(false);
     }
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cacheTimestamp, cachedMembers.length]);
 
   // Refresh function to force reload
   const refreshMembers = useCallback(() => {

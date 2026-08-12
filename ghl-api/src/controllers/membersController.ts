@@ -65,7 +65,7 @@ interface Member {
 class MembersController {
   private membersCache: any = null;
   private cacheTimestamp: number = 0;
-  private readonly CACHE_DURATION = 2 * 60 * 1000; // 2 minutes instead of 5 for fresher data
+  private readonly CACHE_DURATION = 10 * 60 * 1000; // 10 minutes — frontend also caches for 5 min
   private fetchPromise: Promise<any> | null = null; // For request deduplication
   
   // Cache for individual member details
