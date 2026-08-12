@@ -93,7 +93,8 @@ function canEditBusiness(req: Request, businessId: string): boolean {
   const u = req.user as any;
   if (!u) return false;
   if (u.role === 'admin') return true;
-  return !!(u.isBusinessProfileEditor && u.ghlBusinessId === businessId);
+  const hasEditRole = !!(u.isMainContact || u.isBusinessProfileEditor);
+  return hasEditRole && u.ghlBusinessId === businessId;
 }
 
 /** Permission check: user is main contact or admin. */

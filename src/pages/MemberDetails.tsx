@@ -439,7 +439,7 @@ const MemberDetailsPage: React.FC = () => {
     <>
       {/* Header */}
       <div 
-        className="flex h-10 items-center justify-between mb-6 z-40 shadow-md fixed left-0 right-0 bg-card/70 px-4"
+        className="flex h-10 items-center justify-between mb-6 z-70 shadow-md fixed left-0 right-0 bg-card/70 px-4"
         style={isNativeApp() ? { 
           top: 'calc(5rem + var(--safe-area-inset-top, 0px))' 
         } : { 

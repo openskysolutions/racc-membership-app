@@ -558,11 +558,30 @@ class MembersController {
 
       console.log(`Updating avatar for business ${id} with URL: ${avatarUrl}`);
 
-      const userRole = (req as any).user?.role;
-      const userBusinessId = (req as any).user?.ghlBusinessId;
+      const u = (req as any).user;
+      const userRole = u?.role;
+      const userBusinessId = u?.ghlBusinessId;
+      const userContactId = u?.ghlContactId;
+      const hasEditRole = !!(u?.isMainContact || u?.isBusinessProfileEditor);
 
-      if (userBusinessId !== id && userRole !== 'admin') {
-        return res.status(403).json({ error: 'You can only update your own avatar or admin access required' });
+      if (userRole !== 'admin') {
+        if (!hasEditRole) {
+          return res.status(403).json({ error: 'Requires main contact or business profile editor permission' });
+        }
+        if (userBusinessId) {
+          // Fast path: ghlBusinessId is cached in DB
+          if (userBusinessId !== id) {
+            return res.status(403).json({ error: 'You can only update your own avatar' });
+          }
+        } else if (userContactId) {
+          // Backward-compat path for 1.1.20: ghlBusinessId not yet in DB, verify via contact lookup
+          const contact = await ghlService.getContact(userContactId);
+          if (!contact?.businessId || contact.businessId !== id) {
+            return res.status(403).json({ error: 'You can only update your own avatar' });
+          }
+        } else {
+          return res.status(403).json({ error: 'You can only update your own avatar' });
+        }
       }
 
       if (!avatarUrl) {
@@ -595,11 +614,30 @@ class MembersController {
 
       console.log(`Updating cover image for business ${id} with URL: ${coverImageUrl}`);
 
-      const userRole = (req as any).user?.role;
-      const userBusinessId = (req as any).user?.ghlBusinessId;
+      const u = (req as any).user;
+      const userRole = u?.role;
+      const userBusinessId = u?.ghlBusinessId;
+      const userContactId = u?.ghlContactId;
+      const hasEditRole = !!(u?.isMainContact || u?.isBusinessProfileEditor);
 
-      if (userBusinessId !== id && userRole !== 'admin') {
-        return res.status(403).json({ error: 'You can only update your own cover image or admin access required' });
+      if (userRole !== 'admin') {
+        if (!hasEditRole) {
+          return res.status(403).json({ error: 'Requires main contact or business profile editor permission' });
+        }
+        if (userBusinessId) {
+          // Fast path: ghlBusinessId is cached in DB
+          if (userBusinessId !== id) {
+            return res.status(403).json({ error: 'You can only update your own cover image' });
+          }
+        } else if (userContactId) {
+          // Backward-compat path for 1.1.20: ghlBusinessId not yet in DB, verify via contact lookup
+          const contact = await ghlService.getContact(userContactId);
+          if (!contact?.businessId || contact.businessId !== id) {
+            return res.status(403).json({ error: 'You can only update your own cover image' });
+          }
+        } else {
+          return res.status(403).json({ error: 'You can only update your own cover image' });
+        }
       }
 
       if (!coverImageUrl) {

@@ -114,7 +114,7 @@ export function NotificationBell() {
         <div
           className={[
             // mobile: full-screen below header (h-20 = 80px)
-            'fixed inset-x-0 top-20 bottom-0 z-[60]',
+            'fixed inset-x-0 top-20 bottom-0 z-[200]',
             'flex flex-col bg-background overflow-hidden border-t shadow-lg',
             // desktop: fixed popover anchored below the header, right-aligned
             'md:inset-x-auto md:bottom-auto md:right-4 md:top-20',
