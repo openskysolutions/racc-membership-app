@@ -553,55 +553,34 @@ class MembersController {
    */
   async updateContactAvatar(req: Request, res: Response) {
     try {
-      const { id } = req.params;
+      const { id } = req.params; // id is the GHL Business ID
       const { avatarUrl } = req.body;
-      
-      console.log(`Updating avatar for contact ${id} with URL: ${avatarUrl}`);
-      
-      // Validate that the user can update this contact's avatar
-      const userGhlContactId = (req as any).user?.ghlContactId;
+
+      console.log(`Updating avatar for business ${id} with URL: ${avatarUrl}`);
+
       const userRole = (req as any).user?.role;
-      
-      if (userGhlContactId !== id && userRole !== 'admin') {
+      const userBusinessId = (req as any).user?.ghlBusinessId;
+
+      if (userBusinessId !== id && userRole !== 'admin') {
         return res.status(403).json({ error: 'You can only update your own avatar or admin access required' });
       }
-      
+
       if (!avatarUrl) {
         return res.status(400).json({ error: 'Avatar URL is required' });
       }
-      
-      // Get current contact to verify it exists
-      const contact = await ghlService.getContact(id);
-      if (!contact) {
-        return res.status(404).json({ error: 'Contact not found' });
-      }
-      
-      // Update contact with avatar URL in custom fields
-      const updateData = {
-        customFields: {
-          ...contact.customFields,
-          avatar_url: avatarUrl,
-          profile_photo: avatarUrl
-        }
-      };
-      
-      // Update contact in GoHighLevel
-      await ghlService.updateContact(id, updateData);
-      
-      // Clear cache for this member AND the main members cache to show updated avatar immediately
-      this.memberDetailsCache.delete(id);
-      this.membersCache = null; // Clear main cache so avatars refresh immediately
-      this.cacheTimestamp = 0;
-      
-      console.log(`Avatar URL updated successfully for contact ${id}`);
-      
-      res.json({ 
-        success: true, 
+
+      // Write logo_url to the business record via the Objects API
+      await ghlService.updateBusinessProperties(id, { logo_url: avatarUrl });
+
+      console.log(`Avatar URL updated successfully for business ${id}`);
+
+      res.json({
+        success: true,
         message: 'Avatar URL updated successfully',
         avatarUrl: avatarUrl
       });
     } catch (error) {
-      console.error('Error updating contact avatar:', error);
+      console.error('Error updating avatar:', error);
       res.status(500).json({ error: 'Failed to update avatar', details: error.message });
     }
   }
@@ -611,46 +590,32 @@ class MembersController {
    */
   async updateContactCoverImage(req: Request, res: Response) {
     try {
-      const { id } = req.params;
+      const { id } = req.params; // id is the GHL Business ID
       const { coverImageUrl } = req.body;
-      
-      console.log(`Updating cover image for contact ${id} with URL: ${coverImageUrl}`);
-      
-      // Validate that the user can update this contact's cover image
-      const userGhlContactId = (req as any).user?.ghlContactId;
+
+      console.log(`Updating cover image for business ${id} with URL: ${coverImageUrl}`);
+
       const userRole = (req as any).user?.role;
-      
-      if (userGhlContactId !== id && userRole !== 'admin') {
+      const userBusinessId = (req as any).user?.ghlBusinessId;
+
+      if (userBusinessId !== id && userRole !== 'admin') {
         return res.status(403).json({ error: 'You can only update your own cover image or admin access required' });
       }
-      
+
       if (!coverImageUrl) {
         return res.status(400).json({ error: 'Cover image URL is required' });
       }
-      
-      // Get current contact to verify it exists
-      const contact = await ghlService.getContact(id);
-      if (!contact) {
-        return res.status(404).json({ error: 'Contact not found' });
-      }
-      
-      // Update contact with cover image URL in custom fields
-      await ghlService.updateContact(id, {
-        coverImage: coverImageUrl
-      });
-      
-      // Clear cache for this member AND the main members cache to show updated cover image immediately
-      this.memberDetailsCache.delete(id);
-      this.membersCache = null; // Clear main cache so cover images refresh immediately
-      this.cacheTimestamp = 0;
-      
-      res.json({ 
-        success: true, 
+
+      // Write cover_image_url to the business record via the Objects API
+      await ghlService.updateBusinessProperties(id, { cover_image_url: coverImageUrl });
+
+      res.json({
+        success: true,
         message: 'Cover image URL updated successfully',
         coverImageUrl: coverImageUrl
       });
     } catch (error) {
-      console.error('Error updating contact cover image:', error);
+      console.error('Error updating cover image:', error);
       res.status(500).json({ error: 'Failed to update cover image', details: error.message });
     }
   }
