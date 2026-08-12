@@ -229,7 +229,7 @@ const JobApplicationPage: React.FC = () => {
                 type="email"
                 value={formData.applicantEmail}
                 onChange={(e) =>
-                  setFormData({ ...formData, applicantEmail: e.target.value })
+                  setFormData({ ...formData, applicantEmail: e.target.value.toLowerCase() })
                 }
                 placeholder="john.doe@example.com"
                 required

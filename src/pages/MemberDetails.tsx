@@ -1125,7 +1125,7 @@ const MemberDetailsPage: React.FC = () => {
                       </div>
                       <div>
                         <label className="text-xs font-medium">Email *</label>
-                        <Input type="email" value={newMemberForm.email} onChange={e => setNewMemberForm(p => ({...p, email: e.target.value}))} required />
+                        <Input type="email" value={newMemberForm.email} onChange={e => setNewMemberForm(p => ({...p, email: e.target.value.toLowerCase()}))} required />
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div>

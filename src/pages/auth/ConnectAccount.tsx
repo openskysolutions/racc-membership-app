@@ -48,7 +48,7 @@ export const ConnectAccountPage = () => {
     
     if (emailMatch && emailMatch[1]) {
       // URL decode the email parameter
-      const emailParam = decodeURIComponent(emailMatch[1]);
+      const emailParam = decodeURIComponent(emailMatch[1]).toLowerCase().trim();
       setEmailFromUrl(emailParam);
       setEmail(emailParam);
       setFormData(prev => ({
@@ -370,7 +370,7 @@ export const ConnectAccountPage = () => {
                   autoComplete="email"
                   value={email}
                   onChange={(e) => {
-                    setEmail(e.target.value);
+                    setEmail(e.target.value.toLowerCase().toLowerCase());
                     if (error) setError(null);
                   }}
                   placeholder="Enter your email address"

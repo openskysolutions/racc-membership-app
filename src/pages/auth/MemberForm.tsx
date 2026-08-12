@@ -24,7 +24,8 @@ const MembershipFormPage: React.FC = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    const normalizedValue = name === 'primaryEmail' ? value.toLowerCase() : value;
+    setFormData(prev => ({ ...prev, [name]: normalizedValue }));
   };
 
   const handleMultiSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {

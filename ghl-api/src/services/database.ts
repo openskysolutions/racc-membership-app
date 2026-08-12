@@ -58,7 +58,7 @@ class DatabaseService {
 
     const newUser = await prisma.user.create({
       data: {
-        email: user.email,
+        email: user.email.toLowerCase().trim(),
         passwordHash,
         role: user.role,
         status: user.status,
@@ -75,7 +75,7 @@ class DatabaseService {
    */
   async findUserByEmail(email: string): Promise<User | null> {
     const user = await prisma.user.findUnique({
-      where: { email },
+      where: { email: email.toLowerCase().trim() },
     });
 
     return user ? this.mapUser(user) : null;

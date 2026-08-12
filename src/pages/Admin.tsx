@@ -1868,7 +1868,7 @@ export default function AdminPage() {
                   </div>
                   <div className="">
                     <Label>Business Email <span className="text-destructive">*</span></Label>
-                    <Input type="email" value={addMembershipForm.business.email} onChange={e => setAddMembershipForm(f => ({ ...f, business: { ...f.business, email: e.target.value } }))} />
+                    <Input type="email" value={addMembershipForm.business.email} onChange={e => setAddMembershipForm(f => ({ ...f, business: { ...f.business, email: e.target.value.toLowerCase() } }))} />
                   </div>
                   <div className="">
                     <Label>Business Phone <span className="text-destructive">*</span></Label>
@@ -1929,7 +1929,7 @@ export default function AdminPage() {
                   </div>
                   <div className="col-span-2">
                     <Label>Email <span className="text-destructive">*</span></Label>
-                    <Input type="email" value={addMembershipForm.contact.email} onChange={e => setAddMembershipForm(f => ({ ...f, contact: { ...f.contact, email: e.target.value } }))} />
+                    <Input type="email" value={addMembershipForm.contact.email} onChange={e => setAddMembershipForm(f => ({ ...f, contact: { ...f.contact, email: e.target.value.toLowerCase() } }))} />
                   </div>
                   <div className="col-span-2">
                     <Label>Phone <span className="text-destructive">*</span></Label>
@@ -2813,7 +2813,7 @@ function EditUserForm({
           id="email"
           type="email"
           value={formData.email}
-          onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+          onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value.toLowerCase() }))}
           required
         />
       </div>

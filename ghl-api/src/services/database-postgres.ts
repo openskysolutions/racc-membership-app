@@ -189,7 +189,7 @@ class DatabaseService {
        VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING *`,
       [
-        user.email,
+        user.email.toLowerCase().trim(),
         user.passwordHash,
         user.role,
         user.status,
@@ -209,7 +209,7 @@ class DatabaseService {
 
     const result = await this.pool.query(
       'SELECT * FROM users WHERE email = $1',
-      [email]
+      [email.toLowerCase().trim()]
     );
 
     return result.rows.length > 0 ? this.mapUser(result.rows[0]) : null;

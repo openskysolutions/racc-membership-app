@@ -50,9 +50,10 @@ export const EventRegistrationDialog: React.FC<EventRegistrationDialogProps> = (
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+    const normalizedValue = name === 'email' ? value.toLowerCase() : value;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: normalizedValue
     }));
   };
 

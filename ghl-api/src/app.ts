@@ -36,6 +36,14 @@ app.use(cors({
 // So a 5MB image becomes ~6.6MB when base64 encoded
 app.use(express.json({ limit: '15mb' }));
 
+// Normalize email fields to lowercase for case-insensitive matching
+app.use((req, _res, next) => {
+  if (req.body && typeof req.body.email === 'string') {
+    req.body.email = req.body.email.toLowerCase().trim();
+  }
+  next();
+});
+
 // Serve static files from public directory (for resume uploads, etc.)
 app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
 
