@@ -5,6 +5,9 @@ import Pages from 'vite-plugin-pages';
 import svgr from "vite-plugin-svgr";
 import { fileURLToPath } from 'url';
 import { excludeMobileAdminPlugin } from './vite-plugin-exclude-mobile';
+import { readFileSync } from 'fs';
+
+const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf-8'));
 
 export default defineConfig(({ mode }) => {
   // Load env file based on `mode` in the current working directory.
@@ -44,6 +47,7 @@ export default defineConfig(({ mode }) => {
       'import.meta.env.VITE_API_BASE_URL': JSON.stringify(env.VITE_API_BASE_URL),
       'import.meta.env.VITE_ENV': JSON.stringify(env.VITE_ENV),
       'import.meta.env.VITE_PLATFORM': JSON.stringify(env.VITE_PLATFORM),
+      '__APP_VERSION__': JSON.stringify(pkg.version),
     },
   };
 });

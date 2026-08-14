@@ -492,7 +492,7 @@ const MemberDetailsPage: React.FC = () => {
 
       {/* Hero Section */}
       <div
-        className={`absolute h-80 md:h-[400px] bg-cover bg-center bg-no-repeat pt-10 pb-8 px-8 left-0 right-0 ${isEditing ? 'z-50' : 'z-20'}`}
+        className={`absolute h-80 md:h-[400px] bg-cover bg-center bg-no-repeat pt-10 pb-8 px-8 left-0 right-0 ${isEditing ? 'z-30' : 'z-20'}`}
         style={{
           // Position below navbar (5rem) + header (2.5rem) + safe area
           top: isNativeApp() ? 'calc(7.5rem + var(--safe-area-inset-top, 0px))' : '7.5rem',

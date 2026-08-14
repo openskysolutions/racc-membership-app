@@ -11,6 +11,7 @@ interface AuthState {
   setUser: (user: any) => void;
   role: string | null;
   lastValidated: number | null;
+  storeVersion: string | null; // persisted app version — used to bust stale cache on update
   // Business identity (populated from auth response)
   ghlBusinessId: string | null;
   businessName: string | null;
@@ -28,6 +29,7 @@ export const useAuthStore = create<AuthState>()(
       isLoading: true,
       role: null,
       lastValidated: null,
+      storeVersion: null,
       ghlBusinessId: null,
       businessName: null,
       isMainContact: false,
@@ -35,7 +37,7 @@ export const useAuthStore = create<AuthState>()(
 
       handleLogout: async () => {
         await logout();
-        set({ user: null, isAuthenticated: false, role: null, lastValidated: null, ghlBusinessId: null, businessName: null, isMainContact: false, isBusinessProfileEditor: false });
+        set({ user: null, isAuthenticated: false, role: null, lastValidated: null, storeVersion: null, ghlBusinessId: null, businessName: null, isMainContact: false, isBusinessProfileEditor: false });
       },
 
       setUser: (user: any) => {
@@ -48,16 +50,25 @@ export const useAuthStore = create<AuthState>()(
           businessName: user?.businessName ?? null,
           isMainContact: user?.isMainContact ?? false,
           isBusinessProfileEditor: user?.isBusinessProfileEditor ?? false,
-          lastValidated: Date.now()
+          lastValidated: Date.now(),
+          storeVersion: __APP_VERSION__,
         });
       },
 
       checkAuth: async () => {
         const state = get();
         const now = Date.now();
+
+        // If the app was updated since the last session, force a fresh profile
+        // fetch so any new fields (e.g. ghlBusinessId) are populated immediately.
+        const versionChanged = state.storeVersion !== __APP_VERSION__;
+        if (versionChanged) {
+          console.log(`🔄 App updated (${state.storeVersion} → ${__APP_VERSION__}), busting auth cache`);
+          set({ lastValidated: null, storeVersion: __APP_VERSION__ });
+        }
         
         // If we have cached auth data and it's less than 5 minutes old, use it
-        if (state.user && state.lastValidated && (now - state.lastValidated) < VALIDATION_TTL) {
+        if (!versionChanged && state.user && state.lastValidated && (now - state.lastValidated) < VALIDATION_TTL) {
           console.log('✅ Using cached auth data (age:', Math.round((now - state.lastValidated) / 1000), 'seconds)');
           set({ isLoading: false });
           return;
@@ -87,10 +98,11 @@ export const useAuthStore = create<AuthState>()(
             businessName: userData.businessName ?? null,
             isMainContact: userData.isMainContact ?? false,
             isBusinessProfileEditor: userData.isBusinessProfileEditor ?? false,
-            lastValidated: Date.now()
+            lastValidated: Date.now(),
+            storeVersion: __APP_VERSION__,
           });
         } catch (error) {
-          set({ user: null, isAuthenticated: false, isLoading: false, role: null, lastValidated: null, ghlBusinessId: null, businessName: null, isMainContact: false, isBusinessProfileEditor: false });
+          set({ user: null, isAuthenticated: false, isLoading: false, role: null, lastValidated: null, storeVersion: null, ghlBusinessId: null, businessName: null, isMainContact: false, isBusinessProfileEditor: false });
         }
       }
     }),
@@ -104,7 +116,8 @@ export const useAuthStore = create<AuthState>()(
         businessName: state.businessName,
         isMainContact: state.isMainContact,
         isBusinessProfileEditor: state.isBusinessProfileEditor,
-        lastValidated: state.lastValidated
+        lastValidated: state.lastValidated,
+        storeVersion: state.storeVersion,
       }), // Only persist these fields
     }
   )
