@@ -323,12 +323,11 @@ router.patch('/:id', requireAuth, async (req: Request, res: Response) => {
 // ---------------------------------------------------------------------------
 // GET /businesses/:id/team
 // ---------------------------------------------------------------------------
+// Any authenticated member can view a business's team list (read-only).
+// The Add Member and Grant/Revoke editor controls are enforced on the frontend
+// and on their respective POST/DELETE endpoints.
 router.get('/:id/team', requireAuth, async (req: Request, res: Response) => {
   const { id } = req.params;
-
-  if (!canEditBusiness(req, id)) {
-    return res.status(403).json({ error: 'Forbidden' });
-  }
 
   try {
     // Use shared contacts cache if warm — avoids a live GHL API call on every page load.

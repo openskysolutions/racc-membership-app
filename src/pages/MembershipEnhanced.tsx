@@ -49,14 +49,6 @@ const EnhancedMembershipPage: React.FC = () => {
                     <div className="flex items-start gap-3">
                       <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
                       <div>
-                        <h3 className="font-semibold">Upgraded Directory Listing</h3>
-                        <p className="text-muted-foreground">Enhanced directory listing with links to your website</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-3">
-                      <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                      <div>
                         <h3 className="font-semibold">Free Monthly Luncheon Ticker</h3>
                         <p className="text-muted-foreground">One free ticket to luncheons every month (excludes Annual Dinner)</p>
                       </div>
@@ -65,32 +57,16 @@ const EnhancedMembershipPage: React.FC = () => {
                     <div className="flex items-start gap-3">
                       <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
                       <div>
+                        <h3 className="font-semibold">Professional Promotional Video</h3>
+                        <p className="text-muted-foreground">Receive one professional promotional video for your business (must sign up to redeem, $150 value)</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                      <div>
                         <h3 className="font-semibold">Richfield Reaper Feature</h3>
                         <p className="text-muted-foreground">Business featured once a year in Richfield Reaper</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-3">
-                      <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <h3 className="font-semibold">Member Listing Website Link</h3>
-                        <p className="text-muted-foreground">Member listing website link</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-3">
-                      <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <h3 className="font-semibold">Member Listing Address Map</h3>
-                        <p className="text-muted-foreground">Member listing address map</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-3">
-                      <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <h3 className="font-semibold">Member Listing Business Bio</h3>
-                        <p className="text-muted-foreground">Member listing business bio</p>
                       </div>
                     </div>
                   </div>

@@ -41,14 +41,6 @@ const EliteMembershipPage: React.FC = () => {
                       <p className="text-muted-foreground">Complete access to all benefits from Basic and Enhanced membership tiers</p>
                     </div>
                   </div>
-                  
-                  <div className="flex items-start gap-3">
-                    <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <h3 className="font-semibold">Upgraded directory listing</h3>
-                      <p className="text-muted-foreground">Upgraded directory listing to include links to your social media pages</p>
-                    </div>
-                  </div>
 
                   <div className="flex items-start gap-3">
                     <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
@@ -73,62 +65,6 @@ const EliteMembershipPage: React.FC = () => {
                       <p className="text-muted-foreground">Advertisement on luncheon placemats throughout the year</p>
                     </div>
                   </div>
-                  
-                  <div className="flex items-start gap-3">
-                    <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <h3 className="font-semibold">Member Listing Cover Image & Social Links</h3>
-                      <p className="text-muted-foreground">Member listing Cover image & social links</p>
-                    </div>
-                  </div>
-                  
-                  {/* <div className="flex items-start gap-3">
-                    <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <h3 className="font-semibold">Member Listing Coupon Uploads</h3>
-                      <p className="text-muted-foreground">Member listing coupon uploads</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-start gap-3">
-                    <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <h3 className="font-semibold">Member Listing Business Image Gallery</h3>
-                      <p className="text-muted-foreground">Member listing business image gallery</p>
-                    </div>
-                  </div> */}
-                  
-                  {/* <div className="flex items-start gap-3">
-                    <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <h3 className="font-semibold">Board Nomination Eligibility</h3>
-                      <p className="text-muted-foreground">Eligible to be nominated and serve on the Chamber Board of Directors</p>
-                    </div>
-                  </div> */}
-                  
-                  {/* <div className="flex items-start gap-3">
-                    <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <h3 className="font-semibold">Executive Roundtable Access</h3>
-                      <p className="text-muted-foreground">Exclusive access to executive roundtable discussions and strategic sessions</p>
-                    </div>
-                  </div> */}
-                  
-                  {/* <div className="flex items-start gap-3">
-                    <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <h3 className="font-semibold">Premium Marketing Placement</h3>
-                      <p className="text-muted-foreground">Priority placement in Chamber marketing materials and communications</p>
-                    </div>
-                  </div> */}
-                  
-                  {/* <div className="flex items-start gap-3">
-                    <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <h3 className="font-semibold">Strategic Planning Input</h3>
-                      <p className="text-muted-foreground">Direct input into Chamber strategic planning and community development initiatives</p>
-                    </div>
-                  </div> */}
                 </div>
               </CardContent>
             </Card>

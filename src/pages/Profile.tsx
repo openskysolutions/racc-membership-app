@@ -15,6 +15,7 @@ import {
 import { BioDisplay, BioEditor } from '@/components/BioField';
 import { Mail, Phone, User, Edit, Save, X, AlertTriangle, Lock, Linkedin, Link as LinkIcon } from 'lucide-react';
 import { api } from '@/services/apiClient';
+import { phoneNumberAutoFormat } from '@/lib/utils';
 import type { Member } from '@/types/member';
 import AvatarUpload from '@/components/AvatarUpload';
 import { PasswordInput } from '@/components/ui/password-input';
@@ -516,7 +517,7 @@ const ProfilePage: React.FC = () => {
                         href={`tel:${profile.phone}`}
                         className="text-primary hover:underline"
                       >
-                        {profile.phone}
+                        {phoneNumberAutoFormat(profile.phone)}
                       </a>
                     </div>
                   )}

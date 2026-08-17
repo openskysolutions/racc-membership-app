@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { CouponCodesInput } from '@/components/ui/coupon-codes-input';
 import { toast } from 'sonner';
 // import { capitalizeFirst } from '@/lib/utils';
+import { phoneNumberAutoFormat } from '@/lib/utils';
 import { api } from '@/services/apiClient';
 import { useAuthStore } from '@/stores/authStore';
 import { useMembersStore } from '@/stores/membersStore';
@@ -226,7 +227,7 @@ const MemberDetailsPage: React.FC = () => {
   };
 
   const canEdit = user && member && (
-    (user.isBusinessProfileEditor && user.ghlBusinessId === member.id) ||
+    ((user.isBusinessProfileEditor || user.isMainContact) && user.ghlBusinessId === member.id) ||
     user.role === 'admin'
   );
 
@@ -255,9 +256,9 @@ const MemberDetailsPage: React.FC = () => {
   const hasEnhancedOrElite = !!(tier && ['basic', 'standard', 'enhanced', 'elite'].includes(tier));
   const hasElite = hasEnhancedOrElite; // all paying members treated as elite for UI purposes
 
-  // Load team members when canEdit is true
+  // Load team members for any logged-in user viewing a business profile
   useEffect(() => {
-    if (!member || !canEdit) return;
+    if (!member || !user) return;
     const loadTeam = async () => {
       setTeamLoading(true);
       try {
@@ -270,7 +271,7 @@ const MemberDetailsPage: React.FC = () => {
       finally { setTeamLoading(false); }
     };
     loadTeam();
-  }, [member?.id, canEdit]);
+  }, [member?.id, user]);
 
   const handleToggleEditor = async (contactId: string, currentlyEditor: boolean, isMainContact: boolean) => {
     if (!member || isMainContact) return;
@@ -571,7 +572,7 @@ const MemberDetailsPage: React.FC = () => {
                             href={`tel:${member.phone}`}
                             className="text-primary hover:underline"
                           >
-                            {member.phone}
+                            {phoneNumberAutoFormat(member.phone)}
                           </a>
                         </div>
                       )}
@@ -1094,8 +1095,8 @@ const MemberDetailsPage: React.FC = () => {
               </CardContent>
             </Card>
 
-            {/* Team Management — visible to editors of this business */}
-            {canEdit && (
+            {/* Team Members — visible to all logged-in members */}
+            {user && (
               <Card className="mt-6">
                 <CardHeader>
                   <div className="flex items-center justify-between">
@@ -1103,10 +1104,12 @@ const MemberDetailsPage: React.FC = () => {
                       <Users className="h-5 w-5" />
                       Team Members
                     </CardTitle>
-                    <Button size="sm" onClick={() => setShowAddTeamMember(v => !v)}>
-                      <Plus className="h-4 w-4 mr-1" />
-                      Add Member
-                    </Button>
+                    {canEdit && (
+                      <Button size="sm" onClick={() => setShowAddTeamMember(v => !v)}>
+                        <Plus className="h-4 w-4 mr-1" />
+                        Add Member
+                      </Button>
+                    )}
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -1164,7 +1167,17 @@ const MemberDetailsPage: React.FC = () => {
                           <div className="flex items-center gap-3">
                             <div>
                               <p className="text-sm font-medium">{member.firstName} {member.lastName}</p>
-                              <p className="text-xs text-muted-foreground">{member.title || member.email}</p>
+                              {member.title && <p className="text-xs text-muted-foreground">{member.title}</p>}
+                              {member.email && (
+                                <p className="text-xs text-muted-foreground">
+                                  <a href={`mailto:${member.email}`} className="hover:underline">{member.email}</a>
+                                </p>
+                              )}
+                              {member.phone && (
+                                <p className="text-xs text-muted-foreground">
+                                  <a href={`tel:${member.phone}`} className="hover:underline">{phoneNumberAutoFormat(member.phone)}</a>
+                                </p>
+                              )}
                             </div>
                             {member.isMainContact && <Badge variant="secondary" className="text-xs">Main Contact</Badge>}
                             {member.isEditor && !member.isMainContact && <Badge variant="outline" className="text-xs">Editor</Badge>}

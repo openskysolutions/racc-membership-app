@@ -81,6 +81,14 @@ const BasicMembershipPage: React.FC = () => {
                       <p className="text-muted-foreground">Sponsorship opportunities</p>
                     </div>
                   </div>
+                  
+                  <div className="flex items-start gap-3">
+                    <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <h3 className="font-semibold">Chamber Travels</h3>
+                      <p className="text-muted-foreground">Chamber Travels: $100 off Deposit.</p>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
