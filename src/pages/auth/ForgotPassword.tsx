@@ -50,6 +50,12 @@ export const ForgotPasswordPage = () => {
                   Please check your email, <span className='font-semibold'>{email}</span><br/>inbox (and spam folder) for the password reset link. The link will expire in 1 hour.
                 </AlertDescription>
               </Alert>
+
+              <p className="mt-4">
+                 If you do not receive a reset password email, please register your current membership with the chamber website/app by clicking here to complete that step: <a href="/connect-account" className="font-medium text-highlight-foreground hover:underline">
+                Register current membership
+              </a>
+              </p>
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -87,7 +93,14 @@ export const ForgotPasswordPage = () => {
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl">Reset password</CardTitle>
           <CardDescription>
-            Enter your email address and we'll send you a link to reset your password.
+            <p className="mt-4">
+              Enter your email address and we'll send you a link to reset your password.
+            </p>
+            <p className="mt-4">
+              If you have not yet registered your current membership with the chamber website/app click here to complete that step: <a href="/connect-account" className="font-medium text-highlight-foreground hover:underline">
+                Register current membership
+              </a>
+            </p>
           </CardDescription>
         </CardHeader>
         <CardContent>
