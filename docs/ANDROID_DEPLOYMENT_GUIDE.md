@@ -49,7 +49,7 @@ npm run build:mobile:prod
 npx cap sync android
 ```
 
-**⚠️ Important:** Always use `build:mobile:prod` instead of `build` for mobile deployments. The mobile build uses production API endpoints (`https://api.raccwi.com`) instead of localhost, which is essential for the app to function on devices.
+**⚠️ Important:** Always use `build:mobile:prod` instead of `build` for mobile deployments. The mobile build uses production API endpoints instead of localhost, which is essential for the app to function on devices.
 
 ## Step 3: Configure Android App
 
