@@ -106,6 +106,22 @@ const AdminRoute = ({ children }: { children: ReactNode }) => {
   return <>{children}</>;
 };
 
+// Yearly Voting Route Component (open to any active member, not just board)
+const ActiveMemberRoute = ({ children }: { children: ReactNode }) => {
+  const { isAuthenticated, user } = useAuthStore();
+  const location = useLocation();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  if (user?.status !== 'active') {
+    return <Navigate to="/" replace />;
+  }
+
+  return <>{children}</>;
+};
+
 // External redirect component
 const ExternalRedirect = ({ to }: { to: string }) => {
   useEffect(() => { window.location.replace(to); }, [to]);
@@ -151,7 +167,7 @@ export default function AppRoutes() {
         <Route path="join" element={<JoinPage />} />
         <Route path="nominations" element={<NominationsPage />} />
         <Route path="voting" element={<AdminRoute><VotingPage /></AdminRoute>} />
-        <Route path="yearly-voting" element={<AdminRoute><YearlyVotingPage /></AdminRoute>} />
+        <Route path="yearly-voting" element={<ActiveMemberRoute><YearlyVotingPage /></ActiveMemberRoute>} />
 
         <Route path="basic-membership" element={<BasicMembershipPage />} />
         <Route path="enhanced-membership" element={<EnhancedMembershipPage />} />

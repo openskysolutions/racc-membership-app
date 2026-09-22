@@ -22,13 +22,13 @@ router.get('/voting/status', requireAuth, (req, res) => controller.getVotingStat
 
 /**
  * GET /nominations/yearly/voting
- * Get monthly winners available for yearly voting (Oct 1-20 only) (REQUIRES AUTH - board members only)
+ * Get monthly winners available for yearly voting (REQUIRES AUTH - open to all active members)
  */
 router.get('/yearly/voting', requireAuth, (req, res) => controller.getYearlyVotingNominations(req, res));
 
 /**
  * GET /nominations/yearly/status
- * Get current user's yearly voting status (REQUIRES AUTH - board members only)
+ * Get current user's yearly voting status (REQUIRES AUTH - open to all active members)
  */
 router.get('/yearly/status', requireAuth, (req, res) => controller.getYearlyVotingStatus(req, res));
 
@@ -82,7 +82,7 @@ router.post('/:id/vote', requireAuth, (req, res) => controller.voteOnNomination(
 
 /**
  * POST /nominations/:id/vote/yearly
- * Vote on a yearly winner (Oct 1-20 only) (REQUIRES AUTH - board members only)
+ * Vote on a yearly winner (REQUIRES AUTH - open to all active members)
  */
 router.post('/:id/vote/yearly', requireAuth, (req, res) => controller.voteOnYearlyNomination(req, res));
 

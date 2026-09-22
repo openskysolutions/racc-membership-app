@@ -88,16 +88,16 @@ const YearlyVotingPage: React.FC = () => {
     return months[monthNumber - 1];
   };
 
-  // Check access
-  const isBoardMember = user && (user.role === 'admin' || user.role === 'moderator' || user.role === 'board_member');
+  // Yearly voting is open to all active members (unlike monthly voting, which is board-only)
+  const isActiveMember = user && user.status === 'active';
 
-  if (!isBoardMember) {
+  if (!isActiveMember) {
     return (
       <div className="container mx-auto px-4 py-8">
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            Only board members can access the voting system.
+            Active membership with a membership tier is required to access yearly voting.
           </AlertDescription>
         </Alert>
       </div>

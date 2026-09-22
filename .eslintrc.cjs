@@ -14,5 +14,7 @@ module.exports = {
       'warn',
       { allowConstantExport: true },
     ],
+    // Matches existing codebase convention of `catch (err: any)` used throughout src/ and ghl-api/src/
+    '@typescript-eslint/no-explicit-any': 'off',
   },
 }
