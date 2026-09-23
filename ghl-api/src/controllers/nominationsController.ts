@@ -913,49 +913,30 @@ export class NominationsController {
 
       // Include winners from January (1) through October (10) of current year
       for (let targetMonth = 1; targetMonth <= 10; targetMonth++) {
-        const targetYear = currentYear;
-        
-        // Calculate the voting month (previous month from target)
-        let votingMonth: number;
-        let votingYear: number;
-        
-        if (targetMonth === 1) {
-          // January winners were voted on in December of previous year
-          votingMonth = 12;
-          votingYear = targetYear - 1;
-        } else {
-          votingMonth = targetMonth - 1;
-          votingYear = targetYear;
-        }
-        
-        const votingMonthStr = `${votingYear}-${String(votingMonth).padStart(2, '0')}`;
-        
-        // Get winner for each category this month
+        const winnerMonthStr = `${currentYear}-${String(targetMonth).padStart(2, '0')}`;
+
+        // Get the admin-designated winner for each category this month
         for (const category of ['business_of_month', 'customer_service_superstar']) {
-          // Find nomination with most votes for this month/category
           const winner = await prisma.nomination.findFirst({
             where: {
               category: category,
-              status: 'approved'
+              status: 'approved',
+              isWinner: true,
+              winnerMonth: winnerMonthStr
             },
             include: {
               votes: {
                 where: {
-                  votingMonth: votingMonthStr,
+                  votingMonth: winnerMonthStr,
                   votingCategory: category,
                   voteType: 'monthly',
                   voteValue: true
                 }
               }
-            },
-            orderBy: {
-              votes: {
-                _count: 'desc'
-              }
             }
           });
 
-          if (winner && winner.votes.length > 0) {
+          if (winner) {
             monthlyWinners[category].push({
               id: winner.id,
               name: winner.name,
@@ -964,7 +945,7 @@ export class NominationsController {
               category: winner.category,
               monthlyVoteCount: winner.votes.length,
               winningMonth: targetMonth,
-              votingMonth: votingMonthStr,
+              votingMonth: winnerMonthStr,
               createdAt: winner.createdAt
             });
           }
