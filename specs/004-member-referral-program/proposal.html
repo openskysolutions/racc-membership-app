@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Member Connect — Referral Program Proposal</title>
+  <style>
+    @page {
+      size: letter;
+      margin: 0.85in 0.9in;
+    }
+
+    body {
+      font-family: Calibri, 'Segoe UI', Arial, sans-serif;
+      font-size: 11pt;
+      color: #111827;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px 48px;
+      line-height: 1.3;
+    }
+
+    h2, h3 {
+      page-break-after: avoid;
+      break-after: avoid;
+    }
+
+    p {
+      margin-top: 0.5em;
+    }
+
+    div[style*="border-left"] {
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+
+    div[style*="border: 2px dashed"] {
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+
+    h2:not(:first-of-type) {
+      padding-top: 0;
+      margin-top: 0;
+    }
+
+    hr {
+      page-break-after: always;
+      break-after: page;
+      border-width: 0;
+    }
+
+    tr {
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+
+    p:last-child {
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+
+    @media screen {
+      body { padding: 40px 48px; }
+    }
+
+    @media print {
+      body { padding: 30px; max-width: 100%; }
+      * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Cover -->
+  <div class="cover" style="background: #1a56a4; color: #ffffff; border-radius: 8px; padding: 40px 48px 36px; margin-bottom: 32px;">
+    <p style="font-size: 9pt; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; opacity: .75; margin: 0 0 10px;">Richfield Area Chamber of Commerce — Membership App</p>
+    <h1 style="font-size: 26pt; font-weight: 800; margin: 0 0 12px; color: #ffffff;">Member Connect: A Member Referral Program</h1>
+    <p style="font-size: 11pt; opacity: .9; margin: 0 0 24px; color: #ffffff;">A proposal for a member-to-member referral system that helps chamber members send each other business, with lightweight recognition and a leaderboard built on top of the existing membership app.</p>
+    <p style="font-size: 9pt; opacity: .7; margin: 0; color: #ffffff;">Proposal v1.0 &nbsp;·&nbsp; September 2026 &nbsp;·&nbsp; Feature: 004-member-referral-program</p>
+  </div>
+
+  <!-- 1. The opportunity -->
+  <h2 style="font-size: 14pt; font-weight: 700; color: #1a56a4; border-bottom: 2px solid #dbeafe; padding-bottom: 6px; margin-top: 24px;">The Opportunity</h2>
+  <p>Today, members support each other's businesses informally — at mixers, ribbon cuttings, and through word of mouth — but there's no structured way for a member to send a referral to another member, or for the chamber to see how much value members are already creating for each other.</p>
+  <p>Business networking organizations like BNI and LeTip have built entire membership value propositions around exactly this: giving members a structured, trackable way to pass business to one another. Many of your members likely already belong to (or have heard of) these groups. Bringing a well-designed version of this into the chamber app turns an invisible, informal benefit into a visible, differentiating reason to renew membership.</p>
+
+  <div style="background: #dbeafe; border-left: 4px solid #1a56a4; padding: 12px 16px; margin: 16px 0; border-radius: 0 4px 4px 0;">
+    <p style="margin: 0; font-weight: 700;">Why this is a good fit for this app specifically</p>
+    <p style="margin: 6px 0 0;">The app already has a member directory, a working notification system (email + push), and a badge/recognition pattern from the existing Business of the Month program. This program builds on that foundation rather than introducing new infrastructure.</p>
+  </div>
+
+  <!-- 2. Research -->
+  <h3 style="font-size: 11pt; font-weight: 700; margin-top: 24px;">What we learned from comparable organizations</h3>
+  <table border="1" cellpadding="8" cellspacing="0" style="width: 100%; border-collapse: collapse; font-size: 10pt;">
+    <thead>
+      <tr style="background: #f3f4f6;">
+        <th style="text-align: left; padding: 6px 10px; border: 1px solid #d1d5db;">Organization</th>
+        <th style="text-align: left; padding: 6px 10px; border: 1px solid #d1d5db;">Model</th>
+        <th style="text-align: left; padding: 6px 10px; border: 1px solid #d1d5db;">Key takeaway for us</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;"><strong>BNI</strong></td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">One member per industry per chapter; weekly meetings; tracks referrals, visitors, one-to-ones, and dollar value of closed business</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Public visibility (leaderboards, scorecards) drives participation more than the points themselves</td>
+      </tr>
+      <tr style="background: #f9fafb;">
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;"><strong>LeTip International</strong></td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Similar structure to BNI, lighter-weight, tracks "tips" given</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Simple volume-based recognition can work without heavy dollar-value tracking</td>
+      </tr>
+      <tr>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;"><strong>Alignable</strong></td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Open network (not one-per-category), public recommendations, activity feed</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Closer structural fit for an open chamber where many members share a category</td>
+      </tr>
+      <tr style="background: #f9fafb;">
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;"><strong>Most chambers today</strong></td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">No formal referral system — informal networking only</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">A well-built version of this is a genuine differentiator, not table stakes to match</td>
+      </tr>
+    </tbody>
+  </table>
+  <p style="font-size: 9.5pt; color: #6b7280; margin-top: 8px;">The single most consistent lesson across all of these models: referral programs succeed or fail based on whether the person who <em>gave</em> a referral ever finds out what happened to it. "Closing the loop" is the design priority behind this proposal.</p>
+
+  <hr />
+
+  <!-- 3. Concept -->
+  <h2 style="font-size: 14pt; font-weight: 700; color: #1a56a4; border-bottom: 2px solid #dbeafe; padding-bottom: 6px; margin-top: 24px;">How It Works: The Core Loop</h2>
+  <p>Rather than copying BNI's exclusive, one-per-industry chapter model — which doesn't fit a chamber where many members share a category — Member Connect is built around a simple four-step loop available to every member, every day, inside the app they already use.</p>
+
+  <table border="1" cellpadding="10" cellspacing="0" style="width: 100%; border-collapse: collapse; font-size: 10pt;">
+    <tbody>
+      <tr>
+        <td style="padding: 10px; border: 1px solid #d1d5db; width: 25%; vertical-align: top; background: #f9fafb;">
+          <p style="margin: 0; font-weight: 700; color: #1a56a4;">1. Give</p>
+          <p style="margin: 6px 0 0;">A member finds another member in the existing directory and submits a referral: lead name, contact info, and a short note.</p>
+        </td>
+        <td style="padding: 10px; border: 1px solid #d1d5db; width: 25%; vertical-align: top;">
+          <p style="margin: 0; font-weight: 700; color: #1a56a4;">2. Receive &amp; Acknowledge</p>
+          <p style="margin: 6px 0 0;">The receiving member is notified immediately and can see the referral in a "My Referrals" inbox.</p>
+        </td>
+        <td style="padding: 10px; border: 1px solid #d1d5db; width: 25%; vertical-align: top; background: #f9fafb;">
+          <p style="margin: 0; font-weight: 700; color: #1a56a4;">3. Close the Loop</p>
+          <p style="margin: 6px 0 0;">The recipient updates a simple status (Contacted → In Discussion → Closed) so the referrer always knows the outcome.</p>
+        </td>
+        <td style="padding: 10px; border: 1px solid #d1d5db; width: 25%; vertical-align: top;">
+          <p style="margin: 0; font-weight: 700; color: #1a56a4;">4. Recognize</p>
+          <p style="margin: 6px 0 0;">The referral shows up chamber-wide (referrer and recipient only, never the lead), and a closed-won outcome can carry a public thank-you plus points, badges, and leaderboard credit.</p>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- 4. Feature set -->
+  <h2 style="font-size: 14pt; font-weight: 700; color: #1a56a4; border-bottom: 2px solid #dbeafe; padding-bottom: 6px; margin-top: 24px;">Feature Set</h2>
+
+  <h3 style="font-size: 11pt; font-weight: 700; margin-top: 20px;">Give &amp; track referrals (core)</h3>
+  <ul>
+    <li><strong>Refer a Member</strong> — submit a referral directly from any member's profile in the existing directory</li>
+    <li><strong>My Referrals inbox</strong> — one place to see everything given and received</li>
+    <li><strong>Status pipeline</strong> — Submitted → Contacted → In Discussion → Closed-Won / Closed-Lost / Not a Fit</li>
+    <li><strong>Automatic notifications</strong> — email and in-app alerts when a referral is received or its status changes</li>
+  </ul>
+
+  <h3 style="font-size: 11pt; font-weight: 700; margin-top: 20px;">Public recognition &amp; trust</h3>
+  <ul>
+    <li><strong>Referral activity feed</strong> — shows chamber-wide, by default, that a referral took place between two members (who referred whom)</li>
+    <li><strong>Lead privacy, always</strong> — the referred lead's identity, contact details, and any dollar value of closed business are never shown publicly, only to the referrer and recipient</li>
+    <li><strong>Testimonials</strong> — a short public thank-you a member can post about a referral partner</li>
+  </ul>
+
+  <h3 style="font-size: 11pt; font-weight: 700; margin-top: 20px;">Recognition &amp; leaderboard</h3>
+  <ul>
+    <li><strong>Points &amp; Connector tiers</strong> — Bronze / Silver / Gold / Platinum, weighted toward closed business rather than raw volume</li>
+    <li><strong>Leaderboard</strong> — monthly and all-time views of top connectors</li>
+    <li><strong>Connector of the Month</strong> — a spotlight slot for the app and/or newsletter, mirroring the existing Business of the Month program</li>
+  </ul>
+
+  <h3 style="font-size: 11pt; font-weight: 700; margin-top: 20px;">Admin &amp; moderation</h3>
+  <ul>
+    <li>Chamber-wide view of all referrals, statuses, and top connectors</li>
+    <li>Ability to hide inappropriate entries or correct a stuck status</li>
+    <li>Built-in guardrails: rate limits and de-duplication to discourage spammy referrals</li>
+  </ul>
+
+  <div style="background: #fef3c7; border-left: 4px solid #d97706; padding: 12px 16px; margin: 16px 0; border-radius: 0 4px 4px 0;">
+    <p style="margin: 0; font-weight: 700;">Optional add-ons (not included in the estimate below)</p>
+    <p style="margin: 6px 0 0; font-size: 12px;">Mobile push notification polish beyond what already exists, and automation that creates a record in the chamber's CRM when a referral closes. These are worth revisiting once the core program is live and member interest is validated. Dollar-value tracking of closed business was considered and intentionally excluded — that stays private between the two member businesses involved.</p>
+  </div>
+
+  <hr />
+
+  <!-- 5. Roadmap -->
+  <h2 style="font-size: 14pt; font-weight: 700; color: #1a56a4; border-bottom: 2px solid #dbeafe; padding-bottom: 6px; margin-top: 24px;">Phased Roadmap</h2>
+  <p>The program is broken into seven phases. Each phase ships something usable on its own, so the chamber can see and react to the program before the next phase begins.</p>
+
+  <table border="1" cellpadding="8" cellspacing="0" style="width: 100%; border-collapse: collapse; font-size: 10pt;">
+    <thead>
+      <tr style="background: #f3f4f6;">
+        <th style="text-align: left; padding: 8px 10px; border: 1px solid #d1d5db;">Phase</th>
+        <th style="text-align: left; padding: 8px 10px; border: 1px solid #d1d5db;">What you get</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;"><strong>1. Foundation</strong></td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;">The data model and backend API that everything else is built on</td>
+      </tr>
+      <tr style="background: #f9fafb;">
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;"><strong>2. Core Referral Experience</strong></td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;">"Refer a Member" flow from the directory, plus the "My Referrals" inbox with status tracking — the program is usable end-to-end after this phase</td>
+      </tr>
+      <tr>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;"><strong>3. Notifications</strong></td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;">Email and in-app alerts on new referrals and status changes</td>
+      </tr>
+      <tr style="background: #f9fafb;">
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;"><strong>4. Admin Tools</strong></td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;">Chamber-wide reporting and moderation controls — included in the first release rather than deferred</td>
+      </tr>
+      <tr>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;"><strong>5. Public Recognition</strong></td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;">Chamber-wide activity feed (referrer/recipient only, lead identity always private) and public thank-you testimonials</td>
+      </tr>
+      <tr style="background: #f9fafb;">
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;"><strong>6. Leaderboard</strong></td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;">Points, Connector tiers/badges, and the monthly/all-time leaderboard</td>
+      </tr>
+      <tr>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;"><strong>7. Testing, Feedback &amp; Revision</strong></td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;">A structured test pass across all phases, a round of chamber staff/member feedback, and revisions to address what's found</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <hr />
+
+  <!-- 6. Estimate -->
+  <h2 style="font-size: 14pt; font-weight: 700; color: #1a56a4; border-bottom: 2px solid #dbeafe; padding-bottom: 6px; margin-top: 24px;">Implementation Estimate</h2>
+  <p>The table below estimates the hands-on-keyboard implementation time for each phase — writing the code and getting it working in this codebase, priced at $75/hour. Figures shown are the minimum of each phase's estimated range, for planning purposes. It does <strong>not</strong> include code review, staging/production deployment, or App Store/Play Store review cycles, which should be scoped and budgeted separately.</p>
+
+  <table border="1" cellpadding="8" cellspacing="0" style="width: 100%; border-collapse: collapse; font-size: 10pt;">
+    <thead>
+      <tr style="background: #f3f4f6;">
+        <th style="text-align: left; padding: 8px 10px; border: 1px solid #d1d5db;">Phase</th>
+        <th style="text-align: right; padding: 8px 10px; border: 1px solid #d1d5db;">Implementation effort</th>
+        <th style="text-align: right; padding: 8px 10px; border: 1px solid #d1d5db;">Estimated cost</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;">1. Foundation</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db; text-align: right;">2 hours</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db; text-align: right;">$150.00</td>
+      </tr>
+      <tr style="background: #f9fafb;">
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;">2. Core Referral Experience</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db; text-align: right;">2 hours</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db; text-align: right;">$150.00</td>
+      </tr>
+      <tr>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;">3. Notifications</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db; text-align: right;">1 hour</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db; text-align: right;">$75</td>
+      </tr>
+      <tr style="background: #f9fafb;">
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;">4. Admin Tools</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db; text-align: right;">1 hour</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db; text-align: right;">$75.00</td>
+      </tr>
+      <tr>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;">5. Public Recognition</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db; text-align: right;">2 hours</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db; text-align: right;">$150</td>
+      </tr>
+      <tr style="background: #f9fafb;">
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;">6. Leaderboard</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db; text-align: right;">1.5 hours</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db; text-align: right;">$112.50</td>
+      </tr>
+      <tr style="border-bottom: #acacac 2px solid;">
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;">7. Testing, Feedback &amp; Revision</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db; text-align: right;">3 hours</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db; text-align: right;">$225</td>
+      </tr>
+      <tr>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db; font-weight: 700;">Total (all 7 phases)</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db; text-align: right; font-weight: 700;">~12.5 hours</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db; text-align: right; font-weight: 700;">~$937.50</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p style="font-size: 9.5pt; color: #6b7280; margin-top: 8px;">Notifications (Phase 3) are inexpensive because this codebase already has working email and push-notification infrastructure in place — this phase reuses it rather than building new plumbing.</p>
+
+  <div style="background: #dbeafe; border-left: 4px solid #1a56a4; padding: 12px 16px; margin: 16px 0; border-radius: 0 4px 4px 0;">
+    <p style="margin: 0; font-weight: 700;">Turning effort hours into a project timeline</p>
+    <p style="margin: 6px 0 0;">Raw implementation hours are only part of the calendar timeline. Add time for chamber staff review and feedback between phases, and any App Store/Play Store release cycles for mobile. A realistic phased delivery schedule with review checkpoints would run over several weeks rather than a single sitting, even though hands-on-keyboard time is well under a work-week.</p>
+  </div>
+
+  <!-- 7. Next steps -->
+  <h2 style="font-size: 14pt; font-weight: 700; color: #1a56a4; border-bottom: 2px solid #dbeafe; padding-bottom: 6px; margin-top: 24px;">Next Steps</h2>
+  <ol>
+    <li>Approve the full seven-phase program scope described above.</li>
+    <li>Run a short gut-check with a few members on whether points/leaderboards are motivating before committing to Phase 6 (Leaderboard).</li>
+    <li>Approve the phased roadmap and schedule QA/testing and release windows around it.</li>
+  </ol>
+
+</body>
+</html>

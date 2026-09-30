@@ -23,6 +23,7 @@ import { ghlService } from '@/services/gohighlevel';
 import { emailService } from '@/services/emailService';
 import { prisma } from '@/lib/prisma';
 import { contactsCache, businessesCache } from '@/services/contactsCache';
+import { refreshDirectoryCache, refreshDirectoryCacheInBackground } from '@/services/directoryCache';
 
 const router = express.Router();
 
@@ -111,10 +112,19 @@ function isMainContactOrAdmin(req: Request): boolean {
 // ---------------------------------------------------------------------------
 router.get('/', async (req: Request, res: Response) => {
   try {
-    const { search, tier, city, categoryId } = req.query as Record<string, string>;
+    const { search, tier, city, categoryId, refresh } = req.query as Record<string, string>;
 
-    // Fetch all business records with properties via Objects API (2 calls for ~145 records)
-    const allBusinesses = await ghlService.getAllBusinessRecords();
+    // Serve from the shared in-memory cache (kept warm by directoryCache's prewarm
+    // interval) so the directory responds in milliseconds instead of waiting on the
+    // GHL Objects API. ?refresh=true forces a synchronous re-fetch (pull-to-refresh);
+    // otherwise a cold cache falls back to a live fetch and repopulates itself.
+    if (refresh === 'true') {
+      await refreshDirectoryCache();
+    }
+    const allBusinesses = businessesCache.get() ?? await ghlService.getAllBusinessRecords().then(b => {
+      businessesCache.set(b);
+      return b;
+    });
 
     // Active members = businesses with membership_tier set, status active,
     // and a renewal date within the last 13 months.
@@ -166,7 +176,10 @@ router.get('/', async (req: Request, res: Response) => {
 
     // Build team members map from contacts cache (falls back to live API if cold)
     const businessIdSet = new Set(businessIds);
-    const allContacts: any[] = contactsCache.get() ?? await ghlService.getAllContacts();
+    const allContacts: any[] = contactsCache.get() ?? await ghlService.getAllContacts().then(c => {
+      contactsCache.set(c);
+      return c;
+    });
     const teamByBusiness = new Map<string, Array<{ firstName: string | null; lastName: string | null; email: string | null; title: string | null }>>();
     for (const c of allContacts) {
       if (!c.businessId || !businessIdSet.has(c.businessId)) continue;
@@ -215,6 +228,8 @@ router.get('/', async (req: Request, res: Response) => {
       };
     });
 
+    // Prevent browsers/proxies from ever serving a stale directory from their own HTTP cache.
+    res.set('Cache-Control', 'no-store');
     res.json({ members, total: members.length });
   } catch (err: any) {
     console.error('GET /businesses error:', err.message);
@@ -295,6 +310,7 @@ router.patch('/:id', requireAuth, async (req: Request, res: Response) => {
       await ghlService.updateBusinessProperties(id, customProps);
     }
     businessesCache.invalidate();
+    refreshDirectoryCacheInBackground();
 
     // Update categories (MemberCategory table, keyed by ghlBusinessId)
     if (categories !== undefined && Array.isArray(categories)) {
@@ -456,6 +472,7 @@ router.post('/:id/team', requireAuth, async (req: Request, res: Response) => {
 
     // Invalidate contacts cache so the team list reflects the new member immediately
     contactsCache.invalidate();
+    refreshDirectoryCacheInBackground();
 
     res.status(201).json({ ...result, contact: { id: contactId, firstName, lastName, email } });
   } catch (err: any) {

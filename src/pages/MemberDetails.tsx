@@ -54,7 +54,7 @@ const MemberDetailsPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user } = useAuthStore();
-  const { triggerMemberRefresh } = useMembersStore();
+  const { triggerMemberRefresh, updateCachedMember } = useMembersStore();
   const { categories } = useBusinessCategories();
   const fetchingRef = useRef(false);
 
@@ -368,7 +368,9 @@ const MemberDetailsPage: React.FC = () => {
       setMember({ ...updatedMember, categories: selectedCategories });
       setIsEditing(false);
 
-      // Trigger refresh of members directory so changes appear immediately
+      // Merge the fresh data into the directory cache immediately (no wait for refetch),
+      // then trigger a full background refresh so the rest of the list stays in sync.
+      updateCachedMember({ ...updatedMember, categories: selectedCategories });
       triggerMemberRefresh();
       toast.success('Profile updated successfully!');
     } catch (err) {
@@ -530,6 +532,7 @@ const MemberDetailsPage: React.FC = () => {
                 setMember({ ...member, coverImage: newCoverImageUrl });
                 setFormData(prev => ({ ...prev, coverImage: newCoverImageUrl }));
                 // Trigger refresh of members directory
+                updateCachedMember({ id: member.id, coverImage: newCoverImageUrl });
                 triggerMemberRefresh();
               }
             }}
@@ -708,6 +711,7 @@ const MemberDetailsPage: React.FC = () => {
                         if (member) {
                           setMember({ ...member, avatar: newAvatarUrl });
                           // Trigger refresh of members directory
+                          updateCachedMember({ id: member.id, avatar: newAvatarUrl });
                           triggerMemberRefresh();
                         }
                       }}

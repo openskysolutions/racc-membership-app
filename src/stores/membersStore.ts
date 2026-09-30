@@ -31,6 +31,7 @@ interface MembersState {
   resetFilters: () => void;
   triggerMemberRefresh: () => void;
   setCachedMembers: (members: any[], total: number) => void;
+  updateCachedMember: (updated: { id: string } & Record<string, any>) => void;
 }
 
 const initialState = {
@@ -60,6 +61,11 @@ export const useMembersStore = create<MembersState>()(
       resetFilters: () => set(initialState),
       triggerMemberRefresh: () => set({ lastMemberUpdate: Date.now(), cacheTimestamp: 0 }),
       setCachedMembers: (members, total) => set({ cachedMembers: members, cachedTotal: total, cacheTimestamp: Date.now() }),
+      // Merge a just-saved member into the cache so the directory reflects the edit
+      // instantly, without waiting on the follow-up background refetch to land.
+      updateCachedMember: (updated) => set((state) => ({
+        cachedMembers: state.cachedMembers.map((m: any) => (m.id === updated.id ? { ...m, ...updated } : m)),
+      })),
     }),
     {
       name: 'members-filters', // localStorage key

@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Board Elections — Proposal</title>
+  <style>
+    @page {
+      size: letter;
+      margin: 0.85in 0.9in;
+    }
+
+    body {
+      font-family: Calibri, 'Segoe UI', Arial, sans-serif;
+      font-size: 11pt;
+      color: #111827;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px 48px;
+      line-height: 1.3;
+    }
+
+    h2, h3 {
+      page-break-after: avoid;
+      break-after: avoid;
+    }
+
+    p {
+      margin-top: 0.5em;
+    }
+
+    div[style*="border-left"] {
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+
+    div[style*="border: 2px dashed"] {
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+
+    h2:not(:first-of-type) {
+      padding-top: 0;
+      margin-top: 0;
+    }
+
+    hr {
+      page-break-after: always;
+      break-after: page;
+      border-width: 0;
+    }
+
+    tr {
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+
+    p:last-child {
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+
+    @media screen {
+      body { padding: 40px 48px; }
+    }
+
+    @media print {
+      body { padding: 30px; max-width: 100%; }
+      * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Cover -->
+  <div class="cover" style="background: #1a56a4; color: #ffffff; border-radius: 8px; padding: 40px 48px 36px; margin-bottom: 32px;">
+    <p style="font-size: 9pt; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; opacity: .75; margin: 0 0 10px;">Richfield Area Chamber of Commerce — Membership App</p>
+    <h1 style="font-size: 26pt; font-weight: 800; margin: 0 0 12px; color: #ffffff;">Board Elections: A Chamber-Wide Board Voting System</h1>
+    <p style="font-size: 11pt; opacity: .9; margin: 0 0 24px; color: #ffffff;">A proposal to let board members open positions, nominate candidates, and run a timed, chamber-wide vote for board seats, with results held privately until the board chooses to publish them, built on the existing membership app.</p>
+    <p style="font-size: 9pt; opacity: .7; margin: 0; color: #ffffff;">Proposal v1.0 &nbsp;·&nbsp; September 2026 &nbsp;·&nbsp; Feature: 005-board-member-elections</p>
+  </div>
+
+  <!-- 1. The opportunity -->
+  <h2 style="font-size: 14pt; font-weight: 700; color: #1a56a4; border-bottom: 2px solid #dbeafe; padding-bottom: 6px; margin-top: 24px;">The Opportunity</h2>
+  <p>Board elections today happen outside the app entirely — nominations and voting are handled manually, with no structured record of who was nominated, when voting was open, or how the vote was tallied. That makes it harder to run a transparent, repeatable process year over year, and gives members no visibility into the fact that an election is even happening.</p>
+  <p>Members already sign in to this app to vote on Business of the Month nominees, so they're already comfortable with an in-app voting experience. Extending that same trust to board elections — with a real voting window and a deliberate, board-controlled results reveal — turns an informal, easy-to-question process into a transparent one that lives alongside everything else members already do in the app.</p>
+
+  <div style="background: #dbeafe; border-left: 4px solid #1a56a4; padding: 12px 16px; margin: 16px 0; border-radius: 0 4px 4px 0;">
+    <p style="margin: 0; font-weight: 700;">Why this is a good fit for this app specifically</p>
+    <p style="margin: 6px 0 0;">The app already has secure member sign-in, a role system that distinguishes board members from general members, and a working nomination/voting pattern from the Business of the Month program. This feature reuses that foundation rather than introducing new infrastructure.</p>
+  </div>
+
+  <!-- 2. Concept -->
+  <h2 style="font-size: 14pt; font-weight: 700; color: #1a56a4; border-bottom: 2px solid #dbeafe; padding-bottom: 6px; margin-top: 24px;">How It Works: The Core Loop</h2>
+  <p>The process is broken into four clear steps, each controlled by the board until the moment a member casts a vote.</p>
+
+  <table border="1" cellpadding="10" cellspacing="0" style="width: 100%; border-collapse: collapse; font-size: 10pt;">
+    <tbody>
+      <tr>
+        <td style="padding: 10px; border: 1px solid #d1d5db; width: 25%; vertical-align: top; background: #f9fafb;">
+          <p style="margin: 0; font-weight: 700; color: #1a56a4;">1. Set Up</p>
+          <p style="margin: 6px 0 0;">A board member opens a position (title, description, number of seats) and adds the chamber members nominated for it.</p>
+        </td>
+        <td style="padding: 10px; border: 1px solid #d1d5db; width: 25%; vertical-align: top;">
+          <p style="margin: 0; font-weight: 700; color: #1a56a4;">2. Voting Window</p>
+          <p style="margin: 6px 0 0;">The board sets an opens/closes date and time. Voting can also be closed early by the board at any point.</p>
+        </td>
+        <td style="padding: 10px; border: 1px solid #d1d5db; width: 25%; vertical-align: top; background: #f9fafb;">
+          <p style="margin: 0; font-weight: 700; color: #1a56a4;">3. Vote</p>
+          <p style="margin: 6px 0 0;">Every active member sees open positions and casts one ballot per position, selecting up to the number of available seats.</p>
+        </td>
+        <td style="padding: 10px; border: 1px solid #d1d5db; width: 25%; vertical-align: top;">
+          <p style="margin: 0; font-weight: 700; color: #1a56a4;">4. Close &amp; Publish</p>
+          <p style="margin: 6px 0 0;">Closing voting never reveals results automatically. Results stay hidden until the board explicitly clicks "Publish Results," after votes are reviewed and counted.</p>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <hr />
+
+  <!-- 3. Feature set -->
+  <h2 style="font-size: 14pt; font-weight: 700; color: #1a56a4; border-bottom: 2px solid #dbeafe; padding-bottom: 6px; margin-top: 36px;">Feature Set</h2>
+
+  <h3 style="font-size: 11pt; font-weight: 700; margin-top: 20px;">Set up an election (board/admin)</h3>
+  <ul>
+    <li><strong>Open positions</strong> — create a position up for election with a title, description, and number of available seats</li>
+    <li><strong>Nominate candidates</strong> — add the chamber members nominated for each position, with an optional short statement/bio</li>
+    <li><strong>Voting window</strong> — set an opens/closes date and time per position</li>
+  </ul>
+
+  <h3 style="font-size: 11pt; font-weight: 700; margin-top: 20px;">Vote (chamber members)</h3>
+  <ul>
+    <li><strong>Ballot view</strong> — every position currently open for voting, with each candidate's name, business, and statement</li>
+    <li><strong>Cast a vote</strong> — select up to the number of available seats and submit; one ballot per member per position, with no re-voting or edits after submission</li>
+    <li><strong>Status visibility</strong> — members can see when voting opens and closes and whether they've already voted, but never a live vote count</li>
+  </ul>
+
+  <h3 style="font-size: 11pt; font-weight: 700; margin-top: 20px;">Close voting &amp; publish results (board/admin)</h3>
+  <ul>
+    <li><strong>Manual close</strong> — close voting at any time, in addition to the scheduled end date, stopping new votes immediately</li>
+    <li><strong>Manual publish</strong> — a separate, deliberate step to reveal results, so votes can be reviewed and counted first</li>
+    <li><strong>Results view</strong> — members see winner(s) per position once published; the board additionally sees the full vote tally</li>
+  </ul>
+
+  <h3 style="font-size: 11pt; font-weight: 700; margin-top: 20px;">Admin oversight</h3>
+  <ul>
+    <li>A single view of all elections and their status (draft, nominations, voting open, closed, published)</li>
+    <li>Edit or remove a position/candidate before voting opens</li>
+    <li>Re-open voting on a position closed in error, as long as results haven't been published yet</li>
+  </ul>
+
+  <div style="background: #fef3c7; border-left: 4px solid #d97706; padding: 12px 16px; margin: 16px 0; border-radius: 0 4px 4px 0;">
+    <p style="margin: 0; font-weight: 700;">Optional add-ons (included in the estimate below)</p>
+    <p style="margin: 6px 0 0; font-size: 12px;">Email and in-app/push notifications when voting opens and when results are published. Self-nomination by members and public candidate statements submitted directly by nominees were considered and intentionally excluded from this version — only board members/admins add positions and candidates.</p>
+  </div>
+
+  <hr />
+
+  <!-- 4. Roadmap -->
+  <h2 style="font-size: 14pt; font-weight: 700; color: #1a56a4; border-bottom: 2px solid #dbeafe; padding-bottom: 6px; margin-top: 24px;">Phased Roadmap</h2>
+  <p>The feature is broken into six phases. Each builds directly on the last, ending with a fully working election from setup through published results.</p>
+
+  <table border="1" cellpadding="8" cellspacing="0" style="width: 100%; border-collapse: collapse; font-size: 10pt;">
+    <thead>
+      <tr style="background: #f3f4f6;">
+        <th style="text-align: left; padding: 8px 10px; border: 1px solid #d1d5db;">Phase</th>
+        <th style="text-align: left; padding: 8px 10px; border: 1px solid #d1d5db;">What you get</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;"><strong>1. Database Schema</strong></td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;">The data model for positions, candidates, and votes that everything else is built on</td>
+      </tr>
+      <tr style="background: #f9fafb;">
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;"><strong>2. Backend API</strong></td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;">Create/manage positions and candidates, cast a vote, close voting, and publish results — with the right role checks on each action</td>
+      </tr>
+      <tr>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;"><strong>3. Admin/Board Management UI</strong></td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;">The board-facing screens to open positions, add candidates, set voting windows, and manually close voting and publish results</td>
+      </tr>
+      <tr style="background: #f9fafb;">
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;"><strong>4. Member-Facing Voting UI</strong></td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;">The ballot screen members use to vote, plus the published results view — the feature is usable end-to-end after this phase</td>
+      </tr>
+      <tr>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;"><strong>5. Notifications</strong></td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;">Email and in-app/push alerts when voting opens and when results are published</td>
+      </tr>
+      <tr style="background: #f9fafb;">
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;"><strong>6. Self-Testing &amp; Revision</strong></td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;">A full manual walkthrough of the entire election lifecycle, with any issues found addressed before handoff</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <hr />
+
+  <!-- 5. Estimate -->
+  <h2 style="font-size: 14pt; font-weight: 700; color: #1a56a4; border-bottom: 2px solid #dbeafe; padding-bottom: 6px; margin-top: 24px;">Implementation Estimate</h2>
+  <p>The table below estimates the hands-on-keyboard implementation time for each phase — writing the code and getting it working in this codebase, priced at $75/hour. It does <strong>not</strong> include code review, staging/production deployment, or App Store/Play Store review cycles, which should be scoped and budgeted separately.</p>
+
+  <table border="1" cellpadding="8" cellspacing="0" style="width: 100%; border-collapse: collapse; font-size: 10pt;">
+    <thead>
+      <tr style="background: #f3f4f6;">
+        <th style="text-align: left; padding: 8px 10px; border: 1px solid #d1d5db;">Phase</th>
+        <th style="text-align: right; padding: 8px 10px; border: 1px solid #d1d5db;">Implementation effort</th>
+        <th style="text-align: right; padding: 8px 10px; border: 1px solid #d1d5db;">Estimated cost</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;">1. Database Schema</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db; text-align: right;">0.5 hour</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db; text-align: right;">$37.50</td>
+      </tr>
+      <tr style="background: #f9fafb;">
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;">2. Backend API</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db; text-align: right;">1 hour</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db; text-align: right;">$75.00</td>
+      </tr>
+      <tr>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;">3. Admin/Board Management UI</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db; text-align: right;">1 hour</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db; text-align: right;">$75.00</td>
+      </tr>
+      <tr style="background: #f9fafb;">
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;">4. Member-Facing Voting UI</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db; text-align: right;">0.5 hour</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db; text-align: right;">$37.50</td>
+      </tr>
+      <tr>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;">5. Notifications</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db; text-align: right;">0.5 hour</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db; text-align: right;">$37.50</td>
+      </tr>
+      <tr style="border-bottom: #acacac 2px solid;">
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db;">6. Self-Testing &amp; Revision</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db; text-align: right;">0.5 hour</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db; text-align: right;">$37.50</td>
+      </tr>
+      <tr>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db; font-weight: 700;">Total (all 6 phases)</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db; text-align: right; font-weight: 700;">~4 hours</td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db; text-align: right; font-weight: 700;">~$300.00</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p style="font-size: 9.5pt; color: #6b7280; margin-top: 8px;">Notifications (Phase 5) are inexpensive because this codebase already has working email and push-notification infrastructure in place — this phase reuses it rather than building new plumbing.</p>
+
+  <div style="background: #dbeafe; border-left: 4px solid #1a56a4; padding: 12px 16px; margin: 16px 0; border-radius: 0 4px 4px 0;">
+    <p style="margin: 0; font-weight: 700;">Turning effort hours into a project timeline</p>
+    <p style="margin: 6px 0 0;">Raw implementation hours are only part of the calendar timeline. Add time for board review and sign-off between phases, and any App Store/Play Store release cycles for mobile. A realistic delivery schedule with review checkpoints would run over more than a single sitting, even though hands-on-keyboard time is well under a single business day.</p>
+  </div>
+
+  <!-- 6. Next steps -->
+  <h2 style="font-size: 14pt; font-weight: 700; color: #1a56a4; border-bottom: 2px solid #dbeafe; padding-bottom: 6px; margin-top: 24px;">Next Steps</h2>
+  <ol>
+    <li>Confirm who is eligible to vote — every active chamber member (as scoped above), or existing board members only.</li>
+    <li>Approve the full six-phase scope described above.</li>
+    <li>Approve the phased roadmap and schedule review checkpoints and release windows around it.</li>
+  </ol>
+
+</body>
+</html>

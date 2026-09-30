@@ -12,6 +12,7 @@ import { emailService } from '@/services/emailService';
 import { prisma } from '@/lib/prisma';
 
 import { contactsCache, businessesCache } from '@/services/contactsCache';
+import { refreshDirectoryCacheInBackground } from '@/services/directoryCache';
 
 const router = express.Router();
 
@@ -757,6 +758,7 @@ router.patch('/businesses/:id/tier', requireAuth, requireAdmin, async (req, res)
     // Invalidate caches so next load reflects new tags
     if (updatedCount > 0) contactsCache.invalidate();
     businessesCache.invalidate();
+    refreshDirectoryCacheInBackground();
 
     console.log(`[tier update] business ${id} → ${tier ?? 'none'} | updated ${updatedCount}/${bizContacts.length} contacts`);
 
@@ -929,6 +931,7 @@ router.post('/contacts/:contactId/set-main-contact', requireAuth, requireAdmin, 
 
     // Invalidate cache so next load reflects changes
     contactsCache.invalidate();
+    refreshDirectoryCacheInBackground();
 
     res.json({ success: true, contactId, businessId });
   } catch (err: any) {
@@ -1038,6 +1041,7 @@ router.post('/memberships', requireAuth, requireAdmin, async (req, res) => {
   // Invalidate caches so admin tabs reflect the new contact and business immediately
   contactsCache.invalidate();
   businessesCache.invalidate();
+  refreshDirectoryCacheInBackground();
 
   res.status(201).json(result);
 });

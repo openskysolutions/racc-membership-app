@@ -4,6 +4,7 @@ require('dotenv').config();
 import app from './app';
 import { databaseService } from '@/services/database';
 import { startEventReminderScheduler } from '@/services/eventReminderScheduler';
+import { startDirectoryCachePrewarm } from '@/services/directoryCache';
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
@@ -30,6 +31,10 @@ async function startServer() {
 
       // Start scheduled jobs
       startEventReminderScheduler();
+
+      // Prewarm the member directory cache so GET /businesses responds from
+      // memory instead of waiting on a live GHL API call, and keep it warm.
+      startDirectoryCachePrewarm();
     });
   } catch (error) {
     console.error('Failed to start server:', error);

@@ -66,7 +66,10 @@ const MembersPage: React.FC = () => {
   
   // Seed local state from the persisted cache so the directory renders instantly
   const [members, setMembers] = useState<Member[]>(() => cachedMembers as Member[]);
+  // Blocks the whole page — only true when there's no cached data to show yet.
   const [loading, setLoading] = useState(() => cachedMembers.length === 0);
+  // Background revalidation indicator — spins the refresh icon without hiding the grid.
+  const [refreshing, setRefreshing] = useState(false);
   const [loadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasMore] = useState(false);
@@ -83,7 +86,16 @@ const MembersPage: React.FC = () => {
       return;
     }
 
-    setLoading(true);
+    // Only block the page with the big spinner when we have nothing to show yet.
+    // Otherwise this is a revalidation (e.g. forced after an edit) — the grid is
+    // already showing correct (possibly optimistically-merged) data, so just spin
+    // the small refresh icon instead of hiding it behind a full-page spinner.
+    const hasExistingData = cachedMembers.length > 0;
+    if (hasExistingData) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
     try {
       const params = new URLSearchParams({ source: 'MembersPage' });
       if (forceRefresh) params.append('refresh', 'true');
@@ -100,6 +112,7 @@ const MembersPage: React.FC = () => {
       setError(err instanceof Error ? err.message : 'Failed to load members');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cacheTimestamp, cachedMembers.length]);
@@ -337,9 +350,9 @@ const MembersPage: React.FC = () => {
                 variant="outline"
                 size="icon"
                 onClick={refreshMembers}
-                disabled={loading}
+                disabled={loading || refreshing}
                 title="Refresh member list"
-                className={cn(loading ? "animate-spin" : "",
+                className={cn(loading || refreshing ? "animate-spin" : "",
                   "h-9 w-9 flex items-center justify-center"
                 )}
               >
