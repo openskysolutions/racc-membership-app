@@ -8,20 +8,26 @@ const TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 function makeCache<T>() {
   let cache: { items: T[]; fetchedAt: number } | null = null;
+  let invalidated = false;
 
   return {
     get(): T[] | null {
-      if (!cache || Date.now() - cache.fetchedAt >= TTL_MS) return null;
+      if (!cache || invalidated || Date.now() - cache.fetchedAt >= TTL_MS) return null;
       return cache.items;
+    },
+    /** Last known data regardless of freshness - last-resort fallback when a live refetch fails. */
+    getStale(): T[] | null {
+      return cache?.items ?? null;
     },
     set(items: T[]): void {
       cache = { items, fetchedAt: Date.now() };
+      invalidated = false;
     },
     invalidate(): void {
-      cache = null;
+      invalidated = true;
     },
     isFresh(): boolean {
-      return !!cache && Date.now() - cache.fetchedAt < TTL_MS;
+      return !!cache && !invalidated && Date.now() - cache.fetchedAt < TTL_MS;
     },
   };
 }

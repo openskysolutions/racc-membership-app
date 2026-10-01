@@ -116,15 +116,23 @@ router.get('/', async (req: Request, res: Response) => {
 
     // Serve from the shared in-memory cache (kept warm by directoryCache's prewarm
     // interval) so the directory responds in milliseconds instead of waiting on the
-    // GHL Objects API. ?refresh=true forces a synchronous re-fetch (pull-to-refresh);
-    // otherwise a cold cache falls back to a live fetch and repopulates itself.
-    if (refresh === 'true') {
-      await refreshDirectoryCache();
+    // GHL Objects API. ?refresh=true forces a synchronous re-fetch (pull-to-refresh).
+    // When cold, concurrent requests share a single in-flight refresh (via
+    // refreshDirectoryCache's dedup) instead of each firing their own live GHL call -
+    // avoids a thundering herd on cache-cold/restart. If that live refresh fails
+    // (GHL hiccup, rate limit), fall back to the last known-good data rather than
+    // failing the request outright.
+    if (refresh === 'true' || !businessesCache.get() || !contactsCache.get()) {
+      try {
+        await refreshDirectoryCache();
+      } catch (err: any) {
+        console.error('[GET /businesses] live refresh failed, falling back to stale cache if available:', err.message);
+      }
     }
-    const allBusinesses = businessesCache.get() ?? await ghlService.getAllBusinessRecords().then(b => {
-      businessesCache.set(b);
-      return b;
-    });
+    const allBusinesses = businessesCache.get() ?? businessesCache.getStale();
+    if (!allBusinesses) {
+      return res.status(503).json({ error: 'Member directory temporarily unavailable, please try again shortly' });
+    }
 
     // Active members = businesses with membership_tier set, status active,
     // and a renewal date within the last 13 months.
@@ -174,12 +182,10 @@ router.get('/', async (req: Request, res: Response) => {
       catsByBusiness.get(row.ghlBusinessId)!.push(row.subcategory);
     }
 
-    // Build team members map from contacts cache (falls back to live API if cold)
+    // Build team members map from contacts cache (already refreshed above if cold;
+    // an empty list here is non-fatal, just means team members are omitted this response).
     const businessIdSet = new Set(businessIds);
-    const allContacts: any[] = contactsCache.get() ?? await ghlService.getAllContacts().then(c => {
-      contactsCache.set(c);
-      return c;
-    });
+    const allContacts: any[] = contactsCache.get() ?? contactsCache.getStale() ?? [];
     const teamByBusiness = new Map<string, Array<{ firstName: string | null; lastName: string | null; email: string | null; title: string | null }>>();
     for (const c of allContacts) {
       if (!c.businessId || !businessIdSet.has(c.businessId)) continue;
