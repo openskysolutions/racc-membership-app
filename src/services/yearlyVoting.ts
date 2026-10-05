@@ -1,6 +1,6 @@
 /**
  * Yearly Voting Service
- * API client for yearly voting functionality (October 1-20 voting window)
+ * API client for yearly voting functionality (September 21 - October 20 voting window)
  */
 
 import { apiFetch, handle401Redirect } from './apiClient';

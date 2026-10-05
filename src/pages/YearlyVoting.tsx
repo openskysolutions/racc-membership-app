@@ -186,11 +186,8 @@ const YearlyVotingPage: React.FC = () => {
                   </p>
                 )}
                 <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                  <Badge variant="outline" className="text-xs">
+                  <Badge className="text-xs">
                     {getMonthName(nomination.winningMonth)} Winner
-                  </Badge>
-                  <Badge variant="secondary" className="text-xs">
-                    {nomination.monthlyVoteCount} monthly votes
                   </Badge>
                 </div>
                 {isVotedFor && (
@@ -299,7 +296,7 @@ const YearlyVotingPage: React.FC = () => {
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <div className="mb-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-2">
-          <h1 className="text-4xl font-bold">Yearly Winners Voting</h1>
+          <h1 className="text-4xl font-bold">Yearly Voting</h1>
           <div className="flex gap-2">
             <Button
               variant="outline"

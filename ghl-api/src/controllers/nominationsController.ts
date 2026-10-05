@@ -16,11 +16,11 @@ import { ghlService } from '@/services/gohighlevel';
 import { prisma } from '@/lib/prisma';
 
 // Configuration: Yearly voting period
-// Yearly voting runs September 21 - October 31
+// Yearly voting runs September 21 - October 20
 const YEARLY_VOTING_START_MONTH = 8; // September (0-indexed)
 const YEARLY_VOTING_START_DAY = 21;
 const YEARLY_VOTING_END_MONTH = 9; // October (0-indexed)
-const YEARLY_VOTING_END_DAY = 31;
+const YEARLY_VOTING_END_DAY = 20;
 
 interface NominationRequest {
   type: 'business' | 'individual';
@@ -244,7 +244,7 @@ export class NominationsController {
    * Voting is for the month AFTER the voting period ends
    * Example: Jan 21 - Feb 20 = voting for March awards
    * Monthly voting stops Sep 20 (last period: Aug 21 - Sep 20 for October)
-   * Monthly voting paused: Sep 21 - Nov 20 (yearly voting happens Sep 21 - Oct 31)
+   * Monthly voting paused: Sep 21 - Nov 20 (yearly voting happens Sep 21 - Oct 20)
    * Monthly voting resumes: Nov 21 - Dec 20 for January winners
    */
   private getVotingPeriodDetails(now: Date = new Date()) {
@@ -260,23 +260,23 @@ export class NominationsController {
         votingMonth: null,
         targetMonth: null,
         deadline: null,
-        error: 'Monthly voting is closed. Yearly voting is open September 21 - October 31.'
+        error: 'Monthly voting is closed. Yearly voting is open September 21 - October 20.'
       };
     }
     
-    if (currentMonth === 9) {
-      // October 1-31: Monthly voting closed, yearly voting open
+    if (currentMonth === 9 && currentDay <= 20) {
+      // October 1-20: Monthly voting closed, yearly voting open
       return {
         canVote: false,
         votingMonth: null,
         targetMonth: null,
         deadline: null,
-        error: 'Monthly voting is closed. Yearly voting is open through October 31.'
+        error: 'Monthly voting is closed. Yearly voting is open through October 20.'
       };
     }
     
-    if (currentMonth === 10 && currentDay <= 20) {
-      // November 1-20: No voting at all
+    if ((currentMonth === 9 && currentDay > 20) || (currentMonth === 10 && currentDay <= 20)) {
+      // October 21-31 and November 1-20: Yearly voting has closed, monthly voting not yet resumed
       return {
         canVote: false,
         votingMonth: null,
@@ -847,7 +847,7 @@ export class NominationsController {
 
   /**
    * Helper: Get yearly voting period details
-   * Yearly voting runs September 21 - October 31 and is open to all chamber members
+   * Yearly voting runs September 21 - October 20 and is open to all chamber members
    */
   private getYearlyVotingPeriodDetails(now: Date = new Date()) {
     const currentMonth = now.getMonth(); // 0-11
@@ -855,22 +855,22 @@ export class NominationsController {
     const currentDay = now.getDate();
     
     // Check if we're in the yearly voting window
-    // September 21 - October 31
+    // September 21 - October 20
     const inSeptember = currentMonth === 8 && currentDay >= 21; // Sep 21-30
-    const inOctober = currentMonth === 9; // Oct 1-31
+    const inOctober = currentMonth === 9 && currentDay <= 20; // Oct 1-20
     
     if (!inSeptember && !inOctober) {
       return {
         canVote: false,
         votingYear: null,
-        error: 'Yearly voting is only available September 21 - October 31'
+        error: 'Yearly voting is only available September 21 - October 20'
       };
     }
     
     return {
       canVote: true,
       votingYear: currentYear,
-      deadline: new Date(currentYear, 9, 31, 23, 59, 59, 999) // Oct 31
+      deadline: new Date(currentYear, 9, 20, 23, 59, 59, 999) // Oct 20
     };
   }
 
