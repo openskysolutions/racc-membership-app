@@ -6,6 +6,7 @@ import { HomepageCards } from '@/components/HomepageCards';
 import Benefits from '@/components/Benefits';
 import MembershipLevels from '@/components/MembershipLevels';
 import CategoryBar from '@/components/CategoryBar';
+import PromoVideo from '@/components/PromoVideo';
 import { useMembersStore } from '@/stores/membersStore';
 import { MissionVision } from './About';
 
@@ -32,6 +33,8 @@ const HomePage: React.FC = () => {
       </div>
 
       <MissionVision />
+
+      <PromoVideo />
 
       {/* Hero Section */}
       <div className="text-center my-8 sm:my-16 px-6">

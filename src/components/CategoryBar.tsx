@@ -1,5 +1,6 @@
 import React from 'react';
 import { useBusinessCategories } from '@/hooks/useBusinessCategories';
+import { CATEGORY_BG_MAP, CATEGORY_TINT_MAP } from '@/lib/categoryImages';
 import cn from 'classnames';
 
 
@@ -7,7 +8,7 @@ import cn from 'classnames';
 const COLOR_MAP: Record<string, string> = {
   Utensils:     'bg-orange-700 hover:bg-orange-600 ring-1 ring-inset ring-orange-500',
   Hotel:        'bg-sky-700 hover:bg-sky-600 ring-1 ring-inset ring-sky-500',
-  ShoppingCart: 'bg-violet-700 hover:bg-violet-600 ring-1 ring-inset ring-violet-500',
+  ShoppingCart: 'bg-violet-700 hover:bg-violet-600 ring-1 ring-inset ring-violet-500 saturate-50',
   HeartPulse:   'bg-red-800 hover:bg-red-700 ring-1 ring-inset ring-red-600',
   Briefcase:    'bg-slate-600 hover:bg-slate-500 ring-1 ring-inset ring-slate-400',
   VscTools:     'bg-yellow-600 hover:bg-yellow-500 ring-1 ring-inset ring-yellow-400',
@@ -17,30 +18,10 @@ const COLOR_MAP: Record<string, string> = {
 };
 
 // Icon name → semi-transparent tint overlay class (painted over the bg image).
-const TINT_MAP: Record<string, string> = {
-  Utensils:     'bg-orange-700/75',
-  Hotel:        'bg-sky-800/75',
-  ShoppingCart: 'bg-violet-700/75',
-  HeartPulse:   'bg-red-800/75',
-  Briefcase:    'bg-slate-700/75',
-  VscTools:     'bg-yellow-700/75',
-  Building2:    'bg-green-800/75',
-  Factory:      'bg-stone-800/75',
-  Megaphone:    'bg-teal-800/75',
-};
+const TINT_MAP = CATEGORY_TINT_MAP;
 
 // Icon name → placeholder background image (Unsplash).
-const BG_MAP: Record<string, string> = {
-  Utensils:     'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=400&q=60',
-  Hotel:        'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=400&q=60',
-  ShoppingCart: 'https://images.unsplash.com/photo-1513884923967-4b182ef167ab?q=80&w=2940&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-  HeartPulse:   'https://plus.unsplash.com/premium_photo-1661775601929-8c775187bea6?q=80&w=2940&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-  Briefcase:    'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=400&q=60',
-  VscTools:     'https://plus.unsplash.com/premium_photo-1723759283157-54d22e11a870?q=80&w=2940&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-  Building2:    'https://images.unsplash.com/photo-1764760505443-39d3e33df39a?q=80&w=2728&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-  Factory:      'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=400&q=60',
-  Megaphone:    'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=400&q=60',
-};
+const BG_MAP = CATEGORY_BG_MAP;
 
 interface CategoryBarProps {
   selected: string; // top-level category id, or '' for all

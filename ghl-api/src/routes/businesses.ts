@@ -338,7 +338,7 @@ router.patch('/:id', requireAuth, async (req: Request, res: Response) => {
     res.json(member);
   } catch (err: any) {
     console.error(`PATCH /businesses/${id} error:`, err.message);
-    res.status(500).json({ error: 'Failed to update business' });
+    res.status(400).json({ error: err.message || 'Failed to update business' });
   }
 });
 

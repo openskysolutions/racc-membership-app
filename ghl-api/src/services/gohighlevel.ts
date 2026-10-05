@@ -2444,6 +2444,22 @@ class GoHighLevelService {
   }
 
   /**
+   * Normalizes a member-entered phone number into the format GHL's Phone
+   * field requires (leading "+" and country code). Assumes a US number and
+   * prepends "1" when exactly 10 digits are entered, so members never have
+   * to type a country code themselves. Returns undefined for blank/invalid
+   * input so the field is simply omitted from the update instead of sent as
+   * "" (which GHL rejects with a 400).
+   */
+  private normalizePhoneForGhl(phone?: string): string | undefined {
+    if (!phone) return undefined;
+    const digits = phone.replace(/\D/g, '');
+    if (!digits) return undefined;
+    const withCountryCode = digits.length === 10 ? `1${digits}` : digits;
+    return `+${withCountryCode}`;
+  }
+
+  /**
    * Update a GHL Business record.
    * Called when a main-contact team member edits their company's profile in the app.
    * Only the fields supported by the GHL Business object are written here;
@@ -2474,8 +2490,8 @@ class GoHighLevelService {
     // Map to the Objects API property keys (postalCode → postalcode to match read-side)
     const raw: Record<string, any> = {
       name:        data.name,
-      phone:       data.phone,
-      email:       data.email,
+      phone:       this.normalizePhoneForGhl(data.phone),
+      email:       data.email || undefined, // GHL rejects "" with a validation error; omit instead of clearing
       website:     data.website,
       address:     data.address,
       city:        data.city,
@@ -2506,7 +2522,7 @@ class GoHighLevelService {
       return response.data;
     } catch (error: any) {
       console.error(`❌ Failed to update business ${businessId}:`, error.response?.data ?? error.message);
-      throw new Error(`Failed to update business: ${error.message}`);
+      throw new Error(error.response?.data?.message || `Failed to update business: ${error.message}`);
     }
   }
 
@@ -2548,7 +2564,7 @@ class GoHighLevelService {
         `❌ Failed to update business properties ${businessId}:`,
         error.response?.data ?? error.message
       );
-      throw new Error(`Failed to update business properties: ${error.message}`);
+      throw new Error(error.response?.data?.message || `Failed to update business properties: ${error.message}`);
     }
   }
 

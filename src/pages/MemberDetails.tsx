@@ -334,6 +334,10 @@ const MemberDetailsPage: React.FC = () => {
 
   const handleSave = async () => {
     if (!member) return;
+    if (!(formData.businessName || formData.companyName)?.trim()) {
+      toast.error('Business Name is required');
+      return;
+    }
 
     setUpdating(true);
 
@@ -361,7 +365,8 @@ const MemberDetailsPage: React.FC = () => {
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to update member: ${response.statusText}`);
+        const body = await response.json().catch(() => null);
+        throw new Error(body?.error || `Failed to update member: ${response.statusText}`);
       }
 
       const updatedMember: Member = await response.json();
@@ -760,13 +765,14 @@ const MemberDetailsPage: React.FC = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label htmlFor="businessName" className="block text-sm font-medium mb-1">
-                          Business Name
+                          Business Name <span className="text-destructive">*</span>
                         </label>
                         <Input
                           id="businessName"
                           name="businessName"
                           value={formData.businessName}
                           onChange={handleFormChange}
+                          required
                         />
                       </div>
 

@@ -14,7 +14,8 @@ import { useMembersStore, MEMBERS_CACHE_TTL } from '@/stores/membersStore';
 import cn from 'classnames';
 import { isNativeApp } from '@/lib/platform';
 import CategoryBar from '@/components/CategoryBar';
-import { useBusinessCategories, getSubcategoryName } from '@/hooks/useBusinessCategories';
+import { useBusinessCategories, getSubcategoryName, getCategoryForSubcategory } from '@/hooks/useBusinessCategories';
+import { CATEGORY_BG_MAP } from '@/lib/categoryImages';
 
 // Extended member type for the directory page
 interface Member extends BaseMember {
@@ -34,6 +35,21 @@ interface Member extends BaseMember {
     state: string;
     zipCode: string;
   };
+}
+
+// Darkened, slightly desaturated neutral overlay used only when a business has
+// neither a cover image nor a matching category image to fall back to.
+const DEFAULT_OVERLAY = 'rgba(0, 0, 0, 0.45)';
+const CATEGORY_OVERLAY = 'rgba(0, 0, 0, 0.60)';
+
+// Falls back to the business's top-level category image (and matching color tint,
+// same as the CategoryBar tabs) when no cover image was uploaded.
+function getMemberCardBackground(member: Member, categories: ReturnType<typeof useBusinessCategories>['categories']): { image?: string; overlay: string; isFallback: boolean } {
+  if (member.coverImage) return { image: member.coverImage, overlay: DEFAULT_OVERLAY, isFallback: false };
+  const subcatId = member.categories?.[0];
+  const category = subcatId ? getCategoryForSubcategory(subcatId, categories) : undefined;
+  if (!category) return { overlay: DEFAULT_OVERLAY, isFallback: false };
+  return { image: CATEGORY_BG_MAP[category.icon], overlay: CATEGORY_OVERLAY, isFallback: true };
 }
 
 
@@ -76,7 +92,7 @@ const MembersPage: React.FC = () => {
   const [totalMembers, setTotalMembers] = useState(() => cachedTotal);
   
   // Load members — skips the network call when the cache is still fresh
-  const loadMembers = useCallback(async (_offset = 0, _append = false, forceRefresh = false) => {
+  const loadMembers = useCallback(async (forceRefresh = false) => {
     const isFresh = cacheTimestamp > 0 && Date.now() - cacheTimestamp < MEMBERS_CACHE_TTL;
     if (!forceRefresh && isFresh && cachedMembers.length > 0) {
       // Cache is valid — use it and skip the network request
@@ -119,7 +135,7 @@ const MembersPage: React.FC = () => {
 
   // Refresh function to force reload
   const refreshMembers = useCallback(() => {
-    loadMembers(0, false, true);
+    loadMembers(true);
   }, [loadMembers]);
 
   // No-op: all members loaded at once, no infinite scroll needed
@@ -204,7 +220,7 @@ const MembersPage: React.FC = () => {
 
   // Initial fetch on mount
   useEffect(() => {
-    loadMembers(0, false);
+    loadMembers();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run on mount to avoid infinite loops
 
@@ -262,17 +278,6 @@ const MembersPage: React.FC = () => {
     const firstName = member.firstName?.charAt(0) || '';
     const lastName = member.lastName?.charAt(0) || '';
     return (firstName + lastName).toUpperCase() || member.email.charAt(0).toUpperCase();
-  };
-
-  //@ts-ignore
-  const getRoleColor = (role: string) => {
-    switch (role) {
-      case 'admin': return 'bg-red-100 text-red-800';
-      case 'moderator': return 'bg-blue-100 text-blue-800';
-      case 'board_member': return 'bg-purple-100 text-purple-800';
-      case 'member': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
   };
 
   if (loading) {
@@ -465,10 +470,13 @@ const MembersPage: React.FC = () => {
               ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"
               : "space-y-0"
           }>
-            {filteredMembers.map((member, index) => (
+            {filteredMembers.map((member, index) => {
+            const { image: coverImage, overlay, isFallback } = getMemberCardBackground(member, categories);
+            const showBackground = viewMode === 'grid' && !!coverImage;
+            return (
             <Card 
               key={member.id} 
-              className={`cursor-pointer hover:shadow-lg transition-shadow overflow-hidden bg-cover bg-center ${
+              className={`relative cursor-pointer hover:shadow-lg transition-shadow overflow-hidden ${
                 viewMode === 'list' 
                   ? `p-2 flex flex-col sm:flex-row mt-0 ${
                       index === 0 
@@ -483,25 +491,34 @@ const MembersPage: React.FC = () => {
                     }` 
                   : 'p-4'
               }`}
-              style={viewMode === 'grid' && member.coverImage ? {
-                backgroundImage: `linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45)), url('${member.coverImage}')`
-              } : undefined}
               onClick={() => handleMemberClick(member.id)}
             >
+              {showBackground && (
+                <>
+                  {/* Fallback category images are desaturated so they read as a neutral
+                      placeholder rather than looking like the business's own photo. */}
+                  <div
+                    className={`absolute inset-0 bg-cover bg-center ${isFallback ? 'grayscale opacity-30' : ''}`}
+                    style={{ backgroundImage: `url('${coverImage}')` }}
+                  />
+                  <div className="absolute inset-0" style={{ backgroundColor: overlay }} />
+                </>
+              )}
+              <div className="relative z-10 flex-1 flex flex-col">
               <CardHeader className={`${viewMode === 'list' ? 'flex-1 p-0' : 'p-0'}`}>
                 <div className={`flex flex-row items-center space-x-4`}>
                   <Avatar className={'h-12 w-12 ring-0 ring-white !rounded-lg'}>
                     {member.avatar ? (
                       <AvatarImage src={member.avatar} alt={formatMemberName(member)} className="!rounded-lg" />
                     ) : (
-                      <AvatarFallback className="bg-primary/10 text-primary font-semibold !rounded-lg">
+                      <AvatarFallback className={`font-semibold !rounded-lg ${showBackground ? 'bg-white/20 text-white' : 'bg-primary/10 text-primary'}`}>
                         {getInitials(member)}
                       </AvatarFallback>
                     )}
                   </Avatar>
                   
                   <div className={'flex-1'}>
-                    <CardTitle className={`text-md ${viewMode === 'grid' && member.coverImage ? 'text-white hover:text-white' : 'text-highlight-foreground hover:text-foreground'}`}>
+                    <CardTitle className={`text-md ${showBackground ? 'text-white hover:text-white' : 'text-highlight-foreground hover:text-foreground'}`}>
                       {member.businessName || formatMemberName(member)}
                     </CardTitle>
                   </div>
@@ -515,7 +532,7 @@ const MembersPage: React.FC = () => {
                       <Badge
                         key={subcatId}
                         variant="secondary"
-                        className={`font-medium bg-opacity-50 ${member.coverImage ? 'text-white hover:text-white bg-opacity-30' : 'text-primary hover:text-foreground'} text-xs px-2 py-0`}
+                        className={`font-medium bg-opacity-50 ${showBackground ? 'text-white hover:text-white bg-opacity-30' : 'text-primary hover:text-foreground'} text-xs px-2 py-0`}
                       >
                         {getSubcategoryName(subcatId, categories)}
                       </Badge>
@@ -550,8 +567,9 @@ const MembersPage: React.FC = () => {
                   </div>
                 )} */}
               </CardContent>
+              </div>
             </Card>
-          ))}
+          );})}
         </div>
         
         <div className="mt-8 space-y-4">
