@@ -112,6 +112,7 @@ export function NotificationBell() {
 
       {open && createPortal(
         <div
+          onMouseDown={(e) => e.stopPropagation()}
           className={[
             // mobile: full-screen below header (h-20 = 80px)
             'fixed inset-x-0 top-20 bottom-0 z-[200]',

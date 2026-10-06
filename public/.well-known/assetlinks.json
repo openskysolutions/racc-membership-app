@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.get_login_creds"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.racc.membership",
+      "sha256_cert_fingerprints": [
+        "03:33:D5:EB:5B:4D:13:E6:09:73:2F:70:93:5F:0D:83:80:C5:71:54:40:B1:37:A4:65:FD:55:F1:BD:4D:46:D9"
+      ]
+    }
+  }
+]

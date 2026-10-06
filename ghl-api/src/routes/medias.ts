@@ -9,6 +9,7 @@ const {
   uploadCoverImage,
   uploadEventCoverImage,
   uploadBlogImage,
+  uploadElectionCandidatePhoto,
 } = require('@/controllers/mediasController');
 const { requireAuth } = require('@/middleware/auth');
 const router = express.Router();
@@ -285,5 +286,60 @@ router.post('/upload-event-cover', uploadEventCoverImage);
  *         description: Upload failed
  */
 router.post('/upload-blog-image', uploadBlogImage);
+
+/**
+ * @swagger
+ * /medias/upload-election-candidate-photo:
+ *   post:
+ *     summary: Upload a photo for a board election candidate
+ *     tags:
+ *       - Medias
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               fileData:
+ *                 type: string
+ *                 description: Base64 encoded image data
+ *               fileName:
+ *                 type: string
+ *                 description: Name of the file
+ *               mimeType:
+ *                 type: string
+ *                 description: MIME type of the file
+ *               locationId:
+ *                 type: string
+ *                 description: GoHighLevel location ID (optional)
+ *             required:
+ *               - fileData
+ *     responses:
+ *       201:
+ *         description: Candidate photo uploaded successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 mediaId:
+ *                   type: string
+ *                 mediaUrl:
+ *                   type: string
+ *                 message:
+ *                   type: string
+ *       400:
+ *         description: Bad request - missing fileData
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Upload failed
+ */
+router.post('/upload-election-candidate-photo', requireAuth, uploadElectionCandidatePhoto);
 
 module.exports = router;

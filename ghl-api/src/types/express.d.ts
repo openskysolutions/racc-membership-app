@@ -15,6 +15,7 @@ declare global {
         ghlBusinessId?: string;
         isMainContact?: boolean;
         isBusinessProfileEditor?: boolean;
+        isExecutiveDirector?: boolean;
       };
       session?: {
         id: string;

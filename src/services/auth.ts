@@ -30,6 +30,7 @@ interface AuthResponse {
     ghlBusinessId?: string | null;
     isMainContact?: boolean;
     isBusinessProfileEditor?: boolean;
+    isExecutiveDirector?: boolean;
   };
   token: string;
 }

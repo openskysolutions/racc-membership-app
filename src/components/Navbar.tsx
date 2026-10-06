@@ -198,6 +198,13 @@ export const Navbar = () => {
                         </span>
                       </DropdownMenuItem>
                     )}
+                    {user?.status === 'active' && (
+                      <DropdownMenuItem onClick={() => navigate('/board-elections')}>
+                        <span className="flex items-center gap-2">
+                          Executive Board Elections
+                        </span>
+                      </DropdownMenuItem>
+                    )}
                     {user?.role === 'admin' && (
                       <DropdownMenuItem onClick={() => navigate('/admin')}>
                         <span className="flex items-center gap-2">
@@ -379,6 +386,19 @@ export const Navbar = () => {
                     className="text-lg"
                   >
                     Yearly Voting
+                  </Button>
+                )}
+                {user?.status === 'active' && (
+                  <Button
+                    size="lg"
+                    variant={"outline"}
+                    onClick={() => {
+                      setIsOpen(false);
+                      navigate('/board-elections');
+                    }}
+                    className="text-lg"
+                  >
+                    Executive Board Elections
                   </Button>
                 )}
                 {user?.role === 'admin' && (

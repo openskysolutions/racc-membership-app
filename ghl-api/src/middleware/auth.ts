@@ -58,6 +58,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
       // Falls back to false on cache miss (server restart) — user must re-login to restore.
       isMainContact: session?.user?.isMainContact ?? false,
       isBusinessProfileEditor: session?.user?.isBusinessProfileEditor ?? false,
+      isExecutiveDirector: session?.user?.isExecutiveDirector ?? false,
     };
     req.session = session;
     
@@ -113,6 +114,20 @@ export function requireModerator(req: Request, res: Response, next: NextFunction
  */
 export function requireBoardMember(req: Request, res: Response, next: NextFunction) {
   return requireRole(['admin', 'moderator', 'board_member'])(req, res, next);
+}
+
+/**
+ * Middleware to require the Executive Director flag specifically — not role-based,
+ * and deliberately NOT satisfied by admin alone (used for election tie-breaking).
+ */
+export function requireExecutiveDirector(req: Request, res: Response, next: NextFunction) {
+  if (!req.user) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  if (!req.user.isExecutiveDirector) {
+    return res.status(403).json({ error: 'Executive Director access required' });
+  }
+  next();
 }
 
 /**

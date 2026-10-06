@@ -18,6 +18,7 @@ import businessCategoriesRoutes from '@/routes/business-categories';
 import businessesRoutes from '@/routes/businesses';
 import notificationsRoutes from '@/routes/notifications';
 import settingsRoutes from '@/routes/settings';
+import electionsRoutes from '@/routes/elections';
 
 // CommonJS imports
 const moderationRoutes = require('@/routes/moderation');
@@ -57,5 +58,8 @@ router.use('/notifications', notificationsRoutes);
 
 // Settings routes
 router.use('/settings', settingsRoutes);
+
+// Executive board member elections routes
+router.use('/elections', electionsRoutes);
 
 export default router;

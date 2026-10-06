@@ -48,6 +48,12 @@ app.use((req, res, next) => {
 
 app.use(express.static(path.join(__dirname, 'dist')));
 
+// Served without a file extension, so static middleware can't infer the mime type
+app.get('/.well-known/apple-app-site-association', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.sendFile(path.join(__dirname, 'dist', '.well-known', 'apple-app-site-association'));
+});
+
 // OG tag injection for blog post pages when requested by social crawlers
 app.get('/blog/:slug', async (req, res, next) => {
   const ua = req.headers['user-agent'] || '';

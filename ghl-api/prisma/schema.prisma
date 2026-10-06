@@ -33,6 +33,7 @@ model User {
   jobs          Job[]
   deviceTokens  DeviceToken[]
   notifications Notification[]
+  electionVotes ElectionVote[]
 
   @@index([email])
   @@index([ghlContactId])
@@ -397,3 +398,67 @@ model EventFlag {
 
   @@map("event_flags")
 }
+
+// Executive board member elections: a position (e.g. "Treasurer") open for a vote
+model ElectionPosition {
+  id                    Int       @id @default(autoincrement())
+  title                 String
+  description           String?   @db.Text
+  seatsAvailable        Int       @default(1)
+  status                String    @default("draft") // draft, nominations, voting_open, voting_closed, results_published
+  votingStartAt         DateTime?
+  votingEndAt           DateTime?
+  votingClosedManually  Boolean   @default(false)
+  resultsPublishedAt    DateTime?
+  // Executive Director's picks to break a tie for the last seat(s); empty until resolved
+  tieBreakWinnerIds     Int[]     @default([])
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  // Relations
+  candidates ElectionCandidate[]
+  votes      ElectionVote[]
+
+  @@index([status])
+  @@map("election_positions")
+}
+
+// A chamber member nominated as a candidate for an ElectionPosition
+model ElectionCandidate {
+  id           Int      @id @default(autoincrement())
+  positionId   Int
+  name         String
+  businessName String?
+  statement    String?  @db.Text
+  photoUrl     String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  position ElectionPosition @relation(fields: [positionId], references: [id], onDelete: Cascade)
+  votes    ElectionVote[]
+
+  @@index([positionId])
+  @@map("election_candidates")
+}
+
+// One ballot entry: a member's vote for a candidate on a position
+model ElectionVote {
+  id         Int      @id @default(autoincrement())
+  positionId Int
+  candidateId Int
+  voterId    Int
+  createdAt  DateTime @default(now())
+
+  // Relations
+  position  ElectionPosition  @relation(fields: [positionId], references: [id], onDelete: Cascade)
+  candidate ElectionCandidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  voter     User              @relation(fields: [voterId], references: [id], onDelete: Cascade)
+
+  @@unique([positionId, candidateId, voterId])
+  @@index([positionId])
+  @@index([candidateId])
+  @@index([voterId])
+  @@map("election_votes")
+}
+

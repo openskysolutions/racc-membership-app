@@ -345,14 +345,20 @@ const YearlyVotingPage: React.FC = () => {
       )}
 
       <Tabs defaultValue="business" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-6">
-          <TabsTrigger value="business">
+        <TabsList className="grid w-full min-h-24 sm:min-h-0 grid-cols-1 sm:grid-cols-2 mb-6 py-2 gap-2">
+          <TabsTrigger
+            value="business"
+            className="data-[state=active]:border-l-4 data-[state=active]:border-b-0 sm:data-[state=active]:border-l-0 sm:data-[state=active]:border-b-4 data-[state=active]:border-primary"
+          >
             Business of the Year
             {votingStatus?.hasVoted?.business_of_month && (
               <CheckCircle2 className="ml-2 h-4 w-4 text-green-600" />
             )}
           </TabsTrigger>
-          <TabsTrigger value="superstar">
+          <TabsTrigger
+            value="superstar"
+            className="data-[state=active]:border-l-4 data-[state=active]:border-b-0 sm:data-[state=active]:border-l-0 sm:data-[state=active]:border-b-4 data-[state=active]:border-primary"
+          >
             Customer Service Superstar of the Year
             {votingStatus?.hasVoted?.customer_service_superstar && (
               <CheckCircle2 className="ml-2 h-4 w-4 text-green-600" />

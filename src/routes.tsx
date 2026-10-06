@@ -18,6 +18,7 @@ import JoinPage from '@/pages/Join';
 import NominationsPage from '@/pages/Nominations';
 import VotingPage from '@/pages/Voting';
 import YearlyVotingPage from '@/pages/YearlyVoting';
+import BoardElectionVotingPage from '@/pages/BoardElectionVoting';
 
 import BasicMembershipPage from '@/pages/MembershipBasic';
 import EnhancedMembershipPage from '@/pages/MembershipEnhanced';
@@ -61,6 +62,7 @@ const PostCategoryFormPage = !isMobile ? lazy(() => import('@/pages/admin/PostCa
 const PostAuthorsPage = !isMobile ? lazy(() => import('@/pages/admin/PostAuthors')) : MobileStub;
 const PostAuthorFormPage = !isMobile ? lazy(() => import('@/pages/admin/PostAuthorForm')) : MobileStub;
 const PostFormPage = !isMobile ? lazy(() => import('@/pages/admin/PostForm')) : MobileStub;
+const ElectionsManagementPage = !isMobile ? lazy(() => import('@/pages/admin/ElectionsManagement')) : MobileStub;
 
 import { ReactNode } from 'react';
 
@@ -168,6 +170,7 @@ export default function AppRoutes() {
         <Route path="nominations" element={<NominationsPage />} />
         <Route path="voting" element={<AdminRoute><VotingPage /></AdminRoute>} />
         <Route path="yearly-voting" element={<ActiveMemberRoute><YearlyVotingPage /></ActiveMemberRoute>} />
+        <Route path="board-elections" element={<ActiveMemberRoute><BoardElectionVotingPage /></ActiveMemberRoute>} />
 
         <Route path="basic-membership" element={<BasicMembershipPage />} />
         <Route path="enhanced-membership" element={<EnhancedMembershipPage />} />
@@ -215,6 +218,8 @@ export default function AppRoutes() {
         
         <Route path="admin/posts/new" element={<AdminRoute><Suspense fallback={<LazyLoadingFallback />}><PostFormPage /></Suspense></AdminRoute>} />
         <Route path="admin/posts/:id/edit" element={<AdminRoute><Suspense fallback={<LazyLoadingFallback />}><PostFormPage /></Suspense></AdminRoute>} />
+
+        <Route path="admin/elections" element={<AdminRoute><Suspense fallback={<LazyLoadingFallback />}><ElectionsManagementPage /></Suspense></AdminRoute>} />
       </Route>
 
       {/* External redirects */}

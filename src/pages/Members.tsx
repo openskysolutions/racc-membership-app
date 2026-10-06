@@ -14,8 +14,7 @@ import { useMembersStore, MEMBERS_CACHE_TTL } from '@/stores/membersStore';
 import cn from 'classnames';
 import { isNativeApp } from '@/lib/platform';
 import CategoryBar from '@/components/CategoryBar';
-import { useBusinessCategories, getSubcategoryName, getCategoryForSubcategory } from '@/hooks/useBusinessCategories';
-import { CATEGORY_BG_MAP } from '@/lib/categoryImages';
+import { useBusinessCategories, getSubcategoryName } from '@/hooks/useBusinessCategories';
 
 // Extended member type for the directory page
 interface Member extends BaseMember {
@@ -37,19 +36,12 @@ interface Member extends BaseMember {
   };
 }
 
-// Darkened, slightly desaturated neutral overlay used only when a business has
-// neither a cover image nor a matching category image to fall back to.
+// Darkened, slightly desaturated neutral overlay used when a business has no cover image.
 const DEFAULT_OVERLAY = 'rgba(0, 0, 0, 0.45)';
-const CATEGORY_OVERLAY = 'rgba(0, 0, 0, 0.60)';
 
-// Falls back to the business's top-level category image (and matching color tint,
-// same as the CategoryBar tabs) when no cover image was uploaded.
-function getMemberCardBackground(member: Member, categories: ReturnType<typeof useBusinessCategories>['categories']): { image?: string; overlay: string; isFallback: boolean } {
-  if (member.coverImage) return { image: member.coverImage, overlay: DEFAULT_OVERLAY, isFallback: false };
-  const subcatId = member.categories?.[0];
-  const category = subcatId ? getCategoryForSubcategory(subcatId, categories) : undefined;
-  if (!category) return { overlay: DEFAULT_OVERLAY, isFallback: false };
-  return { image: CATEGORY_BG_MAP[category.icon], overlay: CATEGORY_OVERLAY, isFallback: true };
+function getMemberCardBackground(member: Member): { image?: string; overlay: string } {
+  if (member.coverImage) return { image: member.coverImage, overlay: DEFAULT_OVERLAY };
+  return { overlay: DEFAULT_OVERLAY };
 }
 
 
@@ -471,7 +463,7 @@ const MembersPage: React.FC = () => {
               : "space-y-0"
           }>
             {filteredMembers.map((member, index) => {
-            const { image: coverImage, overlay, isFallback } = getMemberCardBackground(member, categories);
+            const { image: coverImage, overlay } = getMemberCardBackground(member);
             const showBackground = viewMode === 'grid' && !!coverImage;
             return (
             <Card 
@@ -495,10 +487,8 @@ const MembersPage: React.FC = () => {
             >
               {showBackground && (
                 <>
-                  {/* Fallback category images are desaturated so they read as a neutral
-                      placeholder rather than looking like the business's own photo. */}
                   <div
-                    className={`absolute inset-0 bg-cover bg-center ${isFallback ? 'grayscale opacity-30' : ''}`}
+                    className="absolute inset-0 bg-cover bg-center"
                     style={{ backgroundImage: `url('${coverImage}')` }}
                   />
                   <div className="absolute inset-0" style={{ backgroundColor: overlay }} />

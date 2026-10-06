@@ -134,7 +134,8 @@ router.post('/authorize', async (req, res) => {
         status: user.status,
         ghlBusinessId: user.ghlBusinessId ?? null,
         isMainContact: user.isMainContact ?? false,
-        isBusinessProfileEditor: user.isBusinessProfileEditor ?? false
+        isBusinessProfileEditor: user.isBusinessProfileEditor ?? false,
+        isExecutiveDirector: user.isExecutiveDirector ?? false
       }
     });
 
@@ -247,7 +248,8 @@ router.post('/token', async (req, res) => {
         role: user.role,
         ghlBusinessId: user.ghlBusinessId ?? null,
         isMainContact: user.isMainContact ?? false,
-        isBusinessProfileEditor: user.isBusinessProfileEditor ?? false
+        isBusinessProfileEditor: user.isBusinessProfileEditor ?? false,
+        isExecutiveDirector: user.isExecutiveDirector ?? false
       }
     });
 
@@ -349,7 +351,8 @@ router.post('/session', async (req, res) => {
           role: user.role,
           ghlBusinessId: user.ghlBusinessId ?? null,
           isMainContact: user.isMainContact ?? false,
-          isBusinessProfileEditor: user.isBusinessProfileEditor ?? false
+          isBusinessProfileEditor: user.isBusinessProfileEditor ?? false,
+          isExecutiveDirector: user.isExecutiveDirector ?? false
         }
       });
     }
@@ -506,7 +509,8 @@ router.post('/check-session', async (req, res) => {
         role: user.role,
         ghlBusinessId: user.ghlBusinessId ?? null,
         isMainContact: user.isMainContact ?? false,
-        isBusinessProfileEditor: user.isBusinessProfileEditor ?? false
+        isBusinessProfileEditor: user.isBusinessProfileEditor ?? false,
+        isExecutiveDirector: user.isExecutiveDirector ?? false
       },
       session: {
         sessionId: session.id,
@@ -602,6 +606,7 @@ router.get('/profile', async (req, res) => {
       ghlBusinessId: user.ghlBusinessId ?? null,
       isMainContact: user.isMainContact ?? false,
       isBusinessProfileEditor: user.isBusinessProfileEditor ?? false,
+      isExecutiveDirector: user.isExecutiveDirector ?? false,
       avatarUrl: user.avatarUrl,
       tags: user.tags || [], // Include tags from GoHighLevel
       createdAt: user.createdAt,
@@ -899,7 +904,8 @@ router.post('/register', async (req, res) => {
         ghlContactId: enrichedUser.ghlContactId,
         ghlBusinessId: enrichedUser.ghlBusinessId ?? null,
         isMainContact: enrichedUser.isMainContact ?? false,
-        isBusinessProfileEditor: enrichedUser.isBusinessProfileEditor ?? false
+        isBusinessProfileEditor: enrichedUser.isBusinessProfileEditor ?? false,
+        isExecutiveDirector: enrichedUser.isExecutiveDirector ?? false
       },
       payment: {
         required: true,
@@ -977,7 +983,8 @@ router.post('/login', async (req, res) => {
         membershipTier: user.membershipTier,
         ghlBusinessId: user.ghlBusinessId ?? null,
         isMainContact: user.isMainContact ?? false,
-        isBusinessProfileEditor: user.isBusinessProfileEditor ?? false
+        isBusinessProfileEditor: user.isBusinessProfileEditor ?? false,
+        isExecutiveDirector: user.isExecutiveDirector ?? false
       },
       session: {
         sessionId: session.id,
@@ -1518,7 +1525,8 @@ router.post('/register-existing', async (req, res) => {
         ghlContactId: enrichedUser.ghlContactId,
         ghlBusinessId: enrichedUser.ghlBusinessId ?? null,
         isMainContact: enrichedUser.isMainContact ?? false,
-        isBusinessProfileEditor: enrichedUser.isBusinessProfileEditor ?? false
+        isBusinessProfileEditor: enrichedUser.isBusinessProfileEditor ?? false,
+        isExecutiveDirector: enrichedUser.isExecutiveDirector ?? false
       },
       payment: {
         required: true,

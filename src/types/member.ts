@@ -111,6 +111,7 @@ export interface AuthenticatedUser {
   businessName?: string | null;
   isMainContact: boolean;
   isBusinessProfileEditor: boolean;
+  isExecutiveDirector?: boolean;
 }
 
 /**

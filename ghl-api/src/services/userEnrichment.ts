@@ -113,6 +113,8 @@ export interface EnrichedUser {
   // Business identity (resolved from GHL at login)
   isMainContact?: boolean;
   isBusinessProfileEditor?: boolean;
+  // Tag-driven, not role-based — set via the 'executive director' GHL contact tag
+  isExecutiveDirector?: boolean;
 
   // Computed fields
   isActive?: boolean;
@@ -181,6 +183,7 @@ export async function enrichUserWithGhlData(
       const tags: string[] = Array.isArray(contact.tags) ? contact.tags : [];
       enrichedUser.isMainContact = tags.includes('main-contact') || tags.includes('main contact');
       enrichedUser.isBusinessProfileEditor = enrichedUser.isMainContact || tags.includes('business-profile-editor') || tags.includes('business profile editor');
+      enrichedUser.isExecutiveDirector = tags.includes('executive director');
 
       // Sync ghlBusinessId to DB if it changed
       if (contactBusinessId && dbUser.id && contactBusinessId !== dbUser.ghlBusinessId) {

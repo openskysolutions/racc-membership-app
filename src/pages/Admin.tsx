@@ -18,7 +18,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from '@/components/ui/label';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, Edit, Trash2, Search, MoreHorizontal, AlertTriangle, CheckCircle, Clock, Award, LucideRefreshCcw, Star, FileText, Bell, ChevronDown, Calendar, Settings, Building2, Contact } from 'lucide-react';
+import { Users, Edit, Trash2, Search, MoreHorizontal, AlertTriangle, CheckCircle, Clock, Award, LucideRefreshCcw, Star, FileText, Bell, ChevronDown, Calendar, Settings, Building2, Contact, Vote } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { getUpcomingEvents, CalendarEvent } from '@/services/calendar';
 import { getFeaturedEventId, setFeaturedEventId } from '@/services/settingsService';
@@ -143,24 +143,6 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState(currentUser?.role === 'admin' ? 'users' : 'nominations');
   const [adminNavOpen, setAdminNavOpen] = useState(false);
 
-  if (!hasAccess) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-card">
-        <Card className="w-96">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-red-500" />
-              Access Denied
-            </CardTitle>
-            <CardDescription>
-              You don't have permission to access this page. Admin or board member access is required.
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      </div>
-    );
-  }
-
   // Initial load
   useEffect(() => {
     loadData(0, false);
@@ -178,18 +160,22 @@ export default function AdminPage() {
 
   useEffect(() => {
     loadBusinessNominations();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [businessMonthSelected]);
 
   useEffect(() => {
     loadSuperstarNominations();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [superstarMonthSelected]);
 
   useEffect(() => {
     loadBusinessYearlyNominations();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [businessYearSelected]);
 
   useEffect(() => {
     loadSuperstarYearlyNominations();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [superstarYearSelected]);
 
   // Generate months for dropdown: next month (current voting round) + last 11 months
@@ -323,8 +309,9 @@ export default function AdminPage() {
       },
       { threshold: 0.1 }
     );
-    if (usersObserverTarget.current) observer.observe(usersObserverTarget.current);
-    return () => { if (usersObserverTarget.current) observer.unobserve(usersObserverTarget.current); };
+    const target = usersObserverTarget.current;
+    if (target) observer.observe(target);
+    return () => { if (target) observer.unobserve(target); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [usersHasMore, loadingMore, loading, usersOffset, loadData]);
 
@@ -338,8 +325,9 @@ export default function AdminPage() {
       },
       { threshold: 0.1 }
     );
-    if (bizObserverTarget.current) observer.observe(bizObserverTarget.current);
-    return () => { if (bizObserverTarget.current) observer.unobserve(bizObserverTarget.current); };
+    const target = bizObserverTarget.current;
+    if (target) observer.observe(target);
+    return () => { if (target) observer.unobserve(target); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bizHasMore, bizLoadingMore, bizLoading, bizOffset, loadBusinesses]);
 
@@ -353,8 +341,9 @@ export default function AdminPage() {
       },
       { threshold: 0.1 }
     );
-    if (contactsObserverTarget.current) observer.observe(contactsObserverTarget.current);
-    return () => { if (contactsObserverTarget.current) observer.unobserve(contactsObserverTarget.current); };
+    const target = contactsObserverTarget.current;
+    if (target) observer.observe(target);
+    return () => { if (target) observer.unobserve(target); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contactsHasMore, contactsLoadingMore, contactsLoading, contactsOffset, loadContacts]);
 
@@ -677,6 +666,7 @@ export default function AdminPage() {
     { value: 'nominations', label: 'Nominations', icon: Award },
     { value: 'monthly-results', label: 'Monthly Results', icon: Star },
     { value: 'yearly-results', label: 'Yearly Results', icon: Star },
+    { value: 'elections', label: 'Executive Board Elections', icon: Vote },
     ...(isFullAdmin ? [
       { value: 'blog-posts', label: 'Blog Posts', icon: FileText },
       { value: 'notifications', label: 'Notifications', icon: Bell },
@@ -685,6 +675,24 @@ export default function AdminPage() {
   ];
   const activeNavItem = navItems.find(item => item.value === activeTab);
   const ActiveIcon = activeNavItem?.icon;
+
+  if (!hasAccess) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-card">
+        <Card className="w-96">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-red-500" />
+              Access Denied
+            </CardTitle>
+            <CardDescription>
+              You don't have permission to access this page. Admin or board member access is required.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen px-3 py-6 md:px-6">
@@ -738,6 +746,8 @@ export default function AdminPage() {
                         setAdminNavOpen(false);
                         if (item.value === 'blog-posts') {
                           window.location.href = '/admin/posts';
+                        } else if (item.value === 'elections') {
+                          window.location.href = '/admin/elections';
                         } else {
                           setActiveTab(item.value);
                           if (item.value === 'nominations') loadNominations();
@@ -773,6 +783,10 @@ export default function AdminPage() {
               <TabsTrigger value="yearly-results" className="shrink-0 md:w-full md:justify-start px-3 py-2 h-9 md:h-auto rounded-lg gap-2 text-sm font-medium bg-transparent border-0 text-muted-foreground data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-none hover:bg-muted/50 hover:text-foreground transition-colors">
                 <Star className="h-4 w-4 shrink-0" />
                 <span>Yearly Results</span>
+              </TabsTrigger>
+              <TabsTrigger value="elections" className="shrink-0 md:w-full md:justify-start px-3 py-2 h-9 md:h-auto rounded-lg gap-2 text-sm font-medium bg-transparent border-0 text-muted-foreground data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-none hover:bg-muted/50 hover:text-foreground transition-colors" onClick={() => window.location.href = '/admin/elections'}>
+                <Vote className="h-4 w-4 shrink-0" />
+                <span>Exec Board Elections</span>
               </TabsTrigger>
               {isFullAdmin && (
                 <>
@@ -2322,6 +2336,7 @@ function NotificationsTab() {
       .then(setCalEvents)
       .catch(() => {})
       .finally(() => setCalEventsLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contentType]);
 
   // Lazy-load published blog posts when the post content type is chosen
@@ -2333,6 +2348,7 @@ function NotificationsTab() {
       .then(d => setPosts(d.data ?? []))
       .catch(() => {})
       .finally(() => setPostsLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contentType]);
 
   function handleContentTypeChange(type: 'none' | 'event' | 'post') {

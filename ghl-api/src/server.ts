@@ -5,6 +5,7 @@ import app from './app';
 import { databaseService } from '@/services/database';
 import { startEventReminderScheduler } from '@/services/eventReminderScheduler';
 import { startDirectoryCachePrewarm } from '@/services/directoryCache';
+import { startElectionScheduler } from '@/services/electionScheduler';
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
@@ -31,6 +32,7 @@ async function startServer() {
 
       // Start scheduled jobs
       startEventReminderScheduler();
+      startElectionScheduler();
 
       // Prewarm the member directory cache so GET /businesses responds from
       // memory instead of waiting on a live GHL API call, and keep it warm.
