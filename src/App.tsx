@@ -9,6 +9,7 @@ import { Toaster } from '@/components/ui/sonner';
 import { SessionMonitor } from '@/components/SessionMonitor';
 import { initPushNotifications, onNotificationTap, consumePendingDeepLink } from '@/services/pushNotifications';
 import { openNotificationBell } from '@/components/NotificationBell';
+import { listenForTokenRequests, requestTokenFromOtherTabs } from '@/services/tokenRelay';
 import { useNavigate } from 'react-router-dom';
 
 import "@/App.css";
@@ -19,15 +20,32 @@ function App() {
   const fetchLocationIfNeeded = useLocationStore(state => state.fetchLocationIfNeeded);
   const navigate = useNavigate();
 
+  // Let other tabs ask this tab for its token (e.g. when they're opened from a shared link)
   useEffect(() => {
-    // Check for existing authentication token in either storage
-    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-    if (token) {
-      checkAuth();
-    } else {
-      // No token found: clear loading state without fetching
-      useAuthStore.setState({ isLoading: false });
-    }
+    listenForTokenRequests();
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      // Check for existing authentication token in either storage
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      if (token) {
+        checkAuth();
+        return;
+      }
+
+      // No token in this tab - a direct/shared link opens in a fresh tab with
+      // empty sessionStorage even if the user is already logged in elsewhere.
+      // Ask other open tabs before treating this as logged out.
+      const relayedToken = await requestTokenFromOtherTabs();
+      if (relayedToken) {
+        sessionStorage.setItem('token', relayedToken);
+        checkAuth();
+      } else {
+        // No token found anywhere: clear loading state without fetching
+        useAuthStore.setState({ isLoading: false });
+      }
+    })();
   }, [checkAuth]);
 
   // Fetch location information on app startup (uses cache if available)
