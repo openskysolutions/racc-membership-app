@@ -17,4 +17,11 @@ module.exports = {
     // Matches existing codebase convention of `catch (err: any)` used throughout src/ and ghl-api/src/
     '@typescript-eslint/no-explicit-any': 'off',
   },
+  overrides: [
+    {
+      // Node script (not part of the Vite/browser app) - uses process/module globals
+      files: ['serve.js'],
+      env: { node: true },
+    },
+  ],
 }

@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /login
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /connect-account
+Disallow: /profile
+Disallow: /voting
+Disallow: /yearly-voting
+Disallow: /board-elections
+Disallow: /dashboard
+
+Sitemap: https://richfieldareachamber.com/sitemap.xml

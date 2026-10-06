@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { useNavigate } from 'react-router-dom';
 import { openExternalUrl, membershipUrls } from '@/lib/externalBrowser';
-import cn from "classnames";
 import {
   Carousel,
   CarouselContent,
@@ -10,13 +9,16 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
-import { getCurrentYearEvents, getEventCustomFields, type CalendarEvent } from '@/services/calendar';
+import { getCurrentYearEvents, type CalendarEvent } from '@/services/calendar';
 import { Calendar, MapPin } from 'lucide-react';
 import Autoplay from "embla-carousel-autoplay";
-import mainSlideImage from '@/assets/Collage1.png';
-import meetingImg from '@/assets/meeting-image.jpg';
 
 const GHL_CALENDAR_ID = '9XpDcFHv3SmCUuHeuOOg';
+
+// Hosted on DigitalOcean Spaces (CDN-enabled), bucket "rac". Shared looping
+// background behind every slide, replacing the old per-slide background images.
+const HERO_VIDEO_URL = 'https://rac.sfo3.cdn.digitaloceanspaces.com/hero-web-720-crf26.mp4';
+const HERO_POSTER_URL = 'https://rac.sfo3.cdn.digitaloceanspaces.com/hero-poster.jpg';
 
 interface MembershipSlide {
   type: 'membership';
@@ -24,8 +26,6 @@ interface MembershipSlide {
   subtitle: string;
   description: string;
   bulletPoints: string[];
-  bgImage: string;
-  bgColor: string;
   ctaText: string;
   ctaLink: string;
 }
@@ -33,7 +33,6 @@ interface MembershipSlide {
 interface EventSlide {
   type: 'event';
   event: CalendarEvent;
-  coverImageUrl?: string;
 }
 
 interface MainSlide {
@@ -55,8 +54,6 @@ const membershipSlides: MembershipSlide[] = [
       'Networking Opportunities',
       'Sponsorship Opportunities'
     ],
-    bgImage: meetingImg,
-    bgColor: 'bg-sky-800',
     ctaText: 'Join Basic',
     ctaLink: membershipUrls.basic
   },
@@ -72,8 +69,6 @@ const membershipSlides: MembershipSlide[] = [
       'Annual Feature in Richfield Reaper',
       'Business Bio & Address Map'
     ],
-    bgImage: '/richfieldutah_fall2024138-1-scaled.jpg',
-    bgColor: 'bg-highlight-foreground',
     ctaText: 'Join Enhanced',
     ctaLink: membershipUrls.enhanced
   },
@@ -89,8 +84,6 @@ const membershipSlides: MembershipSlide[] = [
       'Placemat Advertising',
       'Cover Image & Social Links'
     ],
-    bgImage: '/20250213_084901-scaled-1.jpg',
-    bgColor: 'bg-foreground',
     ctaText: 'Join Elite',
     ctaLink: membershipUrls.elite
   }
@@ -129,21 +122,7 @@ export const HeroCarousel = () => {
           .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
           .slice(0, 3);
 
-        // Fetch cover images for upcoming events
-        const eventSlidesPromises = upcomingEvents.map(async (event) => {
-          try {
-            const customFields = await getEventCustomFields(event.id);
-            return { 
-              type: 'event' as const, 
-              event,
-              coverImageUrl: customFields.coverImageUrl 
-            };
-          } catch (error) {
-            return { type: 'event' as const, event };
-          }
-        });
-
-        const eventSlides = await Promise.all(eventSlidesPromises);
+        const eventSlides: EventSlide[] = upcomingEvents.map((event) => ({ type: 'event' as const, event }));
 
         // Build slides array
         const allSlides: SlideData[] = [
@@ -294,14 +273,19 @@ export const HeroCarousel = () => {
 
   if (loading) {
     return (
-      <section className={cn(
-        `bg-[url(@/assets/radio-show.jpg)] bg-cover bg-center bg-no-repeat bg-[#0f172a] bg-opacity-30 bg-blend-multiply`,
-        'relative'
-      )}>
-        <div className={cn(
-          "w-full h-full backdrop-blur-[0px] backdrop-brightness-50",
-          "container grid place-items-center pt-14 py-10 md:py-16"
-        )}>
+      <section className="relative h-[440px] md:h-[490px] overflow-hidden bg-[#0f172a]">
+        <video
+          className="absolute inset-0 h-full w-full object-cover"
+          src={HERO_VIDEO_URL}
+          poster={HERO_POSTER_URL}
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="auto"
+        />
+        <div className="absolute inset-0 bg-black/50" />
+        <div className="relative w-full h-full container grid place-items-center pt-14 py-10 md:py-16">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-highlight"></div>
         </div>
       </section>
@@ -309,57 +293,44 @@ export const HeroCarousel = () => {
   }
 
   return (
-    <Carousel
-      opts={{
-        align: "start",
-        loop: true,
-      }}
-      plugins={[plugin.current]}
-      onMouseEnter={plugin.current.stop}
-      onMouseLeave={plugin.current.reset}
-      className="w-full"
-    >
-      <CarouselContent>
-        {slides.map((slide, index) => {
-          let bgStyle: React.CSSProperties = {};
-          let bgColorClass = 'bg-[#0f172a]';
+    <section className="relative h-[440px] md:h-[490px] overflow-hidden bg-[#0f172a]">
+      <video
+        className="absolute inset-0 h-full w-full object-cover"
+        src={HERO_VIDEO_URL}
+        poster={HERO_POSTER_URL}
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="auto"
+      />
+      <div className="absolute inset-0 bg-black/50" />
 
-          if (slide.type === 'main') {
-            bgStyle = { backgroundImage: `url(${mainSlideImage})` };
-          } else if (slide.type === 'membership') {
-            bgStyle = { backgroundImage: `url(${slide.bgImage})` };
-            bgColorClass = slide.bgColor;
-          } else if (slide.type === 'event') {
-            // Use event cover image if available, otherwise fall back to default
-            const coverImage = slide.coverImageUrl || mainSlideImage;
-            bgStyle = { backgroundImage: `url(${coverImage})` };
-          }
-
-          return (
+      <Carousel
+        opts={{
+          align: "start",
+          loop: true,
+        }}
+        plugins={[plugin.current]}
+        onMouseEnter={plugin.current.stop}
+        onMouseLeave={plugin.current.reset}
+        className="relative w-full"
+      >
+        <CarouselContent>
+          {slides.map((slide, index) => (
             <CarouselItem key={index}>
-              <section 
-                className={cn(
-                  `bg-cover bg-center bg-no-repeat ${bgColorClass} bg-opacity-30 bg-blend-multiply`,
-                  'relative h-[440px] md:h-[490px]'
-                )}
-                style={bgStyle}
-              >
-                <div className={cn(
-                  "w-full h-full backdrop-blur-[0px] backdrop-brightness-50",
-                  "container grid place-items-top pt-12 pb-20 md:pt-12 md:pb-24 gap-10 max-w-full overflow-hidden"
-                )}>
-                  {slide.type === 'main' && renderMainSlide()}
-                  {slide.type === 'event' && renderEventSlide(slide)}
-                  {slide.type === 'membership' && renderMembershipSlide(slide)}
-                </div>
-              </section>
+              <div className="relative h-[440px] md:h-[490px] container grid place-items-top pt-12 pb-20 md:pt-12 md:pb-24 gap-10 max-w-full overflow-hidden">
+                {slide.type === 'main' && renderMainSlide()}
+                {slide.type === 'event' && renderEventSlide(slide)}
+                {slide.type === 'membership' && renderMembershipSlide(slide)}
+              </div>
             </CarouselItem>
-          );
-        })}
-      </CarouselContent>
-      
-      <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70 bg-transparent hover:bg-white/10 border-0 h-16" />
-      <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70 bg-transparent hover:bg-white/10 border-0 h-16" />
-    </Carousel>
+          ))}
+        </CarouselContent>
+
+        <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70 bg-transparent hover:bg-white/10 border-0 h-16" />
+        <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70 bg-transparent hover:bg-white/10 border-0 h-16" />
+      </Carousel>
+    </section>
   );
 };
