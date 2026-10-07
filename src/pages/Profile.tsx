@@ -15,7 +15,7 @@ import {
 import { BioDisplay, BioEditor } from '@/components/BioField';
 import { Mail, Phone, User, Edit, Save, X, AlertTriangle, Lock, Linkedin, Link as LinkIcon } from 'lucide-react';
 import { api } from '@/services/apiClient';
-import { phoneNumberAutoFormat } from '@/lib/utils';
+import { phoneNumberAutoFormat, buildMemberSlug } from '@/lib/utils';
 import type { Member } from '@/types/member';
 import AvatarUpload from '@/components/AvatarUpload';
 import { PasswordInput } from '@/components/ui/password-input';
@@ -628,11 +628,11 @@ const ProfilePage: React.FC = () => {
               <div className="flex gap-2 shrink-0">
                 {(user.isBusinessProfileEditor || user.isMainContact || user.role === 'admin') ? (
                   <Button size="sm" asChild>
-                    <a href={`/members/${user.ghlBusinessId}?edit=true`}>Edit Business Profile</a>
+                    <a href={`/members/${buildMemberSlug(user.businessName, user.ghlBusinessId)}?edit=true`}>Edit Business Profile</a>
                   </Button>
                 ) : (
                   <Button variant="outline" size="sm" asChild>
-                    <a href={`/members/${user.ghlBusinessId}`}>View Business Profile</a>
+                    <a href={`/members/${buildMemberSlug(user.businessName, user.ghlBusinessId)}`}>View Business Profile</a>
                   </Button>
                 )}
               </div>

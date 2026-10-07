@@ -32,7 +32,7 @@ const SITEMAP_STATIC_PAGES = [
 ];
 
 let sitemapCache = { xml: '', timestamp: 0 };
-const SITEMAP_CACHE_TTL_MS = 60 * 60 * 1000;
+const SITEMAP_CACHE_TTL_MS = 15 * 60 * 1000;
 
 function xmlEscape(s = '') {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
@@ -47,8 +47,21 @@ function sitemapUrl(loc, { lastmod, changefreq, priority } = {}) {
   return lines.join('\n');
 }
 
-// Combines the static route list with live blog posts and job postings so
-// new content shows up without a code deploy. (WordPress event-pages are
+// Mirrors src/lib/utils.ts's slugify / ghl-api's generateSlug - kept in sync manually
+// since this plain Node server can't import the TS sources directly.
+function slugify(text = '') {
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/&/g, '-')
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-');
+}
+
+// Combines the static route list with live blog posts, job postings, and member
+// business profiles so new content shows up without a code deploy. (WordPress event-pages are
 // skipped: richfieldareachamber.com/wp-json currently isn't reachable in
 // production - it falls through to the SPA's index.html instead of JSON.)
 async function buildSitemapXml() {
@@ -86,6 +99,23 @@ async function buildSitemapXml() {
     }
   } catch (err) {
     console.error('Sitemap: failed to fetch job postings', err);
+  }
+
+  try {
+    const r = await fetch(`${API_BASE}/businesses`);
+    if (r.ok) {
+      const body = await r.json();
+      for (const member of body.members || []) {
+        if (!member.id) continue;
+        const slug = slugify(member.businessName || '') || member.id;
+        urls.push(sitemapUrl(`${SITE_URL}/members/${slug}`, {
+          changefreq: 'monthly',
+          priority: '0.6',
+        }));
+      }
+    }
+  } catch (err) {
+    console.error('Sitemap: failed to fetch member businesses', err);
   }
 
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join('\n')}\n</urlset>\n`;

@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { CouponCodesInput } from '@/components/ui/coupon-codes-input';
 import { toast } from 'sonner';
 // import { capitalizeFirst } from '@/lib/utils';
-import { phoneNumberAutoFormat } from '@/lib/utils';
+import { phoneNumberAutoFormat, buildMemberSlug } from '@/lib/utils';
 import { api } from '@/services/apiClient';
 import { useAuthStore } from '@/stores/authStore';
 import { useMembersStore } from '@/stores/membersStore';
@@ -50,7 +50,9 @@ interface MemberFormData {
 }
 
 const MemberDetailsPage: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+  const { slug } = useParams<{ slug: string }>();
+  // The backend resolves this slug (business-name slug, or a legacy raw GHL id) to a business.
+  const id = slug;
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user } = useAuthStore();
@@ -142,6 +144,14 @@ const MemberDetailsPage: React.FC = () => {
         console.log('Tags is array:', Array.isArray(memberData.tags));
 
         setMember(memberData);
+
+        // Canonicalize the URL to the business-name slug (e.g. after landing on a
+        // bare-id link) so the address bar always reflects a human-readable slug.
+        const canonicalSlug = buildMemberSlug(memberData.businessName, memberData.id);
+        if (canonicalSlug && canonicalSlug !== slug) {
+          const query = searchParams.toString();
+          navigate(`/members/${canonicalSlug}${query ? `?${query}` : ''}`, { replace: true });
+        }
 
         // Categories are embedded in the business response
         if (memberData.categories) {

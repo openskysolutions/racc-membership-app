@@ -19,3 +19,22 @@ export const capitalizeFirst = (str: string): string => {
   if (!str) return str;
   return str.charAt(0).toUpperCase() + str.slice(1);
 };
+
+export const slugify = (text: string): string => {
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/&/g, "-")
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-");
+};
+
+// Builds a readable "/members/:slug" path segment from the business name, e.g. "acme-plumbing".
+// Falls back to the raw id when there's no name yet. The backend resolves this slug back to the
+// business (matching on slugified name), so no id needs to be embedded in the URL.
+export const buildMemberSlug = (businessName?: string | null, id?: string): string => {
+  const namePart = businessName ? slugify(businessName) : "";
+  return namePart || id || "";
+};

@@ -179,7 +179,7 @@ export default function AppRoutes() {
         <Route path="calendar" element={<CalendarPage />} />
         <Route path="events/:id" element={<EventDetailPage />} />
         <Route path="members" element={<MembersPage />} />
-        <Route path="members/:id" element={<MemberDetailsPage />} />
+        <Route path="members/:slug" element={<MemberDetailsPage />} />
         <Route path="jobs" element={<JobPostingsPage />} />
         <Route path="jobs/new" element={<ProtectedRoute><JobFormPage /></ProtectedRoute>} />
         <Route path="jobs/:id" element={<JobDetailPage />} />

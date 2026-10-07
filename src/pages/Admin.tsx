@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
 import { adminService, User } from '@/services/admin';
 import { api } from '@/services/apiClient';
+import { buildMemberSlug } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -927,7 +928,7 @@ export default function AdminPage() {
                                 <DropdownMenuContent align="end">
                                   <DropdownMenuItem onClick={() => setTimeout(() => { setPendingTierChange({ bizId: biz.id, bizName: biz.businessName, currentTier: biz.membershipTier || 'none' }); setDialogSelectedTier(biz.membershipTier || 'none'); }, 0)}>Change Tier</DropdownMenuItem>
                                   <DropdownMenuSeparator />
-                                  <DropdownMenuItem onClick={() => navigate(`/members/${biz.id}`)}>View Profile</DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => navigate(`/members/${buildMemberSlug(biz.businessName, biz.id)}`)}>View Profile</DropdownMenuItem>
                                 </DropdownMenuContent>
                               </DropdownMenu>
                             </div>
@@ -954,7 +955,7 @@ export default function AdminPage() {
                                 <DropdownMenuContent align="end">
                                   <DropdownMenuItem onClick={() => setTimeout(() => { setPendingTierChange({ bizId: biz.id, bizName: biz.businessName, currentTier: biz.membershipTier || 'none' }); setDialogSelectedTier(biz.membershipTier || 'none'); }, 0)}>Change Tier</DropdownMenuItem>
                                   <DropdownMenuSeparator />
-                                  <DropdownMenuItem onClick={() => navigate(`/members/${biz.id}`)}>View Profile</DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => navigate(`/members/${buildMemberSlug(biz.businessName, biz.id)}`)}>View Profile</DropdownMenuItem>
                                 </DropdownMenuContent>
                               </DropdownMenu>
                             </div>

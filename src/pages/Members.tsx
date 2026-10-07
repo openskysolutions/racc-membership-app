@@ -13,6 +13,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { useMembersStore, MEMBERS_CACHE_TTL } from '@/stores/membersStore';
 import cn from 'classnames';
 import { isNativeApp } from '@/lib/platform';
+import { buildMemberSlug } from '@/lib/utils';
 import CategoryBar from '@/components/CategoryBar';
 import { useBusinessCategories, getSubcategoryName } from '@/hooks/useBusinessCategories';
 
@@ -254,8 +255,8 @@ const MembersPage: React.FC = () => {
   //   return Array.from(specialties).sort();
   // }, [members]);
 
-  const handleMemberClick = (memberId: string) => {
-    navigate(`/members/${memberId}`);
+  const handleMemberClick = (member: Member) => {
+    navigate(`/members/${buildMemberSlug(member.businessName, member.id)}`);
   };
 
   const formatMemberName = (member: Member) => {
@@ -483,7 +484,7 @@ const MembersPage: React.FC = () => {
                     }` 
                   : 'p-4'
               }`}
-              onClick={() => handleMemberClick(member.id)}
+              onClick={() => handleMemberClick(member)}
             >
               {showBackground && (
                 <>

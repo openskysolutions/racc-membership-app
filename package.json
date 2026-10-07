@@ -22,7 +22,9 @@
   "main": "electron-main.cjs",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently -n web,api -c blue,green \"npm:dev:web\" \"npm:dev:api\"",
+    "dev:web": "vite",
+    "dev:api": "npm run dev --prefix ghl-api",
     "build": "tsc && vite build",
     "build:mobile": "tsc && vite build --mode mobile",
     "build:mobile:prod": "tsc && vite build --mode mobile.production",

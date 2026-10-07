@@ -24,6 +24,7 @@ import { emailService } from '@/services/emailService';
 import { prisma } from '@/lib/prisma';
 import { contactsCache, businessesCache } from '@/services/contactsCache';
 import { refreshDirectoryCache, refreshDirectoryCacheInBackground } from '@/services/directoryCache';
+import { generateSlug } from '@/utils/slugGenerate';
 
 const router = express.Router();
 
@@ -245,14 +246,23 @@ router.get('/', async (req: Request, res: Response) => {
 
 // ---------------------------------------------------------------------------
 // GET /businesses/:id
+// Accepts either the raw GHL business id or a business-name slug (e.g. from
+// a /members/:slug link) - slug is resolved against the directory cache first.
 // ---------------------------------------------------------------------------
 router.get('/:id', async (req: Request, res: Response) => {
+  const param = req.params.id;
   try {
-    const business = await ghlService.getBusinessById(req.params.id);
+    let cached = businessesCache.get() ?? businessesCache.getStale();
+    if (!cached) {
+      try { await refreshDirectoryCache(); } catch { /* fall through to id-based lookup below */ }
+      cached = businessesCache.get() ?? businessesCache.getStale();
+    }
+    const bySlug = cached?.find(b => generateSlug(b.name ?? '') === param);
+    const business = bySlug ?? await ghlService.getBusinessById(param);
     const member = await buildBusinessMember(business);
     res.json(member);
   } catch (err: any) {
-    console.error(`GET /businesses/${req.params.id} error:`, err.message);
+    console.error(`GET /businesses/${param} error:`, err.message);
     res.status(404).json({ error: 'Business not found' });
   }
 });
