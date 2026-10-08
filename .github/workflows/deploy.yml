@@ -312,7 +312,7 @@ jobs:
           
           # Test that the frontend handles client-side routing
           echo "Testing client-side routing..."
-          curl -f http://localhost:3001/register > /dev/null || {
+          curl -f http://localhost:3001/about > /dev/null || {
             echo "ERROR: Frontend service not handling client-side routes properly"
             pm2 logs racc-frontend --lines 10
             exit 1

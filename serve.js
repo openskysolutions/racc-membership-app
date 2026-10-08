@@ -34,6 +34,23 @@ const SITEMAP_STATIC_PAGES = [
 let sitemapCache = { xml: '', timestamp: 0 };
 const SITEMAP_CACHE_TTL_MS = 15 * 60 * 1000;
 
+// First path segment of every real client-side route (kept in sync with src/routes.tsx).
+// Anything else (e.g. spam-backlinked paths like /tx/<hash>) gets a real 404 below instead
+// of silently serving the homepage shell with a 200 - that 200 is what let Google treat
+// made-up URLs as live, indexable pages.
+const KNOWN_TOP_LEVEL_PATHS = new Set([
+  'dashboard', 'admin', 'login', 'forgot-password', 'reset-password', 'connect-account',
+  'profile', 'join', 'nominations', 'voting', 'yearly-voting', 'board-elections',
+  'basic-membership', 'enhanced-membership', 'elite-membership', 'calendar', 'events',
+  'members', 'jobs', 'job-postings', 'courses', 'about', 'board', 'contact', 'privacy',
+  'terms', 'event-pages', 'blog', 'forms', 'magazine', 'chamber-luncheons',
+]);
+
+function isKnownAppPath(reqPath) {
+  const firstSegment = reqPath.split('/').filter(Boolean)[0];
+  return !firstSegment || KNOWN_TOP_LEVEL_PATHS.has(firstSegment);
+}
+
 function xmlEscape(s = '') {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
 }
@@ -208,6 +225,10 @@ app.get('/sitemap.xml', async (req, res) => {
 });
 
 app.get('*', (req, res) => {
+  if (!isKnownAppPath(req.path)) {
+    console.warn(`Unknown path requested, serving 404: ${req.path}`);
+    return res.status(404).sendFile(path.join(__dirname, 'dist', 'index.html'));
+  }
   console.log(`Serving index.html for route: ${req.path}`);
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
