@@ -62,7 +62,8 @@ const PostCategoryFormPage = !isMobile ? lazy(() => import('@/pages/admin/PostCa
 const PostAuthorsPage = !isMobile ? lazy(() => import('@/pages/admin/PostAuthors')) : MobileStub;
 const PostAuthorFormPage = !isMobile ? lazy(() => import('@/pages/admin/PostAuthorForm')) : MobileStub;
 const PostFormPage = !isMobile ? lazy(() => import('@/pages/admin/PostForm')) : MobileStub;
-const ElectionsManagementPage = !isMobile ? lazy(() => import('@/pages/admin/ElectionsManagement')) : MobileStub;
+// Available on mobile: doesn't use the Lexical editor, only the (mobile-stubbed) photo upload
+const ElectionsManagementPage = lazy(() => import('@/pages/admin/ElectionsManagement'));
 
 import { ReactNode } from 'react';
 
