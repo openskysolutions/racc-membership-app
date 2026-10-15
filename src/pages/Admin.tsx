@@ -746,9 +746,9 @@ export default function AdminPage() {
                       onClick={() => {
                         setAdminNavOpen(false);
                         if (item.value === 'blog-posts') {
-                          window.location.href = '/admin/posts';
+                          navigate('/admin/posts');
                         } else if (item.value === 'elections') {
-                          window.location.href = '/admin/elections';
+                          navigate('/admin/elections');
                         } else {
                           setActiveTab(item.value);
                           if (item.value === 'nominations') loadNominations();
@@ -785,13 +785,13 @@ export default function AdminPage() {
                 <Star className="h-4 w-4 shrink-0" />
                 <span>Yearly Results</span>
               </TabsTrigger>
-              <TabsTrigger value="elections" className="shrink-0 md:w-full md:justify-start px-3 py-2 h-9 md:h-auto rounded-lg gap-2 text-sm font-medium bg-transparent border-0 text-muted-foreground data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-none hover:bg-muted/50 hover:text-foreground transition-colors" onClick={() => window.location.href = '/admin/elections'}>
+              <TabsTrigger value="elections" className="shrink-0 md:w-full md:justify-start px-3 py-2 h-9 md:h-auto rounded-lg gap-2 text-sm font-medium bg-transparent border-0 text-muted-foreground data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-none hover:bg-muted/50 hover:text-foreground transition-colors" onClick={() => navigate('/admin/elections')}>
                 <Vote className="h-4 w-4 shrink-0" />
                 <span>Exec Board Elections</span>
               </TabsTrigger>
               {isFullAdmin && (
                 <>
-                  <TabsTrigger value="blog-posts" className="shrink-0 md:w-full md:justify-start px-3 py-2 h-9 md:h-auto rounded-lg gap-2 text-sm font-medium bg-transparent border-0 text-muted-foreground data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-none hover:bg-muted/50 hover:text-foreground transition-colors" onClick={() => window.location.href = '/admin/posts'}>
+                  <TabsTrigger value="blog-posts" className="shrink-0 md:w-full md:justify-start px-3 py-2 h-9 md:h-auto rounded-lg gap-2 text-sm font-medium bg-transparent border-0 text-muted-foreground data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-none hover:bg-muted/50 hover:text-foreground transition-colors" onClick={() => navigate('/admin/posts')}>
                     <FileText className="h-4 w-4 shrink-0" />
                     <span>Blog Posts</span>
                   </TabsTrigger>
