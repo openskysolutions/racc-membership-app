@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Digital Business Card — Proposal</title>
+  <style>
+    @page {
+      size: letter;
+      margin: 0.85in 0.9in;
+    }
+
+    body {
+      font-family: Calibri, 'Segoe UI', Arial, sans-serif;
+      font-size: 11pt;
+      color: #111827;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px 48px;
+      line-height: 1.3;
+    }
+
+    h2, h3 {
+      page-break-after: avoid;
+      break-after: avoid;
+    }
+
+    p {
+      margin-top: 0.5em;
+    }
+
+    div[style*="border-left"] {
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+
+    tr {
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+
+    @media screen {
+      body { padding: 40px 48px; }
+    }
+
+    @media print {
+      body { padding: 30px; max-width: 100%; }
+      * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Cover -->
+  <div class="cover" style="color: #ffffff; background: #1a56a4; border-radius: 8px; padding: 25px; margin-bottom: 32px;">
+    <p style="font-size: 9pt; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; opacity: .75; margin: 0 0 10px;">Richfield Area Chamber of Commerce — Membership App</p>
+    <h1 style="font-size: 26pt; font-weight: 800; margin: 0 0 12px; color: #ffffff;">Digital Business Card</h1>
+    <p style="font-size: 11pt; opacity: .9; margin: 0 0 24px; color: #ffffff;">A proposal to let every member share their contact details from their phone in a few seconds, with no printed cards and nothing for the other person to install.</p>
+    <p style="font-size: 9pt; opacity: .7; margin: 0; color: #ffffff;">Proposal v1.0 &nbsp;·&nbsp; October 2026 &nbsp;·&nbsp; Feature: 006-digital-business-card</p>
+  </div>
+
+  <!-- 1. How it works -->
+  <h2 style="font-size: 14pt; font-weight: 700; color: #1a56a4; border-bottom: 2px solid #dbeafe; padding-bottom: 6px; margin-top: 24px;">How It Works</h2>
+  <p>Popular tools like HiHello, Popl and Blinq all work the same way, and members will find it familiar. Each member has a card page. They share it by showing a QR code, and the other person scans it with their phone camera. No app and no account are needed on the receiving end.</p>
+
+  <table border="1" cellpadding="10" cellspacing="0" style="width: 100%; border-collapse: collapse; font-size: 10pt;">
+    <tbody>
+      <tr>
+        <td style="padding: 10px; border: 1px solid #d1d5db; width: 25%; vertical-align: top; background: #f9fafb;">
+          <p style="margin: 0; font-weight: 700; color: #1a56a4;">1. Show</p>
+          <p style="margin: 6px 0 0;">The member taps "Show my card" and a full-screen QR code appears.</p>
+        </td>
+        <td style="padding: 10px; border: 1px solid #d1d5db; width: 25%; vertical-align: top;">
+          <p style="margin: 0; font-weight: 700; color: #1a56a4;">2. Scan</p>
+          <p style="margin: 6px 0 0;">The other person points their phone camera at the screen.</p>
+        </td>
+        <td style="padding: 10px; border: 1px solid #d1d5db; width: 25%; vertical-align: top; background: #f9fafb;">
+          <p style="margin: 0; font-weight: 700; color: #1a56a4;">3. View</p>
+          <p style="margin: 6px 0 0;">The member's card page opens: name, business, role, and the contact details they chose to share.</p>
+        </td>
+        <td style="padding: 10px; border: 1px solid #d1d5db; width: 25%; vertical-align: top;">
+          <p style="margin: 0; font-weight: 700; color: #1a56a4;">4. Save</p>
+          <p style="margin: 6px 0 0;">One tap on "Save contact" adds them to the phone's contacts.</p>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <p style="font-size: 9.5pt; color: #6b7280; margin-top: 8px;">The link can also be sent by text or email. The card always shows current information, so members never need to reprint or resend anything.</p>
+
+  <!-- 2. Quick access -->
+  <h2 style="font-size: 14pt; font-weight: 700; color: #1a56a4; border-bottom: 2px solid #dbeafe; padding-bottom: 6px; margin-top: 28px;">Getting to the Card Quickly</h2>
+  <p>A card is only useful if it comes up the moment someone asks for it. Typing an email and password in the middle of a conversation would defeat the purpose, so we propose two changes that work together.</p>
+
+  <div style="background: #dbeafe; border-left: 4px solid #1a56a4; padding: 12px 16px; margin: 16px 0; border-radius: 0 4px 4px 0;">
+    <p style="margin: 0; font-weight: 700;">A. "Show my card" works even when signed out</p>
+    <p style="margin: 6px 0 0;">After a member signs in once, the app remembers their card on that phone. A "Show my card" button on the sign-in screen displays the QR code immediately, with no password and no internet connection needed. This is safe because the card only contains what the member chose to make public.</p>
+  </div>
+
+  <div style="background: #dbeafe; border-left: 4px solid #1a56a4; padding: 12px 16px; margin: 16px 0; border-radius: 0 4px 4px 0;">
+    <p style="margin: 0; font-weight: 700;">B. Stay signed in, with Face ID or fingerprint</p>
+    <p style="margin: 6px 0 0;">Members stay signed in for longer, and the app opens with Face ID or a fingerprint, the way banking apps do. Today, sessions last up to 30 days if "Remember me" is checked and 24 hours if not. This makes the whole app smoother, not only the card.</p>
+  </div>
+
+  <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 28px 0;" />
+
+  <!-- 3. Decisions -->
+  <h2 style="font-size: 14pt; font-weight: 700; color: #1a56a4; border-bottom: 2px solid #dbeafe; padding-bottom: 6px; margin-top: 20px; padding-top: 24px; page-break-before: always; break-before: page;">Decisions We Need From You</h2>
+
+  <table border="1" cellpadding="8" cellspacing="0" style="width: 100%; border-collapse: collapse; font-size: 10pt;">
+    <thead>
+      <tr style="background: #f3f4f6;">
+        <th style="text-align: left; padding: 6px 10px; border: 1px solid #d1d5db; width: 4%;"></th>
+        <th style="text-align: left; padding: 6px 10px; border: 1px solid #d1d5db; width: 24%;">Question</th>
+        <th style="text-align: left; padding: 6px 10px; border: 1px solid #d1d5db;">Options and our recommendation</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db; vertical-align: top;">&#9744;</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db; vertical-align: top;"><strong>1. Whose card is it?</strong></td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">The directory today shows business pages. We recommend a card for each <strong>individual person</strong> (name, role, their business), so that team members at the same business each have their own.</td>
+      </tr>
+      <tr style="background: #f9fafb;">
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db; vertical-align: top;">&#9744;</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db; vertical-align: top;"><strong>2. What appears on the card?</strong></td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">We recommend each member <strong>chooses which details to share</strong> (for example phone, email, website), with a switch to turn the card off entirely. Alternative: the chamber sets one fixed layout for everyone.</td>
+      </tr>
+      <tr>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db; vertical-align: top;">&#9744;</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db; vertical-align: top;"><strong>3. Quick access</strong></td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">We recommend <strong>both A and B</strong> above. They cover the case where a member isn't signed in and the everyday case of getting into the app quickly.</td>
+      </tr>
+      <tr style="background: #f9fafb;">
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db; vertical-align: top;">&#9744;</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db; vertical-align: top;"><strong>4. Home screen widget</strong></td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">A widget would put the QR code one tap from the phone's home screen. It must be built separately for iPhone and Android, so it is a meaningful extra project. We suggest <strong>deferring</strong> it until members have used the card.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- 4. Scope -->
+  <h2 style="font-size: 14pt; font-weight: 700; color: #1a56a4; border-bottom: 2px solid #dbeafe; padding-bottom: 6px; margin-top: 28px;">What's In and Out</h2>
+  <table border="1" cellpadding="8" cellspacing="0" style="width: 100%; border-collapse: collapse; font-size: 10pt;">
+    <thead>
+      <tr style="background: #f3f4f6;">
+        <th style="text-align: left; padding: 6px 10px; border: 1px solid #d1d5db; width: 50%;">Included in the first version</th>
+        <th style="text-align: left; padding: 6px 10px; border: 1px solid #d1d5db;">Not included</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db; vertical-align: top;">
+          <ul style="margin: 0; padding-left: 18px;">
+            <li>Personal card page for each member</li>
+            <li>Full-screen QR code and shareable link</li>
+            <li>"Save contact" on the receiving phone</li>
+            <li>Member control over what is shown</li>
+            <li>Show card while signed out</li>
+            <li>Stay signed in, with Face ID or fingerprint</li>
+          </ul>
+        </td>
+        <td style="padding: 8px 10px; border: 1px solid #d1d5db; vertical-align: top;">
+          <ul style="margin: 0; padding-left: 18px;">
+            <li>Printed or physical cards, including NFC cards and tags</li>
+            <li>Apple Wallet and Google Wallet cards</li>
+            <li>Home screen widget (see decision 4)</li>
+            <li>Collecting the other person's details in return</li>
+            <li>Connecting scanned contacts to a CRM</li>
+          </ul>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <p style="font-size: 9.5pt; color: #6b7280; margin-top: 8px;">Anything in the "Not included" column can be added later without redoing the first version.</p>
+
+  <!-- 5. Pricing -->
+  <h2 style="font-size: 14pt; font-weight: 700; color: #1a56a4; border-bottom: 2px solid #dbeafe; padding-bottom: 6px; margin-top: 28px;">Pricing</h2>
+  <table border="1" cellpadding="8" cellspacing="0" style="width: 100%; border-collapse: collapse; font-size: 10pt;">
+    <tbody>
+      <tr>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Standard price for this feature</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db; text-align: right; width: 20%;">$250</td>
+      </tr>
+      <tr style="background: #f9fafb;">
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;">Covered by your existing monthly maintenance fee</td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db; text-align: right;">&minus;$150</td>
+      </tr>
+      <tr style="background: #dbeafe;">
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db;"><strong>Additional cost to you</strong></td>
+        <td style="padding: 6px 10px; border: 1px solid #d1d5db; text-align: right;"><strong>$100</strong></td>
+      </tr>
+    </tbody>
+  </table>
+
+</body>
+</html>

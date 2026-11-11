@@ -13,7 +13,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { BioDisplay, BioEditor } from '@/components/BioField';
-import { Mail, Phone, User, Edit, Save, X, AlertTriangle, Lock, Linkedin, Link as LinkIcon } from 'lucide-react';
+import { QrCode, Handshake, Mail, Phone, User, Edit, Save, X, AlertTriangle, Lock, Linkedin, Link as LinkIcon } from 'lucide-react';
 import { api } from '@/services/apiClient';
 import { phoneNumberAutoFormat, buildMemberSlug } from '@/lib/utils';
 import type { Member } from '@/types/member';
@@ -21,6 +21,7 @@ import AvatarUpload from '@/components/AvatarUpload';
 import { PasswordInput } from '@/components/ui/password-input';
 import { toast } from 'sonner';
 import DeleteAccountDialog from '@/components/DeleteAccountDialog';
+import { BiometricLockSetting } from '@/components/BiometricLockSetting';
 
 interface ExtendedUpdateProfileRequest extends UpdateProfileRequest {
   bio?: string;
@@ -310,7 +311,15 @@ const ProfilePage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col items-start mb-6 max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold">Your Profile</h1>
-        
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Button asChild variant="outline">
+            <a href="/my-card"><QrCode className="mr-2 h-4 w-4" /> My Business Card</a>
+          </Button>
+          <Button asChild variant="outline">
+            <a href="/referrals"><Handshake className="mr-2 h-4 w-4" /> My Referrals</a>
+          </Button>
+        </div>
+        <BiometricLockSetting />
       </div>
 
       {/* Single Card with All Information */}

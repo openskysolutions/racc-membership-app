@@ -18,7 +18,7 @@
     "responsive-design"
   ],
   "private": true,
-  "version": "1.1.35",
+  "version": "1.1.36",
   "main": "electron-main.cjs",
   "type": "module",
   "scripts": {
@@ -49,6 +49,7 @@
     "electron:build": "electron-builder"
   },
   "dependencies": {
+    "@aparajita/capacitor-biometric-auth": "^9.1.2",
     "@capacitor/android": "^7.4.2",
     "@capacitor/browser": "^7.0.2",
     "@capacitor/core": "^7.4.2",
@@ -98,6 +99,7 @@
     "lexical": "^0.40.0",
     "lucide-react": "^0.424.0",
     "next-themes": "^0.4.6",
+    "qrcode.react": "^4.2.0",
     "quill": "^2.0.3",
     "quill-better-table": "^1.2.10",
     "react": "^18.3.1",

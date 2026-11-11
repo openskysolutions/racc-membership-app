@@ -7,6 +7,7 @@ import { StatusBar } from '@capacitor/status-bar';
 import { isNativeApp } from '@/lib/platform';
 import { Toaster } from '@/components/ui/sonner';
 import { SessionMonitor } from '@/components/SessionMonitor';
+import { BiometricLock } from '@/components/BiometricLock';
 import { initPushNotifications, onNotificationTap, consumePendingDeepLink } from '@/services/pushNotifications';
 import { openNotificationBell } from '@/components/NotificationBell';
 import { listenForTokenRequests, requestTokenFromOtherTabs } from '@/services/tokenRelay';
@@ -103,6 +104,7 @@ function App() {
       <SessionMonitor />
       <AppRoutes />
       <Toaster />
+      <BiometricLock />
     </>
   );
 }

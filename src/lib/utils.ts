@@ -15,6 +15,18 @@ export const phoneNumberAutoFormat = (phoneNumber: string): string => {
   return number.replace(/(\d{3})(\d{4})(\d{4})/, "$1-$2-$3");
 };
 
+/**
+ * Display formatter for stored phone values. Reformats plain US numbers (10 digits, or 11 with a
+ * leading 1); anything else (extensions, international, free text) is returned unchanged.
+ */
+export const formatPhone = (phone?: string | null): string => {
+  if (!phone) return '';
+  const digits = phone.replace(/\D/g, '');
+  const isPlainUs = digits.length === 10 || (digits.length === 11 && digits.startsWith('1'));
+  const hasExtraText = /[a-z]/i.test(phone) || /\d\D*[x#]/i.test(phone);
+  return isPlainUs && !hasExtraText ? phoneNumberAutoFormat(phone) : phone.trim();
+};
+
 export const capitalizeFirst = (str: string): string => {
   if (!str) return str;
   return str.charAt(0).toUpperCase() + str.slice(1);

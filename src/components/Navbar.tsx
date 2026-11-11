@@ -67,6 +67,11 @@ export const Navbar = () => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [blogPosts, setBlogPosts] = useState<Post[]>([]);
   const {isAuthenticated, user, handleLogout } = useAuthStore();
+  // Anyone who can reach at least one ballot: active members, plus board/admin staff
+  const canVote = isAuthenticated && (
+    user?.status === 'active' ||
+    user?.role === 'admin' || user?.role === 'moderator' || user?.role === 'board_member'
+  );
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -184,26 +189,8 @@ export const Navbar = () => {
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => navigate('/profile')}>Profile</DropdownMenuItem>
-                    {(user?.role === 'admin' || user?.role === 'moderator' || user?.role === 'board_member') && (
-                      <DropdownMenuItem onClick={() => navigate('/voting')}>
-                        <span className="flex items-center gap-2">
-                          Monthly Voting
-                        </span>
-                      </DropdownMenuItem>
-                    )}
-                    {user?.status === 'active' && (
-                      <DropdownMenuItem onClick={() => navigate('/yearly-voting')}>
-                        <span className="flex items-center gap-2">
-                          Yearly Voting
-                        </span>
-                      </DropdownMenuItem>
-                    )}
-                    {user?.status === 'active' && (
-                      <DropdownMenuItem onClick={() => navigate('/board-elections')}>
-                        <span className="flex items-center gap-2">
-                          Executive Board Elections
-                        </span>
-                      </DropdownMenuItem>
+                    {canVote && (
+                      <DropdownMenuItem onClick={() => navigate('/vote')}>Voting</DropdownMenuItem>
                     )}
                     {user?.role === 'admin' && (
                       <DropdownMenuItem onClick={() => navigate('/admin')}>
@@ -354,6 +341,17 @@ export const Navbar = () => {
                 <div className="flex-grow"/>
                 <Button
                   size="lg"
+                  variant={"outline"}
+                  onClick={() => {
+                    setIsOpen(false);
+                    navigate('/my-card');
+                  }}
+                  className="text-lg"
+                >
+                  My Card
+                </Button>
+                <Button
+                  size="lg"
                   onClick={() => {
                     setIsOpen(false);
                     navigate('/nominations');
@@ -362,43 +360,17 @@ export const Navbar = () => {
                 >
                   Nominations
                 </Button>
-                {(user?.role === 'admin' || user?.role === 'moderator' || user?.role === 'board_member') && (
+                {canVote && (
                   <Button
                     size="lg"
                     variant={"outline"}
                     onClick={() => {
                       setIsOpen(false);
-                      navigate('/voting');
+                      navigate('/vote');
                     }}
                     className="text-lg"
                   >
-                    Monthly Voting
-                  </Button>
-                )}
-                {user?.status === 'active' && (
-                  <Button
-                    size="lg"
-                    variant={"outline"}
-                    onClick={() => {
-                      setIsOpen(false);
-                      navigate('/yearly-voting');
-                    }}
-                    className="text-lg"
-                  >
-                    Yearly Voting
-                  </Button>
-                )}
-                {user?.status === 'active' && (
-                  <Button
-                    size="lg"
-                    variant={"outline"}
-                    onClick={() => {
-                      setIsOpen(false);
-                      navigate('/board-elections');
-                    }}
-                    className="text-lg"
-                  >
-                    Executive Board Elections
+                    Voting
                   </Button>
                 )}
                 {user?.role === 'admin' && (

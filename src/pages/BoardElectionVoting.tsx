@@ -14,12 +14,15 @@ import {
   ElectionPosition,
   ElectionResults,
   getOpenPositions,
+  getAllPositions,
   castVote,
   getResults,
 } from '@/services/elections';
 
 export default function BoardElectionVoting() {
   const { user } = useAuthStore();
+  const isAdmin = user?.role === 'admin';
+  const isActiveMember = user?.status === 'active';
   const [loading, setLoading] = useState(true);
   const [positions, setPositions] = useState<ElectionPosition[]>([]);
   const [resultsByPosition, setResultsByPosition] = useState<Record<number, ElectionResults>>({});
@@ -35,7 +38,8 @@ export default function BoardElectionVoting() {
     setLoading(true);
     setError(null);
     try {
-      const data = await getOpenPositions();
+      // Admins also see draft elections so they can preview the ballot before opening it
+      const data = isAdmin ? await getAllPositions() : await getOpenPositions();
       setPositions(data);
 
       const published = data.filter(p => p.status === 'results_published');
@@ -88,9 +92,7 @@ export default function BoardElectionVoting() {
     }
   };
 
-  const isActiveMember = user && user.status === 'active';
-
-  if (!isActiveMember) {
+  if (!isActiveMember && !isAdmin) {
     return (
       <div className="container mx-auto px-4 py-8">
         <Alert variant="destructive">
@@ -183,7 +185,8 @@ export default function BoardElectionVoting() {
             );
           }
 
-          // voting_open
+          // voting_open (or draft, shown to admins as a read-only preview)
+          const isDraft = position.status === 'draft';
           const hasVoted = position.hasVoted;
           const selected = selections[position.id] || [];
 
@@ -198,6 +201,12 @@ export default function BoardElectionVoting() {
                 </p>
               </CardHeader>
               <CardContent className="space-y-4">
+                {isDraft && (
+                  <Alert>
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>Admin preview: this election isn't open yet, so voting is disabled.</AlertDescription>
+                  </Alert>
+                )}
                 {hasVoted ? (
                   <Alert className="bg-green-50 dark:bg-green-950 border-green-500">
                     <CheckCircle2 className="h-4 w-4 text-green-600" />
@@ -217,7 +226,7 @@ export default function BoardElectionVoting() {
                               id={`candidate-${candidate.id}`}
                               checked={selected.includes(candidate.id)}
                               onCheckedChange={() => toggleCandidate(position, candidate.id)}
-                              disabled={submitting === position.id}
+                              disabled={isDraft || submitting === position.id}
                             />
                             {candidate.photoUrl && (
                               <img src={candidate.photoUrl} alt={candidate.name} className="h-12 w-12 rounded-sm object-cover shrink-0" />
@@ -231,7 +240,7 @@ export default function BoardElectionVoting() {
                         ))}
                         <Button
                           onClick={() => handleSubmit(position)}
-                          disabled={submitting === position.id || selected.length === 0}
+                          disabled={isDraft || submitting === position.id || selected.length === 0}
                           className="w-full sm:w-auto"
                         >
                           {submitting === position.id && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}

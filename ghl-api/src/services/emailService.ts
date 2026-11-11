@@ -5,7 +5,7 @@
 
 import nodemailer from 'nodemailer';
 import sgMail from '@sendgrid/mail';
-import { generateConfirmationEmail, generateConfirmationEmailText, generateInviteEmail, generateInviteEmailText } from '@/templates/emails';
+import { generateConfirmationEmail, generateConfirmationEmailText, generateInviteEmail, generateInviteEmailText, generateReferralReceivedEmail, generateReferralReceivedEmailText, generateReferralStatusUpdateEmail, generateReferralStatusUpdateEmailText, generateNonMemberInviteEmail, generateNonMemberInviteEmailText, NON_MEMBER_EMAIL_COPY } from '@/templates/emails';
 
 interface EmailConfig {
   provider: 'gmail' | 'sendgrid' | 'mailgun' | 'smtp';
@@ -219,6 +219,33 @@ class EmailService {
       console.error(`❌ Failed to send invite email to ${to}:`, errorMsg);
       return false;
     }
+  }
+
+  async sendReferralReceivedEmail(to: string, params: { referrerBusinessName: string; leadName: string; appUrl: string }): Promise<boolean> {
+    return this.sendEmail({
+      to,
+      subject: `New referral from ${params.referrerBusinessName}`,
+      html: generateReferralReceivedEmail(params),
+      text: generateReferralReceivedEmailText(params),
+    });
+  }
+
+  async sendReferralStatusUpdateEmail(to: string, params: { recipientBusinessName: string; leadName: string; statusLabel: string; appUrl: string }): Promise<boolean> {
+    return this.sendEmail({
+      to,
+      subject: `Referral update: ${params.statusLabel}`,
+      html: generateReferralStatusUpdateEmail(params),
+      text: generateReferralStatusUpdateEmailText(params),
+    });
+  }
+
+  async sendNonMemberReferralEmail(to: string, params: { contactName?: string | null; businessName: string; referrerBusinessName: string; joinUrl: string }): Promise<boolean> {
+    return this.sendEmail({
+      to,
+      subject: NON_MEMBER_EMAIL_COPY.subject,
+      html: generateNonMemberInviteEmail(params),
+      text: generateNonMemberInviteEmailText(params),
+    });
   }
 
   private stripHtml(html: string): string {

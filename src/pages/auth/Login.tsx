@@ -6,15 +6,19 @@ import { Button } from '@/components/ui/button';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { login } from '@/services/auth';
 import { useAuthStore } from '@/stores/authStore';
+import { readCachedCard } from '@/lib/cardCache';
+import { isNativeApp } from '@/lib/platform';
 
 export const AuthPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [remember, setRemember] = useState(false);
+  const [remember, setRemember] = useState(isNativeApp()); // the native app keeps members signed in by default
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const setUser = useAuthStore(state => state.setUser);
+  // Members who've opened their card before can show it without signing in
+  const hasCachedCard = readCachedCard() !== null;
 
   // Get the intended destination from location state or query params
   // Priority: 1) returnUrl query param (from 401 redirect), 2) location state, 3) home page
@@ -138,6 +142,11 @@ export const AuthPage = () => {
           </form>
         </CardContent>
       </Card>
+      {hasCachedCard && (
+        <Button variant="outline" className="mt-4 w-full max-w-md" onClick={() => navigate('/my-card')}>
+          Show my business card
+        </Button>
+      )}
     </div>
   );
 };

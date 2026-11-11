@@ -66,6 +66,7 @@ export interface BusinessMember {
   tagline?: string;
   avatar?: string;         // business logo / profile photo
   coverImage?: string;
+  isActiveMember?: boolean; // from GET /businesses/:id; false for lapsed/non-members
   membershipTier?: 'elite' | 'enhanced' | 'basic' | 'standard';
   memberSince?: string;
   couponCodes?: string[];

@@ -23,6 +23,7 @@ import CoverImageUpload from '@/components/CoverImageUpload';
 import { getJobs, Job } from '@/services/jobs';
 import { BioDisplay, BioEditor } from '@/components/BioField';
 import { isNativeApp } from '@/lib/platform';
+import { ReferReferralDialog } from '@/components/referrals/ReferReferralDialog';
 
 interface MemberFormData {
   firstName: string;
@@ -61,6 +62,7 @@ const MemberDetailsPage: React.FC = () => {
   const fetchingRef = useRef(false);
 
   const [member, setMember] = useState<Member | null>(null);
+  const [showReferDialog, setShowReferDialog] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -457,7 +459,7 @@ const MemberDetailsPage: React.FC = () => {
     <>
       {/* Header */}
       <div 
-        className="flex h-10 items-center justify-between mb-6 z-70 shadow-md fixed left-0 right-0 bg-card/70 px-4"
+        className="flex h-10 items-center justify-between mb-6 z-40 shadow-md fixed left-0 right-0 bg-card/70 px-4"
         style={isNativeApp() ? { 
           top: 'calc(5rem + var(--safe-area-inset-top, 0px))' 
         } : { 
@@ -766,6 +768,16 @@ const MemberDetailsPage: React.FC = () => {
                       )}
                     </div>
                   </div>
+
+                  {user?.ghlBusinessId && member && user.ghlBusinessId !== member.id && member.isActiveMember !== false && !isEditing && (
+                    <Button
+                      variant="default"
+                      onClick={() => setShowReferDialog(true)}
+                      className="sm:ml-auto sm:self-center"
+                    >
+                      Refer this member
+                    </Button>
+                  )}
                 </div>
               </CardHeader>
 
@@ -1273,6 +1285,14 @@ const MemberDetailsPage: React.FC = () => {
           </div>
         </div>
       </div>
+      {member && (
+        <ReferReferralDialog
+          open={showReferDialog}
+          onOpenChange={setShowReferDialog}
+          recipientBusinessId={member.id}
+          recipientBusinessName={member.businessName}
+        />
+      )}
     </>
   );
 };

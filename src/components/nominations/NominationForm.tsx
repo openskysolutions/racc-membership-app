@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { toast } from 'sonner';
 import { api } from '@/services/apiClient';
 import BusinessSearchCombobox from './BusinessSearchCombobox';
+import { formatPhone } from '@/lib/utils';
 
 interface NominationFormProps {
   type: 'business' | 'individual';
@@ -139,7 +140,7 @@ const NominationForm: React.FC<NominationFormProps> = ({
                   <p><strong>Business:</strong> {nominee.businessName}</p>
                 )}
                 {nominee.email && <p><strong>Email:</strong> {nominee.email}</p>}
-                {nominee.phone && <p><strong>Phone:</strong> {nominee.phone}</p>}
+                {nominee.phone && <p><strong>Phone:</strong> {formatPhone(nominee.phone)}</p>}
               </div>
             )}
           </div>
@@ -159,7 +160,7 @@ const NominationForm: React.FC<NominationFormProps> = ({
                 <div className="text-sm text-muted-foreground bg-muted p-3 rounded-md mt-2">
                   <p><strong>Business:</strong> {business.name}</p>
                   {business.email && <p><strong>Email:</strong> {business.email}</p>}
-                  {business.phone && <p><strong>Phone:</strong> {business.phone}</p>}
+                  {business.phone && <p><strong>Phone:</strong> {formatPhone(business.phone)}</p>}
                 </div>
               )}
             </div>

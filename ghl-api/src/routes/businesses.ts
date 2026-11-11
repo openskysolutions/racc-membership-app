@@ -25,6 +25,7 @@ import { prisma } from '@/lib/prisma';
 import { contactsCache, businessesCache } from '@/services/contactsCache';
 import { refreshDirectoryCache, refreshDirectoryCacheInBackground } from '@/services/directoryCache';
 import { generateSlug } from '@/utils/slugGenerate';
+import { getBusinessProp, isActiveMember } from '@/utils/activeMember';
 
 const router = express.Router();
 
@@ -32,15 +33,6 @@ const router = express.Router();
 // Helpers
 // ---------------------------------------------------------------------------
 
-/**
- * Read a custom field value from a GHL Business object's customFields array.
- * GHL returns { key, valueString } for text/select fields and { key, valueDate }
- * for date fields. Returns null when the field is not set.
- */
-function getBusinessProp(business: any, key: string): string | null {
-  const field = (business.customFields ?? []).find((f: any) => f.key === key);
-  return field?.valueString ?? field?.valueDate ?? null;
-}
 
 /**
  * Parse the membership_tier GHL value to our short slug.
@@ -87,6 +79,7 @@ async function buildBusinessMember(business: any) {
     linkedinUrl: getBusinessProp(business, 'linkedin_url'),
     hideMembershipTier: getBusinessProp(business, 'hide_membership_tier') === 'true',
     categories,
+    isActiveMember: isActiveMember(business),
   };
 }
 
@@ -135,18 +128,8 @@ router.get('/', async (req: Request, res: Response) => {
       return res.status(503).json({ error: 'Member directory temporarily unavailable, please try again shortly' });
     }
 
-    // Active members = businesses with membership_tier set, status active,
-    // and a renewal date within the last 13 months.
-    const now = new Date();
-    const cutoff = new Date(now);
-    cutoff.setMonth(cutoff.getMonth() - 13);
-
-    let active = allBusinesses.filter(b => {
-      if (!getBusinessProp(b, 'membership_tier')) return false;
-      if (getBusinessProp(b, 'membership_status') !== 'active') return false;
-      const renewal = getBusinessProp(b, 'renewal_date');
-      return !!renewal && new Date(renewal) >= cutoff;
-    });
+    // Active members: see isActiveMember (tier set, status active, renewed within 13 months).
+    let active = allBusinesses.filter(b => isActiveMember(b));
 
     // Apply filters
     if (search) {

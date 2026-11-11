@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
 import { adminService, User } from '@/services/admin';
 import { api } from '@/services/apiClient';
-import { buildMemberSlug } from '@/lib/utils';
+import { buildMemberSlug, formatPhone } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,7 +19,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from '@/components/ui/label';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, Edit, Trash2, Search, MoreHorizontal, AlertTriangle, CheckCircle, Clock, Award, LucideRefreshCcw, Star, FileText, Bell, ChevronDown, Calendar, Settings, Building2, Contact, Vote } from 'lucide-react';
+import { Users, Edit, Trash2, Search, MoreHorizontal, AlertTriangle, CheckCircle, Clock, Award, LucideRefreshCcw, Star, FileText, Bell, ChevronDown, Calendar, Settings, Building2, Contact, Vote, Handshake } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { getUpcomingEvents, CalendarEvent } from '@/services/calendar';
 import { getFeaturedEventId, setFeaturedEventId } from '@/services/settingsService';
@@ -28,6 +28,7 @@ import { RiShieldUserFill } from "react-icons/ri";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { toast } from 'sonner';
+import { AdminReferrals } from '@/components/admin/AdminReferrals';
 
 interface Nomination {
   id: number;
@@ -669,6 +670,7 @@ export default function AdminPage() {
     { value: 'yearly-results', label: 'Yearly Results', icon: Star },
     { value: 'elections', label: 'Executive Board Elections', icon: Vote },
     ...(isFullAdmin ? [
+      { value: 'referrals', label: 'Referrals', icon: Handshake },
       { value: 'blog-posts', label: 'Blog Posts', icon: FileText },
       { value: 'notifications', label: 'Notifications', icon: Bell },
       { value: 'homepage', label: 'Homepage', icon: Settings },
@@ -791,6 +793,10 @@ export default function AdminPage() {
               </TabsTrigger>
               {isFullAdmin && (
                 <>
+                <TabsTrigger value="referrals" className="shrink-0 md:w-full md:justify-start px-3 py-2 h-9 md:h-auto rounded-lg gap-2 text-sm font-medium bg-transparent border-0 text-muted-foreground data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-none hover:bg-muted/50 hover:text-foreground transition-colors">
+                  <Handshake className="h-4 w-4 shrink-0" />
+                  <span>Referrals</span>
+                </TabsTrigger>
                   <TabsTrigger value="blog-posts" className="shrink-0 md:w-full md:justify-start px-3 py-2 h-9 md:h-auto rounded-lg gap-2 text-sm font-medium bg-transparent border-0 text-muted-foreground data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-none hover:bg-muted/50 hover:text-foreground transition-colors" onClick={() => navigate('/admin/posts')}>
                     <FileText className="h-4 w-4 shrink-0" />
                     <span>Blog Posts</span>
@@ -1035,7 +1041,7 @@ export default function AdminPage() {
                                 </div>
                                 <div className="text-xs text-muted-foreground truncate">{c.email || '—'}</div>
                               </div>
-                              <span className="text-xs text-muted-foreground">{c.phone || '—'}</span>
+                              <span className="text-xs text-muted-foreground">{formatPhone(c.phone) || '—'}</span>
                               <span className="text-xs text-muted-foreground truncate">{c.businessName || '—'}</span>
                               <span>{c.isMainContact ? <Badge variant="secondary" className="text-xs whitespace-nowrap">main contact</Badge> : <span className="text-xs text-muted-foreground/50">—</span>}</span>
                               <span>{c.hasAppAccount ? <span className="inline-flex items-center gap-1 text-xs text-green-700"><CheckCircle className="h-3.5 w-3.5" />Yes</span> : <span className="text-xs text-muted-foreground/50">—</span>}</span>
@@ -1061,7 +1067,7 @@ export default function AdminPage() {
                                 </div>
                                 <div className="text-xs text-muted-foreground mt-0.5 truncate">{c.email || '—'}</div>
                                 <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5 text-xs text-muted-foreground">
-                                  <span>{c.phone || '—'}</span>
+                                  <span>{formatPhone(c.phone) || '—'}</span>
                                   <span className="truncate">{c.businessName || '—'}</span>
                                 </div>
                               </div>
@@ -1834,6 +1840,13 @@ export default function AdminPage() {
           {isFullAdmin && (
             <TabsContent value="notifications" className="space-y-6">
               <NotificationsTab />
+            </TabsContent>
+          )}
+
+          {/* Referrals Tab */}
+          {isFullAdmin && (
+            <TabsContent value="referrals" className="space-y-6">
+              <AdminReferrals />
             </TabsContent>
           )}
 

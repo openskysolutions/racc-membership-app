@@ -5,3 +5,4 @@
 
 export * from './confirmationEmail';
 export * from './inviteEmail';
+export * from './referralEmail';

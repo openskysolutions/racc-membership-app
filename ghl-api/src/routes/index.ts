@@ -19,6 +19,8 @@ import businessesRoutes from '@/routes/businesses';
 import notificationsRoutes from '@/routes/notifications';
 import settingsRoutes from '@/routes/settings';
 import electionsRoutes from '@/routes/elections';
+import referralsRoutes from '@/routes/referrals';
+import cardsRoutes from '@/routes/cards';
 
 // CommonJS imports
 const moderationRoutes = require('@/routes/moderation');
@@ -61,5 +63,11 @@ router.use('/settings', settingsRoutes);
 
 // Executive board member elections routes
 router.use('/elections', electionsRoutes);
+
+// Member referral program
+router.use('/referrals', referralsRoutes);
+
+// Digital business cards (public view + owner settings)
+router.use('/cards', cardsRoutes);
 
 export default router;

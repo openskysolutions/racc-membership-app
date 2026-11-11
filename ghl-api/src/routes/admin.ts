@@ -10,6 +10,7 @@ import { enrichUsersWithGhlData, enrichUserWithGhlData, getMembershipTierStats }
 import { ghlService } from '@/services/gohighlevel';
 import { emailService } from '@/services/emailService';
 import { prisma } from '@/lib/prisma';
+import { adminReferralsRoutes } from '@/routes/referrals';
 
 import { contactsCache, businessesCache } from '@/services/contactsCache';
 import { refreshDirectoryCacheInBackground } from '@/services/directoryCache';
@@ -1045,5 +1046,7 @@ router.post('/memberships', requireAuth, requireAdmin, async (req, res) => {
 
   res.status(201).json(result);
 });
+
+router.use('/referrals', adminReferralsRoutes);
 
 export default router;

@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Mail, Phone, FileText, ExternalLink, Calendar } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { formatPhone } from '@/lib/utils';
 
 const JobApplicationsListPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -171,7 +172,7 @@ const JobApplicationsListPage: React.FC = () => {
                         href={`tel:${application.applicantPhone}`}
                         className="text-primary hover:underline"
                       >
-                        {application.applicantPhone}
+                        {formatPhone(application.applicantPhone)}
                       </a>
                     </div>
                   )}

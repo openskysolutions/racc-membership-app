@@ -22,6 +22,8 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Use Face ID to unlock the Richfield Chamber app.</string>
 	<key>NSCalendarsFullAccessUsageDescription</key>
 	<string>This app needs access to your calendar to add events you're interested in attending.</string>
 	<key>NSCalendarsUsageDescription</key>

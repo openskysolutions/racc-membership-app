@@ -3,6 +3,8 @@ import { Search, Users, RefreshCw, X, ArrowUpDown } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { ReferNonMemberDialog } from '@/components/referrals/ReferNonMemberDialog';
+import { ReferReferralDialog } from '@/components/referrals/ReferReferralDialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -50,6 +52,8 @@ const MembersPage: React.FC = () => {
   const navigate = useNavigate();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuthStore();
+  const [showNonMemberDialog, setShowNonMemberDialog] = useState(false);
+  const [referTarget, setReferTarget] = useState<{ id: string; name: string } | null>(null);
   const { categories } = useBusinessCategories();
   
   // Use Zustand store for persistent filter/sort state
@@ -439,6 +443,11 @@ const MembersPage: React.FC = () => {
                 Clear Filters
               </Button>
             )}
+            {user?.ghlBusinessId && (
+              <Button variant="outline" size="sm" className="h-9 shrink-0" onClick={() => setShowNonMemberDialog(true)}>
+                Refer a non-member
+              </Button>
+            )}
           </div>
         {/* </CardContent>
       </Card> */}
@@ -495,7 +504,7 @@ const MembersPage: React.FC = () => {
                   <div className="absolute inset-0" style={{ backgroundColor: overlay }} />
                 </>
               )}
-              <div className="relative z-10 flex-1 flex flex-col">
+              <div className="relative z-10 flex-1 flex flex-col justify-between h-full">
               <CardHeader className={`${viewMode === 'list' ? 'flex-1 p-0' : 'p-0'}`}>
                 <div className={`flex flex-row items-center space-x-4`}>
                   <Avatar className={'h-12 w-12 ring-0 ring-white !rounded-lg'}>
@@ -516,7 +525,7 @@ const MembersPage: React.FC = () => {
                 </div>
               </CardHeader>
 
-              <CardContent className="space-y-1 mt-3 p-0 flex-1">
+              <CardContent className="space-y-1 mt-3 p-0 flex-1 flex items-center justify-between">
                 {member.categories && member.categories.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-1">
                     {member.categories.map((subcatId) => (
@@ -529,6 +538,19 @@ const MembersPage: React.FC = () => {
                       </Badge>
                     ))}
                   </div>
+                )}
+                {user?.ghlBusinessId && user.ghlBusinessId !== member.id && (
+                  <Button
+                    size="sm"
+                    variant='ghost'
+                    className={`h-6 text-xs px-1.5 border-0 ${showBackground ? 'text-yellow-300 hover:text-yellow-200 hover:bg-yellow-300/30' : 'text-yellow-600 hover:text-yellow-600 hover:bg-yellow-500/20 border border-yellow-400'}`}
+                    onClick={e => {
+                      e.stopPropagation();
+                      setReferTarget({ id: member.id, name: member.businessName || formatMemberName(member) });
+                    }}
+                  >
+                    Refer this member
+                  </Button>
                 )}
                 {/* {member.email && (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -581,6 +603,15 @@ const MembersPage: React.FC = () => {
           </div>
         </div>
         </>
+      )}
+      <ReferNonMemberDialog open={showNonMemberDialog} onOpenChange={setShowNonMemberDialog} />
+      {referTarget && (
+        <ReferReferralDialog
+          open
+          onOpenChange={open => { if (!open) setReferTarget(null); }}
+          recipientBusinessId={referTarget.id}
+          recipientBusinessName={referTarget.name}
+        />
       )}
     </div>
   );

@@ -44,6 +44,7 @@ const KNOWN_TOP_LEVEL_PATHS = new Set([
   'basic-membership', 'enhanced-membership', 'elite-membership', 'calendar', 'events',
   'members', 'jobs', 'job-postings', 'courses', 'about', 'board', 'contact', 'privacy',
   'terms', 'event-pages', 'blog', 'forms', 'magazine', 'chamber-luncheons',
+  'card', 'my-card', 'referrals', 'referral-feed', 'leaderboard', 'vote',
 ]);
 
 function isKnownAppPath(reqPath) {

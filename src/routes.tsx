@@ -46,6 +46,12 @@ import EventPage from '@/pages/EventPage';
 import BlogPage from '@/pages/Blog';
 import BlogPostPage from '@/pages/BlogPost';
 import FormPage from '@/pages/FormPage';
+import ReferralsPage from '@/pages/Referrals';
+import ReferralFeedPage from '@/pages/ReferralFeed';
+import LeaderboardPage from '@/pages/Leaderboard';
+import VotePage from '@/pages/Vote';
+import MyCardPage from '@/pages/MyCard';
+import CardPage from '@/pages/Card';
 
 // Always import Posts list (read-only for mobile)
 import PostsPage from '@/pages/admin/Posts';
@@ -169,9 +175,10 @@ export default function AppRoutes() {
 
         <Route path="join" element={<JoinPage />} />
         <Route path="nominations" element={<NominationsPage />} />
+        <Route path="vote" element={<ProtectedRoute><VotePage /></ProtectedRoute>} />
         <Route path="voting" element={<AdminRoute><VotingPage /></AdminRoute>} />
         <Route path="yearly-voting" element={<ActiveMemberRoute><YearlyVotingPage /></ActiveMemberRoute>} />
-        <Route path="board-elections" element={<ActiveMemberRoute><BoardElectionVotingPage /></ActiveMemberRoute>} />
+        <Route path="board-elections" element={<ProtectedRoute><BoardElectionVotingPage /></ProtectedRoute>} />
 
         <Route path="basic-membership" element={<BasicMembershipPage />} />
         <Route path="enhanced-membership" element={<EnhancedMembershipPage />} />
@@ -181,6 +188,11 @@ export default function AppRoutes() {
         <Route path="events/:id" element={<EventDetailPage />} />
         <Route path="members" element={<MembersPage />} />
         <Route path="members/:slug" element={<MemberDetailsPage />} />
+        <Route path="referrals" element={<ProtectedRoute><ReferralsPage /></ProtectedRoute>} />
+        <Route path="referral-feed" element={<ReferralFeedPage />} />
+        <Route path="leaderboard" element={<LeaderboardPage />} />
+        <Route path="my-card" element={<MyCardPage />} />
+        <Route path="card/:publicId" element={<CardPage />} />
         <Route path="jobs" element={<JobPostingsPage />} />
         <Route path="jobs/new" element={<ProtectedRoute><JobFormPage /></ProtectedRoute>} />
         <Route path="jobs/:id" element={<JobDetailPage />} />
