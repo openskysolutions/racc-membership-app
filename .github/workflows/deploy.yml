@@ -64,6 +64,17 @@ jobs:
           fi
           echo "Frontend build successful"
 
+      # The frontend is built here (the runner has plenty of memory) and copied to the droplet,
+      # which only has ~1GB RAM and ran out of memory when building it itself.
+      - name: Upload frontend build
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: dist
+          include-hidden-files: true # dist/.well-known/apple-app-site-association is served by serve.js
+          retention-days: 1
+          if-no-files-found: error
+
   deploy:
     needs: build-and-test
     runs-on: ubuntu-latest
@@ -71,10 +82,24 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Download frontend build
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: dist
+
       - name: Set up SSH
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.DO_DEPLOY_KEY }}
+
+      # Copy the prebuilt frontend to a staging folder outside the git checkout. The deploy script
+      # below swaps it into place only after the API is up, so the live site is never half-updated.
+      - name: Upload frontend build to Droplet
+        run: |
+          test -f dist/index.html || { echo "ERROR: downloaded frontend build is missing dist/index.html"; exit 1; }
+          ssh -o StrictHostKeyChecking=no root@richfieldareachamber.com "mkdir -p /root/racc-frontend-staging"
+          rsync -az --delete -e "ssh -o StrictHostKeyChecking=no" dist/ root@richfieldareachamber.com:/root/racc-frontend-staging/
 
       - name: Deploy to Droplet
         env:
@@ -235,51 +260,29 @@ jobs:
           
           echo "API service is running successfully"
           
-          # Create frontend .env file
+          # The frontend is built on the GitHub runner and uploaded to /root/racc-frontend-staging.
+          # The droplet only needs production deps (express, used by serve.js) - no build here.
           cd ../
-          cat > .env << EOF
-          VITE_API_BASE_URL=\$VITE_API_BASE_URL
-          TEMP_GHL_TOKEN=\$TEMP_GHL_TOKEN
-          EOF
-          
-          # Debug: Show environment variables
-          echo "=== Environment Variables for Frontend Build ==="
-          echo "VITE_API_BASE_URL=\$VITE_API_BASE_URL"
-          echo "TEMP_GHL_TOKEN=\$TEMP_GHL_TOKEN"
-          echo "=== Contents of .env file ==="
-          cat .env
-          echo "=== End Debug ==="
-          
-          # Build frontend on server with conservative memory limit
-          # Server has ~950MB RAM, so we use 512MB to leave room for system
-          echo "Building frontend with 512MB memory limit..."
-          
-          # Only install production dependencies to save memory
-          npm ci --production=false --legacy-peer-deps
-          
-          # Build with memory limit suitable for 1GB server
-          if ! NODE_OPTIONS="--max-old-space-size=512" VITE_API_BASE_URL="\$VITE_API_BASE_URL" TEMP_GHL_TOKEN="\$TEMP_GHL_TOKEN" npm run build; then
-            echo "ERROR: Frontend build failed"
-            echo "Attempting with even lower memory (384MB)..."
-            if ! NODE_OPTIONS="--max-old-space-size=384" VITE_API_BASE_URL="\$VITE_API_BASE_URL" TEMP_GHL_TOKEN="\$TEMP_GHL_TOKEN" npm run build; then
-              echo "ERROR: Frontend build failed even with reduced memory"
-              exit 1
-            fi
-          fi
-          
-          # Verify build output exists
-          if [ ! -f "dist/index.html" ]; then
-            echo "ERROR: Frontend build failed - dist/index.html not found"
+          npm ci --omit=dev --legacy-peer-deps
+
+          if [ ! -f /root/racc-frontend-staging/index.html ]; then
+            echo "ERROR: prebuilt frontend not found in /root/racc-frontend-staging"
             exit 1
           fi
-          
-          echo "Frontend build successful"
-          
+
+          # Swap the new build into place (same filesystem, so each mv is a quick rename)
+          rm -rf dist.old
+          if [ -d dist ]; then mv dist dist.old; fi
+          mv /root/racc-frontend-staging dist
+          rm -rf dist.old
+
+          echo "Frontend build deployed"
+
           # Verify the build used the correct API URL
           echo "=== Checking built files for API URL ==="
           grep -r "localhost:3000" dist/ || echo "No localhost:3000 found in build"
           grep -r "members.richfieldareachamber.com" dist/ | head -3 || echo "No production URL found in build"
-          
+
           # Start or restart frontend service using serve.js from the build directory
           echo "=== Starting zero-downtime deployment for Frontend ==="
           
