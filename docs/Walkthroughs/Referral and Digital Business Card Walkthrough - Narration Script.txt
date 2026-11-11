@@ -1,0 +1,78 @@
+Richfield Area Chamber member app - Referral Program and Digital Business Card walkthrough
+Narration script (voice: OpenAI text-to-speech, 'nova'). All people and businesses in the video are fictional demo data.
+Total running time: 6:11
+
+[0:00] SCENE A: Welcome - Referral Program and Digital Business Card
+  Hi! This video shows two new features in the Richfield Area Chamber member app: the Digital Business Card, and the Member Referral Program. Everything you'll see is made-up demo data.
+
+[0:10] SCENE 1: Digital Business Card - Opening your card
+  First up, the Digital Business Card. We're signed in as Dana Whitfield, who owns Maple Street Bakery.
+  Dana taps My Business Card, near the top.
+
+[0:21] SCENE 2: Digital Business Card - Your card and QR code
+  Here's her card: business logo, name, and a big QR code.
+  Anyone can point their phone camera at the code, and Dana's card opens right in their browser. No app to download, and no typing.
+  Or she can tap Share link, and send the card by text or email.
+
+[0:42] SCENE 3: Digital Business Card - You control what is shared
+  Down here, a section called What your card shows. Her name and business always appear, but she picks what else to share.
+  Dana would rather not give out her phone number, so she unticks it. It saves instantly. Members stay in control of their privacy.
+
+[0:59] SCENE 4: Digital Business Card - What the other person sees
+  She taps Preview, to see what someone sees after scanning.
+  Her name, business, email and website, and each one's tappable. The phone number's missing, because Dana switched it off.
+  Save contact adds Dana to the visitor's phone in one tap, so the connection never gets lost.
+
+[1:20] SCENE 5: Digital Business Card - Works signed out, too
+  What if Dana's signed out? She opens the menu, and taps Sign out. Then she opens the menu again.
+  Even signed out, there's still a My Card button right here in the menu. She taps it.
+  And her card shows up with no password. It's saved on the phone, so it can work even with a weak connection.
+  There's a second way in, too. On the sign-in screen, there's a Show my business card button, so she can pull up her card from there as well.
+
+[1:51] SCENE 6: Member Referral Program - Referring a customer to a member
+  Now the Member Referral Program. A referral is when one member sends a potential customer to another member.
+  Dana opens the Members directory, which lists every active member.
+  A customer asked her for a plumber, so she opens Northside Plumbing.
+  On their business card there's a Refer this member button. Dana taps it.
+  This note explains that the customer's details go only to Northside Plumbing, and never show up in the public feed. That privacy makes members comfortable referring real customers.
+  She can send it to one specific person. She picks Marcus Reyes.
+  She types in the customer's name and contact, a made-up customer called Karen Ostrowski, and a short note.
+  Karen needs help this week, so she marks the lead Hot.
+  Then she taps Send Referral. A confirmation pops up, and the referral's on its way.
+
+[2:53] SCENE 7: Member Referral Program - Introducing a fellow member
+  Dana can also introduce one member to another. She opens the form again.
+  Under Who are you referring, she switches to A fellow member.
+  She searches the member list, and taps Lakeview Dental.
+  Introductions grow the network, but they don't earn leaderboard points. She taps Send Referral.
+
+[3:14] SCENE 8: Member Referral Program - The receiving member
+  Now for the other side. We'll sign in as Marcus Reyes, at Northside Plumbing, with his own email and password.
+  Marcus got a notification the moment Dana sent it. The bell has a red badge, and when he taps it, there's the new referral.
+  He gets an email about it, too, with the same news and a button that opens the app.
+  On My Referrals, the Received tab lists what was sent to his business: Karen's contact details, the note, and the Hot label.
+  After Marcus calls Karen, he opens Update status, and chooses Contacted.
+  Later the job's done, so he chooses Closed, Won. That means the referral turned into paid work.
+  A thank-you box appears. Marcus writes a public thank-you to Maple Street Bakery, leaving out Karen's details, and posts it.
+
+[4:08] SCENE 9: Member Referral Program - Closing the loop
+  Back on Dana's phone, the bell has a new notification. Northside Plumbing just updated her referral, and she gets an email about it, too.
+  That takes her to My Referrals, where she taps the Given tab.
+  Her referral now shows Closed, Won, with Marcus's thank-you. She never had to ask.
+  It's called closing the loop, and it's the main reason referral programs work.
+
+[4:35] SCENE 10: Member Referral Program - Referring a business that is not a member
+  Dana also knows a business that hasn't joined yet, Harbor Light Print Shop. She taps Refer a business that isn't a member.
+  That business gets an invitation email from the chamber, but never sees her customer's name, contact details or note.
+  She enters the business name and email, which are required, then her customer's details, and taps Send Referral. In this demo, no real email goes out.
+  For the chamber, this is also a membership lead to follow up on. In the Given tab, the entry's marked Not a member yet.
+
+[5:16] SCENE 11: Member Referral Program - Community feed and leaderboard
+  Dana taps Community, to see Member Connect, a public feed of recent referrals.
+  It shows which businesses are helping each other, what got won, and the thank-yous. Customer details are never shown here.
+  The Leaderboard ranks businesses by points, with badges from Bronze all the way up to Platinum Connector.
+  Points come from referrals that get acknowledged, business that closes as won, and thank-yous. The toggle switches between This Month and All Time.
+
+[5:47] SCENE 12: Summary - Summary
+  So, to recap. The Digital Business Card shares a member's details in one scan, and the member chooses what's shown. The Referral Program lets members send customers to each other privately, track the results, and get recognized.
+  Together, they help members grow, and help the chamber show the value of belonging. Thanks for watching!
