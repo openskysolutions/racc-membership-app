@@ -836,7 +836,6 @@ const MemberDetailsPage: React.FC = () => {
                           type="email"
                           value={formData.email}
                           onChange={handleFormChange}
-                          disabled
                         />
                       </div>
                     </div>
